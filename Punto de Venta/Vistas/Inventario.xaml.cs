@@ -434,17 +434,22 @@ namespace Punto_de_Venta
         #region Búsqueda y Filtros
         private void FocusSearch()
         {
-            this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
-            {
-                ProductCodeBox.Focus();
-                Keyboard.Focus(ProductCodeBox);
-            }));
+            this.Dispatcher.BeginInvoke(
+                System.Windows.Threading.DispatcherPriority.Input,
+                new Action(() =>
+                {
+                    ProductCodeBox.Focus();
+                    Keyboard.Focus(ProductCodeBox);
+                }));
         }
 
         private void FilterStock_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is RadioButton rb && rb.Tag is string filterTag)
+            if (sender is RadioButton { Tag: string filterTag })
             {
+                if (_currentStockFilter == filterTag)
+                    return;
+
                 _currentStockFilter = filterTag;
                 ProductsView.Refresh();
             }
@@ -453,30 +458,48 @@ namespace Punto_de_Venta
         private bool ProductMatchesSearch(object item)
         {
             if (item is not Producto product)
-            {
                 return false;
-            }
 
+            // Aplicar primero los filtros más restrictivos.
             if (_currentStockFilter == "Low" && !product.EsStockBajo)
-            {
                 return false;
-            }
+
             if (_currentStockFilter == "Out" && !product.EsStockAgotado)
-            {
                 return false;
+
+            // Obtener y normalizar la búsqueda una sola vez por evaluación.
+            var query = SearchBox.Text.Trim();
+
+            if (query.Length == 0)
+                return true;
+
+            // Comparar el ID solo después de comprobar que hay una consulta.
+            if (product.Id.ToString(CultureInfo.InvariantCulture)
+                .Contains(query, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
             }
 
-            var query = SearchBox.Text.Trim();
-            if (query.Length == 0) return true;
+            // Evitar excepciones si el código o el nombre son null.
+            var codigo = product.Codigo;
+            if (!string.IsNullOrEmpty(codigo) &&
+                codigo.Contains(query, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
 
-            return product.Id.ToString(CultureInfo.InvariantCulture).Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                   product.Codigo.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                   product.Nombre.Contains(query, StringComparison.OrdinalIgnoreCase);
+            var nombre = product.Nombre;
+            return !string.IsNullOrEmpty(nombre) &&
+                   nombre.Contains(query, StringComparison.OrdinalIgnoreCase);
         }
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            SearchPlaceholder.Visibility = string.IsNullOrEmpty(SearchBox.Text) ? Visibility.Visible : Visibility.Collapsed;
+            SearchPlaceholder.Visibility =
+                string.IsNullOrEmpty(SearchBox.Text)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
             _searchDebounceTimer.Stop();
             _searchDebounceTimer.Start();
         }

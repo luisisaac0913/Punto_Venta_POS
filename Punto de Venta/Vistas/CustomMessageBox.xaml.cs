@@ -12,10 +12,16 @@ namespace Punto_de_Venta.Vistas
         {
             InitializeComponent();
 
+            // Configuración para que la película negra cubra toda la pantalla de la app
+            this.WindowStyle = WindowStyle.None;
+            this.AllowsTransparency = true;
+            this.Background = System.Windows.Media.Brushes.Transparent;
+            this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            this.WindowState = WindowState.Maximized;
+
             if (owner != null)
             {
-                Owner = owner;
-                WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                this.Owner = owner;
             }
 
             TxtTitle.Text = titulo;
@@ -53,6 +59,16 @@ namespace Punto_de_Venta.Vistas
                 Content = texto,
                 Style = esPrimario ? (Style)FindResource("AlertPrimaryButtonStyle") : (Style)FindResource("AlertButtonStyle")
             };
+
+            // Otorgar el foco automáticamente al botón principal
+            if (esPrimario)
+            {
+                btn.Loaded += (s, e) =>
+                {
+                    btn.Focus();
+                    Keyboard.Focus(btn);
+                };
+            }
 
             btn.Click += (s, e) =>
             {

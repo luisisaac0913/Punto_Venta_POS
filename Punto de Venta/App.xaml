@@ -3,10 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Punto_de_Venta"
              ShutdownMode="OnExplicitShutdown"
-             StartupUri="Vistas/MainWindow.xaml">
+             >
 
     <Application.Resources>
-
+        
+        <BitmapImage x:Key="ThemeLogo" UriSource="pack://application:,,,/Imagenes/Oscuro.png" />
         <!-- ================= COLORES BASE (APPLE LIGHT THEME) ================= -->
         <SolidColorBrush x:Key="ThemeWindowBackground" Color="#F2F2F7" />
         <SolidColorBrush x:Key="ThemeSurfaceBackground" Color="#FFFFFF" />

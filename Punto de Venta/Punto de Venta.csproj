@@ -11,7 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Imagenes\Blanco.png" />
+    <None Remove="Imagenes\Icono.png" />
     <None Remove="Imagenes\Logo.ico" />
+    <None Remove="Imagenes\Oscuro.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,7 +30,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Imagenes\Blanco.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Imagenes\Icono.png" />
     <Resource Include="Imagenes\Logo.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Imagenes\Oscuro.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>

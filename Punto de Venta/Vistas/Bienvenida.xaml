@@ -1,0 +1,144 @@
+﻿<Window x:Class="Punto_de_Venta.Vistas.Bienvenida"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configuración Inicial" Height="600" Width="800"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        WindowStartupLocation="CenterScreen"
+        TextElement.Foreground="{DynamicResource ThemeTextForeground}"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType"
+        KeyDown="Window_KeyDown">
+
+    <Window.Resources>
+        <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="48" ShadowDepth="16" Direction="270" Color="#000000" Opacity="0.22" />
+
+        <Style x:Key="StepButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource ThemeAccent}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Height" Value="48" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="16">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Border Background="{DynamicResource ThemeSurfaceBackground}" 
+                BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" 
+                CornerRadius="24" Margin="32" Effect="{StaticResource AppleModalShadow}">
+
+            <Grid Margin="32,24,32,24">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <!-- Cabecera y Barra de Progreso -->
+                    <RowDefinition Height="*" />
+                    <!-- Contenido Dinámico -->
+                    <RowDefinition Height="Auto" />
+                    <!-- Botones Inferiores -->
+                </Grid.RowDefinitions>
+
+                <!-- BOTÓN CERRAR Y BARRA DE PROGRESO (Oculta en la intro) -->
+                <Grid Grid.Row="0" Margin="0,0,0,24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ProgressBar x:Name="BarraProgreso" Grid.Column="0" Height="6" Minimum="0" Maximum="3" Value="1" Background="{DynamicResource ThemeBorder}" Foreground="{DynamicResource ThemeAccent}" BorderThickness="0" VerticalAlignment="Center" Margin="0,0,32,0" Visibility="Collapsed" />
+
+                    <Button Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Content="✕" FontSize="18" Foreground="{DynamicResource ThemeMutedForeground}" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnCerrar_Click" />
+                </Grid>
+
+                <!-- ÁREA DE CONTENIDO -->
+                <Grid Grid.Row="1">
+
+                    <!-- PASO 0: INTRODUCCIÓN -->
+                    <StackPanel x:Name="PanelPaso0" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Visible">
+                        <Border Width="380" Height="240" CornerRadius="24" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Margin="0,0,0,32" ClipToBounds="True">
+                            <Grid>
+                                <!-- Se agregó Loaded para reproducir al momento en que el componente está listo -->
+                                <MediaElement x:Name="VideoIntro" Source="C:\Ruta\Al\Video.mp4" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="UniformToFill" Loaded="VideoIntro_Loaded" />
+                                <TextBlock Text="⚠️ Inserte Video" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedForeground}" FontSize="18" FontWeight="SemiBold" Panel.ZIndex="-1" />
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="¡Bienvenido/a!" FontSize="28" FontWeight="ExtraBold" HorizontalAlignment="Center" Margin="0,0,0,12" />
+                        <TextBlock Text="Configura tu sistema en menos de 2 minutos." FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,0,0,48" />
+
+                        <Button x:Name="BtnIniciarIntro" Content="INICIAR" Width="200" Height="52" FontSize="16" Style="{StaticResource StepButtonStyle}" Click="BtnIniciarIntro_Click" />
+                    </StackPanel>
+
+                    <!-- PASO 1: Negocio -->
+                    <StackPanel x:Name="PanelPaso1" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
+                        <TextBlock Text="Información de tu tienda" FontSize="26" FontWeight="Bold" Margin="0,0,0,8" />
+                        <TextBlock Text="Paso 1 de 3" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,32" />
+
+                        <TextBlock Text="Nombre de la Tienda *" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBox x:Name="TxtNombreNegocio" Height="44" VerticalContentAlignment="Center" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Margin="0,0,0,20" />
+
+                        <TextBlock Text="Dirección (Opcional)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBox x:Name="TxtDireccion" Height="44" VerticalContentAlignment="Center" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Margin="0,0,0,20" />
+
+                        <TextBlock Text="Mensaje del Ticket" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBox x:Name="TxtMensajePie" Text="¡Gracias por su preferencia!" Height="44" VerticalContentAlignment="Center" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" />
+                    </StackPanel>
+
+                    <!-- PASO 2: Hardware -->
+                    <StackPanel x:Name="PanelPaso2" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
+                        <TextBlock Text="Dispositivos conectados" FontSize="26" FontWeight="Bold" Margin="0,0,0,8" />
+                        <TextBlock Text="Paso 2 de 3" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,32" />
+
+                        <TextBlock Text="Impresora Térmica" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <ComboBox x:Name="CmbImpresoras" Height="44" Margin="0,0,0,32" />
+
+                        <CheckBox x:Name="ChkUsarBascula" Content="Conectar báscula digital al sistema" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,20" />
+
+                        <TextBlock Text="Puerto de la Báscula" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <ComboBox x:Name="CmbPuertosCOM" Height="44" />
+                    </StackPanel>
+
+                    <!-- PASO 3: Seguridad -->
+                    <StackPanel x:Name="PanelPaso3" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
+                        <TextBlock Text="Seguridad y Control" FontSize="26" FontWeight="Bold" Margin="0,0,0,8" />
+                        <TextBlock Text="Paso 3 de 3" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,32" />
+
+                        <TextBlock Text="Fondo de caja inicial ($)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBox x:Name="TxtFondoCaja" Text="500.00" Height="44" VerticalContentAlignment="Center" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Margin="0,0,0,32" />
+
+                        <TextBlock Text="PIN de Administrador (4 dígitos)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <PasswordBox x:Name="TxtPinAdmin" MaxLength="4" Height="44" VerticalContentAlignment="Center" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Margin="0,0,0,8" />
+                        <TextBlock Text="Este código es para autorizar cancelaciones y cortes." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- BOTONES DE NAVEGACIÓN -->
+                <Grid x:Name="GridNavegacion" Grid.Row="2" Margin="0,24,0,0" Visibility="Collapsed" MaxWidth="500">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button x:Name="BtnAnterior" Grid.Column="0" HorizontalAlignment="Left" Content="Atrás" Width="100" Style="{StaticResource StepButtonStyle}" Background="Transparent" Foreground="{DynamicResource ThemeTextForeground}" Visibility="Hidden" Click="BtnAnterior_Click" />
+                    <Button x:Name="BtnSiguiente" Grid.Column="1" Content="Siguiente" Width="140" Style="{StaticResource StepButtonStyle}" Click="BtnSiguiente_Click" />
+                    <Button x:Name="BtnFinalizar" Grid.Column="1" Content="Comenzar a Vender" Width="180" Style="{StaticResource StepButtonStyle}" Background="#34C759" Visibility="Hidden" Click="BtnFinalizar_Click" />
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

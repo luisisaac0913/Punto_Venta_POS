@@ -77,9 +77,10 @@ namespace Punto_de_Venta
             // =========================================================
             // 3. CARGA DE CONFIGURACIÓN Y TEMA
             // =========================================================
+            AppConfig config = new AppConfig();
             try
             {
-                var config = AppConfig.Load();
+                config = AppConfig.Load();
                 SetDarkMode(config.ModoOscuro);
                 CambiarColorAcento(config.ColorAcentoHex);
             }
@@ -88,12 +89,28 @@ namespace Punto_de_Venta
                 RegistrarErrorEnArchivo(ex, "Startup Init");
                 SetDarkMode(false);
             }
+
+            // =========================================================
+            // 4. RUTEO: ¿ASISTENTE DE INICIO O PANTALLA PRINCIPAL?
+            // =========================================================
+            // Si el nombre del negocio está vacío, significa que es la primera ejecución (después de activar)
+            if (string.IsNullOrWhiteSpace(config.NombreNegocio))
+            {
+                Punto_de_Venta.Vistas.Bienvenida setup = new Punto_de_Venta.Vistas.Bienvenida();
+                setup.Show();
+            }
+            else
+            {
+                MainWindow mainWindow = new MainWindow();
+                mainWindow.Show();
+            }
         }
 
         public void SetDarkMode(bool isDark)
         {
             IsDarkMode = isDark;
-
+            string rutaLogo = isDark ? "pack://application:,,,/Imagenes/Blanco.png" : "pack://application:,,,/Imagenes/Oscuro.png";
+            Application.Current.Resources["ThemeLogo"] = new System.Windows.Media.Imaging.BitmapImage(new Uri(rutaLogo));
             if (isDark)
             {
                 Resources["ThemeWindowBackground"] = new SolidColorBrush(Color.FromRgb(0x1C, 0x1C, 0x1E));

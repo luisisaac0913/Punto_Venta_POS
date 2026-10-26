@@ -89,14 +89,21 @@ namespace Punto_de_Venta.Vistas
                 if (FindName("SuggestionsPopup") is Popup popup) popup.IsOpen = false;
                 ToastNotification.Show($"No se pudo cargar el catálogo: {exception.Message}", ToastType.Error);
             }
-
+            if (Cart != null)
+            {
+                Cart.Clear();
+            }
+            RefreshSummary();
             var searchBox = (TextBox)FindName("SearchBox");
-            searchBox?.Focus();
-            Keyboard.Focus(searchBox);
-
+            if (searchBox != null)
+            {
+                searchBox.Text = string.Empty;
+                searchBox.Focus();
+                Keyboard.Focus(searchBox);
+            }
             if (FindName("CartGrid") is DataGrid cartGrid)
             {
-                cartGrid.SelectedIndex = 0;
+                cartGrid.SelectedIndex = -1; 
             }
         }
         #endregion
@@ -441,400 +448,403 @@ namespace Punto_de_Venta.Vistas
         #endregion
 
         #region Búsqueda y Sugerencias de Catálogo
-        private void CargarPromocionesDesdeDb()
+private void CargarPromocionesDesdeDb()
+{
+    try
+    {
+        _promocionesCargadas = PromocionDbStore.LoadAll();
+    }
+    catch
+    {
+        _promocionesCargadas = new();
+    }
+}
+
+private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+{
+    if (!this.IsVisible)
+    {
+        if (FindName("SuggestionsPopup") is Popup popup)
+            popup.IsOpen = false;
+
+        return;
+    }
+
+    var searchBox = (TextBox)FindName("SearchBox");
+
+    ((TextBlock)FindName("SearchPlaceholder")).Visibility =
+        string.IsNullOrEmpty(searchBox.Text)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    if (!_purchaseFeedbackVisible)
+    {
+        ((TextBlock)FindName("SearchMessage")).Text = string.Empty;
+    }
+
+    _typingTimer.Stop();
+    _typingTimer.Start();
+}
+
+private void RefreshSuggestions()
+{
+    var searchBox = (TextBox)FindName("SearchBox");
+    var suggestionsList = (ListBox)FindName("SuggestionsList");
+    var suggestionsPopup = (Popup)FindName("SuggestionsPopup");
+
+    var query = searchBox.Text.Trim();
+
+    if (query.Length == 0)
+    {
+        suggestionsList.ItemsSource = null;
+        suggestionsPopup.IsOpen = false;
+        return;
+    }
+
+    // Solo se compara el ID si la consulta tiene exactamente el mismo
+    // formato que Id.ToString(CultureInfo.InvariantCulture).
+    // Así se evita convertir cada ID a texto durante el recorrido.
+    var idQueryMatches =
+        int.TryParse(query, NumberStyles.Integer, CultureInfo.InvariantCulture, out var idQuery) &&
+        string.Equals(
+            idQuery.ToString(CultureInfo.InvariantCulture),
+            query,
+            StringComparison.Ordinal);
+
+    // Grupos ordenados según TODOS los criterios del OrderBy original:
+    // código exacto > código inicial > código contenido > nombre inicial.
+    // Dentro de cada grupo se conserva el orden original de _catalog.
+    // Las listas se crean únicamente cuando tienen resultados.
+    List<Producto>? exactCodeNameStartsMatches = null;
+    List<Producto>? exactCodeOtherMatches = null;
+    List<Producto>? codeStartsNameStartsMatches = null;
+    List<Producto>? codeStartsOtherMatches = null;
+    List<Producto>? codeContainsNameStartsMatches = null;
+    List<Producto>? codeContainsOtherMatches = null;
+    List<Producto>? nameStartsMatches = null;
+    List<Producto>? otherMatches = null;
+
+    foreach (var p in _catalog)
+    {
+        var codigo = p.Codigo;
+        var nombre = p.Nombre;
+
+        var nombreEmpieza =
+            !string.IsNullOrEmpty(nombre) &&
+            nombre.StartsWith(query, StringComparison.OrdinalIgnoreCase);
+
+        if (!string.IsNullOrEmpty(codigo))
         {
-            try
+            // Prioridad 1: código exacto.
+            if (string.Equals(
+                codigo,
+                query,
+                StringComparison.OrdinalIgnoreCase))
             {
-                _promocionesCargadas = PromocionDbStore.LoadAll();
+                if (nombreEmpieza)
+                    (exactCodeNameStartsMatches ??= new List<Producto>()).Add(p);
+                else
+                    (exactCodeOtherMatches ??= new List<Producto>()).Add(p);
+
+                continue;
             }
-            catch
+
+            // Prioridad 2: código que comienza con la búsqueda.
+            if (codigo.StartsWith(query, StringComparison.OrdinalIgnoreCase))
             {
-                _promocionesCargadas = new();
+                if (nombreEmpieza)
+                    (codeStartsNameStartsMatches ??= new List<Producto>()).Add(p);
+                else
+                    (codeStartsOtherMatches ??= new List<Producto>()).Add(p);
+
+                continue;
+            }
+
+            // Prioridad 3: código que contiene la búsqueda.
+            if (codigo.Contains(query, StringComparison.OrdinalIgnoreCase))
+            {
+                if (nombreEmpieza)
+                    (codeContainsNameStartsMatches ??= new List<Producto>()).Add(p);
+                else
+                    (codeContainsOtherMatches ??= new List<Producto>()).Add(p);
+
+                continue;
             }
         }
 
-        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        // El código no contiene la búsqueda: se evalúa el nombre.
+        if (nombreEmpieza)
         {
-            if (!this.IsVisible)
-            {
-                if (FindName("SuggestionsPopup") is Popup popup)
-                    popup.IsOpen = false;
-
-                return;
-            }
-
-            var searchBox = (TextBox)FindName("SearchBox");
-
-            ((TextBlock)FindName("SearchPlaceholder")).Visibility =
-                string.IsNullOrEmpty(searchBox.Text)
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
-
-            if (!_purchaseFeedbackVisible)
-            {
-                ((TextBlock)FindName("SearchMessage")).Text = string.Empty;
-            }
-
-            _typingTimer.Stop();
-            _typingTimer.Start();
+            (nameStartsMatches ??= new List<Producto>()).Add(p);
+            continue;
         }
 
-        private void RefreshSuggestions()
+        if (!string.IsNullOrEmpty(nombre) &&
+            nombre.Contains(query, StringComparison.OrdinalIgnoreCase))
         {
-            var searchBox = (TextBox)FindName("SearchBox");
-            var suggestionsList = (ListBox)FindName("SuggestionsList");
-            var suggestionsPopup = (Popup)FindName("SuggestionsPopup");
-
-            var query = searchBox.Text.Trim();
-
-            if (query.Length == 0)
-            {
-                suggestionsList.ItemsSource = null;
-                suggestionsPopup.IsOpen = false;
-                return;
-            }
-
-            // Grupos ordenados según las mismas prioridades del código original.
-            // Cada grupo conserva el orden original de _catalog.
-            var exactCodeMatches = new List<Producto>();
-            var codeStartsMatches = new List<Producto>();
-            var codeContainsNameStartsMatches = new List<Producto>();
-            var codeContainsMatches = new List<Producto>();
-            var nameStartsMatches = new List<Producto>();
-            var otherMatches = new List<Producto>();
-
-            foreach (var p in _catalog)
-            {
-                var codigo = p.Codigo;
-                var nombre = p.Nombre;
-
-                if (!string.IsNullOrEmpty(codigo))
-                {
-                    // Prioridad 1: código exacto.
-                    if (string.Equals(
-                        codigo,
-                        query,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        exactCodeMatches.Add(p);
-                        continue;
-                    }
-
-                    // Prioridad 2: código que comienza con la búsqueda.
-                    if (codigo.StartsWith(
-                        query,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        codeStartsMatches.Add(p);
-                        continue;
-                    }
-
-                    // Prioridad 3: código que contiene la búsqueda.
-                    if (codigo.Contains(
-                        query,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        // El nombre también determina el orden dentro
-                        // de los resultados que coinciden con el código.
-                        if (!string.IsNullOrEmpty(nombre) &&
-                            nombre.StartsWith(
-                                query,
-                                StringComparison.OrdinalIgnoreCase))
-                        {
-                            codeContainsNameStartsMatches.Add(p);
-                        }
-                        else
-                        {
-                            codeContainsMatches.Add(p);
-                        }
-
-                        continue;
-                    }
-                }
-
-                // A partir de aquí, el código no contiene la búsqueda.
-                if (!string.IsNullOrEmpty(nombre))
-                {
-                    // Prioridad 4: nombre que comienza con la búsqueda.
-                    if (nombre.StartsWith(
-                        query,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        nameStartsMatches.Add(p);
-                        continue;
-                    }
-
-                    // Coincidencia por nombre.
-                    if (nombre.Contains(
-                        query,
-                        StringComparison.OrdinalIgnoreCase))
-                    {
-                        otherMatches.Add(p);
-                        continue;
-                    }
-                }
-
-                // Coincidencia por ID, conservando la comparación original.
-                if (p.Id.ToString(CultureInfo.InvariantCulture) == query)
-                {
-                    otherMatches.Add(p);
-                }
-            }
-
-            // Las listas ya están ordenadas por prioridad.
-            // No es necesario ejecutar OrderBy / ThenBy.
-            var totalMatches =
-                exactCodeMatches.Count +
-                codeStartsMatches.Count +
-                codeContainsNameStartsMatches.Count +
-                codeContainsMatches.Count +
-                nameStartsMatches.Count +
-                otherMatches.Count;
-
-            var matches = new List<Producto>(totalMatches);
-
-            matches.AddRange(exactCodeMatches);
-            matches.AddRange(codeStartsMatches);
-            matches.AddRange(codeContainsNameStartsMatches);
-            matches.AddRange(codeContainsMatches);
-            matches.AddRange(nameStartsMatches);
-            matches.AddRange(otherMatches);
-
-            suggestionsList.ItemsSource = matches;
-            suggestionsList.SelectedIndex = matches.Count > 0 ? 0 : -1;
-
-            suggestionsPopup.IsOpen =
-                matches.Count > 0 && this.IsVisible;
+            otherMatches ??= new List<Producto>();
+            otherMatches.Add(p);
+            continue;
         }
 
-        private void MoveSuggestionSelection(int offset)
+        // Coincidencia exacta por ID, evitando convertir cada ID a string.
+        if (idQueryMatches && p.Id == idQuery)
         {
-            var suggestionsList = (ListBox)FindName("SuggestionsList");
+            (otherMatches ??= new List<Producto>()).Add(p);
+        }
+    }
 
-            if (suggestionsList.Items.Count == 0)
-                return;
+    var totalMatches =
+        (exactCodeNameStartsMatches?.Count ?? 0) +
+        (exactCodeOtherMatches?.Count ?? 0) +
+        (codeStartsNameStartsMatches?.Count ?? 0) +
+        (codeStartsOtherMatches?.Count ?? 0) +
+        (codeContainsNameStartsMatches?.Count ?? 0) +
+        (codeContainsOtherMatches?.Count ?? 0) +
+        (nameStartsMatches?.Count ?? 0) +
+        (otherMatches?.Count ?? 0);
 
-            var nextIndex = suggestionsList.SelectedIndex < 0
-                ? 0
-                : Math.Clamp(
-                    suggestionsList.SelectedIndex + offset,
-                    0,
-                    suggestionsList.Items.Count - 1);
+    var matches = new List<Producto>(totalMatches);
 
-            suggestionsList.SelectedIndex = nextIndex;
-            suggestionsList.ScrollIntoView(suggestionsList.SelectedItem);
+    if (exactCodeNameStartsMatches != null)
+        matches.AddRange(exactCodeNameStartsMatches);
+    if (exactCodeOtherMatches != null)
+        matches.AddRange(exactCodeOtherMatches);
+    if (codeStartsNameStartsMatches != null)
+        matches.AddRange(codeStartsNameStartsMatches);
+    if (codeStartsOtherMatches != null)
+        matches.AddRange(codeStartsOtherMatches);
+    if (codeContainsNameStartsMatches != null)
+        matches.AddRange(codeContainsNameStartsMatches);
+    if (codeContainsOtherMatches != null)
+        matches.AddRange(codeContainsOtherMatches);
+    if (nameStartsMatches != null)
+        matches.AddRange(nameStartsMatches);
+    if (otherMatches != null)
+        matches.AddRange(otherMatches);
+
+    suggestionsList.ItemsSource = matches;
+    suggestionsList.SelectedIndex = matches.Count > 0 ? 0 : -1;
+
+    suggestionsPopup.IsOpen = matches.Count > 0 && this.IsVisible;
+}
+
+private void MoveSuggestionSelection(int offset)
+{
+    var suggestionsList = (ListBox)FindName("SuggestionsList");
+
+    if (suggestionsList.Items.Count == 0)
+        return;
+
+    var nextIndex = suggestionsList.SelectedIndex < 0
+        ? 0
+        : Math.Clamp(
+            suggestionsList.SelectedIndex + offset,
+            0,
+            suggestionsList.Items.Count - 1);
+
+    suggestionsList.SelectedIndex = nextIndex;
+    suggestionsList.ScrollIntoView(suggestionsList.SelectedItem);
+}
+
+private void SuggestionItem_MouseLeftButtonUp(
+    object sender,
+    MouseButtonEventArgs e)
+{
+    if (sender is ListBoxItem { DataContext: Producto product })
+    {
+        AddSuggestion(product);
+        e.Handled = true;
+    }
+}
+
+private void AddSuggestion(Producto product)
+{
+    decimal cantidad = 1m;
+
+    if (product.SeVendePorPeso)
+    {
+        if (FindName("SuggestionsPopup") is Popup popup)
+            popup.IsOpen = false;
+
+        AddProduct(product, 0m);
+
+        var cartGridScale = (DataGrid)FindName("CartGrid");
+        var cartItemScale = Cart.FirstOrDefault(
+            item => item.ProductoId == product.Id);
+
+        if (cartItemScale != null && cartGridScale != null)
+        {
+            cartGridScale.SelectedItem = cartItemScale;
+            cartGridScale.ScrollIntoView(cartItemScale);
         }
 
-        private void SuggestionItem_MouseLeftButtonUp(
-            object sender,
-            MouseButtonEventArgs e)
+        var sBoxScale = (TextBox)FindName("SearchBox");
+        sBoxScale?.Clear();
+
+        ActualizarVisibilidadEmptyState();
+        AnimarEntradaProducto();
+
+        AbrirModalPesaje();
+        return;
+    }
+    else if (product.PedirCantidadAlCobrar)
+    {
+        var modal = new CantidadModal(product.Nombre);
+
+        // Si el control está dentro de MainWindow, lo asignamos como Owner.
+        if (Window.GetWindow(this) is Window w)
         {
-            if (sender is ListBoxItem { DataContext: Producto product })
-            {
-                AddSuggestion(product);
-                e.Handled = true;
-            }
+            modal.Owner = w;
         }
 
-        private void AddSuggestion(Producto product)
+        modal.ShowDialog();
+
+        if (!modal.Confirmado)
         {
-            decimal cantidad = 1m;
-
-            if (product.SeVendePorPeso)
-            {
-                if (FindName("SuggestionsPopup") is Popup popup)
-                    popup.IsOpen = false;
-
-                AddProduct(product, 0m);
-
-                var cartGridScale = (DataGrid)FindName("CartGrid");
-                var cartItemScale = Cart.FirstOrDefault(
-                    item => item.ProductoId == product.Id);
-
-                if (cartItemScale != null && cartGridScale != null)
-                {
-                    cartGridScale.SelectedItem = cartItemScale;
-                    cartGridScale.ScrollIntoView(cartItemScale);
-                }
-
-                var sBoxScale = (TextBox)FindName("SearchBox");
-                sBoxScale?.Clear();
-
-                ActualizarVisibilidadEmptyState();
-                AnimarEntradaProducto();
-
-                AbrirModalPesaje();
-                return;
-            }
-            else if (product.PedirCantidadAlCobrar)
-            {
-                var modal = new CantidadModal(product.Nombre);
-
-                // Si el control está dentro de MainWindow,
-                // lo asignamos como Owner.
-                if (Window.GetWindow(this) is Window w)
-                {
-                    modal.Owner = w;
-                }
-
-                modal.ShowDialog();
-
-                if (!modal.Confirmado)
-                {
-                    var sBox = (TextBox)FindName("SearchBox");
-                    sBox?.Clear();
-                    FocusSearch();
-                    return;
-                }
-
-                cantidad = modal.CantidadResult;
-            }
-
-            AddProduct(product, cantidad);
-
-            var cartGrid = (DataGrid)FindName("CartGrid");
-            var cartItem = Cart.FirstOrDefault(
-                item => item.ProductoId == product.Id);
-
-            if (cartItem != null && cartGrid != null)
-            {
-                cartGrid.SelectedItem = cartItem;
-                cartGrid.ScrollIntoView(cartItem);
-            }
-
-            if (FindName("SuggestionsPopup") is Popup popupCierre)
-                popupCierre.IsOpen = false;
-
-            var searchBox = (TextBox)FindName("SearchBox");
-            searchBox?.Clear();
-
+            var sBox = (TextBox)FindName("SearchBox");
+            sBox?.Clear();
             FocusSearch();
-            ActualizarVisibilidadEmptyState();
-            AnimarEntradaProducto();
+            return;
         }
 
-        private void AddSearchedProduct()
+        cantidad = modal.CantidadResult;
+    }
+
+    AddProduct(product, cantidad);
+
+    var cartGrid = (DataGrid)FindName("CartGrid");
+    var cartItem = Cart.FirstOrDefault(
+        item => item.ProductoId == product.Id);
+
+    if (cartItem != null && cartGrid != null)
+    {
+        cartGrid.SelectedItem = cartItem;
+        cartGrid.ScrollIntoView(cartItem);
+    }
+
+    if (FindName("SuggestionsPopup") is Popup popupCierre)
+        popupCierre.IsOpen = false;
+
+    var searchBox = (TextBox)FindName("SearchBox");
+    searchBox?.Clear();
+
+    FocusSearch();
+    ActualizarVisibilidadEmptyState();
+    AnimarEntradaProducto();
+}
+
+private void AddSearchedProduct()
+{
+    var searchBox = (TextBox)FindName("SearchBox");
+    var query = searchBox.Text.Trim();
+
+    if (query.Length == 0)
+    {
+        FocusSearch();
+        return;
+    }
+
+    // Se conserva la prioridad original:
+    // código exacto > ID > código inicial > nombre inicial > nombre contenido.
+    Producto? product = null;
+    Producto? productoPorId = null;
+    Producto? productoCodigoPrefijo = null;
+    Producto? productoNombrePrefijo = null;
+    Producto? productoNombreContiene = null;
+
+    var idValido = int.TryParse(query, out var idBuscado);
+    var querySpan = query.AsSpan();
+
+    foreach (var p in _catalog)
+    {
+        var codigo = p.Codigo;
+
+        // Prioridad 1: código exacto, ignorando mayúsculas/minúsculas
+        // y espacios exteriores, sin crear un string mediante Trim().
+        if (!string.IsNullOrEmpty(codigo) &&
+            codigo.AsSpan().Trim().Equals(
+                querySpan,
+                StringComparison.OrdinalIgnoreCase))
         {
-            var searchBox = (TextBox)FindName("SearchBox");
-            var query = searchBox.Text.Trim();
-
-            if (query.Length == 0)
-            {
-                FocusSearch();
-                return;
-            }
-
-            // Se guarda el primer resultado de cada criterio.
-            // Se conserva la prioridad original:
-            // código exacto > ID > código inicial > nombre inicial > nombre contenido.
-            Producto? product = null;
-            Producto? productoPorId = null;
-            Producto? productoCodigoPrefijo = null;
-            Producto? productoNombrePrefijo = null;
-            Producto? productoNombreContiene = null;
-
-            var idValido = int.TryParse(query, out var idBuscado);
-
-            foreach (var p in _catalog)
-            {
-                var codigo = p.Codigo;
-
-                // Prioridad 1: código exacto, ignorando mayúsculas
-                // y minúsculas y eliminando espacios exteriores.
-                if (!string.IsNullOrWhiteSpace(codigo) &&
-                    string.Equals(
-                        codigo.Trim(),
-                        query,
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    product = p;
-                    break;
-                }
-
-                // Prioridad 2: ID del producto.
-                if (idValido &&
-                    productoPorId == null &&
-                    p.Id == idBuscado)
-                {
-                    productoPorId = p;
-                }
-
-                // Prioridad 3: código que comienza con la búsqueda.
-                // Se mantiene el comportamiento original sin aplicar Trim al código.
-                if (productoCodigoPrefijo == null &&
-                    !string.IsNullOrWhiteSpace(codigo) &&
-                    codigo.StartsWith(
-                        query,
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    productoCodigoPrefijo = p;
-                }
-
-                var nombre = p.Nombre;
-
-                if (!string.IsNullOrWhiteSpace(nombre))
-                {
-                    // Prioridad 4: nombre que comienza con la búsqueda.
-                    if (productoNombrePrefijo == null &&
-                        nombre.StartsWith(
-                            query,
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        productoNombrePrefijo = p;
-                    }
-
-                    // Prioridad 5: nombre que contiene la búsqueda.
-                    else if (productoNombreContiene == null &&
-                             nombre.Contains(
-                                 query,
-                                 StringComparison.OrdinalIgnoreCase))
-                    {
-                        productoNombreContiene = p;
-                    }
-                }
-            }
-
-            // Si no existe código exacto, se elige el primer resultado
-            // según las prioridades originales.
-            product ??=
-                productoPorId ??
-                productoCodigoPrefijo ??
-                productoNombrePrefijo ??
-                productoNombreContiene;
-
-            if (product is null)
-            {
-                OpenQuickAdd(query);
-                return;
-            }
-
-            ActualizarVisibilidadEmptyState();
-            AddSuggestion(product);
+            product = p;
+            break;
         }
 
-        private void RemoveSelectedProduct()
+        // Prioridad 2: ID del producto.
+        if (idValido &&
+            productoPorId == null &&
+            p.Id == idBuscado)
         {
-            var cartGrid = (DataGrid)FindName("CartGrid");
-
-            if (cartGrid.SelectedItem is not ItemCarrito selectedItem)
-                return;
-
-            selectedItem.PropertyChanged -= CartItem_PropertyChanged;
-            Cart.Remove(selectedItem);
-
-            var ultimo = Cart.LastOrDefault();
-            cartGrid.SelectedItem = ultimo;
-
-            if (ultimo != null)
-                cartGrid.ScrollIntoView(ultimo);
-
-            ToastNotification.Show(
-                $"Se quitó '{selectedItem.Nombre}' del carrito",
-                ToastType.Info);
-
-            ActualizarVisibilidadEmptyState();
+            productoPorId = p;
         }
-        #endregion
+
+        // Prioridad 3: código que comienza con la búsqueda.
+        if (productoCodigoPrefijo == null &&
+            !string.IsNullOrWhiteSpace(codigo) &&
+            codigo.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+        {
+            productoCodigoPrefijo = p;
+        }
+
+        var nombre = p.Nombre;
+
+        if (!string.IsNullOrWhiteSpace(nombre))
+        {
+            // Prioridad 4: nombre que comienza con la búsqueda.
+            if (productoNombrePrefijo == null &&
+                nombre.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+            {
+                productoNombrePrefijo = p;
+            }
+            else if (productoNombreContiene == null &&
+                     nombre.Contains(query, StringComparison.OrdinalIgnoreCase))
+            {
+                productoNombreContiene = p;
+            }
+        }
+    }
+
+    // Se conserva la prioridad entre los resultados encontrados.
+    product ??=
+        productoPorId ??
+        productoCodigoPrefijo ??
+        productoNombrePrefijo ??
+        productoNombreContiene;
+
+    if (product is null)
+    {
+        OpenQuickAdd(query);
+        return;
+    }
+
+    ActualizarVisibilidadEmptyState();
+    AddSuggestion(product);
+}
+
+private void RemoveSelectedProduct()
+{
+    var cartGrid = (DataGrid)FindName("CartGrid");
+
+    if (cartGrid.SelectedItem is not ItemCarrito selectedItem)
+        return;
+
+    selectedItem.PropertyChanged -= CartItem_PropertyChanged;
+    Cart.Remove(selectedItem);
+
+    var ultimo = Cart.LastOrDefault();
+    cartGrid.SelectedItem = ultimo;
+
+    if (ultimo != null)
+        cartGrid.ScrollIntoView(ultimo);
+
+    ToastNotification.Show(
+        $"Se quitó '{selectedItem.Nombre}' del carrito",
+        ToastType.Info);
+
+    ActualizarVisibilidadEmptyState();
+}
+#endregion
 
         #region Agregar Rápido de Producto Nuevo
         private void OpenQuickAdd(string code)

@@ -18,6 +18,7 @@ namespace Punto_de_Venta
         #region Campos Privados
         private AppConfig _config = new();
         private bool _isTestingScale = false;
+        private bool _isCargando = true;
         private string _selectedColorHex = "#007AFF";
         #endregion
 
@@ -31,6 +32,15 @@ namespace Punto_de_Venta
         {
             if (this.Visibility == Visibility.Visible)
             {
+                // Reiniciar siempre a la primera pestaña (Impresión)
+                NavImpresion_Click(this, new RoutedEventArgs());
+
+                // Si no es la primera carga, restauramos los datos guardados para limpiar ediciones a medias
+                if (!_isCargando)
+                {
+                    CargarDatosFormulario();
+                }
+
                 this.Focus();
                 Keyboard.Focus(this);
             }
@@ -38,9 +48,13 @@ namespace Punto_de_Venta
 
         private async void Configuracion_Loaded(object sender, RoutedEventArgs e)
         {
+            _isCargando = true;
+
             CargarDatosFormulario();
             await CargarDispositivosAsync();
             CmbModoBascula.SelectedIndex = _config.BasculaModoPrecio ? 1 : 0;
+
+            _isCargando = false;
             this.Focus();
         }
 
@@ -123,13 +137,8 @@ namespace Punto_de_Venta
                 var nuevaBrocha = new SolidColorBrush(color);
                 nuevaBrocha.Freeze();
 
-                foreach (var dict in Application.Current.Resources.MergedDictionaries)
-                {
-                    if (dict.Contains("ThemeAccent"))
-                        dict["ThemeAccent"] = nuevaBrocha;
-                }
-
-                Application.Current.Resources["ThemeAccent"] = nuevaBrocha;
+                // SOLO lo aplicamos a esta ventana para previsualizar.
+                // Ya no modificamos Application.Current hasta darle a "Guardar".
                 this.Resources["ThemeAccent"] = nuevaBrocha;
             }
             catch { }
@@ -277,9 +286,8 @@ namespace Punto_de_Venta
         private void PaperWidthComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) => ActualizarVistaPreviaTicket();
         private void CmbModoBascula_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!IsLoaded || _config == null) return;
+            if (!IsLoaded || _config == null || _isCargando) return;
 
-            // Guardar la preferencia usando tu método Save()
             _config.BasculaModoPrecio = CmbModoBascula.SelectedIndex == 1;
             _config.Save();
         }
@@ -332,23 +340,9 @@ namespace Punto_de_Venta
             }
         }
 
-        private void AskBeforePrintCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            if (AutoPrintCheckBox != null && AutoPrintCheckBox.IsChecked == true) AutoPrintCheckBox.IsChecked = false;
-            if (NoPrintOrSaveCheckBox != null && NoPrintOrSaveCheckBox.IsChecked == true) NoPrintOrSaveCheckBox.IsChecked = false;
-        }
-
-        private void AutoPrintCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            if (AskBeforePrintCheckBox != null && AskBeforePrintCheckBox.IsChecked == true) AskBeforePrintCheckBox.IsChecked = false;
-            if (NoPrintOrSaveCheckBox != null && NoPrintOrSaveCheckBox.IsChecked == true) NoPrintOrSaveCheckBox.IsChecked = false;
-        }
-
-        private void NoPrintOrSaveCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            if (AskBeforePrintCheckBox != null) AskBeforePrintCheckBox.IsChecked = false;
-            if (AutoPrintCheckBox != null) AutoPrintCheckBox.IsChecked = false;
-        }
+        private void AskBeforePrintCheckBox_Checked(object sender, RoutedEventArgs e) { }
+        private void AutoPrintCheckBox_Checked(object sender, RoutedEventArgs e) { }
+        private void NoPrintOrSaveCheckBox_Checked(object sender, RoutedEventArgs e) { }
 
         private void SaveConfig_Click(object sender, RoutedEventArgs e)
         {
@@ -398,8 +392,22 @@ namespace Punto_de_Venta
                 _config.MensajeWhatsAppRecordatorio = WhatsAppTemplateBox.Text.Trim();
                 _config.Save();
 
+                // Aplicar configuraciones globales
                 if (Application.Current is App app)
+                {
                     app.SetDarkMode(modoOscuroSeleccionado);
+                    App.CambiarColorAcento(_selectedColorHex); // Se aplica globalmente solo al guardar
+                }
+
+                // Actualizar nombre del negocio instantáneamente en MainWindow
+                if (Application.Current.MainWindow is MainWindow mainWindow)
+                {
+                    if (mainWindow.FindName("TxtMiniLogo") is TextBlock miniLogo)
+                        miniLogo.Text = _config.NombreNegocio;
+
+                    if (mainWindow.FindName("TxtTituloDashboard") is TextBlock tituloDash)
+                        tituloDash.Text = _config.NombreNegocio;
+                }
 
                 ToastNotification.Show("Configuración guardada exitosamente", ToastType.Success);
             }
@@ -413,18 +421,17 @@ namespace Punto_de_Venta
         {
             if (e.Key == Key.Escape)
             {
-                // 1. Revertir cambios gráficos no guardados (como colores de acento en prueba)
                 RevertirColorSiNoSeGuardo();
+                NewPinBox.Clear();
 
-                // 2. Ocultar la vista actual
                 this.Visibility = Visibility.Collapsed;
 
-                // 3. Forzar a MainWindow a mostrar el Dashboard nuevamente
-                if (Application.Current.MainWindow is MainWindow mainWindow)
+                // Búsqueda directa y segura de la ventana padre
+                if (Window.GetWindow(this) is MainWindow mainWindow)
                 {
                     mainWindow.RegresarAlMenu();
+                    mainWindow.Focus();
                 }
-
                 e.Handled = true;
             }
         }

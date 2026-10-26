@@ -26,7 +26,6 @@ namespace Punto_de_Venta
         private bool _isShuttingDown;
         private readonly Dictionary<string, UserControl> _vistasCache = new Dictionary<string, UserControl>();
         #endregion
-
         #region Inicialización
         public MainWindow()
         {
@@ -34,6 +33,24 @@ namespace Punto_de_Venta
 
             // Configuración de Licencia de QuestPDF (Requerido para la versión actual)
             QuestPDF.Settings.License = LicenseType.Community;
+
+            // =========================================================
+            // APLICAR NOMBRE DEL NEGOCIO DINÁMICO AL DASHBOARD
+            // =========================================================
+            try
+            {
+                var config = AppConfig.Load();
+                if (!string.IsNullOrWhiteSpace(config.NombreNegocio))
+                {
+                    // Asegúrate de haberle puesto estos x:Name a tus TextBlocks en MainWindow.xaml
+                    if (FindName("TxtMiniLogo") is TextBlock miniLogo)
+                        miniLogo.Text = config.NombreNegocio;
+
+                    if (FindName("TxtTituloDashboard") is TextBlock tituloDash)
+                        tituloDash.Text = config.NombreNegocio;
+                }
+            }
+            catch { } // Evita que un fallo al leer el archivo impida que la ventana abra
 
             _clockTimer = new DispatcherTimer
             {

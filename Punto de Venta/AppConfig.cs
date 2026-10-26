@@ -16,11 +16,11 @@ namespace Punto_de_Venta
         public int AnchoTicketCaracteres { get; set; } = 32;
         public string RutaRespaldos { get; set; } = string.Empty;
         public string ColorAcentoHex { get; set; } = "#007AFF"; 
-        public string NombreNegocio { get; set; } = "MISCELANEA JAZ";
-        public string GiroNegocio { get; set; } = "Abarrotes y Novedades";
+        public string NombreNegocio { get; set; } = string.Empty;
+        public string GiroNegocio { get; set; } = string.Empty;
         public bool SolicitarPinAdmin { get; set; } = false;
-        public string DireccionNegocio { get; set; } = "Gomez Palacio, Durango";
-        public string MensajePie { get; set; } = "GRACIAS POR SU COMPRA\nVuelva pronto";
+        public string DireccionNegocio { get; set; } = string.Empty;
+        public string MensajePie { get; set; } = string.Empty;
         public string MensajeWhatsAppRecordatorio { get; set; } = "Hola {CLIENTE}, te recordamos de {NEGOCIO} que tienes un saldo pendiente de {SALDO} por concepto de: {CONCEPTO}. ¡Agradecemos tu pronto pago!";
 
         // ================= CONFIGURACIÓN BÁSCULA DIGITAL =================

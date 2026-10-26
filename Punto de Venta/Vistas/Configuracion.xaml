@@ -152,10 +152,22 @@
                                     <ComboBoxItem Content="80 mm ancho (42 columnas)" Tag="42" />
                                 </ComboBox>
 
-                                <!-- Opciones de comportamiento de ticket -->
-                                <CheckBox x:Name="AskBeforePrintCheckBox" Content="Preguntar antes de imprimir al finalizar venta" Foreground="{DynamicResource ThemeTextForeground}" FontSize="13" Margin="0,0,0,6" Checked="AskBeforePrintCheckBox_Checked" />
-                                <CheckBox x:Name="AutoPrintCheckBox" Content="Imprimir ticket siempre de forma automática" Foreground="{DynamicResource ThemeTextForeground}" FontSize="13" Margin="0,0,0,6" Checked="AutoPrintCheckBox_Checked" />
-                                <CheckBox x:Name="NoPrintOrSaveCheckBox" Content="No guardar copia digital ni imprimir" Foreground="{DynamicResource ThemeTextForeground}" FontSize="13" Margin="0,0,0,12" Checked="NoPrintOrSaveCheckBox_Checked" />
+                                <!-- Opciones de Impresión -->
+                                <RadioButton x:Name="AskBeforePrintCheckBox"
+             GroupName="OpcionesImpresion"
+             Content="Preguntar antes de imprimir"
+             Margin="0,0,0,10" Foreground="{DynamicResource ThemeTextForeground}" />
+
+                                <RadioButton x:Name="AutoPrintCheckBox"
+             GroupName="OpcionesImpresion"
+             Content="Imprimir ticket automáticamente"
+             Margin="0,0,0,10" Foreground="{DynamicResource ThemeTextForeground}" />
+
+                                <RadioButton x:Name="NoPrintOrSaveCheckBox"
+             GroupName="OpcionesImpresion"
+             Content="No imprimir ni guardar ticket"
+             Margin="0,0,0,10" Foreground="{DynamicResource ThemeTextForeground}" />
+
 
                                 <Border Height="1" Background="{DynamicResource ThemeBorder}" Margin="0,4,0,12" />
                                 <TextBlock Text="Datos del ticket" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
