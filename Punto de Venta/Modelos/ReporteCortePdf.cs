@@ -22,8 +22,6 @@ namespace Punto_de_Venta.Reportes
     {
         public static void GenerarYabrir(CorteCaja corte, List<MovimientoCaja> movimientos, string rutaLogo, byte[] graficaBytes, string rutaArchivo)
         {
-            QuestPDF.Settings.License = LicenseType.Community;
-            QuestPDF.Settings.UseSystemFonts = true;
             var mx = new CultureInfo("es-MX");
 
             Document.Create(container =>

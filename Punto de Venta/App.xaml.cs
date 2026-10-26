@@ -43,7 +43,8 @@ namespace Punto_de_Venta
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             base.OnStartup(e);
-
+            QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+            QuestPDF.Settings.UseSystemFonts = true;
             // =========================================================
             // 1. MÓDULO DE SEGURIDAD (VA PRIMERO QUE TODO)
             // =========================================================
