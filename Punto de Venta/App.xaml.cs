@@ -45,6 +45,7 @@ namespace Punto_de_Venta
             base.OnStartup(e);
             QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
             QuestPDF.Settings.UseSystemFonts = true;
+            QuestPDF.Settings.ThrowOnMissingFontFamilies = false;
             // =========================================================
             // 1. MÓDULO DE SEGURIDAD (VA PRIMERO QUE TODO)
             // =========================================================
