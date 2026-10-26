@@ -33,6 +33,7 @@ namespace Punto_de_Venta
 
             // Configuración de Licencia de QuestPDF (Requerido para la versión actual)
             QuestPDF.Settings.License = LicenseType.Community;
+            QuestPDF.Settings.UseSystemFonts = true;
 
             // =========================================================
             // APLICAR NOMBRE DEL NEGOCIO DINÁMICO AL DASHBOARD
@@ -458,7 +459,7 @@ namespace Punto_de_Venta
 
         private void ExportarPdf(string suggestedName, Action<string> generatePdfAction)
         {
-            var dialog = new SaveFileDialog
+            var dialog = new Microsoft.Win32.SaveFileDialog
             {
                 Title = "Guardar reporte en PDF",
                 Filter = "Archivo PDF (*.pdf)|*.pdf",
@@ -472,6 +473,9 @@ namespace Punto_de_Venta
                 if (dialog.ShowDialog(this) == true)
                 {
                     generatePdfAction(dialog.FileName);
+
+                    // Abrir automáticamente el archivo generado
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dialog.FileName) { UseShellExecute = true });
                     ToastNotification.Show("Reporte PDF generado exitosamente", ToastType.Success);
                 }
             }
@@ -543,7 +547,7 @@ namespace Punto_de_Venta
                     page.Size(PageSizes.A4);
                     page.Margin(1, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily(Fonts.Lato));
+                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily(Fonts.SegoeUI)); // <-- Corregido a SegoeUI
 
                     page.Header().Column(c =>
                     {
@@ -611,7 +615,7 @@ namespace Punto_de_Venta
                     page.Size(PageSizes.A4);
                     page.Margin(1, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Lato));
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.SegoeUI)); // <-- Corregido a SegoeUI
 
                     page.Header().Column(c =>
                     {
@@ -689,7 +693,7 @@ namespace Punto_de_Venta
                     page.Size(PageSizes.A4);
                     page.Margin(1, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Lato));
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.SegoeUI)); // <-- Corregido a SegoeUI
 
                     page.Header().Column(col =>
                     {

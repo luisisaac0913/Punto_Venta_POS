@@ -55,7 +55,6 @@ namespace Punto_de_Venta
                 _loadFailed = true;
                 ToastNotification.Show($"Error al cargar inventario: {exception.Message}", ToastType.Error);
             }
-
             UpdateProductCount();
             SetNextId();
             UpdateSelectionActions();
@@ -94,6 +93,7 @@ namespace Punto_de_Venta
                 this.Focus();
                 Keyboard.Focus(this);
                 SearchBox?.Focus();
+                ProductsView.Refresh();
             }
         }
         private void UserControl_Loaded(object sender, RoutedEventArgs e)

@@ -16,6 +16,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -25,7 +28,7 @@ namespace Punto_de_Venta
     public partial class Ventas : UserControl
     {
         private readonly DispatcherTimer _clockTimer;
-        private readonly List<Producto> _catalog = [];
+        private List<Producto> _catalog = [];
         private List<MovimientoCaja> _movimientos = [];
         private Venta? _selectedSale;
         private bool _loadFailed;
@@ -49,40 +52,64 @@ namespace Punto_de_Venta
             DataContext = this;
 
             ActualizarRangoPeriodo("Dia");
-
-            try { _catalog = ProductoDB.Load(); } catch { _catalog = []; }
-            CargarMovimientosCaja();
-
-            try
-            {
-                var loadedSales = VentaDB.Load().OrderByDescending(s => s.FechaHora).ThenByDescending(s => s.Id);
-                foreach (var sale in loadedSales) { HydrateSaleProfit(sale); Sales.Add(sale); }
-            }
-            catch (Exception exception)
-            {
-                _loadFailed = true;
-                CustomMessageBox.Show(Application.Current.MainWindow, exception.Message, "No se pudo cargar el historial", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
             ReturnButton.IsEnabled = false;
 
             ActualizarEstiloBotonesPeriodo();
-            RefreshMetrics();
 
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => { ClockText.Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US")); };
             _clockTimer.Start();
         }
 
-        private void CargarMovimientosCaja() { try { _movimientos = MovimientoCajaDB.Load() ?? []; } catch { _movimientos = []; } }
-
+        // ==============================================================
+        // REPARACIÓN: Recargar datos CADA VEZ que el módulo se muestra
+        // ==============================================================
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (this.Visibility == Visibility.Visible)
             {
+                RecargarDatosDesdeBD();
+
                 this.Focus();
                 Keyboard.Focus(this);
             }
+        }
+
+        private void RecargarDatosDesdeBD()
+        {
+            try
+            {
+                // Limpiamos los datos anteriores en memoria
+                Sales.Clear();
+                _loadFailed = false;
+
+                // Recargamos el catálogo y movimientos por si hubo cambios
+                try { _catalog = ProductoDB.Load(); } catch { _catalog = []; }
+                CargarMovimientosCaja();
+
+                // Recargamos las ventas frescas
+                var loadedSales = VentaDB.Load().OrderByDescending(s => s.FechaHora).ThenByDescending(s => s.Id);
+                foreach (var sale in loadedSales)
+                {
+                    HydrateSaleProfit(sale);
+                    Sales.Add(sale);
+                }
+
+                // Aplicamos los filtros y métricas actuales
+                SalesView.Refresh();
+                RefreshMetrics();
+            }
+            catch (Exception exception)
+            {
+                _loadFailed = true;
+                CustomMessageBox.Show(Application.Current.MainWindow, exception.Message, "No se pudo cargar el historial", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CargarMovimientosCaja()
+        {
+            try { _movimientos = MovimientoCajaDB.Load() ?? []; }
+            catch { _movimientos = []; }
         }
 
         public void BtnPeriodo_Click(object sender, RoutedEventArgs e)
@@ -236,7 +263,6 @@ namespace Punto_de_Venta
             ReturnButton.IsEnabled = !_loadFailed && (_selectedSale?.Estado == "Abierta" || _selectedSale?.Estado == "Fiado");
         }
 
-        // --- NUEVO: Doble clic para abrir detalles ---
         private void SalesGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (_selectedSale != null)
@@ -264,8 +290,6 @@ namespace Punto_de_Venta
             CustomMessageBox.Show(Application.Current.MainWindow, text, "Datos de venta", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        // --- NUEVO: Reimpresión de Ticket ---
-        // --- NUEVO: Reimpresión de Ticket ---
         private void ReprintTicketButton_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedSale is null)
@@ -283,20 +307,15 @@ namespace Punto_de_Venta
 
             try
             {
-                // 1. Generamos el texto pasando los 5 parámetros requeridos
-                // Usamos PagoEfectivo (o PagoCon si lo tienes así en tu modelo Venta)
                 string textoTicket = TicketService.GenerarTextoTicket(
                     _selectedSale,
                     _selectedSale.Productos,
-                    _selectedSale.PagoEfectivo > 0 ? _selectedSale.PagoEfectivo : _selectedSale.Total, // Enviamos el monto con el que pagó
+                    _selectedSale.PagoEfectivo > 0 ? _selectedSale.PagoEfectivo : _selectedSale.Total,
                     _selectedSale.Cambio,
                     config
                 );
 
-                // 2. Convertimos el string a un arreglo de bytes (ASCII es el estándar para térmicas)
                 byte[] buffer = System.Text.Encoding.ASCII.GetBytes(textoTicket);
-
-                // 3. Enviamos a la impresora
                 bool impreso = RawPrinterHelper.SendBytesToPrinter(config.ImpresoraSeleccionada, buffer);
 
                 if (impreso)
@@ -306,13 +325,11 @@ namespace Punto_de_Venta
             }
             catch (Exception ex)
             {
-                // Respaldo en caso de error: mostramos los detalles en pantalla
                 ViewDetailsButton_Click(null, null);
                 ToastNotification.Show($"Impresión fallida: {ex.Message}", ToastType.Error);
             }
         }
 
-        // --- NUEVO: Exportar a CSV/Excel ---
         private void ExportButton_Click(object sender, RoutedEventArgs e)
         {
             if (SalesView.IsEmpty)
@@ -323,8 +340,8 @@ namespace Punto_de_Venta
 
             var sfd = new SaveFileDialog
             {
-                Filter = "Archivo CSV (*.csv)|*.csv",
-                FileName = $"ReporteVentas_{_filtroInicio:ddMMyyyy}_al_{_filtroFin:ddMMyyyy}.csv",
+                Filter = "Archivo PDF (*.pdf)|*.pdf",
+                FileName = $"ReporteVentas_{_filtroInicio:ddMMyyyy}_al_{_filtroFin:ddMMyyyy}.pdf",
                 Title = "Exportar Historial de Ventas"
             };
 
@@ -332,26 +349,97 @@ namespace Punto_de_Venta
             {
                 try
                 {
-                    StringBuilder sb = new StringBuilder();
-                    sb.AppendLine("ID Venta,Fecha,Estado,Metodo Pago,Articulos,Total,Ganancia Neta,Resumen Productos");
+                    var culture = CultureInfo.GetCultureInfo("es-MX");
+                    var ventasFiltradas = SalesView.Cast<Venta>().ToList();
 
-                    foreach (var item in SalesView)
+                    var totalVentas = ventasFiltradas.Where(v => v.Estado != "Cancelada").Sum(v => v.Total);
+                    var totalGanancia = ventasFiltradas.Where(v => v.Estado != "Cancelada").Sum(v => v.GananciaTotal);
+
+                    QuestPDF.Settings.License = LicenseType.Community;
+                    QuestPDF.Settings.UseSystemFonts = true;
+
+                    Document.Create(container =>
                     {
-                        if (item is Venta v)
+                        container.Page(page =>
                         {
-                            var fecha = v.FechaHora.ToString("dd/MM/yyyy HH:mm");
-                            // Limpiar resumen de comas para no romper el CSV
-                            var resumenLimpio = v.ProductosResumen.Replace(",", " | ").Replace("\"", " ");
-                            sb.AppendLine($"{v.Id},{fecha},{v.Estado},{v.MetodoPago},{v.CantidadTotal},{v.Total},{v.GananciaTotal},\"{resumenLimpio}\"");
-                        }
-                    }
+                            page.Size(PageSizes.A4.Landscape());
+                            page.Margin(1, Unit.Centimetre);
+                            page.PageColor(QuestPDF.Helpers.Colors.White);
+                            page.DefaultTextStyle(x => x.FontSize(9).FontFamily(QuestPDF.Helpers.Fonts.SegoeUI));
 
-                    File.WriteAllText(sfd.FileName, sb.ToString(), Encoding.UTF8);
-                    ToastNotification.Show("✅ Reporte exportado exitosamente.", ToastType.Success);
+                            page.Header().Column(col =>
+                            {
+                                col.Item().Text("REPORTE DE VENTAS").SemiBold().FontSize(18).FontColor(QuestPDF.Helpers.Colors.Blue.Darken2);
+                                col.Item().Text($"Periodo: {_filtroInicio:dd/MM/yyyy} al {_filtroFin:dd/MM/yyyy}").FontSize(11).FontColor(QuestPDF.Helpers.Colors.Grey.Darken2);
+                                col.Item().PaddingVertical(5).LineHorizontal(1).LineColor(QuestPDF.Helpers.Colors.Grey.Lighten2);
+                            });
+
+                            page.Content().PaddingVertical(10).Table(table =>
+                            {
+                                table.ColumnsDefinition(columns =>
+                                {
+                                    columns.ConstantColumn(40);
+                                    columns.ConstantColumn(85);
+                                    columns.ConstantColumn(60);
+                                    columns.ConstantColumn(60);
+                                    columns.ConstantColumn(40);
+                                    columns.ConstantColumn(60);
+                                    columns.ConstantColumn(60);
+                                    columns.RelativeColumn();
+                                });
+
+                                table.Header(header =>
+                                {
+                                    header.Cell().Text("ID").SemiBold();
+                                    header.Cell().Text("FECHA").SemiBold();
+                                    header.Cell().Text("ESTADO").SemiBold();
+                                    header.Cell().Text("PAGO").SemiBold();
+                                    header.Cell().Text("CANT.").SemiBold().AlignRight();
+                                    header.Cell().Text("TOTAL").SemiBold().AlignRight();
+                                    header.Cell().Text("GANANCIA").SemiBold().AlignRight();
+                                    header.Cell().Text("PRODUCTOS").SemiBold().AlignStart();
+                                });
+
+                                foreach (var v in ventasFiltradas)
+                                {
+                                    var textColor = v.Estado == "Cancelada" ? QuestPDF.Helpers.Colors.Red.Medium : QuestPDF.Helpers.Colors.Black;
+
+                                    table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten3).PaddingVertical(4).Text(v.Id.ToString()).FontColor(textColor);
+                                    table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten3).PaddingVertical(4).Text(v.FechaHora.ToString("dd/MM/yyyy HH:mm")).FontColor(textColor);
+                                    table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten3).PaddingVertical(4).Text(v.Estado).FontColor(textColor);
+                                    table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten3).PaddingVertical(4).Text(v.MetodoPago).FontColor(textColor);
+                                    table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten3).PaddingVertical(4).Text(v.CantidadTotal.ToString()).AlignRight().FontColor(textColor);
+                                    table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten3).PaddingVertical(4).Text(v.Total.ToString("C2", culture)).AlignRight().FontColor(textColor);
+                                    table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten3).PaddingVertical(4).Text(v.GananciaTotal.ToString("C2", culture)).AlignRight().FontColor(textColor);
+                                    table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten3).PaddingVertical(4).PaddingLeft(10).Text(v.ProductosResumen).FontSize(8).FontColor(textColor);
+                                }
+                            });
+
+                            page.Footer().Column(f =>
+                            {
+                                f.Item().PaddingBottom(5).Row(row =>
+                                {
+                                    row.RelativeItem().Text($"Ventas válidas: {totalVentas.ToString("C2", culture)}").Bold().FontSize(11).FontColor(QuestPDF.Helpers.Colors.Blue.Darken2);
+                                    row.RelativeItem().AlignRight().Text($"Ganancia válida: {totalGanancia.ToString("C2", culture)}").Bold().FontSize(11).FontColor(QuestPDF.Helpers.Colors.Green.Darken2);
+                                });
+                                f.Item().LineHorizontal(1).LineColor(QuestPDF.Helpers.Colors.Grey.Lighten2);
+                                f.Item().AlignCenter().PaddingTop(5).Text(x =>
+                                {
+                                    x.Span("Página ");
+                                    x.CurrentPageNumber();
+                                    x.Span(" de ");
+                                    x.TotalPages();
+                                });
+                            });
+                        });
+                    }).GeneratePdf(sfd.FileName);
+
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(sfd.FileName) { UseShellExecute = true });
+                    ToastNotification.Show("✅ Reporte PDF generado exitosamente.", ToastType.Success);
                 }
                 catch (Exception ex)
                 {
-                    ToastNotification.Show($"Error al exportar: {ex.Message}", ToastType.Error);
+                    ToastNotification.Show($"Error al generar PDF: {ex.Message}", ToastType.Error);
                 }
             }
         }
@@ -438,11 +526,11 @@ namespace Punto_de_Venta
             {
                 TurnoCajaManager.CerrarTurno(turnoActivo, contadoFisico, diferenciaTexto, cashSales);
                 using (var conn = DatabaseHelper.GetConnection()) { using (var updateVentasCmd = conn.CreateCommand()) { updateVentasCmd.CommandText = "UPDATE Ventas SET Estado = 'Cerrada' WHERE Estado = 'Abierta';"; updateVentasCmd.ExecuteNonQuery(); } }
-                Sales.Clear();
-                var loadedSales = VentaDB.Load().OrderByDescending(s => s.FechaHora).ThenByDescending(s => s.Id);
-                foreach (var sale in loadedSales) { HydrateSaleProfit(sale); Sales.Add(sale); }
+
+                // Limpiamos y recargamos
+                RecargarDatosDesdeBD();
+
                 ToastNotification.Show("Corte de caja finalizado exitosamente", ToastType.Success);
-                SalesView.Refresh(); RefreshMetrics();
             }
             catch (Exception ex) { ToastNotification.Show($"Error al registrar auditoría: {ex.Message}", ToastType.Error); }
         }

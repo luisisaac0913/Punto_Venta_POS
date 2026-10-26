@@ -432,6 +432,8 @@ namespace Punto_de_Venta
                 try
                 {
                     QuestPDF.Settings.License = LicenseType.Community;
+                    QuestPDF.Settings.UseSystemFonts = true; // Fundamental para que funcione en Windows
+
                     GenerarPdfReporteGlobal(sfd.FileName, start, end, selectedSales, selectedCortes, selectedMovimientos, chartImage);
 
                     ToastNotification.Show("✅ Reporte exportado a PDF exitosamente.", ToastType.Success);
@@ -443,6 +445,7 @@ namespace Punto_de_Venta
                 }
             }
         }
+
         private void GenerarPdfReporteGlobal(string filePath, DateTime start, DateTime end, List<Venta> sales, List<CorteCaja> cortes, List<MovimientoCaja> movimientos, byte[] chartImage)
         {
             var culture = CultureInfo.GetCultureInfo("es-MX");
@@ -468,7 +471,9 @@ namespace Punto_de_Venta
                     page.Size(QuestPDF.Helpers.PageSizes.A4);
                     page.Margin(1, QuestPDF.Infrastructure.Unit.Centimetre);
                     page.PageColor(QuestPDF.Helpers.Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(QuestPDF.Helpers.Fonts.Lato));
+
+                    // CORRECCIÓN: Se utiliza SegoeUI en lugar de Lato
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(QuestPDF.Helpers.Fonts.SegoeUI));
 
                     // Encabezado
                     page.Header().Column(col =>
@@ -485,7 +490,7 @@ namespace Punto_de_Venta
                         // 1. Tarjetas de KPIs
                         col.Item().Row(row =>
                         {
-                            row.Spacing(10); // Espacio horizontal entre las tarjetas
+                            row.Spacing(10);
 
                             row.RelativeItem().Background(QuestPDF.Helpers.Colors.Blue.Lighten5).Padding(10).Column(c => {
                                 c.Item().Text("Venta Total").FontSize(10).FontColor(QuestPDF.Helpers.Colors.Grey.Darken2);
@@ -583,13 +588,13 @@ namespace Punto_de_Venta
                 });
             }).GeneratePdf(filePath);
         }
+
         private byte[] CapturarControlWpf(FrameworkElement control)
         {
             try
             {
                 if (control.ActualWidth == 0 || control.ActualHeight == 0) return null;
 
-                // Renderizamos el control de WPF a un Bitmap
                 var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(
                     (int)control.ActualWidth, (int)control.ActualHeight + 10, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
                 rtb.Render(control);

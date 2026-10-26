@@ -890,9 +890,9 @@ private void RemoveSelectedProduct()
         private void QuickField_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Enter) return;
-            if (sender == QuickNameBox) QuickCategoryBox.Focus();
-            else if (sender == QuickCategoryBox) QuickCostBox.Focus();
-            else if (sender == QuickCostBox) QuickMarginBox.Focus();
+            if (sender == QuickNameBox) { QuickCategoryBox.Focus(); QuickCategoryBox.SelectAll(); }
+            else if (sender == QuickCategoryBox) { QuickCostBox.Focus(); QuickCostBox.SelectAll(); }
+            else if (sender == QuickCostBox) { QuickMarginBox.Focus(); QuickMarginBox.SelectAll(); }
             e.Handled = true;
         }
 
