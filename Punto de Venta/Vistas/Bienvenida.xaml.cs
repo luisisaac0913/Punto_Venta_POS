@@ -1,4 +1,6 @@
-﻿using System.Drawing.Printing;
+﻿using System;
+using System.Drawing.Printing;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using Punto_de_Venta.Servicios;
@@ -8,6 +10,7 @@ namespace Punto_de_Venta.Vistas
     public partial class Bienvenida : Window
     {
         private int _pasoActual = 0; // 0 = Video Intro
+        private bool _setupCompletado = false; // Bandera para controlar el cierre seguro
 
         public Bienvenida()
         {
@@ -15,6 +18,24 @@ namespace Punto_de_Venta.Vistas
             CargarImpresoras();
             CargarPuertos();
             ActualizarVistaPasos();
+
+            // Cargar icono inicial de tema oscuro/claro
+            var config = AppConfig.Load();
+            BtnThemeToggle.Content = config.ModoOscuro ? "☀️" : "🌙";
+        }
+
+        private void BtnThemeToggle_Click(object sender, RoutedEventArgs e)
+        {
+            if (Application.Current is App app)
+            {
+                bool isDark = !app.IsDarkMode;
+                app.SetDarkMode(isDark);
+                BtnThemeToggle.Content = isDark ? "☀️" : "🌙";
+
+                var config = AppConfig.Load();
+                config.ModoOscuro = isDark;
+                config.Save();
+            }
         }
 
         // Se ejecuta cuando el control de video terminó de crearse en memoria
@@ -98,18 +119,17 @@ namespace Punto_de_Venta.Vistas
 
                 // Foco automático
                 if (_pasoActual == 1) TxtNombreNegocio.Focus();
-                if (_pasoActual == 3) TxtPinAdmin.Focus();
+                if (_pasoActual == 3) TxtFondoCaja.Focus();
             }
         }
 
         private void BtnSiguiente_Click(object sender, RoutedEventArgs e)
         {
-            // VALIDACIÓN OBLIGATORIA DEL NOMBRE DEL NEGOCIO
             if (_pasoActual == 1 && string.IsNullOrWhiteSpace(TxtNombreNegocio.Text))
             {
                 CustomMessageBox.Show("El nombre de la tienda es obligatorio para poder continuar.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 TxtNombreNegocio.Focus();
-                return; // Impide avanzar
+                return;
             }
 
             if (_pasoActual < 3)
@@ -128,18 +148,36 @@ namespace Punto_de_Venta.Vistas
             }
         }
 
+        private void VideoIntro_MediaEnded(object sender, RoutedEventArgs e)
+        {
+            VideoIntro.Position = TimeSpan.Zero;
+        }
+
         private void BtnFinalizar_Click(object sender, RoutedEventArgs e)
         {
+            // NUEVO: Validación de UX para evitar arrancar con caja cerrada si el usuario teclea mal el fondo
+            string textoFondo = TxtFondoCaja.Text.Trim();
+            if (!string.IsNullOrWhiteSpace(textoFondo))
+            {
+                if (!decimal.TryParse(textoFondo, NumberStyles.Any, CultureInfo.InvariantCulture, out _) &&
+                    !decimal.TryParse(textoFondo, NumberStyles.Any, CultureInfo.GetCultureInfo("es-MX"), out _))
+                {
+                    CustomMessageBox.Show("El monto inicial del fondo de caja contiene caracteres inválidos. Solo usa números y un punto decimal.", "Fondo Inválido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    TxtFondoCaja.Focus();
+                    TxtFondoCaja.SelectAll();
+                    return;
+                }
+            }
+
             if (!string.IsNullOrWhiteSpace(TxtPinAdmin.Password) && TxtPinAdmin.Password.Length < 4)
             {
-                CustomMessageBox.Show("El PIN debe tener 4 dígitos o dejarse vacio por ahora.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("El PIN debe tener al menos 4 dígitos numéricos o dejarse vacío por ahora.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 TxtPinAdmin.Focus();
                 return;
             }
 
             var config = AppConfig.Load();
 
-            // Guardamos el nombre tal como está, porque ya aseguramos que no esté vacío
             config.NombreNegocio = TxtNombreNegocio.Text.Trim();
             config.DireccionNegocio = TxtDireccion.Text.Trim();
             config.MensajePie = string.IsNullOrWhiteSpace(TxtMensajePie.Text) ? "GRACIAS POR SU COMPRA\nVuelva pronto" : TxtMensajePie.Text.Trim();
@@ -158,8 +196,32 @@ namespace Punto_de_Venta.Vistas
                 config.EstablecerNuevoPin(TxtPinAdmin.Password.Trim());
                 config.SolicitarPinAdmin = true;
             }
+            else
+            {
+                config.SolicitarPinAdmin = false;
+            }
 
             config.Save();
+
+            // Guardar fondo de caja inicial formalmente
+            if (decimal.TryParse(textoFondo, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal montoFondo) ||
+                decimal.TryParse(textoFondo, NumberStyles.Any, CultureInfo.GetCultureInfo("es-MX"), out montoFondo))
+            {
+                if (montoFondo > 0)
+                {
+                    try
+                    {
+                        TurnoCajaManager.AbrirTurno(montoFondo);
+                    }
+                    catch (Exception ex)
+                    {
+                        CustomMessageBox.Show($"No se pudo registrar el fondo de caja inicial: {ex.Message}", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                }
+            }
+
+            // Marcamos como completado para evitar el Shutdown accidental
+            _setupCompletado = true;
 
             MainWindow main = new MainWindow();
             Application.Current.MainWindow = main;
@@ -170,6 +232,17 @@ namespace Punto_de_Venta.Vistas
         private void BtnCerrar_Click(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+
+            // Si la ventana se cierra (con Alt+F4 o la X) antes de finalizar, mata el programa
+            if (!_setupCompletado)
+            {
+                Application.Current.Shutdown();
+            }
         }
     }
 }

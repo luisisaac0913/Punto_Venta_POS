@@ -95,22 +95,9 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <Style x:Key="FormComboBoxStyle" TargetType="ComboBox">
-            <Setter Property="Height" Value="44" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
-            <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Padding" Value="12,0" />
-        </Style>
     </Window.Resources>
 
     <Grid>
-        <!-- Aumentado el Margin a 48 para evitar que la sombra (BlurRadius=48) se corte en los bordes de la ventana transparente -->
         <Border Background="{DynamicResource ThemeSurfaceBackground}" 
                 BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" 
                 CornerRadius="24" Margin="48" Effect="{StaticResource AppleModalShadow}">
@@ -128,29 +115,28 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Se agregó CornerRadius visual a la barra de progreso -->
                     <Border Grid.Column="0" Height="6" CornerRadius="3" Background="{DynamicResource ThemeBorder}" Margin="0,0,32,0" VerticalAlignment="Center">
                         <ProgressBar x:Name="BarraProgreso" Minimum="0" Maximum="3" Value="1" Background="Transparent" Foreground="{DynamicResource ThemeAccent}" BorderThickness="0" Visibility="Collapsed" />
                     </Border>
 
-                    <Button Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Content="✕" FontSize="18" Foreground="{DynamicResource ThemeMutedForeground}" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnCerrar_Click" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <Button x:Name="BtnThemeToggle" Content="🌙" FontSize="18" Foreground="{DynamicResource ThemeMutedForeground}" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,16,0" Click="BtnThemeToggle_Click" ToolTip="Alternar tema oscuro/claro" />
+                        <Button x:Name="BtnCerrar" Content="✕" FontSize="18" Foreground="{DynamicResource ThemeMutedForeground}" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnCerrar_Click" />
+                    </StackPanel>
                 </Grid>
 
                 <Grid Grid.Row="1">
                     <StackPanel x:Name="PanelPaso0" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Visible">
-                        <!-- Redujimos Height a 220 y Margin inferior a 24 -->
-                        <Border Width="380" Height="220" CornerRadius="24" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Margin="0,0,0,24" ClipToBounds="True">
+                        <Border Width="380" Height="220" CornerRadius="24" Background="{DynamicResource ThemeInputBackground}" Margin="0,0,0,24" ClipToBounds="True">
                             <Grid>
-                                <MediaElement x:Name="VideoIntro" Source="C:\Ruta\Al\Video.mp4" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="UniformToFill" Loaded="VideoIntro_Loaded" />
+                                <MediaElement x:Name="VideoIntro" MediaEnded="VideoIntro_MediaEnded" IsMuted="True" Source="Imagenes/Intro.mp4" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="UniformToFill" Loaded="VideoIntro_Loaded" />
                                 <TextBlock Text="⚠️ Inserte Video" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedForeground}" FontSize="18" FontWeight="SemiBold" Panel.ZIndex="-1" />
                             </Grid>
                         </Border>
 
-                        <!-- Redujimos los márgenes inferiores -->
                         <TextBlock Text="¡Bienvenido/a!" FontSize="28" FontWeight="ExtraBold" HorizontalAlignment="Center" Margin="0,0,0,8" />
                         <TextBlock Text="Configura tu sistema en menos de 2 minutos." FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,0,0,32" />
 
-                        <!-- Se igualó el Height a 48 para respetar el diseño del Style -->
                         <Button x:Name="BtnIniciarIntro" Content="INICIAR" Width="200" Height="48" FontSize="16" Style="{StaticResource StepButtonStyle}" Click="BtnIniciarIntro_Click" />
                     </StackPanel>
 
@@ -173,12 +159,13 @@
                         <TextBlock Text="Paso 2 de 3" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,32" />
 
                         <TextBlock Text="Impresora Térmica" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <ComboBox x:Name="CmbImpresoras" Style="{StaticResource FormComboBoxStyle}" Margin="0,0,0,32" />
+                        <!-- Se eliminó el Style estático para que adopte el global de App.xaml -->
+                        <ComboBox x:Name="CmbImpresoras" Margin="0,0,0,32" />
 
                         <CheckBox x:Name="ChkUsarBascula" Content="Conectar báscula digital al sistema" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,20" />
 
                         <TextBlock Text="Puerto de la Báscula" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <ComboBox x:Name="CmbPuertosCOM" Style="{StaticResource FormComboBoxStyle}" />
+                        <ComboBox x:Name="CmbPuertosCOM" />
                     </StackPanel>
 
                     <StackPanel x:Name="PanelPaso3" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
@@ -190,7 +177,7 @@
 
                         <TextBlock Text="PIN de Administrador (4 dígitos)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <PasswordBox x:Name="TxtPinAdmin" MaxLength="4" Style="{StaticResource FormPasswordStyle}" Margin="0,0,0,8" />
-                        <TextBlock Text="Este código es para autorizar cancelaciones y cortes." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" />
+                        <TextBlock Text="Este código es para autorizar cancelaciones. Déjalo vacío si no deseas usar PIN por ahora." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" />
                     </StackPanel>
                 </Grid>
 

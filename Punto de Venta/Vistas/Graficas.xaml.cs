@@ -68,7 +68,6 @@ namespace Punto_de_Venta
             _clockTimer.Tick += (_, _) => ClockText.Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
             _clockTimer.Start();
 
-            // Reemplazo del evento Closed de Window por Unloaded de UserControl
             Unloaded += (_, _) => _clockTimer.Stop();
 
             RefreshData();
@@ -128,7 +127,6 @@ namespace Punto_de_Venta
         {
             if (e.IsRepeat) return;
 
-            // 1. Interceptar modales activos para cerrarlos de forma individual con ESC
             if (HelpOverlay != null && HelpOverlay.Visibility == Visibility.Visible)
             {
                 if (e.Key == Key.Escape)
@@ -149,7 +147,6 @@ namespace Punto_de_Venta
                 return;
             }
 
-            // 2. Si no hay ningún modal abierto, ESC regresa al menú principal
             if (e.Key == Key.Escape)
             {
                 this.Visibility = Visibility.Collapsed;
@@ -331,7 +328,7 @@ namespace Punto_de_Venta
         private void CargarGraficaCategorias(List<Venta> sales)
         {
             ChartTitleText.Text = "Categorías con Mayor Volumen de Piezas";
-            var dict = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var dict = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase); // CORREGIDO: int -> decimal
 
             foreach (var s in sales)
             {
@@ -340,7 +337,7 @@ namespace Punto_de_Venta
             }
 
             var sorted = dict.OrderByDescending(c => c.Value).Take(7).ToList();
-            if (sorted.Count == 0) sorted.Add(new KeyValuePair<string, int>("Sin ventas", 0));
+            if (sorted.Count == 0) sorted.Add(new KeyValuePair<string, decimal>("Sin ventas", 0m));
 
             SeriesPrincipal = [new ColumnSeries<double> { Name = "Piezas Vendidas", Values = sorted.Select(c => (double)c.Value).ToArray(), Fill = new SolidColorPaint(new SKColor(0, 122, 255)), MaxBarWidth = 44 }];
             EjesXPrincipal = [new Axis { Labels = sorted.Select(c => c.Key).ToArray(), LabelsPaint = new SolidColorPaint(ObtenerColorTextoEje()), TextSize = 13 }];
@@ -382,15 +379,14 @@ namespace Punto_de_Venta
         private void CargarTopProductosPorUtilidad(List<Venta> sales)
         {
             TopProductos.Clear();
-            var dict = new Dictionary<string, (int Qty, decimal Ganancia)>(StringComparer.OrdinalIgnoreCase);
+            var dict = new Dictionary<string, (decimal Qty, decimal Ganancia)>(StringComparer.OrdinalIgnoreCase); // CORREGIDO: int -> decimal
             foreach (var s in sales) { foreach (var p in s.Productos) { var cur = dict.GetValueOrDefault(p.Nombre); dict[p.Nombre] = (cur.Qty + p.Cantidad, cur.Ganancia + (p.Ganancia * p.Cantidad)); } }
             var top = dict.OrderByDescending(x => x.Value.Ganancia).ThenByDescending(x => x.Value.Qty).Take(5).ToList();
             for (int i = 0; i < top.Count; i++) TopProductos.Add(new TopProductoItem(i + 1, top[i].Key, top[i].Value.Qty, top[i].Value.Ganancia));
-            for (int i = top.Count; i < 5; i++) TopProductos.Add(new TopProductoItem(i + 1, "Sin datos", 0, 0m));
+            for (int i = top.Count; i < 5; i++) TopProductos.Add(new TopProductoItem(i + 1, "Sin datos", 0m, 0m)); // CORREGIDO: 0 -> 0m
         }
         private void ExportarReporteDia_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Determinar las fechas exactas del periodo actualmente visualizado
             var today = DateTime.Today;
             DateTime start = today;
             DateTime end = today;
@@ -404,7 +400,6 @@ namespace Punto_de_Venta
                 case Period.Custom: start = _customStart.Date; end = _customEnd.Date; break;
             }
 
-            // 2. Filtrar todos los datos que correspondan a esas fechas
             var selectedSales = _sales.Where(s => s.FechaHora.Date >= start && s.FechaHora.Date <= end).ToList();
             var selectedCortes = _cortes.Where(c => c.FechaHora.Date >= start && c.FechaHora.Date <= end).ToList();
             var selectedMovimientos = _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end).ToList();
@@ -415,7 +410,6 @@ namespace Punto_de_Venta
                 return;
             }
 
-            // 3. Capturar la gráfica que esté visible actualmente como imagen
             byte[] chartImage = null;
             if (MainChartView.Visibility == Visibility.Visible) chartImage = CapturarControlWpf(MainChartView);
             else if (PieChartView.Visibility == Visibility.Visible) chartImage = CapturarControlWpf(PieChartView);
@@ -432,7 +426,7 @@ namespace Punto_de_Venta
                 try
                 {
                     QuestPDF.Settings.License = LicenseType.Community;
-                    QuestPDF.Settings.UseSystemFonts = true; // Fundamental para que funcione en Windows
+                    QuestPDF.Settings.UseSystemFonts = true;
 
                     GenerarPdfReporteGlobal(sfd.FileName, start, end, selectedSales, selectedCortes, selectedMovimientos, chartImage);
 
@@ -455,8 +449,7 @@ namespace Punto_de_Venta
             var totalGastos = gastosList.Sum(m => m.Monto);
             var balanceNeto = totalVentas - totalGastos;
 
-            // Calcular Top 10 Productos del periodo
-            var dictTop = new Dictionary<string, (int Qty, decimal Ingreso)>(StringComparer.OrdinalIgnoreCase);
+            var dictTop = new Dictionary<string, (decimal Qty, decimal Ingreso)>(StringComparer.OrdinalIgnoreCase); // CORREGIDO: int -> decimal
             foreach (var s in sales)
             {
                 if (s.Productos.Count > 0) { foreach (var p in s.Productos) { var cur = dictTop.GetValueOrDefault(p.Nombre); dictTop[p.Nombre] = (cur.Qty + p.Cantidad, cur.Ingreso + (p.Precio * p.Cantidad)); } }
@@ -472,10 +465,8 @@ namespace Punto_de_Venta
                     page.Margin(1, QuestPDF.Infrastructure.Unit.Centimetre);
                     page.PageColor(QuestPDF.Helpers.Colors.White);
 
-                    // CORRECCIÓN: Se utiliza SegoeUI en lugar de Lato
                     page.DefaultTextStyle(x => x.FontSize(10).FontFamily(QuestPDF.Helpers.Fonts.SegoeUI));
 
-                    // Encabezado
                     page.Header().Column(col =>
                     {
                         col.Item().Text("REPORTE FINANCIERO GLOBAL").SemiBold().FontSize(18).FontColor(QuestPDF.Helpers.Colors.Blue.Darken2);
@@ -484,10 +475,8 @@ namespace Punto_de_Venta
                         col.Item().PaddingVertical(5).LineHorizontal(1).LineColor(QuestPDF.Helpers.Colors.Grey.Lighten2);
                     });
 
-                    // Cuerpo del Reporte
                     page.Content().PaddingVertical(10).Column(col =>
                     {
-                        // 1. Tarjetas de KPIs
                         col.Item().Row(row =>
                         {
                             row.Spacing(10);
@@ -513,14 +502,12 @@ namespace Punto_de_Venta
                             });
                         });
 
-                        // 2. Gráfica Renderizada
                         if (chartImage != null)
                         {
                             col.Item().PaddingTop(15).Text("ANÁLISIS VISUAL").SemiBold().FontSize(12).FontColor(QuestPDF.Helpers.Colors.Grey.Darken3);
                             col.Item().PaddingTop(5).Height(240).Image(chartImage);
                         }
 
-                        // 3. Tabla de Cortes de Caja
                         if (cortes.Any())
                         {
                             col.Item().PaddingTop(20).Text("CORTES DE CAJA (TURNOS) DEL PERIODO").SemiBold().FontSize(12).FontColor(QuestPDF.Helpers.Colors.Grey.Darken3);
@@ -550,7 +537,6 @@ namespace Punto_de_Venta
                             });
                         }
 
-                        // 4. Tabla Top 10 Productos
                         if (topList.Any())
                         {
                             col.Item().PaddingTop(20).Text("TOP 10 PRODUCTOS CON MAYOR INGRESO").SemiBold().FontSize(12).FontColor(QuestPDF.Helpers.Colors.Grey.Darken3);
@@ -570,14 +556,13 @@ namespace Punto_de_Venta
                                 {
                                     table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten4).PaddingVertical(2).Text(pos++.ToString());
                                     table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten4).PaddingVertical(2).Text(p.Key);
-                                    table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten4).PaddingVertical(2).Text(p.Value.Qty.ToString()).AlignRight();
+                                    table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten4).PaddingVertical(2).Text(p.Value.Qty.ToString("0.###", culture)).AlignRight();
                                     table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten4).PaddingVertical(2).Text(p.Value.Ingreso.ToString("C2", culture)).AlignRight();
                                 }
                             });
                         }
                     });
 
-                    // Pie de página
                     page.Footer().AlignCenter().Text(x =>
                     {
                         x.Span("Generado el: " + DateTime.Now.ToString("dd/MM/yyyy hh:mm tt", culture) + "  |  Página ");
@@ -632,7 +617,7 @@ namespace Punto_de_Venta
         private void CargarTopProductos(List<Venta> sales)
         {
             TopProductos.Clear();
-            var dict = new Dictionary<string, (int Qty, decimal Ingreso)>(StringComparer.OrdinalIgnoreCase);
+            var dict = new Dictionary<string, (decimal Qty, decimal Ingreso)>(StringComparer.OrdinalIgnoreCase); // CORREGIDO: int -> decimal
             foreach (var s in sales)
             {
                 if (s.Productos.Count > 0) { foreach (var p in s.Productos) { var cur = dict.GetValueOrDefault(p.Nombre); dict[p.Nombre] = (cur.Qty + p.Cantidad, cur.Ingreso + (p.Precio * p.Cantidad)); } }
@@ -640,7 +625,7 @@ namespace Punto_de_Venta
             }
             var top = dict.OrderByDescending(x => x.Value.Ingreso).ThenByDescending(x => x.Value.Qty).Take(5).ToList();
             for (int i = 0; i < top.Count; i++) TopProductos.Add(new TopProductoItem(i + 1, top[i].Key, top[i].Value.Qty, top[i].Value.Ingreso));
-            for (int i = top.Count; i < 5; i++) TopProductos.Add(new TopProductoItem(i + 1, "Sin datos", 0, 0m));
+            for (int i = top.Count; i < 5; i++) TopProductos.Add(new TopProductoItem(i + 1, "Sin datos", 0m, 0m)); // CORREGIDO: 0 -> 0m
         }
         #endregion
 
@@ -702,7 +687,7 @@ namespace Punto_de_Venta
         private enum ChartView { Finanzas, MetodosPago, Categorias, HorasPico, Rentabilidad, CortesCaja }
     }
 
-    public sealed record TopProductoItem(int Posicion, string Nombre, int Cantidad, decimal Ingreso);
+    public sealed record TopProductoItem(int Posicion, string Nombre, decimal Cantidad, decimal Ingreso); // CORREGIDO: int Cantidad -> decimal Cantidad
     public sealed record CorteAuditoriaItem(int TurnoId, string FechaHoraFormateada, string FolioTexto, string EsperadoFormateado, string ContadoFormateado, string DiferenciaFormateada, Brush BadgeBackground, Brush BadgeForeground);
     #endregion
 }

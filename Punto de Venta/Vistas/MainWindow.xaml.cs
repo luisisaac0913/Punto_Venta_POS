@@ -26,24 +26,20 @@ namespace Punto_de_Venta
         private bool _isShuttingDown;
         private readonly Dictionary<string, UserControl> _vistasCache = new Dictionary<string, UserControl>();
         #endregion
+
         #region Inicialización
         public MainWindow()
         {
             InitializeComponent();
 
-            // Configuración de Licencia de QuestPDF (Requerido para la versión actual)
             QuestPDF.Settings.License = LicenseType.Community;
             QuestPDF.Settings.UseSystemFonts = true;
 
-            // =========================================================
-            // APLICAR NOMBRE DEL NEGOCIO DINÁMICO AL DASHBOARD
-            // =========================================================
             try
             {
                 var config = AppConfig.Load();
                 if (!string.IsNullOrWhiteSpace(config.NombreNegocio))
                 {
-                    // Asegúrate de haberle puesto estos x:Name a tus TextBlocks en MainWindow.xaml
                     if (FindName("TxtMiniLogo") is TextBlock miniLogo)
                         miniLogo.Text = config.NombreNegocio;
 
@@ -51,7 +47,7 @@ namespace Punto_de_Venta
                         tituloDash.Text = config.NombreNegocio;
                 }
             }
-            catch { } // Evita que un fallo al leer el archivo impida que la ventana abra
+            catch { }
 
             _clockTimer = new DispatcherTimer
             {
@@ -128,15 +124,12 @@ namespace Punto_de_Venta
                 _vistasCache[nombreVista] = new T();
             }
 
-            // REPARACIÓN DEL PANTALLAZO EN BLANCO: 
-            // Forzar que el UserControl vuelva a ser visible, ya que el evento ESC lo oculta internamente.
             _vistasCache[nombreVista].Visibility = Visibility.Visible;
 
             GridDashboard.Visibility = Visibility.Collapsed;
             ContenedorVistas.Content = _vistasCache[nombreVista];
             ContenedorVistas.Visibility = Visibility.Visible;
 
-            // Foco retardado para asegurar que la vista activa reciba los eventos del teclado
             Dispatcher.BeginInvoke(new Action(() => {
                 _vistasCache[nombreVista].Focus();
             }), DispatcherPriority.Loaded);
@@ -144,19 +137,19 @@ namespace Punto_de_Venta
 
         public void RegresarAlMenu()
         {
-            // 1. Ocultar y limpiar el contenedor de la vista modular
             ContenedorVistas.Visibility = Visibility.Collapsed;
             ContenedorVistas.Content = null;
 
-            // 2. Volver a mostrar el panel de inicio (Dashboard Bento)
             if (GridDashboard != null)
             {
                 GridDashboard.Visibility = Visibility.Visible;
             }
 
-            // 3. Devolver el foco a la ventana principal
-            this.Focus();
-            Keyboard.Focus(this);
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                this.Focus();
+                Keyboard.Focus(this);
+            }), DispatcherPriority.Input);
         }
 
         private void Cobro_Click(object sender, RoutedEventArgs e) => AbrirVista<Cobro>();
@@ -190,7 +183,6 @@ namespace Punto_de_Venta
 
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            // REPARACIÓN CLAVE DEL ESC: Si el modal de exportar está abierto, lo cierra.
             if (ExportarOverlay != null && ExportarOverlay.Visibility == Visibility.Visible)
             {
                 if (e.Key == Key.Escape)
@@ -201,20 +193,21 @@ namespace Punto_de_Venta
                 return;
             }
 
-            // REPARACIÓN CLAVE DEL ESC: Si un módulo está abierto, dejamos que el UserControl 
-            // y sus modales internos manejen el ESC por sí mismos.
-            if (ContenedorVistas.Visibility == Visibility.Visible)
+            if (ImportarOverlay != null && ImportarOverlay.Visibility == Visibility.Visible)
             {
                 if (e.Key == Key.Escape)
                 {
-                    // Dejamos pasar el evento para que llegue al UserControl activo
-                    return;
+                    CerrarImportar();
+                    e.Handled = true;
                 }
-                // Retornamos para evitar que estando dentro de un módulo, presiones teclas del menú general.
                 return;
             }
 
-            // Atajos directos desde el menú de inicio
+            if (ContenedorVistas.Visibility == Visibility.Visible)
+            {
+                return;
+            }
+
             switch (e.Key)
             {
                 case Key.D1:
@@ -263,12 +256,34 @@ namespace Punto_de_Venta
         }
         #endregion
 
-        #region Importación de Base de Datos (Txt)
-        private void BtnSubirLista_Click(object sender, RoutedEventArgs e)
+        #region Importación de Base de Datos (Archivos CSV)
+        private void AbrirModalImportar_Click(object sender, RoutedEventArgs e)
+        {
+            if (FindName("ImportarOverlay") is Grid overlay)
+            {
+                overlay.Visibility = Visibility.Visible;
+                overlay.Focus();
+            }
+        }
+
+        private void ImportarOverlay_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (FindName("ImportarOverlay") is Grid overlay && ReferenceEquals(e.OriginalSource, overlay))
+            {
+                CerrarImportar();
+            }
+        }
+
+        private void CerrarImportar()
+        {
+            if (FindName("ImportarOverlay") is Grid overlay) overlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void EjecutarImportacion_Click(object sender, RoutedEventArgs e)
         {
             var openFileDialog = new OpenFileDialog
             {
-                Filter = "Archivos de texto (*.txt)|*.txt|Todos los archivos (*.*)|*.*",
+                Filter = "Archivos CSV (*.csv)|*.csv|Todos los archivos (*.*)|*.*",
                 Title = "Seleccionar lista de productos para importar a SQLite"
             };
 
@@ -277,17 +292,30 @@ namespace Punto_de_Venta
             try
             {
                 var lineasNuevas = File.ReadAllLines(openFileDialog.FileName, Encoding.UTF8);
+
+                if (lineasNuevas.Length == 0)
+                {
+                    ToastNotification.Show("El archivo seleccionado está completamente vacío.", ToastType.Warning);
+                    return;
+                }
+
                 var productosExistentes = ProductoDB.Load();
                 var catalogoPorId = productosExistentes.ToDictionary(p => p.Id);
 
                 int maxId = catalogoPorId.Keys.DefaultIfEmpty(0).Max();
                 int importadosCount = 0;
+                int omitidosCount = 0;
 
                 foreach (var linea in lineasNuevas)
                 {
                     if (string.IsNullOrWhiteSpace(linea)) continue;
+
                     var prod = ParsearLineaProducto(linea);
-                    if (prod == null) continue;
+                    if (prod == null)
+                    {
+                        omitidosCount++;
+                        continue;
+                    }
 
                     if (prod.Id <= 0 || !catalogoPorId.ContainsKey(prod.Id))
                     {
@@ -311,60 +339,87 @@ namespace Punto_de_Venta
                     importadosCount++;
                 }
 
-                ProductoDB.Save(catalogoPorId.Values);
-                ToastNotification.Show($"Se importaron y guardaron {importadosCount} productos en SQLite correctamente", ToastType.Success);
+                if (importadosCount > 0)
+                {
+                    ProductoDB.Save(catalogoPorId.Values);
+                    CerrarImportar();
+
+                    if (omitidosCount > 1)
+                    {
+                        ToastNotification.Show($"Se importaron {importadosCount} productos. Se omitieron {omitidosCount - 1} filas con formato incorrecto.", ToastType.Info);
+                    }
+                    else
+                    {
+                        ToastNotification.Show($"Se importaron y guardaron {importadosCount} productos exitosamente.", ToastType.Success);
+                    }
+                }
+                else
+                {
+                    ToastNotification.Show("No se detectó ningún producto válido. Verifica que el archivo sea un CSV con el orden de columnas correcto.", ToastType.Warning);
+                }
             }
             catch (Exception ex)
             {
-                ToastNotification.Show($"Error al importar archivo: {ex.Message}", ToastType.Error);
+                ToastNotification.Show($"Error crítico al leer el archivo: {ex.Message}", ToastType.Error);
             }
         }
 
         private static Producto? ParsearLineaProducto(string linea)
         {
-            var partes = linea.Split(new[] { "//" }, StringSplitOptions.None);
-            if (partes.Length < 4) return null;
+            var partes = linea.Split(',');
+            if (partes.Length < 4)
+            {
+                partes = linea.Split(';');
+                if (partes.Length < 4) return null;
+            }
 
-            int.TryParse(partes[0].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id);
-            var codigo = partes[1].Trim();
-            var nombre = partes[2].Trim();
-            if (string.IsNullOrWhiteSpace(nombre)) return null;
+            for (int i = 0; i < partes.Length; i++)
+            {
+                partes[i] = partes[i].Trim(' ', '"');
+            }
+
+            int.TryParse(partes[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var id);
+            var codigo = partes[1];
+            var nombre = partes[2];
+
+            if (string.IsNullOrWhiteSpace(nombre) || nombre.Equals("Nombre", StringComparison.OrdinalIgnoreCase))
+                return null;
 
             var categoria = "N/A";
             decimal costo = 0m, ganancia = 0m, precio = 0m;
-            int stock = 0;
+            decimal stock = 0m;
             bool pedirCantidad = false, seVendePorPeso = false;
 
             if (partes.Length >= 10)
             {
-                categoria = string.IsNullOrWhiteSpace(partes[3]) ? "N/A" : partes[3].Trim();
+                categoria = string.IsNullOrWhiteSpace(partes[3]) ? "N/A" : partes[3];
                 costo = ParseDecimalFlexible(partes[4]);
                 ganancia = ParseDecimalFlexible(partes[5]);
                 precio = ParseDecimalFlexible(partes[6]);
-                int.TryParse(partes[7].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out stock);
-                bool.TryParse(partes[8].Trim(), out pedirCantidad);
-                bool.TryParse(partes[9].Trim(), out seVendePorPeso);
+                decimal.TryParse(partes[7], NumberStyles.Any, CultureInfo.InvariantCulture, out stock);
+                bool.TryParse(partes[8], out pedirCantidad);
+                bool.TryParse(partes[9], out seVendePorPeso);
             }
             else if (partes.Length == 9)
             {
-                categoria = string.IsNullOrWhiteSpace(partes[3]) ? "N/A" : partes[3].Trim();
+                categoria = string.IsNullOrWhiteSpace(partes[3]) ? "N/A" : partes[3];
                 costo = ParseDecimalFlexible(partes[4]);
                 ganancia = ParseDecimalFlexible(partes[5]);
                 precio = ParseDecimalFlexible(partes[6]);
-                int.TryParse(partes[7].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out stock);
-                bool.TryParse(partes[8].Trim(), out pedirCantidad);
+                decimal.TryParse(partes[7], NumberStyles.Any, CultureInfo.InvariantCulture, out stock);
+                bool.TryParse(partes[8], out pedirCantidad);
             }
             else if (partes.Length == 8)
             {
-                categoria = string.IsNullOrWhiteSpace(partes[3]) ? "N/A" : partes[3].Trim();
+                categoria = string.IsNullOrWhiteSpace(partes[3]) ? "N/A" : partes[3];
                 costo = ParseDecimalFlexible(partes[4]);
                 ganancia = ParseDecimalFlexible(partes[5]);
                 precio = ParseDecimalFlexible(partes[6]);
-                int.TryParse(partes[7].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out stock);
+                decimal.TryParse(partes[7], NumberStyles.Any, CultureInfo.InvariantCulture, out stock);
             }
             else if (partes.Length == 7)
             {
-                categoria = string.IsNullOrWhiteSpace(partes[3]) ? "N/A" : partes[3].Trim();
+                categoria = string.IsNullOrWhiteSpace(partes[3]) ? "N/A" : partes[3];
                 costo = ParseDecimalFlexible(partes[4]);
                 ganancia = ParseDecimalFlexible(partes[5]);
                 precio = ParseDecimalFlexible(partes[6]);
@@ -378,7 +433,7 @@ namespace Punto_de_Venta
             else if (partes.Length == 5)
             {
                 precio = ParseDecimalFlexible(partes[3]);
-                categoria = string.IsNullOrWhiteSpace(partes[4]) ? "N/A" : partes[4].Trim();
+                categoria = string.IsNullOrWhiteSpace(partes[4]) ? "N/A" : partes[4];
                 ganancia = precio;
             }
             else if (partes.Length == 4)
@@ -473,8 +528,6 @@ namespace Punto_de_Venta
                 if (dialog.ShowDialog(this) == true)
                 {
                     generatePdfAction(dialog.FileName);
-
-                    // Abrir automáticamente el archivo generado
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dialog.FileName) { UseShellExecute = true });
                     ToastNotification.Show("Reporte PDF generado exitosamente", ToastType.Success);
                 }
@@ -547,7 +600,7 @@ namespace Punto_de_Venta
                     page.Size(PageSizes.A4);
                     page.Margin(1, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily(Fonts.SegoeUI)); // <-- Corregido a SegoeUI
+                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily(Fonts.SegoeUI));
 
                     page.Header().Column(c =>
                     {
@@ -560,13 +613,13 @@ namespace Punto_de_Venta
                     {
                         table.ColumnsDefinition(columns =>
                         {
-                            columns.ConstantColumn(30); // ID
-                            columns.ConstantColumn(90); // Codigo
-                            columns.RelativeColumn();   // Nombre
-                            columns.ConstantColumn(40); // Stock
-                            columns.ConstantColumn(55); // Costo
-                            columns.ConstantColumn(55); // Ganancia
-                            columns.ConstantColumn(60); // Precio
+                            columns.ConstantColumn(30);
+                            columns.ConstantColumn(90);
+                            columns.RelativeColumn();
+                            columns.ConstantColumn(40);
+                            columns.ConstantColumn(55);
+                            columns.ConstantColumn(55);
+                            columns.ConstantColumn(60);
                         });
 
                         table.Header(header =>
@@ -585,7 +638,7 @@ namespace Punto_de_Venta
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).PaddingVertical(3).Text(product.Id.ToString());
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).PaddingVertical(3).Text(product.Codigo ?? "");
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).PaddingVertical(3).Text(product.Nombre);
-                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).PaddingVertical(3).Text(product.Stock.ToString());
+                            table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).PaddingVertical(3).Text(product.Stock.ToString("0.###"));
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).PaddingVertical(3).Text(product.Costo.ToString("C2", culture)).AlignRight();
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).PaddingVertical(3).Text(product.Ganancia.ToString("C2", culture)).AlignRight();
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten3).PaddingVertical(3).Text(product.Precio.ToString("C2", culture)).AlignRight().SemiBold();
@@ -615,7 +668,7 @@ namespace Punto_de_Venta
                     page.Size(PageSizes.A4);
                     page.Margin(1, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.SegoeUI)); // <-- Corregido a SegoeUI
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.SegoeUI));
 
                     page.Header().Column(c =>
                     {
@@ -628,12 +681,12 @@ namespace Punto_de_Venta
                     {
                         table.ColumnsDefinition(columns =>
                         {
-                            columns.ConstantColumn(30); // ID
-                            columns.RelativeColumn();   // Cliente/Concepto
-                            columns.ConstantColumn(70); // Original
-                            columns.ConstantColumn(70); // Abonado
-                            columns.ConstantColumn(80); // Restante
-                            columns.ConstantColumn(70); // Estado
+                            columns.ConstantColumn(30);
+                            columns.RelativeColumn();
+                            columns.ConstantColumn(70);
+                            columns.ConstantColumn(70);
+                            columns.ConstantColumn(80);
+                            columns.ConstantColumn(70);
                         });
 
                         table.Header(header =>
@@ -693,7 +746,7 @@ namespace Punto_de_Venta
                     page.Size(PageSizes.A4);
                     page.Margin(1, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.SegoeUI)); // <-- Corregido a SegoeUI
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.SegoeUI));
 
                     page.Header().Column(col =>
                     {
@@ -730,7 +783,7 @@ namespace Punto_de_Venta
                                     header.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Text("Subtotal").SemiBold().AlignRight();
                                 });
 
-                                var itemsDelDia = new List<(string Nombre, int Cantidad, decimal Subtotal)>();
+                                var itemsDelDia = new List<(string Nombre, decimal Cantidad, decimal Subtotal)>();
                                 foreach (var sale in dailySales)
                                 {
                                     if (sale.Productos.Count > 0)
@@ -741,9 +794,10 @@ namespace Punto_de_Venta
                                     {
                                         foreach (var part in sale.ProductosResumen.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
                                         {
-                                            var match = System.Text.RegularExpressions.Regex.Match(part, @"^(?<name>.+?)\s+x(?<qty>\d+)$");
-                                            if (match.Success) itemsDelDia.Add((match.Groups["name"].Value.Trim(), int.Parse(match.Groups["qty"].Value), 0m));
-                                            else itemsDelDia.Add((part.Trim(), 1, 0m));
+                                            var match = System.Text.RegularExpressions.Regex.Match(part, @"^(?<name>.+?)\s+x(?<qty>[\d\.]+)$");
+                                            if (match.Success && decimal.TryParse(match.Groups["qty"].Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsedQty))
+                                                itemsDelDia.Add((match.Groups["name"].Value.Trim(), parsedQty, 0m));
+                                            else itemsDelDia.Add((part.Trim(), 1m, 0m));
                                         }
                                     }
                                 }
@@ -756,7 +810,7 @@ namespace Punto_de_Venta
                                     var cant = g.Sum(x => x.Cantidad);
                                     var sub = g.Sum(x => x.Subtotal);
 
-                                    table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).PaddingVertical(2).Text(cant.ToString());
+                                    table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).PaddingVertical(2).Text(cant.ToString("0.###", culture));
                                     table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).PaddingVertical(2).Text(g.Key);
                                     table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten4).PaddingVertical(2).Text(sub > 0 ? sub.ToString("C2", culture) : "-").AlignRight();
                                 }

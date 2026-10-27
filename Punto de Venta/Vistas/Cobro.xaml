@@ -18,7 +18,8 @@
 
         <DropShadowEffect x:Key="AppleCardShadow" BlurRadius="20" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.08" />
         <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="36" ShadowDepth="8" Direction="270" Color="#000000" Opacity="0.25" />
-        <DropShadowEffect x:Key="AppleButtonShadow" BlurRadius="12" ShadowDepth="3" Direction="270" Color="#007AFF" Opacity="0.3" />
+        <!-- CORREGIDO: Sombra adaptable genérica para no forzar el azul -->
+        <DropShadowEffect x:Key="AppleButtonShadow" BlurRadius="12" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.15" />
 
         <Style x:Key="CardBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
@@ -45,11 +46,12 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
+                            <!-- CORREGIDO: Uso de Opacidad para mantener el color de acento dinámico -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#0062CC" />
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.85" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#004FB3" />
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.65" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="ButtonBorder" Property="Background" Value="#AEAEB2" />
@@ -103,7 +105,7 @@
     </UserControl.Resources>
 
     <Border Background="Transparent" ClipToBounds="True">
-        <Grid>
+        <Grid MouseLeftButtonDown="Grid_MouseLeftButtonDown">
             <!-- ================= CONTENIDO PRINCIPAL CON MÁRGENES ADECUADOS ================= -->
             <Grid Margin="32,20,32,24">
                 <Grid.RowDefinitions>
@@ -262,7 +264,7 @@
                                                                     </Style.Triggers>
                                                                 </Style>
                                                             </TextBlock.Style>
-                                <Run Text="{Binding Stock}" />
+                                                            <Run Text="{Binding Stock}" />
                                                         </TextBlock>
                                                     </Border>
 
@@ -456,7 +458,7 @@
             <!-- ================= MODALES (Fuera de los márgenes para cubrir toda la ventana) ================= -->
 
             <!-- MODAL: PAGO (PaymentOverlay) CON COBRO MIXTO -->
-            <Grid x:Name="PaymentOverlay" Panel.ZIndex="10" Background="#66000000" Visibility="Collapsed">
+            <Grid x:Name="PaymentOverlay" Panel.ZIndex="10" Background="#66000000" Visibility="Collapsed" MouseDown="PaymentOverlay_MouseDown">
                 <Border Width="560" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="28" Padding="36,30" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                     <StackPanel>
                         <TextBlock Text="METODO DE PAGO" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,8" />
@@ -550,6 +552,8 @@
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>
+
+                            <!-- CORREGIDO: Botón FINALIZAR con opacidad dinámica en XAML -->
                             <Button x:Name="FinalizeButton" Grid.Column="2" Content="FINALIZAR" Height="50" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="Bold" Cursor="Hand" Click="FinalizeButton_Click" Effect="{StaticResource AppleButtonShadow}">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
@@ -558,10 +562,10 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="BorderFin" Property="Background" Value="#0062CC" />
+                                                <Setter TargetName="BorderFin" Property="Opacity" Value="0.85" />
                                             </Trigger>
                                             <Trigger Property="IsPressed" Value="True">
-                                                <Setter TargetName="BorderFin" Property="Background" Value="#004FB3" />
+                                                <Setter TargetName="BorderFin" Property="Opacity" Value="0.65" />
                                             </Trigger>
                                             <Trigger Property="IsEnabled" Value="False">
                                                 <Setter TargetName="BorderFin" Property="Background" Value="#AEAEB2" />
@@ -646,12 +650,22 @@
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>
+
+                            <!-- CORREGIDO: Botón ACEPTAR Báscula con opacidad dinámica en XAML -->
                             <Button Grid.Column="4" Content="ACEPTAR (Enter)" Height="46" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="ConfirmScale_Click" Effect="{StaticResource AppleButtonShadow}">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                                        <Border x:Name="ScaleAcceptBorder" Background="{TemplateBinding Background}" CornerRadius="12">
                                             <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
                                         </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="ScaleAcceptBorder" Property="Opacity" Value="0.85" />
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="ScaleAcceptBorder" Property="Opacity" Value="0.65" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>
@@ -844,7 +858,7 @@
             </Grid>
 
             <!-- MODAL: RESTOCK RÁPIDO -->
-            <Grid x:Name="QuickRestockOverlay" Panel.ZIndex="999" Background="#66000000" Visibility="Collapsed">
+            <Grid x:Name="QuickRestockOverlay" Panel.ZIndex="999" Background="#66000000" Visibility="Collapsed" MouseDown="QuickRestockOverlay_MouseDown">
                 <Border Width="400" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="20" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel>
                         <TextBlock Text="ReStock Rápido" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,16" />
@@ -880,12 +894,21 @@
                                 </Button.Template>
                             </Button>
 
-                            <Button Grid.Column="2" Content="GUARDAR" Height="42" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="ConfirmQuickRestock_Click">
+                            <!-- CORREGIDO: Botón GUARDAR con opacidad dinámica en XAML -->
+                            <Button Grid.Column="2" Content="GUARDAR" Height="42" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="ConfirmQuickRestock_Click" Effect="{StaticResource AppleButtonShadow}">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
-                                        <Border Background="{DynamicResource ThemeAccent}" CornerRadius="12">
+                                        <Border x:Name="AddStockBorder" Background="{DynamicResource ThemeAccent}" CornerRadius="12">
                                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="AddStockBorder" Property="Opacity" Value="0.85" />
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="AddStockBorder" Property="Opacity" Value="0.65" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>

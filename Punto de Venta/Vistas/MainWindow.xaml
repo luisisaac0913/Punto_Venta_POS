@@ -2,7 +2,7 @@
         PreviewKeyDown="Window_PreviewKeyDown"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Icon="/Imagenes/Logo.ico"
+        Icon="pack://application:,,,/Imagenes/Logo.ico"
         Width="1280" Height="720"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -476,7 +476,8 @@
                             </Button>
 
                             <!-- 9. Importar -->
-                            <Button Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Subir List" Click="BtnSubirLista_Click">
+                            <!-- CORREGIDO: Redirigido a la nueva función que abre el modal de instrucciones -->
+                            <Button Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Subir List" Click="AbrirModalImportar_Click">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <Viewbox Width="20" Height="20" VerticalAlignment="Center">
                                         <Canvas Width="24" Height="24">
@@ -561,6 +562,54 @@
                     </Border>
                 </Grid>
 
+                <!-- NUEVO MODAL DE IMPORTACIÓN DE DATOS -->
+                <Grid x:Name="ImportarOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" Panel.ZIndex="10" MouseDown="ImportarOverlay_MouseDown">
+                    <Border Width="650" Height="420" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="28" Padding="32" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,16">
+                                <TextBlock Text="MIGRACIÓN Y ACTUALIZACIÓN" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                                <TextBlock Text="Importar Catálogo (CSV)" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="26" FontWeight="ExtraBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
+                            </StackPanel>
+
+                            <Border Grid.Row="1" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Padding="20">
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="⚠️ Formato Requerido" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,8" />
+                                    <TextBlock Text="El sistema admite archivos .csv separados por comas (,) o punto y coma (;). El orden de las columnas que lee el sistema de izquierda a derecha debe ser estrictamente el siguiente:" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,12" />
+
+                                    <Border Background="{DynamicResource ThemeSurfaceBackground}" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                        <TextBlock FontFamily="Consolas, Courier New" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap">
+                                            1. ID (Vacio o 0) | 2. Código | 3. Nombre<LineBreak/>
+                                            4. Categoría      | 5. Costo  | 6. Ganancia<LineBreak/>
+                                            7. Precio Final   | 8. Stock  | 9. PedirCant (true/false) | 10. PorPeso (true/false)
+                                        </TextBlock>
+                                    </Border>
+
+                                    <TextBlock Text="* Si el archivo contiene una fila de encabezados, el sistema la omitirá automáticamente." TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" FontStyle="Italic" />
+                                </StackPanel>
+                            </Border>
+
+                            <Button Grid.Row="2" Content="SELECCIONAR ARCHIVO Y SUBIR" Height="46" Background="{DynamicResource ThemeAccent}" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="14" FontWeight="Bold" Cursor="Hand" Click="EjecutarImportacion_Click" Margin="0,20,0,0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="UploadBorder" Background="{TemplateBinding Background}" CornerRadius="12">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="UploadBorder" Property="Opacity" Value="0.9" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+                    </Border>
+                </Grid>
             </Grid>
         </Grid>
     </Border>

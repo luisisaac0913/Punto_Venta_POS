@@ -32,18 +32,30 @@ namespace Punto_de_Venta
         {
             if (this.Visibility == Visibility.Visible)
             {
-                // Reiniciar siempre a la primera pestaña (Impresión)
                 NavImpresion_Click(this, new RoutedEventArgs());
 
-                // Si no es la primera carga, restauramos los datos guardados para limpiar ediciones a medias
                 if (!_isCargando)
                 {
                     CargarDatosFormulario();
                 }
 
+                // Rescate de foco inicial al abrir la ventana usando el patrón agresivo del Dispatcher
+                Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                {
+                    this.Focus();
+                    Keyboard.Focus(this);
+                }));
+            }
+        }
+
+        // Rescate de foco al hacer clic en el fondo vacío de Configuración
+        private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+            {
                 this.Focus();
                 Keyboard.Focus(this);
-            }
+            }));
         }
 
         private async void Configuracion_Loaded(object sender, RoutedEventArgs e)
@@ -55,7 +67,6 @@ namespace Punto_de_Venta
             CmbModoBascula.SelectedIndex = _config.BasculaModoPrecio ? 1 : 0;
 
             _isCargando = false;
-            this.Focus();
         }
 
         private void CargarDatosFormulario()
@@ -136,9 +147,6 @@ namespace Punto_de_Venta
                 var color = (Color)ColorConverter.ConvertFromString(codigoHexadecimal);
                 var nuevaBrocha = new SolidColorBrush(color);
                 nuevaBrocha.Freeze();
-
-                // SOLO lo aplicamos a esta ventana para previsualizar.
-                // Ya no modificamos Application.Current hasta darle a "Guardar".
                 this.Resources["ThemeAccent"] = nuevaBrocha;
             }
             catch { }
@@ -291,6 +299,7 @@ namespace Punto_de_Venta
             _config.BasculaModoPrecio = CmbModoBascula.SelectedIndex == 1;
             _config.Save();
         }
+
         private void ActualizarVistaPreviaTicket()
         {
             if (PreviewTicketText == null) return;
@@ -301,7 +310,7 @@ namespace Punto_de_Venta
 
             var tempConfig = new AppConfig
             {
-                NombreNegocio = BusinessNameBox?.Text ?? "MISCELANEA JAZ",
+                NombreNegocio = BusinessNameBox?.Text ?? "Miscelanea",
                 GiroNegocio = BusinessSubtitleBox?.Text ?? string.Empty,
                 DireccionNegocio = BusinessAddressBox?.Text ?? string.Empty,
                 MensajePie = FooterMessageBox?.Text ?? string.Empty,
@@ -340,9 +349,26 @@ namespace Punto_de_Venta
             }
         }
 
-        private void AskBeforePrintCheckBox_Checked(object sender, RoutedEventArgs e) { }
-        private void AutoPrintCheckBox_Checked(object sender, RoutedEventArgs e) { }
-        private void NoPrintOrSaveCheckBox_Checked(object sender, RoutedEventArgs e) { }
+        // NUEVA FUNCIÓN AÑADIDA: Respaldar Ahora (Manual)
+        private void BtnRespaldarAhora_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string ruta = BackupFolderBox.Text.Trim();
+                if (string.IsNullOrWhiteSpace(ruta) || !Directory.Exists(ruta))
+                {
+                    ToastNotification.Show("Por favor, selecciona primero una carpeta de destino en 'Examinar...'", ToastType.Warning);
+                    return;
+                }
+
+                BackupService.GenerarRespaldo("Manual", ruta);
+                ToastNotification.Show("Respaldo manual generado exitosamente", ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"Error al intentar generar el respaldo: {ex.Message}", ToastType.Error);
+            }
+        }
 
         private void SaveConfig_Click(object sender, RoutedEventArgs e)
         {
@@ -392,14 +418,12 @@ namespace Punto_de_Venta
                 _config.MensajeWhatsAppRecordatorio = WhatsAppTemplateBox.Text.Trim();
                 _config.Save();
 
-                // Aplicar configuraciones globales
                 if (Application.Current is App app)
                 {
                     app.SetDarkMode(modoOscuroSeleccionado);
-                    App.CambiarColorAcento(_selectedColorHex); // Se aplica globalmente solo al guardar
+                    App.CambiarColorAcento(_selectedColorHex);
                 }
 
-                // Actualizar nombre del negocio instantáneamente en MainWindow
                 if (Application.Current.MainWindow is MainWindow mainWindow)
                 {
                     if (mainWindow.FindName("TxtMiniLogo") is TextBlock miniLogo)
@@ -426,7 +450,6 @@ namespace Punto_de_Venta
 
                 this.Visibility = Visibility.Collapsed;
 
-                // Búsqueda directa y segura de la ventana padre
                 if (Window.GetWindow(this) is MainWindow mainWindow)
                 {
                     mainWindow.RegresarAlMenu();

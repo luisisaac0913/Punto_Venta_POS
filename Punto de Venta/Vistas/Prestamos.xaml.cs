@@ -80,10 +80,14 @@ namespace Punto_de_Venta
             if (this.Visibility == Visibility.Visible)
             {
                 this.Focus();
+                FocusSearch();
                 Keyboard.Focus(this);
             }
         }
-
+        private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            FocusSearch();
+        }
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             FocusSearch();
@@ -160,10 +164,14 @@ namespace Punto_de_Venta
         #region Búsqueda y Filtros
         private void FocusSearch()
         {
-            this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+            Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
             {
-                DebtorPhoneBox.Focus();
-                Keyboard.Focus(DebtorPhoneBox);
+                if (DebtorPhoneBox != null)
+                {
+                    this.Focus();
+                    DebtorPhoneBox.Focus();
+                    Keyboard.Focus(DebtorPhoneBox);
+                }
             }));
         }
 
@@ -413,6 +421,14 @@ namespace Punto_de_Venta
                 return;
             }
 
+            var turnoActual = TurnoCajaManager.ObtenerTurnoActivo();
+            if (turnoActual == null)
+            {
+                ShowStatus("Debes abrir turno de caja (ingresar un fondo) para recibir abonos.", false);
+                PaymentAmountBox.Focus();
+                return;
+            }
+
             var culture = CultureInfo.GetCultureInfo("es-MX");
             var paymentText = PaymentAmountBox.Text.Trim();
 
@@ -448,44 +464,33 @@ namespace Punto_de_Venta
             updatedDebtor.TotalAbonado += payment;
 
             var updatedDebtors = Debtors.Select(debtor => debtor.Id == oldDebtor.Id ? updatedDebtor : debtor).ToList();
-            if (!TrySave(updatedDebtors))
-            {
-                return;
-            }
 
             try
             {
-                var movements = MovimientoCajaDB.Load();
-                var nextMovementId = movements.Select(m => m.Id).DefaultIfEmpty(0).Max() + 1;
+                PrestamoDB.Save(updatedDebtors);
+                TurnoCajaManager.RegistrarMovimientoEfectivo("Entrada", payment, $"Abono de cuenta: {updatedDebtor.Nombre}");
 
-                movements.Add(new MovimientoCaja
-                {
-                    Id = nextMovementId,
-                    FechaHora = DateTime.Now,
-                    Tipo = "Entrada",
-                    Monto = payment,
-                    Concepto = $"Abono de cuenta: {updatedDebtor.Nombre}"
-                });
+                ReplaceDebtor(oldDebtor, updatedDebtor);
+                SelectDebtor(updatedDebtor);
+                UpdateDashboardKPIs();
+                UpdateSelectionButtons();
 
-                MovimientoCajaDB.Save(movements);
+                PaymentAmountBox.Clear();
+
+                var mensaje = updatedDebtor.SaldoRestante == 0
+                    ? $"Deuda liquidada. Entrada de {payment.ToString("C2", culture)} guardada en caja."
+                    : $"Abono de {payment.ToString("C2", culture)} registrado. Entrada guardada en caja.";
+
+                ShowStatus(mensaje, true);
             }
             catch (Exception ex)
             {
-                ToastNotification.Show($"Error al registrar entrada en caja: {ex.Message}", ToastType.Warning);
+                Debtors.Clear();
+                foreach (var d in PrestamoDB.Load()) Debtors.Add(d);
+                DebtorsView.Refresh();
+
+                ToastNotification.Show($"Error crítico al procesar abono: {ex.Message}", ToastType.Error);
             }
-
-            ReplaceDebtor(oldDebtor, updatedDebtor);
-            SelectDebtor(updatedDebtor);
-            UpdateDashboardKPIs();
-            UpdateSelectionButtons();
-
-            PaymentAmountBox.Clear();
-
-            var mensaje = updatedDebtor.SaldoRestante == 0
-                ? $"Deuda liquidada. Entrada de {payment.ToString("C2", culture)} guardada en caja."
-                : $"Abono de {payment.ToString("C2", culture)} registrado. Entrada guardada en caja.";
-
-            ShowStatus(mensaje, true);
         }
         #endregion
 
@@ -814,7 +819,7 @@ namespace Punto_de_Venta
             ClearForm();
             SetNextId();
             UpdateSelectionButtons();
-            DebtorNameBox.Focus();
+            DebtorPhoneBox.Focus();
         }
 
         private bool TryReadLoanForm(out string name, out string concept, out decimal amount)
@@ -826,13 +831,6 @@ namespace Punto_de_Venta
             if (name.Length == 0)
             {
                 ShowStatus("El nombre del deudor es obligatorio.", false);
-                DebtorNameBox.Focus();
-                return false;
-            }
-
-            if (ContainsDelimiterOrNewLine(name) || ContainsDelimiterOrNewLine(concept) || ContainsDelimiterOrNewLine(DebtorPhoneBox.Text))
-            {
-                ShowStatus("Los campos no pueden contener // ni saltos de línea.", false);
                 DebtorNameBox.Focus();
                 return false;
             }
@@ -912,9 +910,6 @@ namespace Punto_de_Venta
 
         private static string CombineConcepts(string current, string added) =>
             string.Join("; ", new[] { current.Trim(), added.Trim() }.Where(value => value.Length > 0));
-
-        private static bool ContainsDelimiterOrNewLine(string value) =>
-            value.Contains("//", StringComparison.Ordinal) || value.Contains('\r') || value.Contains('\n');
 
         private int GetNextId() => checked(Debtors.Select(debtor => debtor.Id).DefaultIfEmpty(0).Max() + 1);
 

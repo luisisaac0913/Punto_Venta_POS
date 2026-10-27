@@ -68,6 +68,13 @@ namespace Punto_de_Venta
             }
             catch { }
 
+            // Suscribir eventos de exclusión mutua para los CheckBoxes
+            if (AskQuantityCheckBox != null && ScaleWeighCheckBox != null)
+            {
+                AskQuantityCheckBox.Checked += AskQuantityCheckBox_Checked;
+                ScaleWeighCheckBox.Checked += ScaleWeighCheckBox_Checked;
+            }
+
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => ClockText.Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
             _clockTimer.Start();
@@ -90,12 +97,25 @@ namespace Punto_de_Venta
         {
             if (this.Visibility == Visibility.Visible)
             {
+                // H-46: Sincronizar catálogo con BD para evitar aplastar ventas recientes
+                try
+                {
+                    Products.Clear();
+                    foreach (var product in ProductoDB.Load())
+                    {
+                        Products.Add(product);
+                    }
+                }
+                catch { }
+
                 this.Focus();
                 Keyboard.Focus(this);
                 SearchBox?.Focus();
                 ProductsView.Refresh();
+                UpdateProductCount();
             }
         }
+
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             FocusSearch();
@@ -318,7 +338,7 @@ namespace Punto_de_Venta
                 return;
             }
 
-            if (!int.TryParse(GestorLoteCantidadBox.Text.Trim(), out var qty) || qty <= 0)
+            if (!decimal.TryParse(GestorLoteCantidadBox.Text.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var qty) || qty <= 0)
             {
                 ToastNotification.Show("Ingresa una cantidad válida mayor a 0.", ToastType.Warning);
                 return;
@@ -460,27 +480,23 @@ namespace Punto_de_Venta
             if (item is not Producto product)
                 return false;
 
-            // Aplicar primero los filtros más restrictivos.
             if (_currentStockFilter == "Low" && !product.EsStockBajo)
                 return false;
 
             if (_currentStockFilter == "Out" && !product.EsStockAgotado)
                 return false;
 
-            // Obtener y normalizar la búsqueda una sola vez por evaluación.
             var query = SearchBox.Text.Trim();
 
             if (query.Length == 0)
                 return true;
 
-            // Comparar el ID solo después de comprobar que hay una consulta.
             if (product.Id.ToString(CultureInfo.InvariantCulture)
                 .Contains(query, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
-            // Evitar excepciones si el código o el nombre son null.
             var codigo = product.Codigo;
             if (!string.IsNullOrEmpty(codigo) &&
                 codigo.Contains(query, StringComparison.OrdinalIgnoreCase))
@@ -506,6 +522,25 @@ namespace Punto_de_Venta
         #endregion
 
         #region Interacción con Formulario y DataGrid
+        // EXCLUSIÓN MUTUA DE CHECKBOXES
+        private void AskQuantityCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_isUpdatingForm) return;
+            if (ScaleWeighCheckBox != null && ScaleWeighCheckBox.IsChecked == true)
+            {
+                ScaleWeighCheckBox.IsChecked = false;
+            }
+        }
+
+        private void ScaleWeighCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_isUpdatingForm) return;
+            if (AskQuantityCheckBox != null && AskQuantityCheckBox.IsChecked == true)
+            {
+                AskQuantityCheckBox.IsChecked = false;
+            }
+        }
+
         private void FocusCodeBox()
         {
             ProductCodeBox.Focus();
@@ -532,7 +567,7 @@ namespace Punto_de_Venta
                 ProductCodeBox.Text = _selectedProduct.Codigo ?? string.Empty;
                 ProductNameBox.Text = _selectedProduct.Nombre ?? string.Empty;
                 ProductCategoryBox.Text = _selectedProduct.Categoria ?? "N/A";
-                StockBox.Text = _selectedProduct.Stock.ToString();
+                StockBox.Text = _selectedProduct.Stock.ToString("0.###", CultureInfo.InvariantCulture);
                 ProductCostBox.Text = _selectedProduct.Costo.ToString("0.00", CultureInfo.InvariantCulture);
                 ProductMarginBox.Text = _selectedProduct.Ganancia.ToString("0.00", CultureInfo.InvariantCulture);
 
@@ -805,7 +840,7 @@ namespace Punto_de_Venta
             SetNextId();
         }
 
-        private bool TryReadForm(out string code, out string name, out decimal cost, out decimal margin, out decimal price, out string category, out int stock)
+        private bool TryReadForm(out string code, out string name, out decimal cost, out decimal margin, out decimal price, out string category, out decimal stock)
         {
             code = ProductCodeBox.Text.Trim();
             name = ProductNameBox.Text.Trim();
@@ -830,17 +865,9 @@ namespace Punto_de_Venta
                 return false;
             }
 
-            if (name.Contains("//", StringComparison.Ordinal) || name.Contains('\r') || name.Contains('\n') ||
-                code.Contains("//", StringComparison.Ordinal) || category.Contains("//", StringComparison.Ordinal) ||
-                category.Contains('\r') || category.Contains('\n'))
+            if (!decimal.TryParse(StockBox.Text.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out stock) || stock < 0)
             {
-                ShowValidationError("Nombre, código y categoría no pueden contener // ni saltos de línea.", "ProductNameBox");
-                return false;
-            }
-
-            if (!int.TryParse(StockBox.Text.Trim(), out stock) || stock < 0)
-            {
-                ShowValidationError("Introduce un stock entero igual o mayor que cero.", "StockBox");
+                ShowValidationError("Introduce un stock válido igual o mayor que cero.", "StockBox");
                 return false;
             }
 
@@ -1005,12 +1032,12 @@ namespace Punto_de_Venta
                 return;
             }
 
-            if (!int.TryParse(amountStr, out var addAmount)) return;
+            if (!decimal.TryParse(amountStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var addAmount)) return;
 
-            int.TryParse(StockBox.Text.Trim(), out var currentStock);
+            decimal.TryParse(StockBox.Text.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var currentStock);
             var newStock = currentStock + addAmount;
 
-            StockBox.Text = newStock.ToString();
+            StockBox.Text = newStock.ToString("0.###", CultureInfo.InvariantCulture);
             _selectedProduct.Stock = newStock;
 
             try
@@ -1087,9 +1114,9 @@ namespace Punto_de_Venta
                 return;
             }
 
-            if (!int.TryParse(amountText, out var addAmount) || addAmount <= 0)
+            if (!decimal.TryParse(amountText, NumberStyles.Any, CultureInfo.InvariantCulture, out var addAmount) || addAmount <= 0)
             {
-                QrStatusMessage.Text = "Ingresa una cantidad entera mayor a 0.";
+                QrStatusMessage.Text = "Ingresa una cantidad válida mayor a 0.";
                 QrAddAmountBox.Focus();
                 QrAddAmountBox.SelectAll();
                 return;

@@ -69,7 +69,7 @@ namespace Punto_de_Venta
             if (this.Visibility == Visibility.Visible)
             {
                 RecargarDatosDesdeBD();
-
+                FocusSearch();
                 this.Focus();
                 Keyboard.Focus(this);
             }
@@ -247,13 +247,20 @@ namespace Punto_de_Venta
                 e.Handled = true;
             }
         }
-
+        private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            FocusSearch();
+        }
         private void FocusSearch()
         {
-            this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+            Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
             {
-                SearchBox.Focus();
-                Keyboard.Focus(SearchBox);
+                if (SearchBox != null)
+                {
+                    this.Focus();
+                    SearchBox.Focus();
+                    Keyboard.Focus(SearchBox);
+                }
             }));
         }
 

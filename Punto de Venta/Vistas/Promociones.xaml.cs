@@ -22,7 +22,10 @@ namespace Punto_de_Venta
             InitializeComponent();
             CargarPromociones();
         }
-
+        private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            FocusSearch();
+        }
         private void CargarPromociones()
         {
             ListaPromociones.Clear();
@@ -37,6 +40,7 @@ namespace Punto_de_Venta
             if (this.Visibility == Visibility.Visible)
             {
                 this.Focus();
+                FocusSearch();
                 Keyboard.Focus(this);
             }
         }
@@ -100,12 +104,17 @@ namespace Punto_de_Venta
             }
             return 0m;
         }
+
         private void FocusSearch()
         {
-            this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+            Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
             {
-                NombrePromoBox.Focus();
-                Keyboard.Focus(NombrePromoBox);
+                if (NombrePromoBox != null)
+                {
+                    this.Focus();
+                    NombrePromoBox.Focus();
+                    Keyboard.Focus(NombrePromoBox);
+                }
             }));
         }
         #endregion

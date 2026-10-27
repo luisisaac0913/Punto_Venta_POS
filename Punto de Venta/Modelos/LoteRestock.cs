@@ -13,6 +13,6 @@ namespace Punto_de_Venta.Modelos
     {
         public string Codigo { get; set; } = string.Empty;
         public string Nombre { get; set; } = string.Empty;
-        public int Cantidad { get; set; }
+        public decimal Cantidad { get; set; }
     }
 }

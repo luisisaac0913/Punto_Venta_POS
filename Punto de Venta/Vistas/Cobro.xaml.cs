@@ -119,7 +119,6 @@ namespace Punto_de_Venta.Vistas
         {
             if (this.Visibility == Visibility.Visible)
             {
-                // Recargar catálogo por si se modificó en la ventana de Inventario
                 try { _catalog = ProductoDB.Load(); } catch { _catalog = new(); }
 
                 this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
@@ -480,7 +479,6 @@ namespace Punto_de_Venta.Vistas
                     ? Visibility.Visible
                     : Visibility.Collapsed;
 
-            // Corrección: Borrar el mensaje de feedback tan pronto como el usuario empiece a escribir
             if (_purchaseFeedbackVisible)
             {
                 ClearPurchaseFeedback();
@@ -657,8 +655,6 @@ namespace Punto_de_Venta.Vistas
                     modal.Owner = w;
                 }
 
-                // SOLUCIÓN AL BUG: Forzamos a WPF a renderizar el cierre del Popup de sugerencias
-                // ANTES de abrir la ventana bloqueante del modal, evitando el efecto de superposición
                 Application.Current.Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
 
                 modal.ShowDialog();
@@ -707,8 +703,6 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            // 1. PRIORIDAD ABSOLUTA AL ESCÁNER: Si el texto de la caja concuerda exactamente 
-            // con un Código de Barras o un ID del catálogo, lo agrega inmediatamente.
             var idValido = int.TryParse(query, out var idBuscado);
             var querySpan = query.AsSpan();
 
@@ -733,8 +727,6 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            // 2. Si no hubo match exacto (se escribió manual), verificamos si el usuario
-            // seleccionó intencionalmente un producto navegando por el menú flotante
             if (FindName("SuggestionsPopup") is Popup popup && popup.IsOpen)
             {
                 var suggestionsList = (ListBox)FindName("SuggestionsList");
@@ -748,7 +740,6 @@ namespace Punto_de_Venta.Vistas
 
             if (FindName("SuggestionsPopup") is Popup popupCierre) popupCierre.IsOpen = false;
 
-            // 3. Si no hay match exacto ni seleccion manual, se busca la coincidencia parcial (Prefijos)
             Producto? productoCodigoPrefijo = null;
             Producto? productoNombrePrefijo = null;
             Producto? productoNombreContiene = null;
@@ -810,8 +801,6 @@ namespace Punto_de_Venta.Vistas
             ActualizarVisibilidadEmptyState();
         }
 
-        // Este evento se mantiene en blanco para evitar romper la referencia 'PreviewKeyDown' de tu XAML.
-        // Toda la lógica de Enter se centralizó en UserControl_PreviewKeyDown para evitar conflictos de lectura.
         private void SearchBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
         }
@@ -986,11 +975,27 @@ namespace Punto_de_Venta.Vistas
             return false;
         }
 
+        private void PaymentOverlay_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (ReferenceEquals(e.OriginalSource, PaymentOverlay))
+            {
+                PaymentOverlay.Visibility = Visibility.Collapsed;
+                FocusSearch();
+            }
+        }
+
+        private void QuickRestockOverlay_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (ReferenceEquals(e.OriginalSource, QuickRestockOverlay))
+            {
+                CloseQuickRestock();
+            }
+        }
+
         private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.IsRepeat) return;
 
-            // 1. INTERCEPTAR TECLAS EN CUALQUIER MODAL ABIERTO
             if (ScaleOverlay.Visibility == Visibility.Visible)
             {
                 if (e.Key == Key.Escape) { CancelScale_Click(this, new RoutedEventArgs()); e.Handled = true; Cart.Clear(); }
@@ -1056,7 +1061,6 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            // Para la navegación manual en el popup con las flechas
             var suggestionsPopup = (Popup)FindName("SuggestionsPopup");
             if (suggestionsPopup != null && suggestionsPopup.IsOpen)
             {
@@ -1074,7 +1078,6 @@ namespace Punto_de_Venta.Vistas
                 }
             }
 
-            // 2. ATAJOS GLOBALES
             if (e.Key == Key.F10 || (e.Key == Key.System && e.SystemKey == Key.F10)) { OpenQuickRestockModal(); e.Handled = true; return; }
             if (e.Key == Key.F8) { AbrirModalPesaje(); e.Handled = true; return; }
             if (e.Key == Key.F5) { CajonService.AbrirCajon(); e.Handled = true; return; }
@@ -1087,7 +1090,6 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            // SHIFT + ENTER -> Ir a Cobrar
             if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
             {
                 if (_modalAbierto) return;
@@ -1098,7 +1100,6 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            // ENTER -> Procesar Producto escaneado o escrito (SOLUCIÓN DEL ESCÁNER)
             if (e.Key == Key.Enter || e.Key == Key.Return)
             {
                 if (_modalAbierto) return;
@@ -1186,15 +1187,9 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            if (debtorName.Contains("//", StringComparison.Ordinal))
-            {
-                CreditValidationMessage.Text = "El nombre no puede contener '//'.";
-                ToastNotification.Show("El nombre no puede contener '//'", ToastType.Warning);
-                DebtorNameBox.Focus();
-                return;
-            }
-
             var total = ObtenerTotalNetoVenta();
+            var totalBruto = Cart.Sum(item => item.Subtotal);
+            var factor = totalBruto > 0 ? total / totalBruto : 1m;
 
             try
             {
@@ -1219,68 +1214,64 @@ namespace Punto_de_Venta.Vistas
                     });
                 }
 
+                var sales = VentaDB.Load();
+                var saleId = checked(sales.Select(s => s.Id).DefaultIfEmpty(0).Max() + 1);
+                var sale = new Venta
+                {
+                    Id = saleId,
+                    FechaHora = DateTime.Now,
+                    Total = total,
+                    MetodoPago = "N/A",
+                    PagoCon = 0m,
+                    Cambio = 0m,
+                    Estado = "Fiado",
+                    Productos = Cart.Select(item => {
+                        decimal precioDescuento = Math.Round(item.Precio * factor, 2);
+                        return new DetalleVenta
+                        {
+                            Id = item.ProductoId,
+                            VentaId = saleId,
+                            Nombre = item.Nombre,
+                            Cantidad = item.Cantidad,
+                            Costo = item.Costo,
+                            Ganancia = precioDescuento - item.Costo,
+                            Precio = precioDescuento,
+                            Categoria = item.Categoria
+                        };
+                    }).ToList()
+                };
+
+                foreach (var cartItem in Cart)
+                {
+                    var prod = _catalog.FirstOrDefault(p => p.Id == cartItem.ProductoId);
+                    if (prod != null) prod.Stock = (decimal)Math.Max(0m, (decimal)prod.Stock - cartItem.Cantidad);
+                }
+
                 PrestamoDB.Save(debtors);
+                VentaDB.Save(sales.Append(sale));
+                ProductoDB.Save(_catalog);
+
+                var config = AppConfig.Load();
+                TicketService.GuardarCopiaDigital(sale, sale.Productos, 0m, 0m, config);
+
+                foreach (var item in Cart) item.PropertyChanged -= CartItem_PropertyChanged;
+                Cart.Clear();
+                _saleNumber++;
+                RefreshSummary();
+
+                CreditOverlay.Visibility = Visibility.Collapsed;
+                ((Grid)FindName("PaymentOverlay")).Visibility = Visibility.Collapsed;
+                ((TextBox)FindName("SearchBox")).Clear();
+
+                ShowPurchaseFeedback(true, $"Fiado registrado a '{debtorName}' por {total.ToString("C2", CultureInfo.GetCultureInfo("es-MX"))}.");
+                ToastNotification.Show($"Fiado a {debtorName} registrado ({total.ToString("C2", CultureInfo.GetCultureInfo("es-MX"))})", ToastType.Success);
+                FocusSearch();
             }
             catch (Exception ex)
             {
-                ToastNotification.Show($"Error al guardar el préstamo: {ex.Message}", ToastType.Error);
-                return;
+                _catalog = ProductoDB.Load();
+                ToastNotification.Show($"Error crítico al guardar préstamo: {ex.Message}", ToastType.Error);
             }
-
-            List<Venta> sales;
-            try { sales = VentaDB.Load(); }
-            catch (Exception ex) { ToastNotification.Show($"Error al leer ventas: {ex.Message}", ToastType.Error); return; }
-
-            var saleId = checked(sales.Select(s => s.Id).DefaultIfEmpty(0).Max() + 1);
-            var sale = new Venta
-            {
-                Id = saleId,
-                FechaHora = DateTime.Now,
-                Total = total,
-                MetodoPago = "N/A",
-                PagoCon = 0m,
-                Cambio = 0m,
-                Estado = "Fiado",
-                Productos = Cart.Select(item => new DetalleVenta
-                {
-                    Id = item.ProductoId,
-                    VentaId = saleId,
-                    Nombre = item.Nombre,
-                    Cantidad = (int)Math.Ceiling(item.Cantidad),
-                    Costo = item.Costo,
-                    Ganancia = item.Ganancia,
-                    Precio = item.Precio,
-                    Categoria = item.Categoria
-                }).ToList()
-            };
-
-            try { VentaDB.Save(sales.Append(sale)); }
-            catch (Exception ex) { ToastNotification.Show($"Error al guardar ventas: {ex.Message}", ToastType.Error); return; }
-
-            var config = AppConfig.Load();
-
-            TicketService.GuardarCopiaDigital(sale, sale.Productos, 0m, 0m, config);
-
-            foreach (var cartItem in Cart)
-            {
-                var prod = _catalog.FirstOrDefault(p => p.Id == cartItem.ProductoId);
-                if (prod != null) prod.Stock = Math.Max(0, prod.Stock - (int)Math.Ceiling(cartItem.Cantidad));
-            }
-
-            try { ProductoDB.Save(_catalog); } catch { }
-
-            foreach (var item in Cart) item.PropertyChanged -= CartItem_PropertyChanged;
-            Cart.Clear();
-            _saleNumber++;
-            RefreshSummary();
-
-            CreditOverlay.Visibility = Visibility.Collapsed;
-            ((Grid)FindName("PaymentOverlay")).Visibility = Visibility.Collapsed;
-            ((TextBox)FindName("SearchBox")).Clear();
-
-            ShowPurchaseFeedback(true, $"Fiado registrado a '{debtorName}' por {total.ToString("C2", CultureInfo.GetCultureInfo("es-MX"))}.");
-            ToastNotification.Show($"Fiado a {debtorName} registrado ({total.ToString("C2", CultureInfo.GetCultureInfo("es-MX"))})", ToastType.Success);
-            FocusSearch();
         }
 
         private void OpenCashMovement()
@@ -1453,6 +1444,8 @@ namespace Punto_de_Venta.Vistas
         {
             var culture = CultureInfo.GetCultureInfo("es-MX");
             var total = Math.Round(ObtenerTotalNetoVenta(), 2);
+            var totalBruto = Cart.Sum(item => item.Subtotal);
+            var factor = totalBruto > 0 ? total / totalBruto : 1m;
 
             decimal amountReceived = 0m;
             decimal pEfectivo = 0m, pTarjeta = 0m, pTransf = 0m;
@@ -1495,105 +1488,90 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            List<Venta> sales;
             try
             {
-                sales = VentaDB.Load();
-            }
-            catch (Exception exception)
-            {
-                ((TextBlock)FindName("PaymentMessage")).Text = $"No se pudo cargar el historial: {exception.Message}";
-                ToastNotification.Show($"Error al cargar ventas: {exception.Message}", ToastType.Error);
-                return;
-            }
+                var sales = VentaDB.Load();
+                int saleId = checked(sales.Select(s => s.Id).DefaultIfEmpty(0).Max() + 1);
 
-            int saleId;
-            try
-            {
-                saleId = checked(sales.Select(s => s.Id).DefaultIfEmpty(0).Max() + 1);
+                var sale = new Venta
+                {
+                    Id = saleId,
+                    FechaHora = DateTime.Now,
+                    Total = total,
+                    PagoCon = amountReceived,
+                    Cambio = change,
+                    Estado = "Abierta",
+                    MetodoPago = paymentMethod,
+                    PagoEfectivo = pEfectivo,
+                    PagoTarjeta = pTarjeta,
+                    PagoTransferencia = pTransf,
+                    Productos = Cart.Select(item => {
+                        decimal precioDescuento = Math.Round(item.Precio * factor, 2);
+                        return new DetalleVenta
+                        {
+                            Id = item.ProductoId,
+                            VentaId = saleId,
+                            Nombre = item.Nombre,
+                            Cantidad = item.Cantidad,
+                            Costo = item.Costo,
+                            Ganancia = precioDescuento - item.Costo,
+                            Precio = precioDescuento,
+                            Categoria = item.Categoria
+                        };
+                    }).ToList()
+                };
+
+                foreach (var cartItem in Cart)
+                {
+                    var prod = _catalog.FirstOrDefault(p => p.Id == cartItem.ProductoId);
+                    if (prod != null) prod.Stock = (decimal)Math.Max(0m, (decimal)prod.Stock - cartItem.Cantidad);
+                }
+
+                VentaDB.Save(sales.Append(sale));
+                ProductoDB.Save(_catalog);
+
+                if (paymentMethod == "Efectivo" || (paymentMethod == "Mixto" && pEfectivo > 0))
+                {
+                    CajonService.AbrirCajon();
+                }
+
+                var config = AppConfig.Load();
+                TicketService.GuardarCopiaDigital(sale, sale.Productos, amountReceived, change, config);
+
+                if (config.ImprimirTicketAutomatico)
+                {
+                    TicketService.ImprimirFisico(sale, sale.Productos, amountReceived, change, config);
+                }
+                else if (config.PreguntarAntesDeImprimir)
+                {
+                    Window window = Window.GetWindow(this) ?? Application.Current.MainWindow;
+                    var resultado = CustomMessageBox.Show(window, "¿Deseas imprimir el ticket de esta venta?", "Ticket de Venta", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (resultado == MessageBoxResult.Yes)
+                    {
+                        TicketService.ImprimirFisico(sale, sale.Productos, amountReceived, change, config);
+                    }
+                }
+
+                Cart.Clear();
+                _saleNumber++;
+                RefreshSummary();
+                ((Grid)FindName("PaymentOverlay")).Visibility = Visibility.Collapsed;
+                ((TextBox)FindName("SearchBox")).Clear();
+                ShowPurchaseFeedback(true, $"Venta liquidada ({paymentMethod}).");
+                ToastNotification.Show($"Venta #{saleId} finalizada exitosamente ({paymentMethod})", ToastType.Success);
+                FocusSearch();
             }
             catch (OverflowException)
             {
                 ((TextBlock)FindName("PaymentMessage")).Text = "No se puede asignar un folio nuevo a la venta.";
                 ToastNotification.Show("No se puede asignar folio a la venta", ToastType.Error);
-                return;
-            }
-
-            var sale = new Venta
-            {
-                Id = saleId,
-                FechaHora = DateTime.Now,
-                Total = total,
-                PagoCon = amountReceived,
-                Cambio = change,
-                Estado = "Abierta",
-                MetodoPago = paymentMethod,
-                PagoEfectivo = pEfectivo,
-                PagoTarjeta = pTarjeta,
-                PagoTransferencia = pTransf,
-                Productos = Cart.Select(item => new DetalleVenta
-                {
-                    Id = item.ProductoId,
-                    VentaId = saleId,
-                    Nombre = item.Nombre,
-                    Cantidad = (int)Math.Ceiling(item.Cantidad),
-                    Costo = item.Costo,
-                    Ganancia = item.Ganancia,
-                    Precio = item.Precio,
-                    Categoria = item.Categoria
-                }).ToList()
-            };
-
-            try
-            {
-                VentaDB.Save(sales.Append(sale));
             }
             catch (Exception exception)
             {
-                ToastNotification.Show($"No se pudo guardar la venta: {exception.Message}", ToastType.Error);
-                return;
+                _catalog = ProductoDB.Load();
+                ((TextBlock)FindName("PaymentMessage")).Text = $"Error crítico en BD: {exception.Message}";
+                ToastNotification.Show($"Error crítico al guardar venta en base de datos: {exception.Message}", ToastType.Error);
             }
-
-            if (paymentMethod == "Efectivo" || (paymentMethod == "Mixto" && pEfectivo > 0))
-            {
-                CajonService.AbrirCajon();
-            }
-
-            var config = AppConfig.Load();
-
-            TicketService.GuardarCopiaDigital(sale, sale.Productos, amountReceived, change, config);
-
-            if (config.ImprimirTicketAutomatico)
-            {
-                TicketService.ImprimirFisico(sale, sale.Productos, amountReceived, change, config);
-            }
-            else if (config.PreguntarAntesDeImprimir)
-            {
-                Window window = Window.GetWindow(this) ?? Application.Current.MainWindow;
-                var resultado = CustomMessageBox.Show(window, "¿Deseas imprimir el ticket de esta venta?", "Ticket de Venta", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                if (resultado == MessageBoxResult.Yes)
-                {
-                    TicketService.ImprimirFisico(sale, sale.Productos, amountReceived, change, config);
-                }
-            }
-
-            foreach (var cartItem in Cart)
-            {
-                var prod = _catalog.FirstOrDefault(p => p.Id == cartItem.ProductoId);
-                if (prod != null) prod.Stock = Math.Max(0, prod.Stock - (int)Math.Ceiling(cartItem.Cantidad));
-            }
-
-            try { ProductoDB.Save(_catalog); }
-            catch (Exception ex) { ToastNotification.Show($"Error al descontar inventario: {ex.Message}", ToastType.Warning); }
-
-            Cart.Clear();
-            _saleNumber++;
-            RefreshSummary();
-            ((Grid)FindName("PaymentOverlay")).Visibility = Visibility.Collapsed;
-            ((TextBox)FindName("SearchBox")).Clear();
-            ShowPurchaseFeedback(true, $"Venta liquidada ({paymentMethod}).");
-            ToastNotification.Show($"Venta #{saleId} finalizada exitosamente ({paymentMethod})", ToastType.Success);
-            FocusSearch();
         }
 
         private void CashReceivedBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -1693,11 +1671,22 @@ namespace Punto_de_Venta.Vistas
         #region Utilidades, Cálculos y Retroalimentación
         private void FocusSearch()
         {
-            var searchBox = (TextBox)FindName("SearchBox");
-            searchBox.Focus();
-            Keyboard.Focus(searchBox);
+            // Obliga a WPF a poner esta acción al frente de la cola de procesos visuales
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+            {
+                var searchBox = (TextBox)FindName("SearchBox");
+                if (searchBox != null)
+                {
+                    this.Focus(); // Primero enfoca la ventana entera
+                    searchBox.Focus(); // Luego enfoca la caja
+                    Keyboard.Focus(searchBox); // Finalmente obliga a Windows a mandar el cursor ahí
+                }
+            }));
         }
-
+        private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            FocusSearch();
+        }
         private void ShowPurchaseFeedback(bool succeeded, string message)
         {
             var feedback = (TextBlock)FindName("SearchMessage");
@@ -1890,7 +1879,7 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            if (!int.TryParse(amountText, out var addAmount) || addAmount <= 0)
+            if (!decimal.TryParse(amountText, NumberStyles.Any, CultureInfo.InvariantCulture, out var addAmount) || addAmount <= 0)
             {
                 QrStatusMessage.Text = "Ingresa una cantidad entera mayor a 0.";
                 QrAddAmountBox.Focus();

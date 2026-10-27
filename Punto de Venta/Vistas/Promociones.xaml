@@ -60,7 +60,7 @@
     </UserControl.Resources>
 
     <Border Background="Transparent" ClipToBounds="True">
-        <Grid>
+        <Grid MouseLeftButtonDown="Grid_MouseLeftButtonDown">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />

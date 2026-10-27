@@ -12,14 +12,9 @@
 
   <ItemGroup>
     <None Remove="Imagenes\Blanco.png" />
-    <None Remove="Imagenes\Icono.png" />
     <None Remove="Imagenes\Intro.mp4" />
     <None Remove="Imagenes\Logo.ico" />
     <None Remove="Imagenes\Oscuro.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="Logo.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,8 +29,12 @@
     <Resource Include="Imagenes\Blanco.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Imagenes\Icono.png" />
-    <Resource Include="Imagenes\Intro.mp4" />
+    <Content Include="Imagenes\Intro.mp4">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Resource Include="Logo.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="Imagenes\Logo.ico">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>

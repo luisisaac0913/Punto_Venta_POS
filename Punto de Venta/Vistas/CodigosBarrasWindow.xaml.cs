@@ -40,6 +40,7 @@ namespace Punto_de_Venta
                     Keyboard.Focus(SearchBox);
                     SearchBox?.Focus();
                     SearchBox?.SelectAll();
+                    FocusSearch();
                 }));
             }
         }
@@ -49,13 +50,29 @@ namespace Punto_de_Venta
             try
             {
                 _catalogo = ProductoDB.Load() ?? new();
+                FocusSearch();
             }
             catch
             {
                 CustomMessageBox.Show("Error al cargar el catálogo de productos.");
             }
         }
-
+        private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            FocusSearch();
+        }
+        private void FocusSearch()
+        {
+            Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+            {
+                if (SearchBox != null)
+                {
+                    this.Focus();
+                    SearchBox.Focus();
+                    Keyboard.Focus(SearchBox);
+                }
+            }));
+        }
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
             this.Visibility = Visibility.Collapsed;

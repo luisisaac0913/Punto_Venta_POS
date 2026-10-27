@@ -11,10 +11,8 @@
         TextOptions.TextRenderingMode="ClearType">
 
     <UserControl.Resources>
-        <!-- Tokens complementarios -->
         <SolidColorBrush x:Key="SystemGreen" Color="#34C759" />
 
-        <!-- Estilo Tarjetas Adaptable -->
         <Style x:Key="ConfigCardStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
@@ -27,7 +25,6 @@
             </Setter>
         </Style>
 
-        <!-- Botones Menu Lateral iPadOS -->
         <Style x:Key="SidebarButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="42" />
             <Setter Property="Padding" Value="12,0" />
@@ -50,7 +47,6 @@
             </Setter>
         </Style>
 
-        <!-- Cajas de Texto Adaptables -->
         <Style x:Key="FormTextBoxStyle" TargetType="TextBox">
             <Setter Property="Height" Value="38" />
             <Setter Property="Padding" Value="10,0" />
@@ -72,7 +68,6 @@
             </Setter>
         </Style>
 
-        <!-- Boton Guardar Azul Apple -->
         <Style x:Key="PillButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="40" />
             <Setter Property="Padding" Value="18,0" />
@@ -95,17 +90,15 @@
         </Style>
     </UserControl.Resources>
 
-    <!-- Eliminado el Border con fondo, bordes y redondeo de la ventana flotante -->
-    <Grid Margin="24,10,24,18">
+    <!-- Rescate de Foco: Grid_MouseLeftButtonDown -->
+    <Grid Margin="24,10,24,18" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Título interno de la sección -->
-        <TextBlock Grid.Row="0" Text="Configuracion" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,16" />
+        <TextBlock Grid.Row="0" Text="Configuración" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,16" />
 
-        <!-- Contenido Principal -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="210" />
@@ -115,7 +108,6 @@
                 <ColumnDefinition x:Name="PreviewColumn" Width="300" />
             </Grid.ColumnDefinitions>
 
-            <!-- 1. Menu Lateral iPadOS -->
             <Border Grid.Column="0" Style="{StaticResource ConfigCardStyle}" Padding="12,14">
                 <StackPanel>
                     <TextBlock Text="AJUSTES" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="8,0,0,10" />
@@ -128,7 +120,6 @@
                 </StackPanel>
             </Border>
 
-            <!-- 2. Formulario Central Dinámico -->
             <Border Grid.Column="2" Style="{StaticResource ConfigCardStyle}" Padding="20,16">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -152,27 +143,14 @@
                                     <ComboBoxItem Content="80 mm ancho (42 columnas)" Tag="42" />
                                 </ComboBox>
 
-                                <!-- Opciones de Impresión -->
-                                <RadioButton x:Name="AskBeforePrintCheckBox"
-             GroupName="OpcionesImpresion"
-             Content="Preguntar antes de imprimir"
-             Margin="0,0,0,10" Foreground="{DynamicResource ThemeTextForeground}" />
-
-                                <RadioButton x:Name="AutoPrintCheckBox"
-             GroupName="OpcionesImpresion"
-             Content="Imprimir ticket automáticamente"
-             Margin="0,0,0,10" Foreground="{DynamicResource ThemeTextForeground}" />
-
-                                <RadioButton x:Name="NoPrintOrSaveCheckBox"
-             GroupName="OpcionesImpresion"
-             Content="No imprimir ni guardar ticket"
-             Margin="0,0,0,10" Foreground="{DynamicResource ThemeTextForeground}" />
-
+                                <RadioButton x:Name="AskBeforePrintCheckBox" GroupName="OpcionesImpresion" Content="Preguntar antes de imprimir" Margin="0,0,0,10" Foreground="{DynamicResource ThemeTextForeground}" />
+                                <RadioButton x:Name="AutoPrintCheckBox" GroupName="OpcionesImpresion" Content="Imprimir ticket automáticamente" Margin="0,0,0,10" Foreground="{DynamicResource ThemeTextForeground}" />
+                                <RadioButton x:Name="NoPrintOrSaveCheckBox" GroupName="OpcionesImpresion" Content="No imprimir ni guardar ticket" Margin="0,0,0,10" Foreground="{DynamicResource ThemeTextForeground}" />
 
                                 <Border Height="1" Background="{DynamicResource ThemeBorder}" Margin="0,4,0,12" />
-                                <TextBlock Text="Datos del ticket" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
+                                <TextBlock Text="Datos de la Tienda (Identidad Visual)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
 
-                                <TextBlock Text="Nombre del negocio" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                <TextBlock Text="Nombre de la tienda (Ticket y Pantalla Principal)" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="2,0,0,4" />
                                 <TextBox x:Name="BusinessNameBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,10" TextChanged="TicketField_TextChanged" />
 
                                 <TextBlock Text="Subtítulo / Giro" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
@@ -189,7 +167,6 @@
                             <StackPanel x:Name="PanelPersonalizacion" Visibility="Collapsed">
                                 <TextBlock Text="Apariencia y Tema" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
 
-                                <!-- MODO OSCURO -->
                                 <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="12" Padding="14" Margin="0,0,0,14">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -204,7 +181,6 @@
                                     </Grid>
                                 </Border>
 
-                                <!-- MODO PREDETERMINADO DE BÁSCULA -->
                                 <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="12" Padding="14" Margin="0,0,0,14">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -222,12 +198,10 @@
                                     </Grid>
                                 </Border>
 
-                                <!-- ================= COLOR DE ACENTO ================= -->
                                 <TextBlock Text="Color de Acento" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,24,0,4" />
                                 <TextBlock Text="Elige el color principal para los botones, selecciones y resaltados del sistema." FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,12" TextWrapping="Wrap" />
 
                                 <StackPanel Orientation="Horizontal">
-                                    <!-- Azul iOS -->
                                     <Button Width="36" Height="36" Margin="0,0,12,0" Cursor="Hand" Tag="#007AFF" Click="ColorButton_Click" ToolTip="Azul Clásico">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -235,7 +209,6 @@
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
-                                    <!-- Verde Esmeralda -->
                                     <Button Width="36" Height="36" Margin="0,0,12,0" Cursor="Hand" Tag="#10B981" Click="ColorButton_Click" ToolTip="Verde Esmeralda">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -243,7 +216,6 @@
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
-                                    <!-- Morado Neón -->
                                     <Button Width="36" Height="36" Margin="0,0,12,0" Cursor="Hand" Tag="#8B5CF6" Click="ColorButton_Click" ToolTip="Morado Neón">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -251,7 +223,6 @@
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
-                                    <!-- Naranja Vibrante -->
                                     <Button Width="36" Height="36" Margin="0,0,12,0" Cursor="Hand" Tag="#F97316" Click="ColorButton_Click" ToolTip="Naranja Vibrante">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -259,7 +230,6 @@
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
-                                    <!-- Rojo Carmesí -->
                                     <Button Width="36" Height="36" Margin="0,0,12,0" Cursor="Hand" Tag="#E11D48" Click="ColorButton_Click" ToolTip="Rojo Carmesí">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -267,7 +237,6 @@
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
-                                    <!-- Rosa Hot Pink -->
                                     <Button Width="36" Height="36" Margin="0,0,12,0" Cursor="Hand" Tag="#EC4899" Click="ColorButton_Click" ToolTip="Rosa">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -275,7 +244,6 @@
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
-                                    <!-- Gris Oscuro -->
                                     <Button Width="36" Height="36" Margin="0,0,12,0" Cursor="Hand" Tag="#3F3F46" Click="ColorButton_Click" ToolTip="Gris Elegante">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -285,7 +253,7 @@
                                     </Button>
                                 </StackPanel>
                             </StackPanel>
-                            
+
                             <!-- ================= SECCIÓN 3: BÁSCULA DIGITAL ================= -->
                             <StackPanel x:Name="PanelBascula" Visibility="Collapsed">
                                 <TextBlock Text="Báscula Digital (Puerto Serie RS-232)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,6" />
@@ -339,7 +307,6 @@
                                             <ComboBoxItem Content="19200" Tag="19200" />
                                         </ComboBox>
                                     </StackPanel>
-
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="Protocolo de lectura" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                         <ComboBox x:Name="ScaleProtocolComboBox" Height="38" VerticalContentAlignment="Center" FontSize="13">
@@ -395,7 +362,6 @@
                             <StackPanel x:Name="PanelSeguridad" Visibility="Collapsed">
                                 <TextBlock Text="Seguridad de acceso" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
 
-                                <!-- NUEVO: Activar / Desactivar PIN de Administrador -->
                                 <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="12" Padding="14" Margin="0,0,0,14">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -404,7 +370,7 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel VerticalAlignment="Center">
                                             <TextBlock Text="Solicitar PIN de administrador" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                            <TextBlock Text="Pedir contraseña al abrir Configuración, Cortes de Caja e Inventario." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
+                                            <TextBlock Text="Se pedira contraseña al entrar a todos los apartados excepto Cobro. El PIN por defecto es 1234." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
                                         </StackPanel>
                                         <CheckBox x:Name="RequirePinCheckBox" Grid.Column="1" VerticalAlignment="Center" />
                                     </Grid>
@@ -431,12 +397,27 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="10" />
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
+
                                     <TextBox x:Name="BackupFolderBox" Style="{StaticResource FormTextBoxStyle}" IsReadOnly="True" ToolTip="Ruta de almacenamiento de respaldos" />
+
                                     <Button Grid.Column="2" Content="Examinar..." Height="38" Padding="14,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" FontFamily="Segoe UI Variable, Segoe UI" FontWeight="SemiBold" Cursor="Hand" Click="BrowseBackupFolder_Click">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <!-- NUEVA FUNCIÓN: Botón para crear respaldo instantáneo -->
+                                    <Button Grid.Column="4" Content="Respaldar Ahora" Height="38" Padding="14,0" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontWeight="Bold" Cursor="Hand" Click="BtnRespaldarAhora_Click">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
                                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 </Border>
                                             </ControlTemplate>
@@ -581,7 +562,6 @@
                                         </Grid>
                                     </StackPanel>
                                 </Border>
-
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>

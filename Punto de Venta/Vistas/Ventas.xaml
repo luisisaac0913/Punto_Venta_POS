@@ -141,7 +141,7 @@
     </UserControl.Resources>
 
     <Border Background="Transparent" ClipToBounds="True">
-        <Grid Margin="32,20,32,24">
+        <Grid Margin="32,20,32,24" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />

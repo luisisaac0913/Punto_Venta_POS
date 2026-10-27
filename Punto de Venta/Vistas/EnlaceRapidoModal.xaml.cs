@@ -125,10 +125,12 @@ namespace Punto_de_Venta.Vistas
                     ProductoDB.Save(_catalogo);
                     ToastNotification.Show($"Código enlazado a '{productoEnDb.Nombre}'", ToastType.Success);
 
-                    // Magia: Limpia todo y regresa el foco al escáner para el siguiente producto en línea
+                    // Re-cargar memoria limpia y desconectar referencias muertas (FIX)
+                    _catalogo = ProductoDB.Load();
+                    _productoSeleccionado = null;
+
                     TxtCodigo.Clear();
                     TxtBusqueda.Clear();
-                    _productoSeleccionado = null;
                     TxtCodigo.Focus();
                 }
                 catch (Exception ex)
