@@ -20,7 +20,100 @@
         <SolidColorBrush x:Key="ThemePlaceholder" Color="#8E8E93" />
 
         <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="40" ShadowDepth="12" Direction="270" Color="#000000" Opacity="0.2" />
+        <!-- 1. Plantilla del Botón Desplegable (La flechita) -->
+        <ControlTemplate x:Key="ComboBoxToggleButton" TargetType="{x:Type ToggleButton}">
+            <Border x:Name="templateRoot" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12">
+                <Border x:Name="splitBorder" Width="32" HorizontalAlignment="Right" BorderThickness="0" Background="Transparent">
+                    <!-- Flecha minimalista redondeada -->
+                    <Path x:Name="arrow" Data="M 0,0 L 5,5 L 10,0" Stroke="{DynamicResource ThemeMutedForeground}" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,2,0,0"/>
+                </Border>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="arrow" Property="Stroke" Value="{DynamicResource ThemeAccent}" />
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="arrow" Property="Stroke" Value="{DynamicResource ThemeAccent}" />
+                    <!-- Opcional: Invertir flecha al abrir -->
+                    <Setter TargetName="arrow" Property="Data" Value="M 0,5 L 5,0 L 10,5" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
 
+        <!-- 2. Estilo Global del ComboBox -->
+        <Style TargetType="{x:Type ComboBox}">
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Padding" Value="14,0,32,0"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBox}">
+                        <Grid x:Name="templateRoot" SnapsToDevicePixels="true">
+                            <ToggleButton x:Name="toggleButton" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Template="{StaticResource ComboBoxToggleButton}" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <ContentPresenter x:Name="contentPresenter" IsHitTestVisible="false" Margin="{TemplateBinding Padding}" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+
+                            <!-- El Menú Flotante (Popup) -->
+                            <Popup x:Name="PART_Popup" AllowsTransparency="true" IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}" Placement="Bottom" PopupAnimation="Fade" Margin="0,4,0,0">
+                                <Border x:Name="dropDownBorder" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Margin="10,6,10,20" MinWidth="{Binding ActualWidth, ElementName=templateRoot}" MaxHeight="280">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.18" />
+                                    </Border.Effect>
+
+                                    <!-- SOLUCIÓN: El Padding va aquí en el ScrollViewer -->
+                                    <ScrollViewer x:Name="DropDownScrollViewer" Padding="6">
+                                        <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    </ScrollViewer>
+
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
+                                <Setter Property="BorderThickness" Value="2" />
+                                <Setter Property="Padding" Value="13,0,31,0" />
+                                <!-- Compensación visual anti-jitter -->
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 3. Estilo de los Ítems dentro del ComboBox -->
+        <Style TargetType="{x:Type ComboBoxItem}">
+            <Setter Property="Padding" Value="12,12"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                        <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}" Margin="0,0,0,2">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ThemeAccent}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <!-- ================= SCROLLBAR MINIMALISTA ================= -->
         <Style x:Key="ScrollThumbs" TargetType="{x:Type Thumb}">
             <Setter Property="Template">

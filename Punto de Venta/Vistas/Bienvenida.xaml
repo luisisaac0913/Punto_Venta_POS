@@ -1,7 +1,7 @@
 ﻿<Window x:Class="Punto_de_Venta.Vistas.Bienvenida"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Configuración Inicial" Height="600" Width="800"
+        Title="Configuración Inicial" Height="620" Width="850"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterScreen"
         TextElement.Foreground="{DynamicResource ThemeTextForeground}"
@@ -13,6 +13,7 @@
         <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="48" ShadowDepth="16" Direction="270" Color="#000000" Opacity="0.22" />
 
         <Style x:Key="StepButtonStyle" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Background" Value="{DynamicResource ThemeAccent}" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
@@ -37,9 +38,10 @@
             </Setter>
         </Style>
 
-        <!-- NUEVO: Estilo global para los TextBox de Bienvenida -->
         <Style x:Key="FormInputStyle" TargetType="TextBox">
             <Setter Property="Height" Value="44" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
@@ -50,13 +52,14 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="12,0">
-                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" />
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Margin="{TemplateBinding Padding}" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
                                 <Setter TargetName="border" Property="BorderThickness" Value="2" />
+                                <Setter TargetName="PART_ContentHost" Property="Margin" Value="11,0" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -64,9 +67,10 @@
             </Setter>
         </Style>
 
-        <!-- NUEVO: Estilo global para el PasswordBox -->
         <Style x:Key="FormPasswordStyle" TargetType="PasswordBox">
             <Setter Property="Height" Value="44" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
@@ -77,25 +81,39 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="PasswordBox">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="12,0">
-                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" />
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Margin="{TemplateBinding Padding}" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
                                 <Setter TargetName="border" Property="BorderThickness" Value="2" />
+                                <Setter TargetName="PART_ContentHost" Property="Margin" Value="11,0" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="FormComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="12,0" />
+        </Style>
     </Window.Resources>
 
     <Grid>
+        <!-- Aumentado el Margin a 48 para evitar que la sombra (BlurRadius=48) se corte en los bordes de la ventana transparente -->
         <Border Background="{DynamicResource ThemeSurfaceBackground}" 
                 BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" 
-                CornerRadius="24" Margin="32" Effect="{StaticResource AppleModalShadow}">
+                CornerRadius="24" Margin="48" Effect="{StaticResource AppleModalShadow}">
 
             <Grid Margin="32,24,32,24">
                 <Grid.RowDefinitions>
@@ -110,25 +128,30 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <ProgressBar x:Name="BarraProgreso" Grid.Column="0" Height="6" Minimum="0" Maximum="3" Value="1" Background="{DynamicResource ThemeBorder}" Foreground="{DynamicResource ThemeAccent}" BorderThickness="0" VerticalAlignment="Center" Margin="0,0,32,0" Visibility="Collapsed" />
+                    <!-- Se agregó CornerRadius visual a la barra de progreso -->
+                    <Border Grid.Column="0" Height="6" CornerRadius="3" Background="{DynamicResource ThemeBorder}" Margin="0,0,32,0" VerticalAlignment="Center">
+                        <ProgressBar x:Name="BarraProgreso" Minimum="0" Maximum="3" Value="1" Background="Transparent" Foreground="{DynamicResource ThemeAccent}" BorderThickness="0" Visibility="Collapsed" />
+                    </Border>
 
                     <Button Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Top" Content="✕" FontSize="18" Foreground="{DynamicResource ThemeMutedForeground}" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnCerrar_Click" />
                 </Grid>
 
                 <Grid Grid.Row="1">
-
                     <StackPanel x:Name="PanelPaso0" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Visible">
-                        <Border Width="380" Height="240" CornerRadius="24" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Margin="0,0,0,32" ClipToBounds="True">
+                        <!-- Redujimos Height a 220 y Margin inferior a 24 -->
+                        <Border Width="380" Height="220" CornerRadius="24" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Margin="0,0,0,24" ClipToBounds="True">
                             <Grid>
                                 <MediaElement x:Name="VideoIntro" Source="C:\Ruta\Al\Video.mp4" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="UniformToFill" Loaded="VideoIntro_Loaded" />
                                 <TextBlock Text="⚠️ Inserte Video" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedForeground}" FontSize="18" FontWeight="SemiBold" Panel.ZIndex="-1" />
                             </Grid>
                         </Border>
 
-                        <TextBlock Text="¡Bienvenido/a!" FontSize="28" FontWeight="ExtraBold" HorizontalAlignment="Center" Margin="0,0,0,12" />
-                        <TextBlock Text="Configura tu sistema en menos de 2 minutos." FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,0,0,48" />
+                        <!-- Redujimos los márgenes inferiores -->
+                        <TextBlock Text="¡Bienvenido/a!" FontSize="28" FontWeight="ExtraBold" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                        <TextBlock Text="Configura tu sistema en menos de 2 minutos." FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,0,0,32" />
 
-                        <Button x:Name="BtnIniciarIntro" Content="INICIAR" Width="200" Height="52" FontSize="16" Style="{StaticResource StepButtonStyle}" Click="BtnIniciarIntro_Click" />
+                        <!-- Se igualó el Height a 48 para respetar el diseño del Style -->
+                        <Button x:Name="BtnIniciarIntro" Content="INICIAR" Width="200" Height="48" FontSize="16" Style="{StaticResource StepButtonStyle}" Click="BtnIniciarIntro_Click" />
                     </StackPanel>
 
                     <StackPanel x:Name="PanelPaso1" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
@@ -150,12 +173,12 @@
                         <TextBlock Text="Paso 2 de 3" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,32" />
 
                         <TextBlock Text="Impresora Térmica" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <ComboBox x:Name="CmbImpresoras" Height="44" Margin="0,0,0,32" />
+                        <ComboBox x:Name="CmbImpresoras" Style="{StaticResource FormComboBoxStyle}" Margin="0,0,0,32" />
 
                         <CheckBox x:Name="ChkUsarBascula" Content="Conectar báscula digital al sistema" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,20" />
 
                         <TextBlock Text="Puerto de la Báscula" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <ComboBox x:Name="CmbPuertosCOM" Height="44" />
+                        <ComboBox x:Name="CmbPuertosCOM" Style="{StaticResource FormComboBoxStyle}" />
                     </StackPanel>
 
                     <StackPanel x:Name="PanelPaso3" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">

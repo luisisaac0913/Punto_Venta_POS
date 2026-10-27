@@ -102,9 +102,16 @@ namespace Punto_de_Venta
 
         private void PosicionarYAnimar(Window activeWindow)
         {
-            UpdateLayout();
+            // Forzar a WPF a calcular el tamaño real que ocupará el texto
+            this.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            this.Arrange(new Rect(new Point(0, 0), this.DesiredSize));
 
-            Left = activeWindow.Left + (activeWindow.ActualWidth - ActualWidth) / 2;
+            double toastWidth = this.DesiredSize.Width > 0 ? this.DesiredSize.Width : this.ActualWidth;
+
+            // Calcular el centro exacto usando el tamaño ya medido
+            Left = activeWindow.Left + (activeWindow.ActualWidth - toastWidth) / 2;
+
+            // Ajustar altura superior
             var topInicial = activeWindow.Top + 10;
             var topFinal = activeWindow.Top + 28;
 

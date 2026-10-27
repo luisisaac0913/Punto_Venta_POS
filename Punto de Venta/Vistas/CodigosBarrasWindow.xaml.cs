@@ -56,15 +56,6 @@ namespace Punto_de_Venta
             }
         }
 
-        private void ModernTitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            var window = Window.GetWindow(this);
-            if (window != null && e.LeftButton == MouseButtonState.Pressed)
-            {
-                window.DragMove();
-            }
-        }
-
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
             this.Visibility = Visibility.Collapsed;
@@ -110,6 +101,27 @@ namespace Punto_de_Venta
             AddSelectedProduct();
         }
 
+        // ================= NUEVOS EVENTOS PARA CANTIDAD =================
+        private void BtnDecreaseQty_Click(object sender, RoutedEventArgs e)
+        {
+            if (int.TryParse(QuantityBox.Text, out int qty) && qty > 1)
+            {
+                QuantityBox.Text = (qty - 1).ToString();
+            }
+        }
+
+        private void BtnIncreaseQty_Click(object sender, RoutedEventArgs e)
+        {
+            if (int.TryParse(QuantityBox.Text, out int qty))
+            {
+                QuantityBox.Text = (qty + 1).ToString();
+            }
+            else
+            {
+                QuantityBox.Text = "1";
+            }
+        }
+
         private void AddToList_Click(object sender, RoutedEventArgs e)
         {
             AddSelectedProduct();
@@ -134,7 +146,7 @@ namespace Punto_de_Venta
                 if (existente != null)
                 {
                     existente.Cantidad += qty;
-                    PrintQueueGrid.Items.Refresh();
+                    PrintQueueGrid.Items.Refresh(); // Fuerza a la cuadrícula a ver el nuevo número
                 }
                 else
                 {
@@ -144,6 +156,20 @@ namespace Punto_de_Venta
                 SearchBox.Clear();
                 QuantityBox.Text = "1";
                 SearchBox.Focus();
+            }
+        }
+
+        // ================= NUEVO EVENTO ELIMINAR INDIVIDUAL =================
+        private void RemoveFromQueue_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.DataContext is EtiquetaImpresion item)
+            {
+                ColaImpresion.Remove(item);
+                if (ColaImpresion.Count == 0)
+                {
+                    DocViewer.Document = null;
+                    DocPlaceholder.Visibility = Visibility.Visible;
+                }
             }
         }
 
@@ -162,20 +188,17 @@ namespace Punto_de_Venta
                 return;
             }
 
-            // Crear Documento A4 (Resolución 96 DPI -> 8.27 x 11.69 pulgadas -> ~794 x 1123 píxeles)
             _documentoActual = new FixedDocument();
             Size pageSize = new Size(794, 1123);
 
-            // Configuración de la cuadrícula de etiquetas (Avery 5160 estándar o similar)
             int columnas = 3;
             int filas = 10;
-            double margenX = 20; // Margen izquierdo/derecho página
-            double margenY = 30; // Margen superior/inferior página
+            double margenX = 20;
+            double margenY = 30;
 
             double anchoEtiqueta = (pageSize.Width - (margenX * 2)) / columnas;
             double altoEtiqueta = (pageSize.Height - (margenY * 2)) / filas;
 
-            // Expandir la lista de cantidades a una lista individual plana
             var itemsAImprimir = new List<Producto>();
             foreach (var item in ColaImpresion)
             {
@@ -188,15 +211,13 @@ namespace Punto_de_Venta
             int itemIndex = 0;
             while (itemIndex < itemsAImprimir.Count)
             {
-                // Crear una nueva página
                 FixedPage page = new FixedPage
                 {
                     Width = pageSize.Width,
                     Height = pageSize.Height,
-                    Background = Brushes.White // Importante para impresión
+                    Background = Brushes.White
                 };
 
-                // Llenar la cuadrícula de la página actual
                 for (int f = 0; f < filas; f++)
                 {
                     for (int c = 0; c < columnas; c++)
@@ -205,18 +226,15 @@ namespace Punto_de_Venta
 
                         Producto prod = itemsAImprimir[itemIndex];
 
-                        // Contenedor de la etiqueta individual
                         Border etiquetaBorder = new Border
                         {
                             Width = anchoEtiqueta,
                             Height = altoEtiqueta,
                             Padding = new Thickness(10),
-                            // BorderBrush = Brushes.LightGray, BorderThickness = new Thickness(1) // Opcional: mostrar guías de corte
                         };
 
                         StackPanel panelInfo = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
 
-                        // Nombre del producto (Negrita, centrado)
                         TextBlock txtNombre = new TextBlock
                         {
                             Text = prod.Nombre,
@@ -229,10 +247,7 @@ namespace Punto_de_Venta
                             Margin = new Thickness(0, 0, 0, 4)
                         };
 
-                        // Dibujar código de barras
                         Canvas canvasBarcode = GenerarVectorCodigo39(prod.Codigo);
-
-                        // Envolver el canvas en un viewbox para que escale perfecto
                         Viewbox vbBarcode = new Viewbox
                         {
                             Child = canvasBarcode,
@@ -241,7 +256,6 @@ namespace Punto_de_Venta
                             Stretch = Stretch.Uniform
                         };
 
-                        // Código numérico debajo de las barras
                         TextBlock txtCodigo = new TextBlock
                         {
                             Text = prod.Codigo,
@@ -251,7 +265,6 @@ namespace Punto_de_Venta
                             FontFamily = new FontFamily("Consolas")
                         };
 
-                        // Precio (Opcional, en la esquina)
                         TextBlock txtPrecio = new TextBlock
                         {
                             Text = prod.Precio.ToString("C2", System.Globalization.CultureInfo.GetCultureInfo("es-MX")),
@@ -266,10 +279,8 @@ namespace Punto_de_Venta
                         panelInfo.Children.Add(vbBarcode);
                         panelInfo.Children.Add(txtCodigo);
                         panelInfo.Children.Add(txtPrecio);
-
                         etiquetaBorder.Child = panelInfo;
 
-                        // Posicionar en la página
                         FixedPage.SetLeft(etiquetaBorder, margenX + (c * anchoEtiqueta));
                         FixedPage.SetTop(etiquetaBorder, margenY + (f * altoEtiqueta));
 
@@ -299,14 +310,10 @@ namespace Punto_de_Venta
             PrintDialog printDialog = new PrintDialog();
             if (printDialog.ShowDialog() == true)
             {
-                // Configurar la impresora y mandar el FixedDocument
                 printDialog.PrintDocument(_documentoActual.DocumentPaginator, "Impresión de Etiquetas A4");
             }
         }
 
-        /// <summary>
-        /// Genera un código de barras vectorial estándar Code 39 (Nativo de WPF sin librerías externas)
-        /// </summary>
         private Canvas GenerarVectorCodigo39(string textoOriginal)
         {
             string validChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%*";
@@ -318,23 +325,22 @@ namespace Punto_de_Venta
                 "010100010", "010001010", "000101010", "010010100"
             };
 
-            // El Code 39 siempre debe iniciar y terminar con un asterisco (*)
             string texto = "*" + textoOriginal.ToUpper().Replace("*", "") + "*";
 
             Canvas canvas = new Canvas { Height = 40, HorizontalAlignment = HorizontalAlignment.Center };
             double x = 0;
-            double narrow = 1.5; // Grosor de barra delgada
-            double wide = 3.5;   // Grosor de barra gruesa
+            double narrow = 1.5;
+            double wide = 3.5;
 
             foreach (char c in texto)
             {
                 int index = validChars.IndexOf(c);
-                if (index < 0) continue; // Saltamos caracteres inválidos
+                if (index < 0) continue;
 
                 string pattern = patterns[index];
                 for (int i = 0; i < 9; i++)
                 {
-                    bool isBar = (i % 2 == 0); // Índice par = Barra Negra, Impar = Espacio Blanco
+                    bool isBar = (i % 2 == 0);
                     bool isWide = pattern[i] == '1';
                     double w = isWide ? wide : narrow;
 
@@ -345,14 +351,14 @@ namespace Punto_de_Venta
                             Width = w,
                             Height = 40,
                             Fill = Brushes.Black,
-                            SnapsToDevicePixels = true // Evita borrosidad
+                            SnapsToDevicePixels = true
                         };
                         Canvas.SetLeft(rect, x);
                         canvas.Children.Add(rect);
                     }
                     x += w;
                 }
-                x += narrow; // Pequeño espacio en blanco para separar cada caracter
+                x += narrow;
             }
 
             canvas.Width = x;

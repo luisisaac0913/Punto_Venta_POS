@@ -103,7 +103,7 @@ namespace Punto_de_Venta.Vistas
             }
             if (FindName("CartGrid") is DataGrid cartGrid)
             {
-                cartGrid.SelectedIndex = -1; 
+                cartGrid.SelectedIndex = -1;
             }
         }
         #endregion
@@ -114,10 +114,14 @@ namespace Punto_de_Venta.Vistas
             bool tieneArticulos = CartGrid.Items.Count > 0;
             EmptyCartPanel.Visibility = tieneArticulos ? Visibility.Collapsed : Visibility.Visible;
         }
+
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (this.Visibility == Visibility.Visible)
             {
+                // Recargar catálogo por si se modificó en la ventana de Inventario
+                try { _catalog = ProductoDB.Load(); } catch { _catalog = new(); }
+
                 this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                 {
                     this.Focus();
@@ -127,6 +131,7 @@ namespace Punto_de_Venta.Vistas
                 }));
             }
         }
+
         private void AnimarEntradaProducto()
         {
             var animX = new DoubleAnimation
@@ -256,7 +261,6 @@ namespace Punto_de_Venta.Vistas
             ScaleProductNameText.Text = $"{_itemEnPesaje.Nombre}";
             ScalePricePerKgText.Text = $"{_itemEnPesaje.Precio.ToString("C2", CultureInfo.GetCultureInfo("es-MX"))} / kg";
 
-            // Cargar la preferencia predeterminada de Configuración (Debes crear BasculaModoPrecio en Settings)
             var config = AppConfig.Load();
             bool abrirEnModoPrecio = config.BasculaModoPrecio;
 
@@ -276,7 +280,6 @@ namespace Punto_de_Venta.Vistas
             ScaleValueInput.Focus();
             ScaleValueInput.SelectAll();
 
-            // Solo consultar la báscula física si estamos en modo Peso
             if (!abrirEnModoPrecio)
             {
                 await ConsultarBasculaAsync();
@@ -349,13 +352,13 @@ namespace Punto_de_Venta.Vistas
                 {
                     decimal pesoCalculado = _itemEnPesaje.Precio > 0 ? valor / _itemEnPesaje.Precio : 0;
                     ScaleResultText.Text = $"{pesoCalculado:0.000} kg";
-                    ScaleResultText.Foreground = (Brush)FindResource("ThemeTextForeground"); // Neutral color for kg
+                    ScaleResultText.Foreground = (Brush)FindResource("ThemeTextForeground");
                 }
                 else
                 {
                     decimal importe = valor * _itemEnPesaje.Precio;
                     ScaleResultText.Text = importe.ToString("C2", mxCulture);
-                    ScaleResultText.Foreground = (Brush)FindResource("SystemGreen"); // Green for money
+                    ScaleResultText.Foreground = (Brush)FindResource("SystemGreen");
                 }
             }
             else
@@ -377,7 +380,7 @@ namespace Punto_de_Venta.Vistas
 
         private async void RereadScale_Click(object sender, RoutedEventArgs e)
         {
-            TabModoPeso.IsChecked = true; // Forzar modo peso al releer hardware
+            TabModoPeso.IsChecked = true;
             await ConsultarBasculaAsync();
         }
 
@@ -448,403 +451,371 @@ namespace Punto_de_Venta.Vistas
         #endregion
 
         #region Búsqueda y Sugerencias de Catálogo
-private void CargarPromocionesDesdeDb()
-{
-    try
-    {
-        _promocionesCargadas = PromocionDbStore.LoadAll();
-    }
-    catch
-    {
-        _promocionesCargadas = new();
-    }
-}
-
-private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
-{
-    if (!this.IsVisible)
-    {
-        if (FindName("SuggestionsPopup") is Popup popup)
-            popup.IsOpen = false;
-
-        return;
-    }
-
-    var searchBox = (TextBox)FindName("SearchBox");
-
-    ((TextBlock)FindName("SearchPlaceholder")).Visibility =
-        string.IsNullOrEmpty(searchBox.Text)
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-
-    if (!_purchaseFeedbackVisible)
-    {
-        ((TextBlock)FindName("SearchMessage")).Text = string.Empty;
-    }
-
-    _typingTimer.Stop();
-    _typingTimer.Start();
-}
-
-private void RefreshSuggestions()
-{
-    var searchBox = (TextBox)FindName("SearchBox");
-    var suggestionsList = (ListBox)FindName("SuggestionsList");
-    var suggestionsPopup = (Popup)FindName("SuggestionsPopup");
-
-    var query = searchBox.Text.Trim();
-
-    if (query.Length == 0)
-    {
-        suggestionsList.ItemsSource = null;
-        suggestionsPopup.IsOpen = false;
-        return;
-    }
-
-    // Solo se compara el ID si la consulta tiene exactamente el mismo
-    // formato que Id.ToString(CultureInfo.InvariantCulture).
-    // Así se evita convertir cada ID a texto durante el recorrido.
-    var idQueryMatches =
-        int.TryParse(query, NumberStyles.Integer, CultureInfo.InvariantCulture, out var idQuery) &&
-        string.Equals(
-            idQuery.ToString(CultureInfo.InvariantCulture),
-            query,
-            StringComparison.Ordinal);
-
-    // Grupos ordenados según TODOS los criterios del OrderBy original:
-    // código exacto > código inicial > código contenido > nombre inicial.
-    // Dentro de cada grupo se conserva el orden original de _catalog.
-    // Las listas se crean únicamente cuando tienen resultados.
-    List<Producto>? exactCodeNameStartsMatches = null;
-    List<Producto>? exactCodeOtherMatches = null;
-    List<Producto>? codeStartsNameStartsMatches = null;
-    List<Producto>? codeStartsOtherMatches = null;
-    List<Producto>? codeContainsNameStartsMatches = null;
-    List<Producto>? codeContainsOtherMatches = null;
-    List<Producto>? nameStartsMatches = null;
-    List<Producto>? otherMatches = null;
-
-    foreach (var p in _catalog)
-    {
-        var codigo = p.Codigo;
-        var nombre = p.Nombre;
-
-        var nombreEmpieza =
-            !string.IsNullOrEmpty(nombre) &&
-            nombre.StartsWith(query, StringComparison.OrdinalIgnoreCase);
-
-        if (!string.IsNullOrEmpty(codigo))
+        private void CargarPromocionesDesdeDb()
         {
-            // Prioridad 1: código exacto.
-            if (string.Equals(
-                codigo,
-                query,
-                StringComparison.OrdinalIgnoreCase))
+            try
             {
-                if (nombreEmpieza)
-                    (exactCodeNameStartsMatches ??= new List<Producto>()).Add(p);
-                else
-                    (exactCodeOtherMatches ??= new List<Producto>()).Add(p);
-
-                continue;
+                _promocionesCargadas = PromocionDbStore.LoadAll();
             }
-
-            // Prioridad 2: código que comienza con la búsqueda.
-            if (codigo.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+            catch
             {
-                if (nombreEmpieza)
-                    (codeStartsNameStartsMatches ??= new List<Producto>()).Add(p);
-                else
-                    (codeStartsOtherMatches ??= new List<Producto>()).Add(p);
-
-                continue;
-            }
-
-            // Prioridad 3: código que contiene la búsqueda.
-            if (codigo.Contains(query, StringComparison.OrdinalIgnoreCase))
-            {
-                if (nombreEmpieza)
-                    (codeContainsNameStartsMatches ??= new List<Producto>()).Add(p);
-                else
-                    (codeContainsOtherMatches ??= new List<Producto>()).Add(p);
-
-                continue;
+                _promocionesCargadas = new();
             }
         }
 
-        // El código no contiene la búsqueda: se evalúa el nombre.
-        if (nombreEmpieza)
+        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            (nameStartsMatches ??= new List<Producto>()).Add(p);
-            continue;
+            if (!this.IsVisible)
+            {
+                if (FindName("SuggestionsPopup") is Popup popup)
+                    popup.IsOpen = false;
+
+                return;
+            }
+
+            var searchBox = (TextBox)FindName("SearchBox");
+
+            ((TextBlock)FindName("SearchPlaceholder")).Visibility =
+                string.IsNullOrEmpty(searchBox.Text)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            // Corrección: Borrar el mensaje de feedback tan pronto como el usuario empiece a escribir
+            if (_purchaseFeedbackVisible)
+            {
+                ClearPurchaseFeedback();
+            }
+
+            _typingTimer.Stop();
+            _typingTimer.Start();
         }
 
-        if (!string.IsNullOrEmpty(nombre) &&
-            nombre.Contains(query, StringComparison.OrdinalIgnoreCase))
+        private void RefreshSuggestions()
         {
-            otherMatches ??= new List<Producto>();
-            otherMatches.Add(p);
-            continue;
+            var searchBox = (TextBox)FindName("SearchBox");
+            var suggestionsList = (ListBox)FindName("SuggestionsList");
+            var suggestionsPopup = (Popup)FindName("SuggestionsPopup");
+
+            var query = searchBox.Text.Trim();
+
+            if (query.Length == 0)
+            {
+                suggestionsList.ItemsSource = null;
+                suggestionsPopup.IsOpen = false;
+                return;
+            }
+
+            var idQueryMatches =
+                int.TryParse(query, NumberStyles.Integer, CultureInfo.InvariantCulture, out var idQuery) &&
+                string.Equals(idQuery.ToString(CultureInfo.InvariantCulture), query, StringComparison.Ordinal);
+
+            List<Producto>? exactCodeNameStartsMatches = null;
+            List<Producto>? exactCodeOtherMatches = null;
+            List<Producto>? codeStartsNameStartsMatches = null;
+            List<Producto>? codeStartsOtherMatches = null;
+            List<Producto>? codeContainsNameStartsMatches = null;
+            List<Producto>? codeContainsOtherMatches = null;
+            List<Producto>? nameStartsMatches = null;
+            List<Producto>? otherMatches = null;
+
+            foreach (var p in _catalog)
+            {
+                var codigo = p.Codigo;
+                var nombre = p.Nombre;
+
+                var nombreEmpieza = !string.IsNullOrEmpty(nombre) && nombre.StartsWith(query, StringComparison.OrdinalIgnoreCase);
+
+                if (!string.IsNullOrEmpty(codigo))
+                {
+                    if (string.Equals(codigo, query, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (nombreEmpieza) (exactCodeNameStartsMatches ??= new List<Producto>()).Add(p);
+                        else (exactCodeOtherMatches ??= new List<Producto>()).Add(p);
+                        continue;
+                    }
+
+                    if (codigo.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (nombreEmpieza) (codeStartsNameStartsMatches ??= new List<Producto>()).Add(p);
+                        else (codeStartsOtherMatches ??= new List<Producto>()).Add(p);
+                        continue;
+                    }
+
+                    if (codigo.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (nombreEmpieza) (codeContainsNameStartsMatches ??= new List<Producto>()).Add(p);
+                        else (codeContainsOtherMatches ??= new List<Producto>()).Add(p);
+                        continue;
+                    }
+                }
+
+                if (nombreEmpieza)
+                {
+                    (nameStartsMatches ??= new List<Producto>()).Add(p);
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(nombre) && nombre.Contains(query, StringComparison.OrdinalIgnoreCase))
+                {
+                    (otherMatches ??= new List<Producto>()).Add(p);
+                    continue;
+                }
+
+                if (idQueryMatches && p.Id == idQuery)
+                {
+                    (otherMatches ??= new List<Producto>()).Add(p);
+                }
+            }
+
+            var totalMatches =
+                (exactCodeNameStartsMatches?.Count ?? 0) +
+                (exactCodeOtherMatches?.Count ?? 0) +
+                (codeStartsNameStartsMatches?.Count ?? 0) +
+                (codeStartsOtherMatches?.Count ?? 0) +
+                (codeContainsNameStartsMatches?.Count ?? 0) +
+                (codeContainsOtherMatches?.Count ?? 0) +
+                (nameStartsMatches?.Count ?? 0) +
+                (otherMatches?.Count ?? 0);
+
+            var matches = new List<Producto>(totalMatches);
+
+            if (exactCodeNameStartsMatches != null) matches.AddRange(exactCodeNameStartsMatches);
+            if (exactCodeOtherMatches != null) matches.AddRange(exactCodeOtherMatches);
+            if (codeStartsNameStartsMatches != null) matches.AddRange(codeStartsNameStartsMatches);
+            if (codeStartsOtherMatches != null) matches.AddRange(codeStartsOtherMatches);
+            if (codeContainsNameStartsMatches != null) matches.AddRange(codeContainsNameStartsMatches);
+            if (codeContainsOtherMatches != null) matches.AddRange(codeContainsOtherMatches);
+            if (nameStartsMatches != null) matches.AddRange(nameStartsMatches);
+            if (otherMatches != null) matches.AddRange(otherMatches);
+
+            suggestionsList.ItemsSource = matches;
+            suggestionsList.SelectedIndex = matches.Count > 0 ? 0 : -1;
+
+            suggestionsPopup.IsOpen = matches.Count > 0 && this.IsVisible;
         }
 
-        // Coincidencia exacta por ID, evitando convertir cada ID a string.
-        if (idQueryMatches && p.Id == idQuery)
+        private void MoveSuggestionSelection(int offset)
         {
-            (otherMatches ??= new List<Producto>()).Add(p);
-        }
-    }
+            var suggestionsList = (ListBox)FindName("SuggestionsList");
 
-    var totalMatches =
-        (exactCodeNameStartsMatches?.Count ?? 0) +
-        (exactCodeOtherMatches?.Count ?? 0) +
-        (codeStartsNameStartsMatches?.Count ?? 0) +
-        (codeStartsOtherMatches?.Count ?? 0) +
-        (codeContainsNameStartsMatches?.Count ?? 0) +
-        (codeContainsOtherMatches?.Count ?? 0) +
-        (nameStartsMatches?.Count ?? 0) +
-        (otherMatches?.Count ?? 0);
+            if (suggestionsList.Items.Count == 0)
+                return;
 
-    var matches = new List<Producto>(totalMatches);
+            var nextIndex = suggestionsList.SelectedIndex < 0
+                ? 0
+                : Math.Clamp(suggestionsList.SelectedIndex + offset, 0, suggestionsList.Items.Count - 1);
 
-    if (exactCodeNameStartsMatches != null)
-        matches.AddRange(exactCodeNameStartsMatches);
-    if (exactCodeOtherMatches != null)
-        matches.AddRange(exactCodeOtherMatches);
-    if (codeStartsNameStartsMatches != null)
-        matches.AddRange(codeStartsNameStartsMatches);
-    if (codeStartsOtherMatches != null)
-        matches.AddRange(codeStartsOtherMatches);
-    if (codeContainsNameStartsMatches != null)
-        matches.AddRange(codeContainsNameStartsMatches);
-    if (codeContainsOtherMatches != null)
-        matches.AddRange(codeContainsOtherMatches);
-    if (nameStartsMatches != null)
-        matches.AddRange(nameStartsMatches);
-    if (otherMatches != null)
-        matches.AddRange(otherMatches);
-
-    suggestionsList.ItemsSource = matches;
-    suggestionsList.SelectedIndex = matches.Count > 0 ? 0 : -1;
-
-    suggestionsPopup.IsOpen = matches.Count > 0 && this.IsVisible;
-}
-
-private void MoveSuggestionSelection(int offset)
-{
-    var suggestionsList = (ListBox)FindName("SuggestionsList");
-
-    if (suggestionsList.Items.Count == 0)
-        return;
-
-    var nextIndex = suggestionsList.SelectedIndex < 0
-        ? 0
-        : Math.Clamp(
-            suggestionsList.SelectedIndex + offset,
-            0,
-            suggestionsList.Items.Count - 1);
-
-    suggestionsList.SelectedIndex = nextIndex;
-    suggestionsList.ScrollIntoView(suggestionsList.SelectedItem);
-}
-
-private void SuggestionItem_MouseLeftButtonUp(
-    object sender,
-    MouseButtonEventArgs e)
-{
-    if (sender is ListBoxItem { DataContext: Producto product })
-    {
-        AddSuggestion(product);
-        e.Handled = true;
-    }
-}
-
-private void AddSuggestion(Producto product)
-{
-    decimal cantidad = 1m;
-
-    if (product.SeVendePorPeso)
-    {
-        if (FindName("SuggestionsPopup") is Popup popup)
-            popup.IsOpen = false;
-
-        AddProduct(product, 0m);
-
-        var cartGridScale = (DataGrid)FindName("CartGrid");
-        var cartItemScale = Cart.FirstOrDefault(
-            item => item.ProductoId == product.Id);
-
-        if (cartItemScale != null && cartGridScale != null)
-        {
-            cartGridScale.SelectedItem = cartItemScale;
-            cartGridScale.ScrollIntoView(cartItemScale);
+            suggestionsList.SelectedIndex = nextIndex;
+            suggestionsList.ScrollIntoView(suggestionsList.SelectedItem);
         }
 
-        var sBoxScale = (TextBox)FindName("SearchBox");
-        sBoxScale?.Clear();
-
-        ActualizarVisibilidadEmptyState();
-        AnimarEntradaProducto();
-
-        AbrirModalPesaje();
-        return;
-    }
-    else if (product.PedirCantidadAlCobrar)
-    {
-        var modal = new CantidadModal(product.Nombre);
-
-        // Si el control está dentro de MainWindow, lo asignamos como Owner.
-        if (Window.GetWindow(this) is Window w)
+        private void SuggestionItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            modal.Owner = w;
+            if (sender is ListBoxItem { DataContext: Producto product })
+            {
+                AddSuggestion(product);
+                e.Handled = true;
+            }
         }
 
-        modal.ShowDialog();
-
-        if (!modal.Confirmado)
+        private void AddSuggestion(Producto product)
         {
-            var sBox = (TextBox)FindName("SearchBox");
-            sBox?.Clear();
+            _typingTimer?.Stop();
+            if (FindName("SuggestionsPopup") is Popup popup)
+                popup.IsOpen = false;
+
+            decimal cantidad = 1m;
+
+            if (product.SeVendePorPeso)
+            {
+                AddProduct(product, 0m);
+
+                var cartGridScale = (DataGrid)FindName("CartGrid");
+                var cartItemScale = Cart.FirstOrDefault(item => item.ProductoId == product.Id);
+
+                if (cartItemScale != null && cartGridScale != null)
+                {
+                    cartGridScale.SelectedItem = cartItemScale;
+                    cartGridScale.ScrollIntoView(cartItemScale);
+                }
+
+                var sBoxScale = (TextBox)FindName("SearchBox");
+                sBoxScale?.Clear();
+
+                ActualizarVisibilidadEmptyState();
+                AnimarEntradaProducto();
+
+                AbrirModalPesaje();
+                return;
+            }
+            else if (product.PedirCantidadAlCobrar)
+            {
+                var modal = new CantidadModal(product.Nombre);
+
+                if (Window.GetWindow(this) is Window w)
+                {
+                    modal.Owner = w;
+                }
+
+                // SOLUCIÓN AL BUG: Forzamos a WPF a renderizar el cierre del Popup de sugerencias
+                // ANTES de abrir la ventana bloqueante del modal, evitando el efecto de superposición
+                Application.Current.Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+
+                modal.ShowDialog();
+
+                if (!modal.Confirmado)
+                {
+                    var sBox = (TextBox)FindName("SearchBox");
+                    sBox?.Clear();
+                    FocusSearch();
+                    return;
+                }
+
+                cantidad = modal.CantidadResult;
+            }
+
+            AddProduct(product, cantidad);
+
+            var cartGrid = (DataGrid)FindName("CartGrid");
+            var cartItem = Cart.FirstOrDefault(item => item.ProductoId == product.Id);
+
+            if (cartItem != null && cartGrid != null)
+            {
+                cartGrid.SelectedItem = cartItem;
+                cartGrid.ScrollIntoView(cartItem);
+            }
+
+            var searchBox = (TextBox)FindName("SearchBox");
+            searchBox?.Clear();
+
             FocusSearch();
-            return;
+            ActualizarVisibilidadEmptyState();
+            AnimarEntradaProducto();
         }
 
-        cantidad = modal.CantidadResult;
-    }
-
-    AddProduct(product, cantidad);
-
-    var cartGrid = (DataGrid)FindName("CartGrid");
-    var cartItem = Cart.FirstOrDefault(
-        item => item.ProductoId == product.Id);
-
-    if (cartItem != null && cartGrid != null)
-    {
-        cartGrid.SelectedItem = cartItem;
-        cartGrid.ScrollIntoView(cartItem);
-    }
-
-    if (FindName("SuggestionsPopup") is Popup popupCierre)
-        popupCierre.IsOpen = false;
-
-    var searchBox = (TextBox)FindName("SearchBox");
-    searchBox?.Clear();
-
-    FocusSearch();
-    ActualizarVisibilidadEmptyState();
-    AnimarEntradaProducto();
-}
-
-private void AddSearchedProduct()
-{
-    var searchBox = (TextBox)FindName("SearchBox");
-    var query = searchBox.Text.Trim();
-
-    if (query.Length == 0)
-    {
-        FocusSearch();
-        return;
-    }
-
-    // Se conserva la prioridad original:
-    // código exacto > ID > código inicial > nombre inicial > nombre contenido.
-    Producto? product = null;
-    Producto? productoPorId = null;
-    Producto? productoCodigoPrefijo = null;
-    Producto? productoNombrePrefijo = null;
-    Producto? productoNombreContiene = null;
-
-    var idValido = int.TryParse(query, out var idBuscado);
-    var querySpan = query.AsSpan();
-
-    foreach (var p in _catalog)
-    {
-        var codigo = p.Codigo;
-
-        // Prioridad 1: código exacto, ignorando mayúsculas/minúsculas
-        // y espacios exteriores, sin crear un string mediante Trim().
-        if (!string.IsNullOrEmpty(codigo) &&
-            codigo.AsSpan().Trim().Equals(
-                querySpan,
-                StringComparison.OrdinalIgnoreCase))
+        private void AddSearchedProduct()
         {
-            product = p;
-            break;
-        }
+            _typingTimer?.Stop();
 
-        // Prioridad 2: ID del producto.
-        if (idValido &&
-            productoPorId == null &&
-            p.Id == idBuscado)
-        {
-            productoPorId = p;
-        }
+            var searchBox = (TextBox)FindName("SearchBox");
+            var query = searchBox.Text.Trim();
 
-        // Prioridad 3: código que comienza con la búsqueda.
-        if (productoCodigoPrefijo == null &&
-            !string.IsNullOrWhiteSpace(codigo) &&
-            codigo.StartsWith(query, StringComparison.OrdinalIgnoreCase))
-        {
-            productoCodigoPrefijo = p;
-        }
-
-        var nombre = p.Nombre;
-
-        if (!string.IsNullOrWhiteSpace(nombre))
-        {
-            // Prioridad 4: nombre que comienza con la búsqueda.
-            if (productoNombrePrefijo == null &&
-                nombre.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+            if (query.Length == 0)
             {
-                productoNombrePrefijo = p;
+                if (FindName("SuggestionsPopup") is Popup p) p.IsOpen = false;
+                FocusSearch();
+                return;
             }
-            else if (productoNombreContiene == null &&
-                     nombre.Contains(query, StringComparison.OrdinalIgnoreCase))
+
+            // 1. PRIORIDAD ABSOLUTA AL ESCÁNER: Si el texto de la caja concuerda exactamente 
+            // con un Código de Barras o un ID del catálogo, lo agrega inmediatamente.
+            var idValido = int.TryParse(query, out var idBuscado);
+            var querySpan = query.AsSpan();
+
+            Producto? matchExacto = null;
+            foreach (var p in _catalog)
             {
-                productoNombreContiene = p;
+                if (!string.IsNullOrEmpty(p.Codigo) && p.Codigo.AsSpan().Trim().Equals(querySpan, StringComparison.OrdinalIgnoreCase))
+                {
+                    matchExacto = p;
+                    break;
+                }
+                if (idValido && p.Id == idBuscado)
+                {
+                    matchExacto = p;
+                }
             }
+
+            if (matchExacto != null)
+            {
+                if (FindName("SuggestionsPopup") is Popup p) p.IsOpen = false;
+                AddSuggestion(matchExacto);
+                return;
+            }
+
+            // 2. Si no hubo match exacto (se escribió manual), verificamos si el usuario
+            // seleccionó intencionalmente un producto navegando por el menú flotante
+            if (FindName("SuggestionsPopup") is Popup popup && popup.IsOpen)
+            {
+                var suggestionsList = (ListBox)FindName("SuggestionsList");
+                if (suggestionsList?.SelectedItem is Producto selectedProduct)
+                {
+                    popup.IsOpen = false;
+                    AddSuggestion(selectedProduct);
+                    return;
+                }
+            }
+
+            if (FindName("SuggestionsPopup") is Popup popupCierre) popupCierre.IsOpen = false;
+
+            // 3. Si no hay match exacto ni seleccion manual, se busca la coincidencia parcial (Prefijos)
+            Producto? productoCodigoPrefijo = null;
+            Producto? productoNombrePrefijo = null;
+            Producto? productoNombreContiene = null;
+
+            foreach (var p in _catalog)
+            {
+                var codigo = p.Codigo;
+                if (productoCodigoPrefijo == null && !string.IsNullOrWhiteSpace(codigo) && codigo.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                {
+                    productoCodigoPrefijo = p;
+                }
+
+                var nombre = p.Nombre;
+                if (!string.IsNullOrWhiteSpace(nombre))
+                {
+                    if (productoNombrePrefijo == null && nombre.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                    {
+                        productoNombrePrefijo = p;
+                    }
+                    else if (productoNombreContiene == null && nombre.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    {
+                        productoNombreContiene = p;
+                    }
+                }
+            }
+
+            var product = productoCodigoPrefijo ?? productoNombrePrefijo ?? productoNombreContiene;
+
+            if (product is null)
+            {
+                OpenQuickAdd(query);
+                return;
+            }
+
+            ActualizarVisibilidadEmptyState();
+            AddSuggestion(product);
         }
-    }
 
-    // Se conserva la prioridad entre los resultados encontrados.
-    product ??=
-        productoPorId ??
-        productoCodigoPrefijo ??
-        productoNombrePrefijo ??
-        productoNombreContiene;
+        private void RemoveSelectedProduct()
+        {
+            var cartGrid = (DataGrid)FindName("CartGrid");
 
-    if (product is null)
-    {
-        OpenQuickAdd(query);
-        return;
-    }
+            if (cartGrid.SelectedItem is not ItemCarrito selectedItem)
+                return;
 
-    ActualizarVisibilidadEmptyState();
-    AddSuggestion(product);
-}
+            selectedItem.PropertyChanged -= CartItem_PropertyChanged;
+            Cart.Remove(selectedItem);
 
-private void RemoveSelectedProduct()
-{
-    var cartGrid = (DataGrid)FindName("CartGrid");
+            var ultimo = Cart.LastOrDefault();
+            cartGrid.SelectedItem = ultimo;
 
-    if (cartGrid.SelectedItem is not ItemCarrito selectedItem)
-        return;
+            if (ultimo != null)
+                cartGrid.ScrollIntoView(ultimo);
 
-    selectedItem.PropertyChanged -= CartItem_PropertyChanged;
-    Cart.Remove(selectedItem);
+            ToastNotification.Show(
+                $"Se quitó '{selectedItem.Nombre}' del carrito",
+                ToastType.Info);
 
-    var ultimo = Cart.LastOrDefault();
-    cartGrid.SelectedItem = ultimo;
+            ActualizarVisibilidadEmptyState();
+        }
 
-    if (ultimo != null)
-        cartGrid.ScrollIntoView(ultimo);
-
-    ToastNotification.Show(
-        $"Se quitó '{selectedItem.Nombre}' del carrito",
-        ToastType.Info);
-
-    ActualizarVisibilidadEmptyState();
-}
-#endregion
+        // Este evento se mantiene en blanco para evitar romper la referencia 'PreviewKeyDown' de tu XAML.
+        // Toda la lógica de Enter se centralizó en UserControl_PreviewKeyDown para evitar conflictos de lectura.
+        private void SearchBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+        }
+        #endregion
 
         #region Agregar Rápido de Producto Nuevo
         private void OpenQuickAdd(string code)
@@ -973,7 +944,6 @@ private void RemoveSelectedProduct()
         #region Atajos de Teclado Centralizados
         private bool CerrarModalActivo()
         {
-            // Revisa uno por uno todos los overlays/modales posibles en la vista de Cobro
             if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible)
             {
                 PaymentOverlay.Visibility = Visibility.Collapsed;
@@ -1013,53 +983,33 @@ private void RemoveSelectedProduct()
                 return true;
             }
 
-            return false; // Ningún modal estaba abierto
+            return false;
         }
+
         private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.IsRepeat) return;
 
-            // ==========================================
-            // 1. INTERCEPTAR ESC / ENTER EN CUALQUIER MODAL ABIERTO (PRIMERO)
-            // ==========================================
-
+            // 1. INTERCEPTAR TECLAS EN CUALQUIER MODAL ABIERTO
             if (ScaleOverlay.Visibility == Visibility.Visible)
             {
-                if (e.Key == Key.Escape)
-                {
-                    CancelScale_Click(this, new RoutedEventArgs());
-                    e.Handled = true;
-                    Cart.Clear();
-                }
+                if (e.Key == Key.Escape) { CancelScale_Click(this, new RoutedEventArgs()); e.Handled = true; Cart.Clear(); }
                 return;
             }
 
             if (QuickRestockOverlay.Visibility == Visibility.Visible)
             {
-                if (e.Key == Key.Escape)
-                {
-                    CloseQuickRestock();
-                    e.Handled = true;
-                }
+                if (e.Key == Key.Escape) { CloseQuickRestock(); e.Handled = true; }
                 return;
             }
 
             if (CreditOverlay.Visibility == Visibility.Visible)
             {
-                if (e.Key == Key.Escape)
-                {
-                    CloseCreditOverlay();
-                    e.Handled = true;
-                }
-                else if (e.Key == Key.Enter)
-                {
-                    ConfirmCreditProcess();
-                    e.Handled = true;
-                }
+                if (e.Key == Key.Escape) { CloseCreditOverlay(); e.Handled = true; }
+                else if (e.Key == Key.Enter) { ConfirmCreditProcess(); e.Handled = true; }
                 return;
             }
 
-            // Validación corregida y directa para PaymentOverlay
             if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible)
             {
                 if (e.Key == Key.F1) { RbEfectivo.IsChecked = true; e.Handled = true; return; }
@@ -1081,17 +1031,8 @@ private void RemoveSelectedProduct()
                     if (!string.IsNullOrWhiteSpace(paymentMessage?.Text))
                     {
                         paymentMessage.Text = string.Empty;
-                        if (RbMixto.IsChecked == true)
-                        {
-                            MixedCashBox.Focus();
-                            MixedCashBox.SelectAll();
-                        }
-                        else
-                        {
-                            var cashBox = (TextBox)FindName("CashReceivedBox");
-                            cashBox?.Focus();
-                            cashBox?.SelectAll();
-                        }
+                        if (RbMixto.IsChecked == true) { MixedCashBox.Focus(); MixedCashBox.SelectAll(); }
+                        else { var cashBox = (TextBox)FindName("CashReceivedBox"); cashBox?.Focus(); cashBox?.SelectAll(); }
                         e.Handled = true;
                         return;
                     }
@@ -1115,9 +1056,8 @@ private void RemoveSelectedProduct()
                 return;
             }
 
+            // Para la navegación manual en el popup con las flechas
             var suggestionsPopup = (Popup)FindName("SuggestionsPopup");
-            var suggestionsList = (ListBox)FindName("SuggestionsList");
-
             if (suggestionsPopup != null && suggestionsPopup.IsOpen)
             {
                 if (e.Key == Key.Down || e.Key == Key.Up)
@@ -1126,71 +1066,19 @@ private void RemoveSelectedProduct()
                     e.Handled = true;
                     return;
                 }
-
                 if (e.Key == Key.Escape)
                 {
                     suggestionsPopup.IsOpen = false;
                     e.Handled = true;
                     return;
                 }
-
-                if (e.Key == Key.Enter)
-                {
-                    suggestionsPopup.IsOpen = false;
-                    if (_modalAbierto) return;
-
-                    try
-                    {
-                        _modalAbierto = true;
-                        if (suggestionsList?.SelectedItem is Producto selectedSuggestion) AddSuggestion(selectedSuggestion);
-                        else if (suggestionsList?.Items.Count > 0 && suggestionsList.Items[0] is Producto firstSuggestion) AddSuggestion(firstSuggestion);
-                        else AddSearchedProduct();
-                    }
-                    finally { _modalAbierto = false; }
-
-                    e.Handled = true;
-                    return;
-                }
             }
 
-            // ==========================================
-            // 2. ATAJOS GENERALES DE LA VISTA DE COBRO
-            // ==========================================
-
-            if (e.Key == Key.F10 || (e.Key == Key.System && e.SystemKey == Key.F10))
-            {
-                OpenQuickRestockModal();
-                e.Handled = true;
-                return;
-            }
-
-            if (e.Key == Key.F8)
-            {
-                AbrirModalPesaje();
-                e.Handled = true;
-                return;
-            }
-
-            if (e.Key == Key.F5)
-            {
-                CajonService.AbrirCajon();
-                e.Handled = true;
-                return;
-            }
-
-            if (e.Key == Key.F4)
-            {
-                OpenCashMovement();
-                e.Handled = true;
-                return;
-            }
-
-            if (_purchaseFeedbackVisible && e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) != ModifierKeys.Shift)
-            {
-                ClearPurchaseFeedback();
-                e.Handled = true;
-                return;
-            }
+            // 2. ATAJOS GLOBALES
+            if (e.Key == Key.F10 || (e.Key == Key.System && e.SystemKey == Key.F10)) { OpenQuickRestockModal(); e.Handled = true; return; }
+            if (e.Key == Key.F8) { AbrirModalPesaje(); e.Handled = true; return; }
+            if (e.Key == Key.F5) { CajonService.AbrirCajon(); e.Handled = true; return; }
+            if (e.Key == Key.F4) { OpenCashMovement(); e.Handled = true; return; }
 
             if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control && e.Key == Key.Left || e.Key == Key.Tab)
             {
@@ -1199,24 +1087,28 @@ private void RemoveSelectedProduct()
                 return;
             }
 
+            // SHIFT + ENTER -> Ir a Cobrar
             if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
             {
                 if (_modalAbierto) return;
-
                 if (suggestionsPopup != null) suggestionsPopup.IsOpen = false;
-
                 try { _modalAbierto = true; StartPayment(); }
                 finally { _modalAbierto = false; }
-
                 e.Handled = true;
                 return;
             }
 
-            if (e.Key == Key.Enter)
+            // ENTER -> Procesar Producto escaneado o escrito (SOLUCIÓN DEL ESCÁNER)
+            if (e.Key == Key.Enter || e.Key == Key.Return)
             {
                 if (_modalAbierto) return;
-                try { _modalAbierto = true; AddSearchedProduct(); }
+                try
+                {
+                    _modalAbierto = true;
+                    AddSearchedProduct();
+                }
                 finally { _modalAbierto = false; }
+
                 e.Handled = true;
             }
             else if (e.Key == Key.Delete)
@@ -1230,10 +1122,8 @@ private void RemoveSelectedProduct()
             }
             else if (e.Key == Key.Escape)
             {
-                // 1. Intenta cerrar un modal activo. Si había uno abierto, se detiene aquí.
                 if (!CerrarModalActivo())
                 {
-                    // 2. Solo si NO había ningún modal abierto, regresa al menú principal.
                     if (Application.Current.MainWindow is MainWindow mainWindow)
                     {
                         mainWindow.RegresarAlMenu();
@@ -1679,7 +1569,6 @@ private void RemoveSelectedProduct()
             }
             else if (config.PreguntarAntesDeImprimir)
             {
-                // Como es UserControl y no ventana, usamos el MainWindow si es posible
                 Window window = Window.GetWindow(this) ?? Application.Current.MainWindow;
                 var resultado = CustomMessageBox.Show(window, "¿Deseas imprimir el ticket de esta venta?", "Ticket de Venta", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (resultado == MessageBoxResult.Yes)
