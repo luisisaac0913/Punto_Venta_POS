@@ -10,7 +10,6 @@
         Focusable="False"
         IsHitTestVisible="False"
         WindowStartupLocation="Manual">
-
     <Border x:Name="ToastContainer" 
             CornerRadius="18" 
             Padding="16,10" 
@@ -21,17 +20,13 @@
         <Border.Effect>
             <DropShadowEffect BlurRadius="20" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.18" />
         </Border.Effect>
-
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-            <!-- Icono de estado -->
             <TextBlock x:Name="IconText" 
                        Text="✓" 
                        FontSize="14" 
                        FontWeight="Bold" 
                        Margin="0,0,10,0" 
                        VerticalAlignment="Center" />
-
-            <!-- Mensaje -->
             <TextBlock x:Name="MessageText" 
                        Text="Operación completada" 
                        FontFamily="Segoe UI Variable, Segoe UI, -apple-system" 

@@ -49,7 +49,6 @@ namespace Punto_de_Venta.Vistas
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => ((TextBlock)FindName("ClockText")).Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
             _clockTimer.Start();
-
             ActualizarVisibilidadEmptyState();
             _typingTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
             _typingTimer.Tick += (s, args) =>
@@ -57,7 +56,6 @@ namespace Punto_de_Venta.Vistas
                 _typingTimer.Stop();
                 RefreshSuggestions();
             };
-
             var searchBox = (TextBox)FindName("SearchBox");
             if (searchBox != null)
             {
@@ -73,7 +71,6 @@ namespace Punto_de_Venta.Vistas
                 };
             }
         }
-
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             try
@@ -865,11 +862,11 @@ namespace Punto_de_Venta.Vistas
 
         private void SaveAndAddProduct()
         {
-            var code = QuickCodeBox.Text.Trim();
-            var name = QuickNameBox.Text.Trim();
+            var codigo = QuickCodeBox.Text.Trim();
+            var nombre = QuickNameBox.Text.Trim();
             var category = string.IsNullOrWhiteSpace(QuickCategoryBox.Text) ? "Abarrotes" : QuickCategoryBox.Text.Trim();
 
-            if (string.IsNullOrWhiteSpace(name))
+            if (string.IsNullOrWhiteSpace(nombre))
             {
                 QuickValidationMessage.Text = "El nombre es obligatorio.";
                 ToastNotification.Show("El nombre del producto es obligatorio", ToastType.Warning);
@@ -897,12 +894,12 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            var nextId = _catalog.Select(p => p.Id).DefaultIfEmpty(0).Max() + 1;
-            var newProduct = new Producto
+            var siguiente = _catalog.Select(p => p.Id).DefaultIfEmpty(0).Max() + 1;
+            var nuevoProd = new Producto
             {
-                Id = nextId,
-                Codigo = code,
-                Nombre = name,
+                Id = siguiente,
+                Codigo = codigo,
+                Nombre = nombre,
                 Categoria = category,
                 Costo = cost,
                 Ganancia = margin,
@@ -913,9 +910,9 @@ namespace Punto_de_Venta.Vistas
 
             try
             {
-                var updated = _catalog.Append(newProduct).ToList();
-                ProductoDB.Save(updated);
-                _catalog = updated;
+                var actualizado = _catalog.Append(nuevoProd).ToList();
+                ProductoDB.Save(actualizado);
+                _catalog = actualizado;
             }
             catch (Exception ex)
             {
@@ -924,9 +921,9 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            AddProduct(newProduct);
+            AddProduct(nuevoProd);
             CloseQuickAdd();
-            ToastNotification.Show($"Producto '{newProduct.Nombre}' registrado", ToastType.Success);
+            ToastNotification.Show($"Producto '{nuevoProd.Nombre}' registrado", ToastType.Success);
         }
         #endregion
 
@@ -965,10 +962,10 @@ namespace Punto_de_Venta.Vistas
                 return true;
             }
 
-            var suggestionsPopup = (Popup)FindName("SuggestionsPopup");
-            if (suggestionsPopup != null && suggestionsPopup.IsOpen)
+            var ssp = (Popup)FindName("SuggestionsPopup");
+            if (ssp != null && ssp.IsOpen)
             {
-                suggestionsPopup.IsOpen = false;
+                ssp.IsOpen = false;
                 return true;
             }
 
@@ -1671,15 +1668,14 @@ namespace Punto_de_Venta.Vistas
         #region Utilidades, Cálculos y Retroalimentación
         private void FocusSearch()
         {
-            // Obliga a WPF a poner esta acción al frente de la cola de procesos visuales
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
             {
                 var searchBox = (TextBox)FindName("SearchBox");
                 if (searchBox != null)
                 {
-                    this.Focus(); // Primero enfoca la ventana entera
-                    searchBox.Focus(); // Luego enfoca la caja
-                    Keyboard.Focus(searchBox); // Finalmente obliga a Windows a mandar el cursor ahí
+                    this.Focus(); 
+                    searchBox.Focus(); 
+                    Keyboard.Focus(searchBox);
                 }
             }));
         }

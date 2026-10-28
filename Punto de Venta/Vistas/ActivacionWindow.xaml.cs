@@ -6,7 +6,6 @@ namespace Punto_de_Venta
 {
     public partial class ActivacionWindow : Window
     {
-        // AQUÍ DEFINES TU CONTRASEÑA MAESTRA
         private const string CLAVE_MAESTRA = "JAZ2026";
 
         public ActivacionWindow()
@@ -21,7 +20,7 @@ namespace Punto_de_Venta
             {
                 LicenciaService.ActivarLicencia();
                 CustomMessageBox.Show("Equipo registrado exitosamente. La licencia ha sido enlazada a este hardware.", "Activación Completada", MessageBoxButton.OK, MessageBoxImage.Information);
-                this.DialogResult = true; // Permite que el programa continúe
+                this.DialogResult = true; 
                 this.Close();
             }
             else

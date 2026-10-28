@@ -67,8 +67,6 @@ namespace Punto_de_Venta
                 }
             }
             catch { }
-
-            // Suscribir eventos de exclusión mutua para los CheckBoxes
             if (AskQuantityCheckBox != null && ScaleWeighCheckBox != null)
             {
                 AskQuantityCheckBox.Checked += AskQuantityCheckBox_Checked;
@@ -97,7 +95,6 @@ namespace Punto_de_Venta
         {
             if (this.Visibility == Visibility.Visible)
             {
-                // H-46: Sincronizar catálogo con BD para evitar aplastar ventas recientes
                 try
                 {
                     Products.Clear();
@@ -185,7 +182,6 @@ namespace Punto_de_Venta
 
         #region Módulos de Lotes (Uso y Creación)
 
-        // ================= USO DE LOTES =================
         private void OpenLotesModal_Click(object sender, RoutedEventArgs e)
         {
             LotesListBox.SelectedItem = null;
@@ -246,8 +242,6 @@ namespace Punto_de_Venta
                 ToastNotification.Show("No se encontró ningún artículo de este lote en tu catálogo actual.", ToastType.Warning);
             }
         }
-
-        // ================= GESTIÓN / CREACIÓN DE LOTES =================
         private void OpenGestorLotes_Click(object sender, RoutedEventArgs e)
         {
             NuevoLoteNombreBox.Clear();
@@ -522,7 +516,6 @@ namespace Punto_de_Venta
         #endregion
 
         #region Interacción con Formulario y DataGrid
-        // EXCLUSIÓN MUTUA DE CHECKBOXES
         private void AskQuantityCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             if (_isUpdatingForm) return;
@@ -724,9 +717,7 @@ namespace Punto_de_Venta
             SearchBox.Clear();
             ProductsView.Refresh();
             UpdateProductCount();
-
             ToastNotification.Show($"Producto '{newProduct.Nombre}' registrado", ToastType.Success);
-
             ClearSelectionAndForm();
             FocusCodeBox();
         }
@@ -870,29 +861,23 @@ namespace Punto_de_Venta
                 ShowValidationError("Introduce un stock válido igual o mayor que cero.", "StockBox");
                 return false;
             }
-
             const NumberStyles styles = NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite | NumberStyles.AllowDecimalPoint;
             var usCulture = CultureInfo.GetCultureInfo("en-US");
             var esCulture = CultureInfo.GetCultureInfo("es-ES");
-
             var parsedCost = decimal.TryParse(costText, styles, usCulture, out cost) ||
                              decimal.TryParse(costText, styles, esCulture, out cost);
-
             if (!parsedCost || cost < 0)
             {
                 ShowValidationError("Introduce un costo decimal válido igual o mayor que cero.", "ProductCostBox");
                 return false;
             }
-
             var parsedMargin = decimal.TryParse(marginText, styles, usCulture, out margin) ||
                                decimal.TryParse(marginText, styles, esCulture, out margin);
-
             if (!parsedMargin || margin < 0)
             {
                 ShowValidationError("Introduce una ganancia decimal válida igual o mayor que cero.", "ProductMarginBox");
                 return false;
             }
-
             price = cost + margin;
             return true;
         }

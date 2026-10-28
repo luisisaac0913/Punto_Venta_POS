@@ -39,7 +39,6 @@ namespace Punto_de_Venta
                     CargarDatosFormulario();
                 }
 
-                // Rescate de foco inicial al abrir la ventana usando el patrón agresivo del Dispatcher
                 Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                 {
                     this.Focus();
@@ -48,7 +47,6 @@ namespace Punto_de_Venta
             }
         }
 
-        // Rescate de foco al hacer clic en el fondo vacío de Configuración
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
@@ -349,7 +347,6 @@ namespace Punto_de_Venta
             }
         }
 
-        // NUEVA FUNCIÓN AÑADIDA: Respaldar Ahora (Manual)
         private void BtnRespaldarAhora_Click(object sender, RoutedEventArgs e)
         {
             try

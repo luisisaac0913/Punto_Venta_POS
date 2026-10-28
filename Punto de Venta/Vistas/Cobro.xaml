@@ -18,7 +18,6 @@
 
         <DropShadowEffect x:Key="AppleCardShadow" BlurRadius="20" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.08" />
         <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="36" ShadowDepth="8" Direction="270" Color="#000000" Opacity="0.25" />
-        <!-- CORREGIDO: Sombra adaptable genérica para no forzar el azul -->
         <DropShadowEffect x:Key="AppleButtonShadow" BlurRadius="12" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.15" />
 
         <Style x:Key="CardBorderStyle" TargetType="Border">
@@ -46,7 +45,6 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- CORREGIDO: Uso de Opacidad para mantener el color de acento dinámico -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.85" />
                             </Trigger>
@@ -106,7 +104,6 @@
 
     <Border Background="Transparent" ClipToBounds="True">
         <Grid MouseLeftButtonDown="Grid_MouseLeftButtonDown">
-            <!-- ================= CONTENIDO PRINCIPAL CON MÁRGENES ADECUADOS ================= -->
             <Grid Margin="32,20,32,24">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -114,7 +111,6 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- Encabezado iOS -->
                 <Grid Grid.Row="0" Margin="0,0,0,14">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <TextBlock Text="Cobro" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
@@ -142,7 +138,6 @@
                     </Border>
                 </Grid>
 
-                <!-- Cuerpo Central (Busqueda, Carrito y Resumen) -->
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="2.1*" />
@@ -150,7 +145,6 @@
                         <ColumnDefinition Width="1*" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Izquierda: Busqueda y Tabla de Carrito -->
                     <Grid Grid.Column="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -161,7 +155,6 @@
                         <StackPanel Grid.Row="0">
                             <TextBlock Text="Buscar producto" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="4,0,0,6" />
 
-                            <!-- Borde del Buscador Dinámico con el Color de Configuración -->
                             <Border x:Name="SearchBorder" Height="48" Background="{DynamicResource ThemeInputBackground}" CornerRadius="14" Padding="14,0">
                                 <Border.Style>
                                     <Style TargetType="Border">
@@ -220,11 +213,9 @@
                                                                 <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center" />
                                                             </Border>
                                                             <ControlTemplate.Triggers>
-                                                                <!-- AL SELECCIONAR: Fondo con el color de configuración actual -->
                                                                 <Trigger Property="IsSelected" Value="True">
                                                                     <Setter TargetName="SuggestionBorder" Property="Background" Value="{DynamicResource ThemeAccent}" />
                                                                 </Trigger>
-                                                                <!-- AL PASAR EL RATÓN: Fondo sutil -->
                                                                 <Trigger Property="IsMouseOver" Value="True">
                                                                     <Setter TargetName="SuggestionBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}" />
                                                                 </Trigger>
@@ -271,16 +262,13 @@
                                                     <TextBlock x:Name="TxtPrecio" Grid.Column="2" Text="{Binding Precio, StringFormat={}{0:C2}}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" VerticalAlignment="Center" Margin="0,0,4,0" />
                                                 </Grid>
 
-                                                <!-- MAGIA APPLE: Al seleccionarse, todo el texto pasa a color blanco puro -->
                                                 <DataTemplate.Triggers>
                                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
                                                         <Setter TargetName="TxtNombre" Property="Foreground" Value="White" />
                                                         <Setter TargetName="TxtCodigo" Property="Foreground" Value="#E5FFFFFF" />
-                                                        <!-- Blanco con un poco de opacidad -->
                                                         <Setter TargetName="TxtPrecio" Property="Foreground" Value="White" />
                                                         <Setter TargetName="TxtStock" Property="Foreground" Value="White" />
                                                         <Setter TargetName="BadgeBorder" Property="Background" Value="#33FFFFFF" />
-                                                        <!-- Fondo de stock semi-transparente -->
                                                     </DataTrigger>
                                                 </DataTemplate.Triggers>
                                             </DataTemplate>
@@ -291,7 +279,6 @@
                             <TextBlock x:Name="SearchMessage" Text="" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource SystemRed}" Margin="6,6,0,0" />
                         </StackPanel>
 
-                        <!-- Contenedor del Carrito -->
                         <Grid Grid.Row="2">
                             <Border Style="{StaticResource CardBorderStyle}" Padding="0" ClipToBounds="True">
                                 <DataGrid x:Name="CartGrid" ItemsSource="{Binding Cart}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="52" SelectionUnit="FullRow" SelectionMode="Single" EnableRowVirtualization="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
@@ -369,7 +356,6 @@
                         </Grid>
                     </Grid>
 
-                    <!-- Derecha: Resumen -->
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -426,7 +412,6 @@
                     </Grid>
                 </Grid>
 
-                <!-- Barra Inferior Atajos -->
                 <Border Grid.Row="2" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Padding="16,10" Margin="0,14,0,0" Effect="{StaticResource AppleCardShadow}">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -455,9 +440,6 @@
                 </Border>
             </Grid>
 
-            <!-- ================= MODALES (Fuera de los márgenes para cubrir toda la ventana) ================= -->
-
-            <!-- MODAL: PAGO (PaymentOverlay) CON COBRO MIXTO -->
             <Grid x:Name="PaymentOverlay" Panel.ZIndex="10" Background="#66000000" Visibility="Collapsed" MouseDown="PaymentOverlay_MouseDown">
                 <Border Width="560" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="28" Padding="36,30" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                     <StackPanel>
@@ -479,13 +461,11 @@
                             </Grid>
                         </Border>
 
-                        <!-- Campo: Dinero Recibido (PAGO SIMPLE) -->
                         <TextBlock x:Name="SinglePaymentLabel" Text="Dinero Recibido" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
                         <Border x:Name="SinglePaymentContainer" Height="58" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="14" Padding="10,0">
                             <TextBox x:Name="CashReceivedBox" Background="Transparent" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" CaretBrush="{DynamicResource ThemeAccent}" TextChanged="CashReceivedBox_TextChanged" PreviewTextInput="CashReceivedBox_PreviewTextInput" />
                         </Border>
 
-                        <!-- Campo: PAGO MIXTO (Oculto por defecto) -->
                         <StackPanel x:Name="MixedPaymentContainer" Visibility="Collapsed" Margin="0,-20,0,0">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -553,7 +533,6 @@
                                 </Button.Template>
                             </Button>
 
-                            <!-- CORREGIDO: Botón FINALIZAR con opacidad dinámica en XAML -->
                             <Button x:Name="FinalizeButton" Grid.Column="2" Content="FINALIZAR" Height="50" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="Bold" Cursor="Hand" Click="FinalizeButton_Click" Effect="{StaticResource AppleButtonShadow}">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
@@ -580,14 +559,12 @@
                 </Border>
             </Grid>
 
-            <!-- MODAL: PESAJE BASCULA -->
             <Grid x:Name="ScaleOverlay" Panel.ZIndex="150" Background="#66000000" Visibility="Collapsed">
                 <Border Width="480" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="28" Padding="32,26" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                     <StackPanel>
                         <TextBlock Text="⚖️ Pesaje de Mercancía" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
                         <TextBlock x:Name="ScaleProductNameText" Text="Producto a granel seleccionado" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,18" />
 
-                        <!-- PESTAÑAS (Modo Peso / Modo Precio) -->
                         <Grid Margin="0,0,0,14">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -651,7 +628,6 @@
                                 </Button.Template>
                             </Button>
 
-                            <!-- CORREGIDO: Botón ACEPTAR Báscula con opacidad dinámica en XAML -->
                             <Button Grid.Column="4" Content="ACEPTAR (Enter)" Height="46" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="ConfirmScale_Click" Effect="{StaticResource AppleButtonShadow}">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
@@ -673,8 +649,6 @@
                     </StackPanel>
                 </Border>
             </Grid>
-
-            <!-- MODAL: AGREGAR RÁPIDO (QuickAddOverlay) -->
             <Grid x:Name="QuickAddOverlay" Panel.ZIndex="100" Background="#66000000" Visibility="Collapsed">
                 <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Width="460" Padding="30" CornerRadius="26" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                     <StackPanel>
@@ -753,7 +727,6 @@
                 </Border>
             </Grid>
 
-            <!-- MODAL: MOVIMIENTO DE CAJA -->
             <Grid x:Name="CashMovementOverlay" Panel.ZIndex="110" Background="#66000000" Visibility="Collapsed">
                 <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Width="430" Padding="30" CornerRadius="26" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                     <StackPanel>
@@ -809,7 +782,6 @@
                 </Border>
             </Grid>
 
-            <!-- MODAL: FIAR -->
             <Grid x:Name="CreditOverlay" Panel.ZIndex="120" Background="#66000000" Visibility="Collapsed">
                 <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Width="420" Padding="30" CornerRadius="26" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                     <StackPanel>
@@ -857,7 +829,6 @@
                 </Border>
             </Grid>
 
-            <!-- MODAL: RESTOCK RÁPIDO -->
             <Grid x:Name="QuickRestockOverlay" Panel.ZIndex="999" Background="#66000000" Visibility="Collapsed" MouseDown="QuickRestockOverlay_MouseDown">
                 <Border Width="400" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="20" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel>
@@ -894,7 +865,6 @@
                                 </Button.Template>
                             </Button>
 
-                            <!-- CORREGIDO: Botón GUARDAR con opacidad dinámica en XAML -->
                             <Button Grid.Column="2" Content="GUARDAR" Height="42" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="ConfirmQuickRestock_Click" Effect="{StaticResource AppleButtonShadow}">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">

@@ -61,9 +61,6 @@ namespace Punto_de_Venta
             _clockTimer.Start();
         }
 
-        // ==============================================================
-        // REPARACIÓN: Recargar datos CADA VEZ que el módulo se muestra
-        // ==============================================================
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (this.Visibility == Visibility.Visible)
@@ -79,23 +76,16 @@ namespace Punto_de_Venta
         {
             try
             {
-                // Limpiamos los datos anteriores en memoria
                 Sales.Clear();
                 _loadFailed = false;
-
-                // Recargamos el catálogo y movimientos por si hubo cambios
                 try { _catalog = ProductoDB.Load(); } catch { _catalog = []; }
                 CargarMovimientosCaja();
-
-                // Recargamos las ventas frescas
                 var loadedSales = VentaDB.Load().OrderByDescending(s => s.FechaHora).ThenByDescending(s => s.Id);
                 foreach (var sale in loadedSales)
                 {
                     HydrateSaleProfit(sale);
                     Sales.Add(sale);
                 }
-
-                // Aplicamos los filtros y métricas actuales
                 SalesView.Refresh();
                 RefreshMetrics();
             }
@@ -293,10 +283,8 @@ namespace Punto_de_Venta
             }
             var profitTotal = _selectedSale.GananciaTotal;
             var text = $"Venta #{_selectedSale.Id}\nFecha: {_selectedSale.FechaHora.ToString("dd/MM/yyyy hh:mm tt", CultureInfo.GetCultureInfo("es-MX"))}\nEstado: {_selectedSale.Estado}\n\n{details}\n\nTotal: {_selectedSale.Total.ToString("C2", CultureInfo.GetCultureInfo("es-MX"))}\nGanancia total de esta venta: {profitTotal.ToString("C2", CultureInfo.GetCultureInfo("es-MX"))}";
-
             CustomMessageBox.Show(Application.Current.MainWindow, text, "Datos de venta", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-
         private void ReprintTicketButton_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedSale is null)
@@ -534,7 +522,6 @@ namespace Punto_de_Venta
                 TurnoCajaManager.CerrarTurno(turnoActivo, contadoFisico, diferenciaTexto, cashSales);
                 using (var conn = DatabaseHelper.GetConnection()) { using (var updateVentasCmd = conn.CreateCommand()) { updateVentasCmd.CommandText = "UPDATE Ventas SET Estado = 'Cerrada' WHERE Estado = 'Abierta';"; updateVentasCmd.ExecuteNonQuery(); } }
 
-                // Limpiamos y recargamos
                 RecargarDatosDesdeBD();
 
                 ToastNotification.Show("Corte de caja finalizado exitosamente", ToastType.Success);

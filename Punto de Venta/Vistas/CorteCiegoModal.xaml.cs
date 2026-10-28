@@ -34,8 +34,6 @@ namespace Punto_de_Venta
                     Owner.Effect = _blurEffect;
                 }
             };
-
-            // Quitar el desenfoque al cerrar
             Closed += (_, _) =>
             {
                 if (Owner != null)
@@ -74,8 +72,6 @@ namespace Punto_de_Venta
         private void Denomination_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Enter) return;
-
-            // Salto rápido entre cajas de texto
             if (sender == Box500) Box200.Focus();
             else if (sender == Box200) Box100.Focus();
             else if (sender == Box100) Box50.Focus();

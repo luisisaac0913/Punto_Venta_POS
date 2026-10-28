@@ -22,10 +22,7 @@ namespace Punto_de_Venta.Modelos
         {
             var list = new List<MovimientoCaja>();
             using var conn = DatabaseHelper.GetConnection();
-
-            // Forzar actualización de esquema antes de leer
             TurnoCajaManager.ValidarEsquemaBD(conn);
-
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT Id, FechaHora, Tipo, Monto, Concepto, CorteCajaId FROM MovimientosCaja ORDER BY Id ASC;";
 
@@ -53,8 +50,6 @@ namespace Punto_de_Venta.Modelos
 
         public static void Save(IEnumerable<MovimientoCaja> movimientos)
         {
-            // Este método ya no debe usarse para guardar movimientos diarios, 
-            // TurnoCajaManager.RegistrarMovimientoEfectivo maneja los Inserts individuales.
         }
     }
 }

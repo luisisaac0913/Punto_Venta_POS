@@ -12,10 +12,7 @@ namespace Punto_de_Venta.Datos
         public static List<Deudor> Load()
         {
             var deudores = new Dictionary<int, Deudor>();
-
             using var conn = DatabaseHelper.GetConnection();
-
-            // 1. Cargar Deudores
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = "SELECT Id, Nombre, Telefono, Concepto, MontoOriginal, TotalAbonado FROM Deudores ORDER BY Id ASC;";
@@ -41,8 +38,6 @@ namespace Punto_de_Venta.Datos
                     };
                 }
             }
-
-            // 2. Cargar Abonos relacionados
             using (var cmdAbonos = conn.CreateCommand())
             {
                 cmdAbonos.CommandText = "SELECT Id, DeudorId, Fecha, Monto FROM Abonos ORDER BY Id DESC;";
@@ -57,7 +52,6 @@ namespace Punto_de_Venta.Datos
                         {
                             DateTime.TryParse(fechaStr, CultureInfo.GetCultureInfo("es-MX"), DateTimeStyles.None, out f);
                         }
-
                         deudor.Abonos.Add(new Abono
                         {
                             Id = rAb.GetInt32(0),
@@ -68,10 +62,8 @@ namespace Punto_de_Venta.Datos
                     }
                 }
             }
-
             return deudores.Values.ToList();
         }
-
         public static void Save(IEnumerable<Deudor> debtors)
         {
             using var conn = DatabaseHelper.GetConnection();
@@ -85,26 +77,22 @@ namespace Punto_de_Venta.Datos
                     delCmd.CommandText = "DELETE FROM Abonos; DELETE FROM Deudores;";
                     delCmd.ExecuteNonQuery();
                 }
-
                 using var insertDeudor = conn.CreateCommand();
                 insertDeudor.Transaction = tr;
                 insertDeudor.CommandText = @"
                     INSERT INTO Deudores (Id, Nombre, Telefono, Concepto, MontoOriginal, TotalAbonado)
                     VALUES (@id, @nom, @tel, @con, @monto, @abonado);";
-
                 var dId = insertDeudor.Parameters.Add("@id", SqliteType.Integer);
                 var dNom = insertDeudor.Parameters.Add("@nom", SqliteType.Text);
                 var dTel = insertDeudor.Parameters.Add("@tel", SqliteType.Text);
                 var dCon = insertDeudor.Parameters.Add("@con", SqliteType.Text);
                 var dMonto = insertDeudor.Parameters.Add("@monto", SqliteType.Real);
                 var dAbonado = insertDeudor.Parameters.Add("@abonado", SqliteType.Real);
-
                 using var insertAbono = conn.CreateCommand();
                 insertAbono.Transaction = tr;
                 insertAbono.CommandText = @"
                     INSERT INTO Abonos (Id, DeudorId, Fecha, Monto)
                     VALUES (@aId, @dId, @fecha, @monto);";
-
                 var aId = insertAbono.Parameters.Add("@aId", SqliteType.Integer);
                 var aDId = insertAbono.Parameters.Add("@dId", SqliteType.Integer);
                 var aFecha = insertAbono.Parameters.Add("@fecha", SqliteType.Text);
@@ -132,7 +120,6 @@ namespace Punto_de_Venta.Datos
                         }
                     }
                 }
-
                 tr.Commit();
             }
             catch

@@ -20,21 +20,18 @@ namespace Punto_de_Venta.Servicios
                 return Array.Empty<string>();
             }
         }
-
         /// <summary>
-        /// Realiza una prueba sincrónica (usada en la pantalla de Configuración).
+        /// 
         /// </summary>
         public static bool ProbarConexion(string puerto, int baudRate, out decimal pesoObtenido, out string mensajeError)
         {
             pesoObtenido = 0m;
             mensajeError = string.Empty;
-
             if (string.IsNullOrWhiteSpace(puerto))
             {
                 mensajeError = "No se ha seleccionado ningun puerto COM.";
                 return false;
             }
-
             SerialPort? port = null;
             try
             {
@@ -43,28 +40,21 @@ namespace Punto_de_Venta.Servicios
                     ReadTimeout = 1200,
                     WriteTimeout = 1200
                 };
-
                 port.Open();
-
-                // Enviar comando estándar de petición 'P' + CR (Torrey L-EQ, Rhino BAR, etc.)
                 port.DiscardInBuffer();
                 port.Write("P\r");
-
                 Thread.Sleep(220);
-
                 var respuesta = port.ReadExisting();
                 if (string.IsNullOrWhiteSpace(respuesta))
                 {
                     try { respuesta = port.ReadLine(); } catch { }
                 }
-
                 port.Close();
 
                 if (TryParsePeso(respuesta, out pesoObtenido))
                 {
                     return true;
                 }
-
                 mensajeError = string.IsNullOrWhiteSpace(respuesta)
                     ? "La bascula no respondio en el tiempo limite. Ay Jaz"
                     : $"Respuesta no válida de la bascula: '{respuesta.Trim()}'";
@@ -83,9 +73,8 @@ namespace Punto_de_Venta.Servicios
                 }
             }
         }
-
         /// <summary>
-        /// Lee el peso de forma asíncrona para usar en la pantalla de Cobro sin congelar la ventana.
+        /// 
         /// </summary>
         public static async Task<(bool Exito, decimal Peso, string Error)> ObtenerPesoAsync()
         {
@@ -95,7 +84,6 @@ namespace Punto_de_Venta.Servicios
             {
                 return (false, 0m, "La bascula está desactivada en la configuracion.");
             }
-
             return await Task.Run(() =>
             {
                 var puerto = config.BasculaPuerto;
@@ -156,27 +144,20 @@ namespace Punto_de_Venta.Servicios
                 }
             });
         }
-
         public static bool TryParsePeso(string respuesta, out decimal peso)
         {
             peso = 0m;
             if (string.IsNullOrWhiteSpace(respuesta)) return false;
-
-            // Busca específicamente un formato como "0.250" o "12.000", ignorando letras como "kg" o símbolos.
             var match = Regex.Match(respuesta, @"\b\d+\.\d{1,3}\b");
-
             if (match.Success)
             {
                 return decimal.TryParse(match.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out peso);
             }
-
-            // Fallback por si la báscula manda el número entero sin decimales (raro, pero pasa)
             var matchEntero = Regex.Match(respuesta, @"\b\d+\b");
             if (matchEntero.Success)
             {
                 return decimal.TryParse(matchEntero.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out peso);
             }
-
             return false;
         }
     }

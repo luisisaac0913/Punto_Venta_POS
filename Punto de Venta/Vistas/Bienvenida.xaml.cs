@@ -9,17 +9,14 @@ namespace Punto_de_Venta.Vistas
 {
     public partial class Bienvenida : Window
     {
-        private int _pasoActual = 0; // 0 = Video Intro
-        private bool _setupCompletado = false; // Bandera para controlar el cierre seguro
-
+        private int _pasoActual = 0; 
+        private bool _setupCompletado = false; 
         public Bienvenida()
         {
             InitializeComponent();
             CargarImpresoras();
             CargarPuertos();
             ActualizarVistaPasos();
-
-            // Cargar icono inicial de tema oscuro/claro
             var config = AppConfig.Load();
             BtnThemeToggle.Content = config.ModoOscuro ? "☀️" : "🌙";
         }
@@ -37,14 +34,10 @@ namespace Punto_de_Venta.Vistas
                 config.Save();
             }
         }
-
-        // Se ejecuta cuando el control de video terminó de crearse en memoria
         private void VideoIntro_Loaded(object sender, RoutedEventArgs e)
         {
             VideoIntro.Play();
         }
-
-        // Avanzar usando la tecla ENTER
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
@@ -95,10 +88,7 @@ namespace Punto_de_Venta.Vistas
             PanelPaso1.Visibility = _pasoActual == 1 ? Visibility.Visible : Visibility.Collapsed;
             PanelPaso2.Visibility = _pasoActual == 2 ? Visibility.Visible : Visibility.Collapsed;
             PanelPaso3.Visibility = _pasoActual == 3 ? Visibility.Visible : Visibility.Collapsed;
-
             GridNavegacion.Visibility = _pasoActual == 0 ? Visibility.Collapsed : Visibility.Visible;
-
-            // Actualizar la barra de progreso
             BarraProgreso.Visibility = _pasoActual == 0 ? Visibility.Collapsed : Visibility.Visible;
             BarraProgreso.Value = _pasoActual;
 
@@ -116,8 +106,6 @@ namespace Punto_de_Venta.Vistas
                     BtnSiguiente.Visibility = Visibility.Visible;
                     BtnFinalizar.Visibility = Visibility.Hidden;
                 }
-
-                // Foco automático
                 if (_pasoActual == 1) TxtNombreNegocio.Focus();
                 if (_pasoActual == 3) TxtFondoCaja.Focus();
             }
@@ -131,7 +119,6 @@ namespace Punto_de_Venta.Vistas
                 TxtNombreNegocio.Focus();
                 return;
             }
-
             if (_pasoActual < 3)
             {
                 _pasoActual++;
@@ -155,7 +142,6 @@ namespace Punto_de_Venta.Vistas
 
         private void BtnFinalizar_Click(object sender, RoutedEventArgs e)
         {
-            // NUEVO: Validación de UX para evitar arrancar con caja cerrada si el usuario teclea mal el fondo
             string textoFondo = TxtFondoCaja.Text.Trim();
             if (!string.IsNullOrWhiteSpace(textoFondo))
             {
@@ -181,16 +167,11 @@ namespace Punto_de_Venta.Vistas
             config.NombreNegocio = TxtNombreNegocio.Text.Trim();
             config.DireccionNegocio = TxtDireccion.Text.Trim();
             config.MensajePie = string.IsNullOrWhiteSpace(TxtMensajePie.Text) ? "GRACIAS POR SU COMPRA\nVuelva pronto" : TxtMensajePie.Text.Trim();
-
-            // Hardware
             if (CmbImpresoras.SelectedIndex > 0 && CmbImpresoras.SelectedItem != null)
                 config.ImpresoraSeleccionada = CmbImpresoras.SelectedItem.ToString();
-
             config.BasculaHabilitada = ChkUsarBascula.IsChecked == true;
             if (CmbPuertosCOM.SelectedIndex > 0 && CmbPuertosCOM.SelectedItem != null)
                 config.BasculaPuerto = CmbPuertosCOM.SelectedItem.ToString();
-
-            // Seguridad
             if (!string.IsNullOrWhiteSpace(TxtPinAdmin.Password))
             {
                 config.EstablecerNuevoPin(TxtPinAdmin.Password.Trim());
@@ -200,10 +181,7 @@ namespace Punto_de_Venta.Vistas
             {
                 config.SolicitarPinAdmin = false;
             }
-
             config.Save();
-
-            // Guardar fondo de caja inicial formalmente
             if (decimal.TryParse(textoFondo, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal montoFondo) ||
                 decimal.TryParse(textoFondo, NumberStyles.Any, CultureInfo.GetCultureInfo("es-MX"), out montoFondo))
             {
@@ -219,10 +197,7 @@ namespace Punto_de_Venta.Vistas
                     }
                 }
             }
-
-            // Marcamos como completado para evitar el Shutdown accidental
             _setupCompletado = true;
-
             MainWindow main = new MainWindow();
             Application.Current.MainWindow = main;
             main.Show();
@@ -233,12 +208,9 @@ namespace Punto_de_Venta.Vistas
         {
             Application.Current.Shutdown();
         }
-
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-
-            // Si la ventana se cierra (con Alt+F4 o la X) antes de finalizar, mata el programa
             if (!_setupCompletado)
             {
                 Application.Current.Shutdown();

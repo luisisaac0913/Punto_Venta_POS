@@ -90,7 +90,6 @@
         </Style>
     </UserControl.Resources>
 
-    <!-- Rescate de Foco: Grid_MouseLeftButtonDown -->
     <Grid Margin="24,10,24,18" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -130,7 +129,6 @@
                     <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
                         <StackPanel>
 
-                            <!-- ================= SECCIÓN 1: IMPRESIÓN ================= -->
                             <StackPanel x:Name="PanelImpresion" Visibility="Visible">
                                 <TextBlock Text="Impresora" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
 
@@ -163,7 +161,6 @@
                                 <TextBox x:Name="FooterMessageBox" Style="{StaticResource FormTextBoxStyle}" Height="54" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" Padding="10,6" Margin="0,0,0,12" TextChanged="TicketField_TextChanged" />
                             </StackPanel>
 
-                            <!-- ================= SECCIÓN 2: PERSONALIZACIÓN ================= -->
                             <StackPanel x:Name="PanelPersonalizacion" Visibility="Collapsed">
                                 <TextBlock Text="Apariencia y Tema" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
 
@@ -253,8 +250,6 @@
                                     </Button>
                                 </StackPanel>
                             </StackPanel>
-
-                            <!-- ================= SECCIÓN 3: BÁSCULA DIGITAL ================= -->
                             <StackPanel x:Name="PanelBascula" Visibility="Collapsed">
                                 <TextBlock Text="Báscula Digital (Puerto Serie RS-232)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,6" />
                                 <TextBlock Text="Permite pesar artículos a granel automáticamente desde la pantalla de cobro." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,12" />
@@ -338,8 +333,6 @@
                                     </Grid>
                                 </Border>
                             </StackPanel>
-
-                            <!-- ================= SECCIÓN: RECORDATORIOS WHATSAPP ================= -->
                             <StackPanel x:Name="PanelWhatsApp" Visibility="Collapsed">
                                 <TextBlock Text="Recordatorios de Cobro por WhatsApp" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,6" />
                                 <TextBlock Text="Personaliza el mensaje que se enviará a los clientes con saldo pendiente." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,14" />
@@ -358,7 +351,6 @@
                                 <TextBox x:Name="WhatsAppTemplateBox" Style="{StaticResource FormTextBoxStyle}" Height="90" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" Padding="10,6" Margin="0,0,0,14" />
                             </StackPanel>
 
-                            <!-- ================= SECCIÓN 4: CAJA Y SEGURIDAD ================= -->
                             <StackPanel x:Name="PanelSeguridad" Visibility="Collapsed">
                                 <TextBlock Text="Seguridad de acceso" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
 
@@ -413,7 +405,6 @@
                                         </Button.Template>
                                     </Button>
 
-                                    <!-- NUEVA FUNCIÓN: Botón para crear respaldo instantáneo -->
                                     <Button Grid.Column="4" Content="Respaldar Ahora" Height="38" Padding="14,0" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontWeight="Bold" Cursor="Hand" Click="BtnRespaldarAhora_Click">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -426,12 +417,10 @@
                                 </Grid>
                             </StackPanel>
 
-                            <!-- ================= SECCIÓN 5: ATAJOS DE TECLADO ================= -->
                             <StackPanel x:Name="PanelAtajos" Visibility="Collapsed">
                                 <TextBlock Text="Guía de Atajos Rápidos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
                                 <TextBlock Text="Usa estas combinaciones para operar el punto de venta a máxima velocidad." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,14" />
 
-                                <!-- 1. PANTALLA DE COBRO -->
                                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,0,0,12">
                                     <StackPanel>
                                         <TextBlock Text="PANTALLA DE COBRO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,8" />
@@ -494,7 +483,6 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- 2. VENTANA DE COBRO / MODAL DE PAGO -->
                                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,0,0,12">
                                     <StackPanel>
                                         <TextBlock Text="MODAL DE PAGO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,8" />
@@ -536,7 +524,6 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- 3. INVENTARIO -->
                                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Padding="14">
                                     <StackPanel>
                                         <TextBlock Text="INVENTARIO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,8" />
@@ -566,7 +553,6 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <!-- Acción Guardar -->
                     <StackPanel Grid.Row="1" Margin="0,14,0,0">
                         <Button Content="Guardar cambios" Style="{StaticResource PillButtonStyle}" HorizontalAlignment="Left" Click="SaveConfig_Click" />
                         <TextBlock x:Name="StatusMessage" Text="" FontSize="12" Foreground="{DynamicResource ThemeAccent}" Margin="0,6,0,0" />
@@ -574,7 +560,6 @@
                 </Grid>
             </Border>
 
-            <!-- 3. Derecha: Vista Previa del Ticket -->
             <Border x:Name="PreviewCardBorder" Grid.Column="4" Style="{StaticResource ConfigCardStyle}" Padding="16">
                 <Grid>
                     <Grid.RowDefinitions>

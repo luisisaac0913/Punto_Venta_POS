@@ -21,14 +21,11 @@ namespace Punto_de_Venta.Datos
             {
                 return resultado;
             }
-
             var promocionesVigentes = promocionesActivas.Where(p => p.EstaVigente()).ToList();
-
             foreach (var promo in promocionesVigentes)
             {
                 switch (promo.Tipo)
                 {
-                    // 1. Regla por Volumen (Ej: 3 x $45)
                     case TipoPromocion.Volumen:
                         var itemVolumen = carrito.FirstOrDefault(c => c.ProductoId == promo.ProductoIdPrincipal);
                         if (itemVolumen != null && itemVolumen.Cantidad >= promo.CantidadMinima && promo.CantidadMinima > 0)
@@ -49,8 +46,6 @@ namespace Punto_de_Venta.Datos
                             }
                         }
                         break;
-
-                    // 2. Regla por Combo (Producto A + Producto B = Precio fijo)
                     case TipoPromocion.Combo:
                         var itemA = carrito.FirstOrDefault(c => c.ProductoId == promo.ProductoIdPrincipal);
                         var itemB = carrito.FirstOrDefault(c => c.ProductoId == promo.ProductoIdSecundario);
@@ -62,8 +57,6 @@ namespace Punto_de_Venta.Datos
                             {
                                 decimal precioNormalCombo = itemA.Precio + itemB.Precio;
                                 decimal ahorroPorCombo = precioNormalCombo - promo.PrecioComboTotal;
-
-                                // Aplica si el precio combo es realmente menor al precio normal
                                 if (ahorroPorCombo > 0)
                                 {
                                     decimal ahorroTotal = ahorroPorCombo * combosPosibles;
@@ -74,8 +67,6 @@ namespace Punto_de_Venta.Datos
                             }
                         }
                         break;
-
-                    // 3. Segunda pieza con porcentaje de descuento
                     case TipoPromocion.PorcentajeSegundo:
                         var itemPar = carrito.FirstOrDefault(c => c.ProductoId == promo.ProductoIdPrincipal);
                         if (itemPar != null && itemPar.Cantidad >= 2)
@@ -94,7 +85,6 @@ namespace Punto_de_Venta.Datos
                         break;
                 }
             }
-
             return resultado;
         }
     }

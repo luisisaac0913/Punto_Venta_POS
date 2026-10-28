@@ -14,12 +14,9 @@
         TextOptions.TextRenderingMode="ClearType">
 
     <Window.Resources>
-        <!-- Sombras Estilo Apple / Fluent Ultra-suaves -->
         <DropShadowEffect x:Key="AppleAppIconShadow" BlurRadius="24" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.05" />
         <DropShadowEffect x:Key="AppleHoverShadow" BlurRadius="32" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.10" />
         <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="48" ShadowDepth="16" Direction="270" Color="#000000" Opacity="0.22" />
-
-        <!-- ICONOS DEL NUEVO DISEÑO -->
         <StreamGeometry x:Key="IconCobro">M 8,19 A 1,1 0 1 0 8,21 A 1,1 0 1 0 8,19 Z M 19,19 A 1,1 0 1 0 19,21 A 1,1 0 1 0 19,19 Z M 2.05,2.05 L 4.05,2.05 L 6.71,14.47 A 2,2 0 0 0 8.71,16.05 L 18.49,16.05 A 2,2 0 0 0 20.44,14.48 L 22.09,7.05 L 5.12,7.05</StreamGeometry>
         <StreamGeometry x:Key="IconVentas">M 4,2 L 4,22 L 6,21 L 8,22 L 10,21 L 12,22 L 14,21 L 16,22 L 18,21 L 20,22 L 20,2 L 18,3 L 16,2 L 14,3 L 12,2 L 10,3 L 8,2 L 6,3 Z M 16,8 L 10,8 A 2,2 0 1 0 10,12 L 14,12 A 2,2 0 1 1 14,16 L 8,16 M 12,17.5 L 12,6.5</StreamGeometry>
         <StreamGeometry x:Key="IconInventario">M 8,2 L 16,2 L 16,6 L 8,6 Z M 16,4 L 18,4 A 2,2 0 0 1 20,6 L 20,20 A 2,2 0 0 1 18,22 L 6,22 A 2,2 0 0 1 4,20 L 4,6 A 2,2 0 0 1 6,4 L 8,4 M 12,11 L 16,11 M 12,16 L 16,16 M 8,11 L 8.01,11 M 8,16 L 8.01,16</StreamGeometry>
@@ -30,8 +27,6 @@
         <StreamGeometry x:Key="IconExportar">M 21,15 L 21,19 A 2,2 0 0 1 19,21 L 5,21 A 2,2 0 0 1 3,19 L 3,15 M 17,8 L 12,3 L 7,8 M 12,3 L 12,15</StreamGeometry>
         <StreamGeometry x:Key="IconImportar">M 21,15 L 21,19 A 2,2 0 0 1 19,21 L 5,21 A 2,2 0 0 1 3,19 L 3,15 M 7,10 L 12,15 L 17,10 M 12,15 L 12,3</StreamGeometry>
         <StreamGeometry x:Key="IconConfiguracion">M 21,4 L 14,4 M 10,4 L 3,4 M 21,12 L 12,12 M 8,12 L 3,12 M 21,20 L 16,20 M 12,20 L 3,20 M 14,2 L 14,6 M 8,10 L 8,14 M 16,18 L 16,22</StreamGeometry>
-
-        <!-- Botones de Control de Ventana (macOS Style refinado) -->
         <Style x:Key="WinCaptionButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="42" />
             <Setter Property="Height" Value="32" />
@@ -82,8 +77,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <!-- Botón Principal: Cobro (Hero con gradiente sutil y profundidad) -->
         <Style x:Key="HeroButtonStyle" TargetType="Button">
             <Setter Property="Margin" Value="10" />
             <Setter Property="Padding" Value="28" />
@@ -101,7 +94,6 @@
                                 <ScaleTransform x:Name="BtnScale" ScaleX="1" ScaleY="1" />
                             </Border.RenderTransform>
                             <Grid>
-                                <!-- Destello decorativo sutil de fondo -->
                                 <Ellipse Width="240" Height="240" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-80,-80,0" Fill="#15FFFFFF" IsHitTestVisible="False"/>
                                 <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
                             </Grid>
@@ -133,8 +125,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <!-- Tarjetas Medianas Bento -->
         <Style x:Key="BentoCardStyle" TargetType="Button">
             <Setter Property="Margin" Value="10" />
             <Setter Property="Padding" Value="22" />
@@ -183,7 +173,6 @@
             </Setter>
         </Style>
 
-        <!-- Botones Compactos de Fila Inferior (Pills) -->
         <Style x:Key="BentoPillStyle" TargetType="Button">
             <Setter Property="Margin" Value="8" />
             <Setter Property="Padding" Value="18,0" />
@@ -230,8 +219,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <!-- Tarjetas del Modal de Exportar -->
         <Style x:Key="ExportModalCardStyle" TargetType="Button" BasedOn="{StaticResource BentoCardStyle}">
             <Setter Property="Margin" Value="10" />
             <Setter Property="Padding" Value="20" />
@@ -244,14 +231,11 @@
             BorderThickness="1"
             CornerRadius="16"
             ClipToBounds="True">
-
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="46" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-
-            <!-- BARRA DE TÍTULO -->
             <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="ModernTitleBar_MouseLeftButtonDown">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -278,18 +262,12 @@
                     </Button>
                 </StackPanel>
             </Grid>
-
-            <!-- CONTENEDOR PRINCIPAL -->
             <Grid Grid.Row="1">
-
-                <!-- MENU PRINCIPAL (DASHBOARD) -->
                 <Grid x:Name="GridDashboard" Margin="36,12,36,32" Visibility="Visible">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-
-                    <!-- ENCABEZADO -->
                     <Grid Grid.Row="0" Margin="10,0,10,22">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -305,8 +283,6 @@
                             <TextBlock x:Name="DateText" Text="" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" FontWeight="Medium" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,2,0,0" />
                         </StackPanel>
                     </Grid>
-
-                    <!-- DISEÑO BENTO -->
                     <Grid Grid.Row="1">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*" />
@@ -324,8 +300,6 @@
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
-
-                            <!-- 1. Cobro -->
                             <Button Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Grid.ColumnSpan="2" Style="{StaticResource HeroButtonStyle}" AutomationProperties.Name="Cobro" Click="Cobro_Click">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -346,8 +320,6 @@
                                     </StackPanel>
                                 </Grid>
                             </Button>
-
-                            <!-- 2. Ventas -->
                             <Button Grid.Row="0" Grid.Column="2" Style="{StaticResource BentoCardStyle}" AutomationProperties.Name="Ventas" Click="Ventas_Click">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -368,8 +340,6 @@
                                     </StackPanel>
                                 </Grid>
                             </Button>
-
-                            <!-- 3. Inventario -->
                             <Button Grid.Row="0" Grid.Column="3" Style="{StaticResource BentoCardStyle}" AutomationProperties.Name="Lista Prod" Click="Inventario_Click">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -390,8 +360,6 @@
                                     </StackPanel>
                                 </Grid>
                             </Button>
-
-                            <!-- 4. Promociones -->
                             <Button Grid.Row="1" Grid.Column="2" Style="{StaticResource BentoCardStyle}" AutomationProperties.Name="Promociones" Click="Promociones_Click">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -412,8 +380,6 @@
                                     </StackPanel>
                                 </Grid>
                             </Button>
-
-                            <!-- 5. Préstamos -->
                             <Button Grid.Row="1" Grid.Column="3" Style="{StaticResource BentoCardStyle}" AutomationProperties.Name="Prestamo" Click="Prestamos_Click">
                                 <Grid>
                                     <Grid.RowDefinitions>
@@ -436,10 +402,7 @@
                             </Button>
                         </Grid>
 
-                        <!-- FILA INFERIOR: 5 botones compactos (Pills) -->
                         <UniformGrid Grid.Row="1" Rows="1" Columns="5" Height="86" Margin="-8,14,-8,0">
-
-                            <!-- 6. Códigos de Barras -->
                             <Button Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Códigos de Barras" Click="CodigosDeBarras_Click">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <Viewbox Width="20" Height="20" VerticalAlignment="Center">
@@ -450,8 +413,6 @@
                                     <TextBlock Text="Etiquetas" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                 </StackPanel>
                             </Button>
-
-                            <!-- 7. Gráficas -->
                             <Button Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Graficas" Click="Graficas_Click">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <Viewbox Width="20" Height="20" VerticalAlignment="Center">
@@ -462,8 +423,6 @@
                                     <TextBlock Text="Graficas" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                 </StackPanel>
                             </Button>
-
-                            <!-- 8. Exportar -->
                             <Button x:Name="ExportButton" Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Exportar" Click="Exportar_Click">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <Viewbox Width="20" Height="20" VerticalAlignment="Center">
@@ -475,8 +434,6 @@
                                 </StackPanel>
                             </Button>
 
-                            <!-- 9. Importar -->
-                            <!-- CORREGIDO: Redirigido a la nueva función que abre el modal de instrucciones -->
                             <Button Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Subir List" Click="AbrirModalImportar_Click">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <Viewbox Width="20" Height="20" VerticalAlignment="Center">
@@ -488,7 +445,6 @@
                                 </StackPanel>
                             </Button>
 
-                            <!-- 10. Configuración -->
                             <Button Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Configuracion" Click="Configuracion_Click">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <Viewbox Width="20" Height="20" VerticalAlignment="Center">
@@ -502,11 +458,7 @@
                         </UniformGrid>
                     </Grid>
                 </Grid>
-
-                <!-- VISTAS MODULARES -->
                 <ContentControl x:Name="ContenedorVistas" Margin="0" Visibility="Collapsed" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-
-                <!-- MODAL DE EXPORTACIÓN -->
                 <Grid x:Name="ExportarOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" Panel.ZIndex="10" MouseDown="ExportarOverlay_MouseDown" PreviewKeyDown="ExportarOverlay_PreviewKeyDown">
                     <Border Width="760" Height="410" MaxWidth="900" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="28" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                         <Grid>
@@ -561,8 +513,6 @@
                         </Grid>
                     </Border>
                 </Grid>
-
-                <!-- NUEVO MODAL DE IMPORTACIÓN DE DATOS -->
                 <Grid x:Name="ImportarOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" Panel.ZIndex="10" MouseDown="ImportarOverlay_MouseDown">
                     <Border Width="650" Height="420" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="28" Padding="32" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                         <Grid>

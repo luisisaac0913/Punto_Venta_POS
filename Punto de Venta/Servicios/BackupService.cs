@@ -16,7 +16,6 @@ namespace Punto_de_Venta.Servicios
 
         public static string ObtenerCarpetaRespaldos(string? rutaPersonalizada = null)
         {
-            // 1. Si no se envió por parámetro, cargar la ruta configurada en Ajustes
             if (string.IsNullOrWhiteSpace(rutaPersonalizada))
             {
                 try
@@ -29,8 +28,6 @@ namespace Punto_de_Venta.Servicios
                     rutaPersonalizada = null;
                 }
             }
-
-            // 2. Si hay ruta personalizada, validarla y crearla si no existe
             if (!string.IsNullOrWhiteSpace(rutaPersonalizada))
             {
                 try
@@ -43,7 +40,6 @@ namespace Punto_de_Venta.Servicios
                 }
                 catch
                 {
-                    // Si falla por permisos, hace fallback a la ruta por defecto
                 }
             }
 
@@ -58,27 +54,19 @@ namespace Punto_de_Venta.Servicios
                 {
                     return;
                 }
-
                 var destinoCarpeta = ObtenerCarpetaRespaldos(rutaPersonalizada);
                 Directory.CreateDirectory(destinoCarpeta);
-
                 var timestamp = DateTime.Now.ToString("yyyy-MM-dd_HHmm");
                 var zipName = $"Backup_{prefijo}_{timestamp}.zip";
                 var destinationZip = Path.Combine(destinoCarpeta, zipName);
-
                 if (File.Exists(destinationZip))
                 {
                     return;
                 }
-
-                // ■ Incluir .db para respaldar SQLite junto con los archivos planos
                 var extensionesValidas = new[] { ".txt", ".json", ".db" };
-
                 var archivos = Directory.GetFiles(AppDataFolder)
                     .Where(file => extensionesValidas.Contains(Path.GetExtension(file).ToLowerInvariant()))
                     .ToList();
-
-                // Si pos_data.db estuviera en la carpeta del ejecutable en vez de AppData, incluirlo también
                 var dbLocal = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "pos_data.db");
                 if (File.Exists(dbLocal) && !archivos.Contains(dbLocal))
                 {
@@ -89,7 +77,6 @@ namespace Punto_de_Venta.Servicios
                 {
                     return;
                 }
-
                 using (var zipArchive = ZipFile.Open(destinationZip, ZipArchiveMode.Create))
                 {
                     foreach (var rutaArchivo in archivos)
@@ -101,7 +88,6 @@ namespace Punto_de_Venta.Servicios
                         fileStream.CopyTo(entryStream);
                     }
                 }
-
                 LimpiarRespaldosAntiguos(destinoCarpeta);
             }
             catch (Exception ex)
@@ -109,14 +95,12 @@ namespace Punto_de_Venta.Servicios
                 System.Diagnostics.Debug.WriteLine($"[BackupService] Error al generar respaldo: {ex.Message}");
             }
         }
-
         private static void LimpiarRespaldosAntiguos(string carpeta)
         {
             try
             {
                 var limiteFecha = DateTime.Now.AddDays(-DiasRetencion);
                 var archivosZip = Directory.GetFiles(carpeta, "Backup_*.zip");
-
                 foreach (var zip in archivosZip)
                 {
                     var fileInfo = new FileInfo(zip);
@@ -128,7 +112,6 @@ namespace Punto_de_Venta.Servicios
             }
             catch
             {
-                // Ignorar si un archivo está en uso
             }
         }
     }

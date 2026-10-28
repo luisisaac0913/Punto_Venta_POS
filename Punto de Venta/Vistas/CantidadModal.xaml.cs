@@ -9,7 +9,6 @@ namespace Punto_de_Venta
         private BlurEffect? _blurEffect;
         public int CantidadResult { get; private set; } = 1;
         public bool Confirmado { get; private set; }
-
         public CantidadModal(string nombreProducto)
         {
             InitializeComponent();
@@ -26,8 +25,6 @@ namespace Punto_de_Venta
                     Owner.Effect = _blurEffect;
                 }
             };
-
-            // Quitar el desenfoque al cerrar
             Closed += (_, _) =>
             {
                 if (Owner != null)
@@ -36,10 +33,9 @@ namespace Punto_de_Venta
                 }
             };
         }
-
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            QuantityBox.Text = "1"; // Sugerencia inicial comun para recargas
+            QuantityBox.Text = "1"; 
             QuantityBox.Focus();
             QuantityBox.SelectAll();
         }

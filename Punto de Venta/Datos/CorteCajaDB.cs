@@ -18,7 +18,6 @@ namespace Punto_de_Venta.Datos
                 SELECT Id, FechaHora, FondoInicial, VentasEfectivo, EntradasEfectivo, SalidasEfectivo, TotalEsperado, TotalContado, Observaciones 
                 FROM CortesCaja 
                 ORDER BY Id ASC;";
-
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
@@ -31,12 +30,10 @@ namespace Punto_de_Venta.Datos
                 var esperado = Convert.ToDecimal(reader.GetDouble(6));
                 var contado = Convert.ToDecimal(reader.GetDouble(7));
                 var notas = reader.IsDBNull(8) ? string.Empty : reader.GetString(8);
-
                 if (!DateTime.TryParse(fechaStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fecha))
                 {
                     DateTime.TryParse(fechaStr, CultureInfo.GetCultureInfo("es-MX"), DateTimeStyles.None, out fecha);
                 }
-
                 list.Add(new CorteCaja
                 {
                     Id = id,

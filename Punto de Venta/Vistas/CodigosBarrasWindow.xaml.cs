@@ -20,9 +20,7 @@ namespace Punto_de_Venta
         private List<Producto> _catalogo = new();
         public ObservableCollection<Producto> ResultadosBusqueda { get; set; } = new();
         public ObservableCollection<EtiquetaImpresion> ColaImpresion { get; set; } = new();
-
         private FixedDocument? _documentoActual;
-
         public CodigosBarrasWindow()
         {
             InitializeComponent();
@@ -118,7 +116,6 @@ namespace Punto_de_Venta
             AddSelectedProduct();
         }
 
-        // ================= NUEVOS EVENTOS PARA CANTIDAD =================
         private void BtnDecreaseQty_Click(object sender, RoutedEventArgs e)
         {
             if (int.TryParse(QuantityBox.Text, out int qty) && qty > 1)
@@ -163,7 +160,7 @@ namespace Punto_de_Venta
                 if (existente != null)
                 {
                     existente.Cantidad += qty;
-                    PrintQueueGrid.Items.Refresh(); // Fuerza a la cuadrícula a ver el nuevo número
+                    PrintQueueGrid.Items.Refresh();
                 }
                 else
                 {
@@ -176,7 +173,6 @@ namespace Punto_de_Venta
             }
         }
 
-        // ================= NUEVO EVENTO ELIMINAR INDIVIDUAL =================
         private void RemoveFromQueue_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.DataContext is EtiquetaImpresion item)
@@ -207,7 +203,6 @@ namespace Punto_de_Venta
 
             _documentoActual = new FixedDocument();
             Size pageSize = new Size(794, 1123);
-
             int columnas = 3;
             int filas = 10;
             double margenX = 20;

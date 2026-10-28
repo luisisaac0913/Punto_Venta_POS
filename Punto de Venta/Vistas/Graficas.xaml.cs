@@ -345,7 +345,7 @@ namespace Punto_de_Venta
             }
 
             decimal totalVendido = dict.Values.Sum();
-            if (totalVendido == 0) totalVendido = 1; // Prevenir división por cero
+            if (totalVendido == 0) totalVendido = 1; 
 
             double claseA = 0, claseB = 0, claseC = 0;
             decimal acumulado = 0;
@@ -378,8 +378,6 @@ namespace Punto_de_Venta
                 if (s.Productos.Count > 0) { foreach (var p in s.Productos) ventasPorProducto[p.Nombre] = ventasPorProducto.GetValueOrDefault(p.Nombre) + p.Cantidad; }
                 else { foreach (var (name, qty) in ParseLegacySummary(s.ProductosResumen)) ventasPorProducto[name] = ventasPorProducto.GetValueOrDefault(name) + qty; }
             }
-
-            // Unir ventas con el stock actual del catálogo
             var rotacionList = new List<(string Nombre, decimal Vendido, decimal Stock)>();
             foreach (var kvp in ventasPorProducto.OrderByDescending(x => x.Value).Take(7))
             {
@@ -458,8 +456,6 @@ namespace Punto_de_Venta
                 if (s.Productos.Count > 0) { foreach (var p in s.Productos) dictVentas[p.Nombre] = dictVentas.GetValueOrDefault(p.Nombre) + p.Cantidad; }
                 else { foreach (var (name, qty) in ParseLegacySummary(s.ProductosResumen)) dictVentas[name] = dictVentas.GetValueOrDefault(name) + qty; }
             }
-
-            // Ordenar por aquellos con MUCHA venta pero POCO stock actual (alto riesgo de desabasto)
             var ranking = new List<(string Nombre, decimal Vendido, decimal StockRestante)>();
             foreach (var kvp in dictVentas)
             {
@@ -781,7 +777,7 @@ namespace Punto_de_Venta
 
         #region Enumeradores y Records
         private enum Period { Day, Week, Month, Year, Custom }
-        private enum ChartView { Finanzas, MetodosPago, Categorias, HorasPico, Rentabilidad, CortesCaja, Rotacion, Pareto } // NUEVAS VISTAS AÑADIDAS
+        private enum ChartView { Finanzas, MetodosPago, Categorias, HorasPico, Rentabilidad, CortesCaja, Rotacion, Pareto } 
     }
 
     public sealed record TopProductoItem(int Posicion, string Nombre, decimal Cantidad, decimal Ingreso);

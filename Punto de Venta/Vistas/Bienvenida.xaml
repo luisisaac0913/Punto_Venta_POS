@@ -157,17 +157,12 @@
                     <StackPanel x:Name="PanelPaso2" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
                         <TextBlock Text="Dispositivos conectados" FontSize="26" FontWeight="Bold" Margin="0,0,0,8" />
                         <TextBlock Text="Paso 2 de 3" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,32" />
-
                         <TextBlock Text="Impresora Térmica" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <!-- Se eliminó el Style estático para que adopte el global de App.xaml -->
                         <ComboBox x:Name="CmbImpresoras" Margin="0,0,0,32" />
-
                         <CheckBox x:Name="ChkUsarBascula" Content="Conectar báscula digital al sistema" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,20" />
-
                         <TextBlock Text="Puerto de la Báscula" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <ComboBox x:Name="CmbPuertosCOM" />
                     </StackPanel>
-
                     <StackPanel x:Name="PanelPaso3" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
                         <TextBlock Text="Seguridad y Control" FontSize="26" FontWeight="Bold" Margin="0,0,0,8" />
                         <TextBlock Text="Paso 3 de 3" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,32" />

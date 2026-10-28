@@ -91,7 +91,6 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!-- 1. Encabezado + Filtro de Periodo + Boton Ayuda + Reloj -->
                 <Grid Grid.Row="0" Margin="0,0,0,14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -179,8 +178,6 @@
                         </Border>
                     </StackPanel>
                 </Grid>
-
-                <!-- 2. Tarjetas KPI de Resumen Financiero -->
                 <Grid Grid.Row="1" Margin="0,0,0,14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -245,7 +242,6 @@
                     </Border>
                 </Grid>
 
-                <!-- 3. Contenido Principal: Barra Lateral + Graficas / Tablas + Top Productos -->
                 <Grid Grid.Row="2">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="200" />
@@ -255,7 +251,6 @@
                         <ColumnDefinition Width="290" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Menu Lateral -->
                     <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="12,14">
                         <StackPanel>
                             <TextBlock Text="VISTAS" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="8,0,0,10" />
@@ -263,8 +258,6 @@
                             <Button x:Name="NavMetodosBtn" Content="💳  Metodos de Pago" Style="{StaticResource SidebarButtonStyle}" Click="NavMetodos_Click" />
                             <Button x:Name="NavCategoriasBtn" Content="🏷 Categorias" Style="{StaticResource SidebarButtonStyle}" Click="NavCategorias_Click" />
                             <Button x:Name="NavHorasBtn" Content="⏰  Horas Pico" Style="{StaticResource SidebarButtonStyle}" Click="NavHorasBtn_Click" />
-
-                            <!-- NUEVAS VISTAS AGREGADAS -->
                             <Button x:Name="NavRotacionBtn" Content="📦  Vel. Rotacion" Style="{StaticResource SidebarButtonStyle}" Click="NavRotacionBtn_Click" />
                             <Button x:Name="NavRentabilidadBtn" Content="💎  Rentabilidad Top" Style="{StaticResource SidebarButtonStyle}" Click="NavRentabilidadBtn_Click" />
                             <Button x:Name="NavParetoBtn" Content="🎯  Analisis ABC" Style="{StaticResource SidebarButtonStyle}" Click="NavParetoBtn_Click" />
@@ -272,8 +265,6 @@
                             <Button x:Name="NavCortesBtn" Content="🧾  Cortes de Caja" Style="{StaticResource SidebarButtonStyle}" Click="NavCortesBtn_Click" />
                         </StackPanel>
                     </Border>
-
-                    <!-- Area Central -->
                     <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="16">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -338,7 +329,6 @@
                         </Grid>
                     </Border>
 
-                    <!-- Top Productos -->
                     <Border Grid.Column="4" Style="{StaticResource CardStyle}" Padding="16">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -373,7 +363,6 @@
                     </Border>
                 </Grid>
 
-                <!-- Modal Guia de Ayuda Rapida -->
                 <Grid x:Name="HelpOverlay" Grid.RowSpan="3" Panel.ZIndex="100" Background="#66000000" Visibility="Collapsed" MouseDown="HelpOverlay_MouseDown">
                     <Border Width="640" MaxHeight="600" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="26" Padding="28,24" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                         <Grid>
@@ -444,8 +433,6 @@
                         </Grid>
                     </Border>
                 </Grid>
-
-                <!-- MODAL: HISTORIAL DE MOVIMIENTOS -->
                 <Grid x:Name="MovimientosOverlay" Grid.RowSpan="3" Panel.ZIndex="999" Background="#66000000" Visibility="Collapsed">
                     <Border Width="550" MaxHeight="500" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="18" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                         <Grid>

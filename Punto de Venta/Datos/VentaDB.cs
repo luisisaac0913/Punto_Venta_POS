@@ -12,10 +12,7 @@ namespace Punto_de_Venta.Datos
         public static List<Venta> Load()
         {
             var ventas = new Dictionary<int, Venta>();
-
             using var conn = DatabaseHelper.GetConnection();
-
-            // 1. Cargar cabeceras de ventas
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = "SELECT Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago FROM Ventas ORDER BY Id ASC;";
@@ -28,12 +25,9 @@ namespace Punto_de_Venta.Datos
                     var pagoCon = Convert.ToDecimal(reader.GetDouble(3));
                     var cambio = Convert.ToDecimal(reader.GetDouble(4));
                     var estado = reader.GetString(5);
-
                     var metodoPagoRaw = reader.GetString(6);
                     var metodoPagoFinal = metodoPagoRaw;
                     decimal pEfectivo = 0, pTarjeta = 0, pTransf = 0;
-
-                    // Desempaquetar si es Cobro Mixto
                     if (metodoPagoRaw != null && metodoPagoRaw.StartsWith("Mixto|"))
                     {
                         metodoPagoFinal = "Mixto";
@@ -45,12 +39,10 @@ namespace Punto_de_Venta.Datos
                             if (parte.StartsWith("Tr:")) decimal.TryParse(parte.Substring(3), NumberStyles.Any, CultureInfo.InvariantCulture, out pTransf);
                         }
                     }
-
                     if (!DateTime.TryParse(fechaStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fecha))
                     {
                         DateTime.TryParse(fechaStr, CultureInfo.GetCultureInfo("es-MX"), DateTimeStyles.None, out fecha);
                     }
-
                     ventas[id] = new Venta
                     {
                         Id = id,
@@ -67,8 +59,6 @@ namespace Punto_de_Venta.Datos
                     };
                 }
             }
-
-            // 2. Cargar detalles de productos vendidos
             using (var cmdDetalle = conn.CreateCommand())
             {
                 cmdDetalle.CommandText = "SELECT Id, VentaId, ProductoId, Nombre, Cantidad, Costo, Ganancia, Precio, Categoria FROM VentasDetalle;";
@@ -92,7 +82,6 @@ namespace Punto_de_Venta.Datos
                     }
                 }
             }
-
             return ventas.Values.ToList();
         }
 
@@ -100,7 +89,6 @@ namespace Punto_de_Venta.Datos
         {
             using var conn = DatabaseHelper.GetConnection();
             using var tr = conn.BeginTransaction();
-
             try
             {
                 using (var delCmd = conn.CreateCommand())
@@ -109,13 +97,11 @@ namespace Punto_de_Venta.Datos
                     delCmd.CommandText = "DELETE FROM VentasDetalle; DELETE FROM Ventas;";
                     delCmd.ExecuteNonQuery();
                 }
-
                 using var insertVenta = conn.CreateCommand();
                 insertVenta.Transaction = tr;
                 insertVenta.CommandText = @"
                     INSERT INTO Ventas (Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago)
                     VALUES (@id, @fecha, @total, @pago, @cambio, @estado, @metodo);";
-
                 var vId = insertVenta.Parameters.Add("@id", SqliteType.Integer);
                 var vFecha = insertVenta.Parameters.Add("@fecha", SqliteType.Text);
                 var vTotal = insertVenta.Parameters.Add("@total", SqliteType.Real);
@@ -123,13 +109,11 @@ namespace Punto_de_Venta.Datos
                 var vCambio = insertVenta.Parameters.Add("@cambio", SqliteType.Real);
                 var vEstado = insertVenta.Parameters.Add("@estado", SqliteType.Text);
                 var vMetodo = insertVenta.Parameters.Add("@metodo", SqliteType.Text);
-
                 using var insertDetalle = conn.CreateCommand();
                 insertDetalle.Transaction = tr;
                 insertDetalle.CommandText = @"
                     INSERT INTO VentasDetalle (VentaId, ProductoId, Nombre, Cantidad, Costo, Ganancia, Precio, Categoria)
                     VALUES (@vId, @pId, @nom, @cant, @costo, @gan, @precio, @cat);";
-
                 var dVId = insertDetalle.Parameters.Add("@vId", SqliteType.Integer);
                 var dPId = insertDetalle.Parameters.Add("@pId", SqliteType.Integer);
                 var dNom = insertDetalle.Parameters.Add("@nom", SqliteType.Text);
@@ -138,7 +122,6 @@ namespace Punto_de_Venta.Datos
                 var dGan = insertDetalle.Parameters.Add("@gan", SqliteType.Real);
                 var dPrecio = insertDetalle.Parameters.Add("@precio", SqliteType.Real);
                 var dCat = insertDetalle.Parameters.Add("@cat", SqliteType.Text);
-
                 foreach (var sale in ventas)
                 {
                     vId.Value = sale.Id;
@@ -147,17 +130,13 @@ namespace Punto_de_Venta.Datos
                     vPago.Value = Convert.ToDouble(sale.PagoCon);
                     vCambio.Value = Convert.ToDouble(sale.Cambio);
                     vEstado.Value = sale.Estado ?? "Abierta";
-
-                    // Empaquetar si es Cobro Mixto
                     string metodoGuardar = sale.MetodoPago ?? "Efectivo";
                     if (metodoGuardar == "Mixto")
                     {
                         metodoGuardar = $"Mixto|E:{sale.PagoEfectivo.ToString(CultureInfo.InvariantCulture)}|T:{sale.PagoTarjeta.ToString(CultureInfo.InvariantCulture)}|Tr:{sale.PagoTransferencia.ToString(CultureInfo.InvariantCulture)}";
                     }
-
                     vMetodo.Value = metodoGuardar;
                     insertVenta.ExecuteNonQuery();
-
                     if (sale.Productos != null && sale.Productos.Count > 0)
                     {
                         foreach (var det in sale.Productos)
@@ -174,7 +153,6 @@ namespace Punto_de_Venta.Datos
                         }
                     }
                 }
-
                 tr.Commit();
             }
             catch

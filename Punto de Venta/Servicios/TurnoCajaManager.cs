@@ -9,24 +9,17 @@ namespace Punto_de_Venta
     public static class TurnoCajaManager
     {
         private static bool _esquemaValidado = false;
-
         public static void ValidarEsquemaBD(SqliteConnection conn)
         {
             if (_esquemaValidado) return;
-
             try { using var cmd = conn.CreateCommand(); cmd.CommandText = "ALTER TABLE CortesCaja ADD COLUMN FechaHoraCierre TEXT;"; cmd.ExecuteNonQuery(); } catch { }
-
-            // CREAR LA COLUMNA FALTANTE PARA EVITAR CRASHES
             try { using var cmd = conn.CreateCommand(); cmd.CommandText = "ALTER TABLE MovimientosCaja ADD COLUMN CorteCajaId INTEGER DEFAULT 0;"; cmd.ExecuteNonQuery(); } catch { }
-
             _esquemaValidado = true;
         }
-
         public static void RegistrarMovimientoEfectivo(string tipo, decimal monto, string concepto)
         {
             var turnoActivo = ObtenerTurnoActivo();
             if (turnoActivo == null) throw new InvalidOperationException("No se pueden registrar movimientos. La caja está cerrada.");
-
             using var conn = DatabaseHelper.GetConnection();
             using var tr = conn.BeginTransaction();
             try
@@ -135,17 +128,13 @@ namespace Punto_de_Venta
             using var tr = conn.BeginTransaction();
             try
             {
-                // 1. Crear el turno en CortesCaja
                 using var cmd = conn.CreateCommand();
                 cmd.Transaction = tr;
                 cmd.CommandText = @"INSERT INTO CortesCaja (FechaHora, Estado, FondoInicial, VentasEfectivo, EntradasEfectivo, SalidasEfectivo, TotalEsperado, TotalContado, Observaciones) VALUES (@fecha, 'Abierto', @fondo, 0, 0, 0, @fondo, 0, @obs); SELECT last_insert_rowid();";
                 cmd.Parameters.AddWithValue("@fecha", DateTime.Now.ToString("o", CultureInfo.InvariantCulture));
                 cmd.Parameters.AddWithValue("@fondo", Convert.ToDouble(fondoInicial));
                 cmd.Parameters.AddWithValue("@obs", concepto);
-
                 long idGenerado = (long)cmd.ExecuteScalar();
-
-                // 2. REGISTRAR EL FONDO INICIAL EN MOVIMIENTOS
                 using var cmdMov = conn.CreateCommand();
                 cmdMov.Transaction = tr;
                 cmdMov.CommandText = @"INSERT INTO MovimientosCaja (FechaHora, Tipo, Monto, Concepto, CorteCajaId) VALUES (@fecha, 'Fondo', @monto, @concepto, @corteId);";
@@ -154,9 +143,7 @@ namespace Punto_de_Venta
                 cmdMov.Parameters.AddWithValue("@concepto", concepto);
                 cmdMov.Parameters.AddWithValue("@corteId", idGenerado);
                 cmdMov.ExecuteNonQuery();
-
                 tr.Commit();
-
                 return new CorteCaja { Id = (int)idGenerado, FechaHora = DateTime.Now, Estado = "Abierto", FondoInicial = fondoInicial, TotalEsperado = fondoInicial, Observaciones = concepto };
             }
             catch

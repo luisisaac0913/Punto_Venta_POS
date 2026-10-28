@@ -6,7 +6,6 @@ namespace Punto_de_Venta.Servicios
 {
     public static class CajonService
     {
-        // Estructuras de Win32 para imprimir datos crudos (RAW) sin pasar por el spooler gráfico de GDI
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         private class DOCINFOA
         {
@@ -43,16 +42,13 @@ namespace Punto_de_Venta.Servicios
         {
             if (string.IsNullOrWhiteSpace(printerName) || bytes == null || bytes.Length == 0)
                 return false;
-
             var di = new DOCINFOA
             {
                 pDocName = "Apertura Cajon POS",
                 pDataType = "RAW"
             };
-
             if (!OpenPrinter(printerName, out var hPrinter, IntPtr.Zero))
                 return false;
-
             var success = false;
             if (StartDocPrinter(hPrinter, 1, di))
             {
@@ -72,34 +68,28 @@ namespace Punto_de_Venta.Servicios
                 }
                 EndDocPrinter(hPrinter);
             }
-
             ClosePrinter(hPrinter);
             return success;
         }
 
         /// <summary>
-        /// Envía el pulso ESC/POS estándar (Pin 2 y Pin 5) para abrir el cajón de dinero.
+        /// 
         /// </summary>
         public static bool AbrirCajon(string? nombreImpresora = null)
         {
             try
             {
                 var printer = nombreImpresora;
-
                 if (string.IsNullOrWhiteSpace(printer))
                 {
                     var config = AppConfig.Load();
                     printer = config.ImpresoraSeleccionada;
                 }
-
                 if (string.IsNullOrWhiteSpace(printer) || printer.StartsWith("(", StringComparison.Ordinal))
                 {
                     return false;
                 }
-
-                // Secuencia ESC p 0 25 250 (Pin 2) seguida de ESC p 1 25 250 (Pin 5 por compatibilidad amplia)
                 byte[] pulsoCajon = [0x1B, 0x70, 0x00, 0x19, 0xFA, 0x1B, 0x70, 0x01, 0x19, 0xFA];
-
                 return SendBytesToPrinter(printer, pulsoCajon);
             }
             catch (Exception ex)

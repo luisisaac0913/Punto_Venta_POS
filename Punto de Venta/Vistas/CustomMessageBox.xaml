@@ -63,7 +63,6 @@
     </Window.Resources>
 
     <Grid MouseDown="Fondo_MouseDown" Background="Transparent">
-        <!-- Reemplazo de Width="340" fijo por proporciones adaptables y MaxHeight -->
         <Border MinWidth="340" MaxWidth="540" MinHeight="160" MaxHeight="600" 
                 Background="{DynamicResource ThemeSurfaceBackground}" 
                 BorderBrush="{DynamicResource ThemeBorder}" 
@@ -77,18 +76,11 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-
-                <!-- Icono opcional y Título -->
                 <TextBlock Grid.Row="0" x:Name="TxtTitle" Text="Aviso" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,12" TextAlignment="Center" TextWrapping="Wrap" />
-
-                <!-- Mensaje (Envuelto en un ScrollViewer para evitar que se desborde la UI) -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,24">
                     <TextBlock x:Name="TxtMessage" Text="Cuerpo del mensaje" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
                 </ScrollViewer>
-
-                <!-- Botones Dinámicos -->
                 <UniformGrid Grid.Row="2" x:Name="BotonesGrid" Rows="1" Columns="2">
-                    <!-- Se inyectan desde C# según se requiera (OK, Yes/No) -->
                 </UniformGrid>
             </Grid>
         </Border>

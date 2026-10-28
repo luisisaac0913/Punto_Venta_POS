@@ -15,35 +15,26 @@ namespace Punto_de_Venta
         Warning,
         Error
     }
-
     public partial class ToastNotification : Window
     {
         private static ToastNotification? _currentToast;
         private readonly DispatcherTimer _timer;
-
-        // Win32 constants para evitar activación de ventana
         private const int GWL_EXSTYLE = -20;
         private const int WS_EX_NOACTIVATE = 0x08000000;
-
         [DllImport("user32.dll")]
         private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
-
         [DllImport("user32.dll")]
         private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
-
         private ToastNotification(string message, ToastType type, Window owner)
         {
             InitializeComponent();
             Owner = owner;
-
-            // Asegurar que Windows NO le otorgue foco a esta ventana
             SourceInitialized += (_, _) =>
             {
                 var helper = new WindowInteropHelper(this);
                 var exStyle = GetWindowLongPtr(helper.Handle, GWL_EXSTYLE);
                 SetWindowLongPtr(helper.Handle, GWL_EXSTYLE, new IntPtr(exStyle.ToInt64() | WS_EX_NOACTIVATE));
             };
-
             switch (type)
             {
                 case ToastType.Success:
@@ -63,16 +54,13 @@ namespace Punto_de_Venta
                     IconText.Foreground = new SolidColorBrush(Color.FromRgb(255, 59, 48));
                     break;
             }
-
             MessageText.Text = message;
-
             _timer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(2.3)
             };
             _timer.Tick += (_, _) => DesvanecerYCerrar();
         }
-
         public static void Show(string message, ToastType type = ToastType.Success)
         {
             Application.Current.Dispatcher.Invoke(() =>
@@ -86,38 +74,24 @@ namespace Punto_de_Venta
                         break;
                     }
                 }
-
                 if (activeWindow == null || !activeWindow.IsVisible) return;
-
                 _currentToast?.Close();
-
                 _currentToast = new ToastNotification(message, type, activeWindow);
                 _currentToast.Show();
                 _currentToast.PosicionarYAnimar(activeWindow);
-
-                // Reafirmar que el foco del teclado se mantenga 100% en la ventana previa
                 activeWindow.Activate();
             });
         }
-
         private void PosicionarYAnimar(Window activeWindow)
         {
-            // Forzar a WPF a calcular el tamaño real que ocupará el texto
             this.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             this.Arrange(new Rect(new Point(0, 0), this.DesiredSize));
-
             double toastWidth = this.DesiredSize.Width > 0 ? this.DesiredSize.Width : this.ActualWidth;
-
-            // Calcular el centro exacto usando el tamaño ya medido
             Left = activeWindow.Left + (activeWindow.ActualWidth - toastWidth) / 2;
-
-            // Ajustar altura superior
             var topInicial = activeWindow.Top + 10;
             var topFinal = activeWindow.Top + 28;
-
             Top = topInicial;
             Opacity = 0;
-
             var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220))
             {
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
@@ -126,22 +100,17 @@ namespace Punto_de_Venta
             {
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
             };
-
             BeginAnimation(OpacityProperty, fadeIn);
             BeginAnimation(TopProperty, slideDown);
-
             _timer.Start();
         }
-
         private void DesvanecerYCerrar()
         {
             _timer.Stop();
-
             var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200))
             {
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
             };
-
             fadeOut.Completed += (_, _) =>
             {
                 Close();
@@ -150,7 +119,6 @@ namespace Punto_de_Venta
                     _currentToast = null;
                 }
             };
-
             BeginAnimation(OpacityProperty, fadeOut);
         }
     }

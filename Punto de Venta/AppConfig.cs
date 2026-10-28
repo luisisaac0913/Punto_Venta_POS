@@ -22,15 +22,12 @@ namespace Punto_de_Venta
         public string DireccionNegocio { get; set; } = string.Empty;
         public string MensajePie { get; set; } = string.Empty;
         public string MensajeWhatsAppRecordatorio { get; set; } = "Hola {CLIENTE}, te recordamos de {NEGOCIO} que tienes un saldo pendiente de {SALDO} por concepto de: {CONCEPTO}. ¡Agradecemos tu pronto pago!";
-
-        // ================= CONFIGURACIÓN BÁSCULA DIGITAL =================
         public bool BasculaHabilitada { get; set; } = false;
         public string BasculaPuerto { get; set; } = "COM1";
         public int BasculaBaudRate { get; set; } = 9600;
-        public string BasculaProtocolo { get; set; } = "Torrey / Rhino (Petición P)"; // Opciones: "Torrey / Rhino (Petición P)", "Modo Continuo"
+        public string BasculaProtocolo { get; set; } = "Torrey / Rhino (Petición P)"; 
         public bool BasculaModoPrecio { get; set; } = false;
 
-        // Hash SHA-256 de "1234" por defecto
         public string PinAdminHash { get; set; } = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 
         private static readonly string ConfigPath = Path.Combine(

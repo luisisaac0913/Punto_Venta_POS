@@ -23,7 +23,7 @@ namespace Punto_de_Venta.Vistas
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             try { _catalogo = ProductoDB.Load(); } catch { }
-            TxtCodigo.Focus(); // Listo para recibir el primer escaneazo
+            TxtCodigo.Focus(); 
         }
 
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -37,7 +37,7 @@ namespace Punto_de_Venta.Vistas
             {
                 if (!string.IsNullOrWhiteSpace(TxtCodigo.Text))
                 {
-                    TxtBusqueda.Focus(); // El escáner da Enter y salta al buscador
+                    TxtBusqueda.Focus(); 
                 }
                 e.Handled = true;
             }
@@ -92,7 +92,7 @@ namespace Punto_de_Venta.Vistas
                 TxtBusqueda.Text = seleccionado.Nombre;
                 PopupSugerencias.Visibility = Visibility.Collapsed;
                 TxtBusqueda.Focus();
-                TxtBusqueda.CaretIndex = TxtBusqueda.Text.Length; // Mueve el cursor al final
+                TxtBusqueda.CaretIndex = TxtBusqueda.Text.Length;
             }
         }
 
@@ -124,8 +124,6 @@ namespace Punto_de_Venta.Vistas
                 {
                     ProductoDB.Save(_catalogo);
                     ToastNotification.Show($"Código enlazado a '{productoEnDb.Nombre}'", ToastType.Success);
-
-                    // Re-cargar memoria limpia y desconectar referencias muertas (FIX)
                     _catalogo = ProductoDB.Load();
                     _productoSeleccionado = null;
 

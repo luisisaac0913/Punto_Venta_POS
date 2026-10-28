@@ -15,7 +15,6 @@ namespace Punto_de_Venta.Datos
             var json = File.ReadAllText(filePath);
             return JsonSerializer.Deserialize<List<LoteRestock>>(json) ?? new List<LoteRestock>();
         }
-
         public static void Save(IEnumerable<LoteRestock> lotes)
         {
             var json = JsonSerializer.Serialize(lotes, new JsonSerializerOptions { WriteIndented = true });

@@ -11,8 +11,6 @@ namespace Punto_de_Venta.Vistas
         private CustomMessageBox(Window owner, string mensaje, string titulo, MessageBoxButton botones, MessageBoxImage icono)
         {
             InitializeComponent();
-
-            // Configuración para que la película negra cubra toda la pantalla de la app
             this.WindowStyle = WindowStyle.None;
             this.AllowsTransparency = true;
             this.Background = System.Windows.Media.Brushes.Transparent;
@@ -59,8 +57,6 @@ namespace Punto_de_Venta.Vistas
                 Content = texto,
                 Style = esPrimario ? (Style)FindResource("AlertPrimaryButtonStyle") : (Style)FindResource("AlertButtonStyle")
             };
-
-            // Otorgar el foco automáticamente al botón principal
             if (esPrimario)
             {
                 btn.Loaded += (s, e) =>
@@ -81,10 +77,8 @@ namespace Punto_de_Venta.Vistas
 
         private void Fondo_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            // e.Handled = true; 
         }
 
-        // ================= SOBRECARGAS DE SHOW PARA SOPORTAR DE 1 A 5 ARGUMENTOS =================
 
         public static MessageBoxResult Show(string mensaje)
         {

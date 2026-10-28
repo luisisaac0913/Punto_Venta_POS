@@ -10,16 +10,13 @@
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Display"
              TextOptions.TextRenderingMode="ClearType">
-
     <UserControl.Resources>
         <SolidColorBrush x:Key="SystemGreen" Color="#34C759" />
         <SolidColorBrush x:Key="SystemOrange" Color="#FF9500" />
         <SolidColorBrush x:Key="SystemRed" Color="#FF3B30" />
-
         <DropShadowEffect x:Key="AppleCardShadow" BlurRadius="20" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.08" />
         <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="36" ShadowDepth="8" Direction="270" Color="#000000" Opacity="0.25" />
         <DropShadowEffect x:Key="AppleButtonShadow" BlurRadius="10" ShadowDepth="2" Direction="270" Color="#007AFF" Opacity="0.25" />
-
         <Style x:Key="LoanCardStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
@@ -27,7 +24,6 @@
             <Setter Property="CornerRadius" Value="20" />
             <Setter Property="Effect" Value="{StaticResource AppleCardShadow}" />
         </Style>
-
         <Style x:Key="LoanTextBoxStyle" TargetType="TextBox">
             <Setter Property="Height" Value="40" />
             <Setter Property="Padding" Value="12,0" />
@@ -61,7 +57,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="LoanButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="42" />
             <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
@@ -94,7 +89,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="PrimaryAddButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="42" />
             <Setter Property="Background" Value="{DynamicResource ThemeAccent}" />
@@ -128,7 +122,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="DangerDeleteButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="42" />
             <Setter Property="Background" Value="#FEE2E2" />
@@ -160,7 +153,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="SuccessPayButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="40" />
             <Setter Property="Background" Value="#DCFCE7" />
@@ -190,7 +182,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="WhatsAppButtonStyle" TargetType="Button">
             <Setter Property="Height" Value="42" />
             <Setter Property="Background" Value="#25D366" />
@@ -219,7 +210,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
         <Style x:Key="SegmentTabStyle" TargetType="RadioButton">
             <Setter Property="Height" Value="38" />
             <Setter Property="Padding" Value="14,0" />
@@ -249,7 +239,6 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-
     <Border Background="Transparent" ClipToBounds="True">
         <Grid Margin="24,10,24,24" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
             <Grid.RowDefinitions>
@@ -257,8 +246,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-
-            <!-- 1. Encabezado -->
             <Grid Grid.Row="0" Margin="0,0,0,16">
                 <TextBlock Text="Prestamos" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
 
@@ -268,8 +255,6 @@
                     </Border>
                 </StackPanel>
             </Grid>
-
-            <!-- 2. Dashboard KPIs -->
             <Grid Grid.Row="1" Margin="0,0,0,16">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -278,21 +263,18 @@
                     <ColumnDefinition Width="16" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-
                 <Border Grid.Column="0" Style="{StaticResource LoanCardStyle}" Padding="16,12">
                     <StackPanel>
                         <TextBlock Text="DINERO POR COBRAR" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
                         <TextBlock x:Name="KpiDeudaTotal" Text="$0.00" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" Margin="0,4,0,0" />
                     </StackPanel>
                 </Border>
-
                 <Border Grid.Column="2" Style="{StaticResource LoanCardStyle}" Padding="16,12">
                     <StackPanel>
                         <TextBlock Text="CAPITAL RECUPERADO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
                         <TextBlock x:Name="KpiTotalRecuperado" Text="$0.00" FontSize="22" FontWeight="Bold" Foreground="{StaticResource SystemGreen}" Margin="0,4,0,0" />
                     </StackPanel>
                 </Border>
-
                 <Border Grid.Column="4" Style="{StaticResource LoanCardStyle}" Padding="16,12">
                     <StackPanel>
                         <TextBlock Text="CLIENTES CON DEUDA" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
@@ -300,23 +282,18 @@
                     </StackPanel>
                 </Border>
             </Grid>
-
-            <!-- 3. Contenido Principal -->
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*" />
                     <ColumnDefinition Width="20" />
                     <ColumnDefinition Width="1.9*" />
                 </Grid.ColumnDefinitions>
-
-                <!-- Lado Izquierdo: Formulario -->
                 <Grid Grid.Column="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
                         <RowDefinition Height="12" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-
                     <Border Grid.Row="0" Style="{StaticResource LoanCardStyle}" Padding="20,18">
                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <StackPanel>
@@ -337,17 +314,12 @@
                                         <TextBox x:Name="DebtorPhoneBox" Style="{StaticResource LoanTextBoxStyle}" KeyDown="DebtorField_KeyDown" />
                                     </StackPanel>
                                 </Grid>
-
                                 <TextBlock Text="Nombre" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <TextBox x:Name="DebtorNameBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,10" KeyDown="DebtorField_KeyDown" />
-
                                 <TextBlock Text="Concepto" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <TextBox x:Name="ConceptBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,10" KeyDown="DebtorField_KeyDown" />
-
                                 <TextBlock Text="Deuda / Monto Total" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <TextBox x:Name="AmountBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,16" KeyDown="DebtorField_KeyDown" />
-
-                                <!-- Panel Resaltado de Pagos -->
                                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,0,0,12">
                                     <StackPanel>
                                         <TextBlock Text="Registrar Pago" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="2,0,0,8" />
@@ -365,10 +337,7 @@
                                         </Grid>
                                     </StackPanel>
                                 </Border>
-
                                 <TextBlock x:Name="StatusText" Text="" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{StaticResource SystemRed}" TextWrapping="Wrap" MinHeight="18" Margin="2,0,2,8" />
-
-                                <!-- Botones de Acción -->
                                 <Grid Margin="0,4,0,0">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -382,55 +351,42 @@
                                         <ColumnDefinition Width="8" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-
                                     <Button Grid.Row="0" Grid.Column="0" Content="NUEVO FIADO" Style="{StaticResource PrimaryAddButtonStyle}" Click="AddButton_Click" />
                                     <Button x:Name="ModifyButton" Grid.Row="0" Grid.Column="2" Content="MODIFICAR" Style="{StaticResource LoanButtonStyle}" IsEnabled="False" Click="ModifyButton_Click" />
-
                                     <Button x:Name="ViewHistoryButton" Grid.Row="2" Grid.Column="0" Content="📜 HISTORIAL" Style="{StaticResource LoanButtonStyle}" IsEnabled="False" Click="ViewHistoryButton_Click" />
                                     <Button x:Name="DeleteButton" Grid.Row="2" Grid.Column="2" Content="BORRAR" Style="{StaticResource DangerDeleteButtonStyle}" IsEnabled="False" Click="DeleteButton_Click" />
-
                                     <Button x:Name="WhatsAppButton" Grid.Row="4" Grid.ColumnSpan="3" Content="Enviar Recordatorio de Cobro" Style="{StaticResource WhatsAppButtonStyle}" IsEnabled="False" Click="WhatsAppButton_Click" />
                                 </Grid>
                             </StackPanel>
                         </ScrollViewer>
                     </Border>
-
                     <Button Grid.Row="2" Content="Limpiar Selección" Style="{StaticResource LoanButtonStyle}" Click="ClearSelectionButton_Click" />
                 </Grid>
-
-                <!-- Lado Derecho: DataGrid y Búsqueda -->
                 <Grid Grid.Column="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="14" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-
                     <Grid Grid.Row="0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-
-                        <!-- Buscador -->
                         <Border Grid.Column="0" Height="48" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="14" Padding="14,0">
                             <Grid VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-
                                 <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" Margin="0,0,10,0" />
-
                                 <Grid Grid.Column="1">
                                     <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" CaretBrush="{DynamicResource ThemeAccent}" TextChanged="SearchBox_TextChanged" AutomationProperties.Name="Buscar deudor por ID o nombre" />
                                     <TextBlock x:Name="SearchPlaceholder" Text="Buscar por cliente o concepto..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
                                 </Grid>
                             </Grid>
                         </Border>
-
-                        <!-- Filtros Rápidos -->
                         <Border Grid.Column="2" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="13" Padding="4" Height="48">
                             <StackPanel Orientation="Horizontal">
                                 <RadioButton Content="Todos" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Click="FilterDebtors_Click" Tag="All" />
@@ -439,10 +395,8 @@
                             </StackPanel>
                         </Border>
                     </Grid>
-
                     <Border Grid.Row="2" Style="{StaticResource LoanCardStyle}" Padding="0" ClipToBounds="True">
                         <DataGrid x:Name="DebtorGrid" ItemsSource="{Binding DebtorsView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" RowHeight="52" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="DebtorGrid_SelectionChanged" MouseDoubleClick="DebtorGrid_MouseDoubleClick" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" EnableRowVirtualization="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
-
                             <DataGrid.ColumnHeaderStyle>
                                 <Style TargetType="DataGridColumnHeader">
                                     <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
@@ -455,7 +409,6 @@
                                     <Setter Property="BorderThickness" Value="0,0,0,1" />
                                 </Style>
                             </DataGrid.ColumnHeaderStyle>
-
                             <DataGrid.CellStyle>
                                 <Style TargetType="DataGridCell">
                                     <Setter Property="Background" Value="Transparent" />
@@ -474,7 +427,6 @@
                                     </Setter>
                                 </Style>
                             </DataGrid.CellStyle>
-
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
                                     <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
@@ -497,7 +449,6 @@
                                     </Style.Triggers>
                                 </Style>
                             </DataGrid.RowStyle>
-
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50" />
                                 <DataGridTextColumn Header="CLIENTE" Binding="{Binding Nombre}" Width="1.1*">
@@ -521,7 +472,6 @@
                                                         Visibility="Collapsed">
                                                     <TextBlock Text="Liquidado" FontSize="11" FontWeight="Bold" Foreground="#2ECC71" />
                                                 </Border>
-
                                                 <StackPanel x:Name="ActiveProgressPanel" VerticalAlignment="Center">
                                                     <Grid Margin="0,0,0,3">
                                                         <TextBlock Text="{Binding PorcentajeAbonado, StringFormat={}{0}% abonado}" 
@@ -534,7 +484,6 @@
                                                                    Foreground="#F39C12" 
                                                                    HorizontalAlignment="Right" />
                                                     </Grid>
-
                                                     <Border Background="#15000000" CornerRadius="3" Height="6" ClipToBounds="True">
                                                         <ProgressBar Value="{Binding PorcentajeAbonado, Mode=OneWay}" 
                                                                      Maximum="100" 
@@ -545,7 +494,6 @@
                                                     </Border>
                                                 </StackPanel>
                                             </Grid>
-
                                             <DataTemplate.Triggers>
                                                 <DataTrigger Binding="{Binding SaldoRestante}" Value="0">
                                                     <Setter TargetName="LiquidadoBadge" Property="Visibility" Value="Visible" />
@@ -569,8 +517,6 @@
                     </Border>
                 </Grid>
             </Grid>
-
-            <!-- MODAL: HISTORIAL DE ABONOS -->
             <Grid x:Name="HistorialOverlay" Grid.RowSpan="3" Panel.ZIndex="100" Background="#66000000" Visibility="Collapsed" MouseDown="HistorialOverlay_MouseDown">
                 <Border Width="600" MaxHeight="580" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="24" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                     <Grid>
@@ -583,12 +529,10 @@
                             <RowDefinition Height="14" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-
                         <StackPanel Grid.Row="0">
                             <TextBlock x:Name="HistoryClientName" Text="Historial de Pagos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
                             <TextBlock x:Name="HistorySummaryText" Text="Original: $0.00 | Total Abonado: $0.00 | Pendiente: $0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
                         </StackPanel>
-
                         <Grid Grid.Row="2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -614,17 +558,14 @@
                                 </Button.Template>
                             </Button>
                         </Grid>
-
                         <Border Grid.Row="4" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="14" Padding="10">
                             <Grid>
                                 <ScrollViewer x:Name="PanelDeudasView" VerticalScrollBarVisibility="Auto" Visibility="Visible">
                                     <StackPanel x:Name="DeudasContainerPanel" />
                                 </ScrollViewer>
-
                                 <ScrollViewer x:Name="PanelAbonosView" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
                                     <StackPanel>
                                         <TextBlock x:Name="NoAbonosMessage" Text="Este cliente aún no registra abonos." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,20" Visibility="Collapsed" />
-
                                         <ItemsControl x:Name="AbonosListControl">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
@@ -648,7 +589,6 @@
                                 </ScrollViewer>
                             </Grid>
                         </Border>
-
                         <Grid Grid.Row="6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -657,13 +597,10 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="140" />
                             </Grid.ColumnDefinitions>
-
                             <TextBlock Grid.Column="0" Text="Monto:" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
-
                             <Border Grid.Column="2" Height="42" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Padding="16,0">
                                 <TextBlock x:Name="HistoryMontoTotalText" Text="$0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
-
                             <Button Grid.Column="4" Content="🖨️ IMPRIMIR RECIBO" Height="42" Background="{DynamicResource ThemeAccent}" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="PrintStatementButton_Click" ToolTip="Imprimir el estado de cuenta actual del cliente" Margin="0,0,10,0">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">

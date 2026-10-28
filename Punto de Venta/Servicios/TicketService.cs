@@ -19,18 +19,15 @@ namespace Punto_de_Venta.Servicios
         );
         #endregion
 
-        #region Generación de Texto del Ticket
+        #region Generacion de Texto del Ticket
         public static string GenerarTextoTicket(Venta venta, IEnumerable<DetalleVenta> items, decimal pagoCon, decimal cambio, AppConfig config)
         {
             var sb = new StringBuilder();
             var culture = CultureInfo.GetCultureInfo("es-MX");
             int ancho = config.AnchoTicketCaracteres > 0 ? config.AnchoTicketCaracteres : 32;
-
-            // Encabezado del Negocio
             if (!string.IsNullOrWhiteSpace(config.NombreNegocio)) sb.AppendLine(CentrarTexto(config.NombreNegocio.Trim(), ancho));
             if (!string.IsNullOrWhiteSpace(config.GiroNegocio)) sb.AppendLine(CentrarTexto(config.GiroNegocio.Trim(), ancho));
             if (!string.IsNullOrWhiteSpace(config.DireccionNegocio)) sb.AppendLine(CentrarTexto(config.DireccionNegocio.Trim(), ancho));
-
             sb.AppendLine(new string('-', ancho));
             sb.AppendLine($"Folio: #{venta.Id}");
             sb.AppendLine($"Fecha: {venta.FechaHora:dd/MM/yyyy hh:mm tt}");
@@ -38,8 +35,6 @@ namespace Punto_de_Venta.Servicios
             sb.AppendLine(new string('-', ancho));
             sb.AppendLine(ancho == 42 ? "CANT  DESCRIPCION            PRECIO   IMPORTE" : "CANT DESCRIPCION       PRECIO IMPORTE");
             sb.AppendLine(new string('-', ancho));
-
-            // Cuerpo de productos
             foreach (var item in items)
             {
                 string cantDesc = $"{item.Cantidad}x {item.Nombre}";
@@ -55,11 +50,8 @@ namespace Punto_de_Venta.Servicios
                 int espacios = ancho - cantDesc.Length - subtotalStr.Length;
                 sb.AppendLine($"{cantDesc}{new string(' ', Math.Max(1, espacios))}{subtotalStr}");
             }
-
             sb.AppendLine(new string('-', ancho));
             sb.AppendLine(AlinearDerecha($"TOTAL: {venta.Total.ToString("C2", culture)}", ancho));
-
-            // Totales, pagos y cambios según el método
             if (venta.MetodoPago == "Fiado")
             {
                 sb.AppendLine(AlinearDerecha("CUENTA POR COBRAR (FIADO)", ancho));
@@ -77,10 +69,7 @@ namespace Punto_de_Venta.Servicios
                 sb.AppendLine(AlinearDerecha($"PAGO CON: {pagoCon.ToString("C2", culture)}", ancho));
                 sb.AppendLine(AlinearDerecha($"CAMBIO: {cambio.ToString("C2", culture)}", ancho));
             }
-
             sb.AppendLine(new string('-', ancho));
-
-            // Mensaje de pie de página
             if (!string.IsNullOrWhiteSpace(config.MensajePie))
             {
                 foreach (var linea in config.MensajePie.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None))
@@ -93,7 +82,7 @@ namespace Punto_de_Venta.Servicios
         }
         #endregion
 
-        #region Almacenamiento e Impresión Física
+        #region Almacenamiento e Impresion Fusica
         public static void GuardarCopiaDigital(Venta venta, IEnumerable<DetalleVenta> items, decimal pagoCon, decimal cambio, AppConfig config)
         {
             try
@@ -103,7 +92,6 @@ namespace Punto_de_Venta.Servicios
             }
             catch { }
         }
-
         public static void ImprimirFisico(Venta venta, IEnumerable<DetalleVenta> items, decimal pagoCon, decimal cambio, AppConfig config)
         {
             if (string.IsNullOrWhiteSpace(config.ImpresoraSeleccionada) || config.ImpresoraSeleccionada.Contains("Ninguna", StringComparison.OrdinalIgnoreCase)) return;
@@ -120,7 +108,6 @@ namespace Punto_de_Venta.Servicios
             }
             catch { }
         }
-
         public static string GenerarTicketMuestra(AppConfig config)
         {
             var ventaPrueba = new Venta { Id = 101, FechaHora = DateTime.Now, Total = 45.00m, MetodoPago = "Efectivo" };
@@ -133,7 +120,7 @@ namespace Punto_de_Venta.Servicios
         }
         #endregion
 
-        #region Utilidades de Formato y Alineación
+        #region Utilidades de Formato y Alineacion
         public static string CentrarTexto(string texto, int ancho) =>
             texto.Length >= ancho ? texto.Substring(0, ancho) : new string(' ', (ancho - texto.Length) / 2) + texto;
 

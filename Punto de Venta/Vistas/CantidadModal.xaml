@@ -26,18 +26,14 @@
         <Border.Effect>
             <DropShadowEffect BlurRadius="28" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.25" />
         </Border.Effect>
-
-        <!-- Entrada elástica fluida -->
         <Border.Triggers>
             <EventTrigger RoutedEvent="Border.Loaded">
                 <BeginStoryboard>
                     <Storyboard>
-                        <!-- Desvanecido suave -->
                         <DoubleAnimation Storyboard.TargetName="ModalRootBorder"
                                          Storyboard.TargetProperty="Opacity"
                                          From="0.0" To="1.0"
                                          Duration="0:0:0.15" />
-                        <!-- Expansión elástica en X -->
                         <DoubleAnimation Storyboard.TargetName="ModalScaleTransform"
                                          Storyboard.TargetProperty="ScaleX"
                                          From="0.94" To="1.0"
@@ -46,7 +42,6 @@
                                 <BackEase Amplitude="0.35" EasingMode="EaseOut" />
                             </DoubleAnimation.EasingFunction>
                         </DoubleAnimation>
-                        <!-- Expansión elástica en Y -->
                         <DoubleAnimation Storyboard.TargetName="ModalScaleTransform"
                                          Storyboard.TargetProperty="ScaleY"
                                          From="0.94" To="1.0"
@@ -66,8 +61,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-
-            <!-- Titulo y Nombre del producto -->
             <StackPanel Grid.Row="0" Margin="0,0,0,14">
                 <TextBlock x:Name="ProductTitleText" 
                            Text="Producto" 
@@ -83,8 +76,6 @@
                            TextAlignment="Center" 
                            Margin="0,2,0,0" />
             </StackPanel>
-
-            <!-- Input de Cantidad -->
             <Border Grid.Row="1" 
                     Background="{DynamicResource ThemeInputBackground}" 
                     CornerRadius="10" 
@@ -102,8 +93,6 @@
                          HorizontalContentAlignment="Center"
                          KeyDown="QuantityBox_KeyDown" />
             </Border>
-
-            <!-- Acciones -->
             <Grid Grid.Row="2" VerticalAlignment="Bottom" Margin="0,12,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

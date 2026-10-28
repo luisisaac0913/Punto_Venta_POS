@@ -9,19 +9,12 @@ namespace Punto_de_Venta.Modelos
     public class Venta : INotifyPropertyChanged
     {
         private string _productosResumenGuardado = string.Empty;
-
-        // ¡CORREGIDO! Cambiado de int a decimal para soportar los pesos de la báscula (H-01) sin romper la compilación
         private decimal _cantidadTotalGuardada;
-
         private string _estado = "Abierta";
         public string MetodoPago { get; set; } = "Efectivo";
-
-        // --- NUEVAS PROPIEDADES EN MEMORIA ---
         public decimal PagoEfectivo { get; set; }
         public decimal PagoTarjeta { get; set; }
         public decimal PagoTransferencia { get; set; }
-        // -------------------------------------
-
         public int Id { get; set; }
         public DateTime FechaHora { get; set; } = DateTime.Now;
         public decimal Total { get; set; }
@@ -36,7 +29,7 @@ namespace Punto_de_Venta.Modelos
                 }
                 return PagoCon - Total;
             }
-            set { } // Setter vacío para permitir deserialización o lectura sin romper
+            set { } 
         }
         public string Categoria { get; set; } = "N/A";
 
@@ -58,7 +51,6 @@ namespace Punto_de_Venta.Modelos
         public string ProductosResumen
         {
             get => Productos.Count > 0
-                // Formato "0.###" oculta decimales inútiles en enteros, pero los muestra en granel
                 ? string.Join(", ", Productos.Select(product => $"{product.Nombre} x{product.Cantidad:0.###}"))
                 : _productosResumenGuardado;
             set => _productosResumenGuardado = value ?? string.Empty;
@@ -94,16 +86,10 @@ namespace Punto_de_Venta.Modelos
     public class DetalleVenta
     {
         public int Id { get; set; }
-
-        // Propiedad añadida pasivamente para futura migración de normalización (H-30)
         public int ProductoId { get; set; }
-
         public int VentaId { get; set; }
         public string Nombre { get; set; } = string.Empty;
-
-        // Cantidad se mantiene en decimal, clave para que la báscula funcione
         public decimal Cantidad { get; set; }
-
         public decimal Costo { get; set; }
         public decimal Ganancia { get; set; }
         public decimal Precio { get; set; }

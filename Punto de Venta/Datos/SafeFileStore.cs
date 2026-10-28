@@ -8,7 +8,6 @@ namespace Punto_de_Venta.Datos
     public static class SafeFileStore
     {
         #region Control de Concurrencia
-        // Bloqueo estático para evitar que dos hilos intenten escribir el mismo archivo al mismo tiempo
         private static readonly object FileLock = new();
         #endregion
 
@@ -28,7 +27,6 @@ namespace Punto_de_Venta.Datos
 
             lock (FileLock)
             {
-                // FileOptions.WriteThrough obliga al disco duro a guardar físicamente antes de continuar
                 using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
                 using (var writer = new StreamWriter(stream, encoding))
                 {
@@ -44,7 +42,6 @@ namespace Punto_de_Venta.Datos
                 {
                     try
                     {
-                        // Intercambio atómico: el temp reemplaza al original, y el original se vuelve backup
                         File.Replace(tempPath, destinationPath, backupPath, ignoreMetadataErrors: true);
                         if (File.Exists(backupPath))
                         {
@@ -53,7 +50,6 @@ namespace Punto_de_Venta.Datos
                     }
                     catch
                     {
-                        // Plan B en caso de que File.Replace falle (ej. en ciertos volúmenes de red)
                         File.Delete(destinationPath);
                         File.Move(tempPath, destinationPath);
                     }

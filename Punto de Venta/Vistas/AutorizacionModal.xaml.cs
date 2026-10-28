@@ -25,8 +25,6 @@ namespace Punto_de_Venta
                     Owner.Effect = _blurEffect;
                 }
             };
-
-            // Quitar el desenfoque al cerrar
             Closed += (_, _) =>
             {
                 if (Owner != null)
@@ -35,7 +33,6 @@ namespace Punto_de_Venta
                 }
             };
         }
-
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             PinBox.Focus();

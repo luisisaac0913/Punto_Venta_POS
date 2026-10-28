@@ -9,16 +9,13 @@ namespace Punto_de_Venta.Datos
         public static string DbFolder => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "POS_DataStorage");
-
         public static string DbPath => Path.Combine(DbFolder, "pos_data.db");
-
         public static string ConnectionString => new SqliteConnectionStringBuilder
         {
             DataSource = DbPath,
             Mode = SqliteOpenMode.ReadWriteCreate,
             Cache = SqliteCacheMode.Shared
         }.ToString();
-
         public static void ActualizarEsquemaVentas()
         {
             using var conn = GetConnection();
@@ -28,7 +25,6 @@ namespace Punto_de_Venta.Datos
                 "ALTER TABLE Ventas ADD COLUMN PagoTransferencia REAL DEFAULT 0;",
                 "ALTER TABLE Ventas ADD COLUMN Estado TEXT NOT NULL DEFAULT 'Completada';"
             };
-
             foreach (var query in queries)
             {
                 try
@@ -39,20 +35,17 @@ namespace Punto_de_Venta.Datos
                 }
                 catch
                 {
-                    // Ignoramos la excepción si la columna ya existe
                 }
             }
         }
-
         public static SqliteConnection GetConnection()
         {
             var conn = new SqliteConnection(ConnectionString);
             conn.Open();
             return conn;
         }
-
         /// <summary>
-        /// Inicializa las tablas y los índices. Se invoca al arrancar la app en App.xaml.cs.
+        /// 
         /// </summary>
         public static void InicializarBaseDeDatos()
         {
@@ -60,16 +53,12 @@ namespace Punto_de_Venta.Datos
             {
                 Directory.CreateDirectory(DbFolder);
             }
-
             using var conn = GetConnection();
-
-            // Activar modo WAL (Write-Ahead Logging) para máxima velocidad y evitar bloqueos de concurrencia
             using (var pragmaCmd = conn.CreateCommand())
             {
                 pragmaCmd.CommandText = "PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;";
                 pragmaCmd.ExecuteNonQuery();
             }
-
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
                 -- 1. PRODUCTOS (Actualizado)
@@ -179,10 +168,7 @@ namespace Punto_de_Venta.Datos
                 );
             ";
             cmd.ExecuteNonQuery();
-
-            // EJECUTAR PARCHES DE AUDITORÍA Y RETROCOMPATIBILIDAD AL VUELO
             ActualizarEsquemaVentas();
-
             using (var alterCmd2 = conn.CreateCommand())
             {
                 alterCmd2.CommandText = "PRAGMA table_info(MovimientosCaja);";
@@ -198,7 +184,6 @@ namespace Punto_de_Venta.Datos
                         }
                     }
                 }
-
                 if (!tieneCorteId)
                 {
                     using var updateCmd2 = conn.CreateCommand();
@@ -206,7 +191,6 @@ namespace Punto_de_Venta.Datos
                     updateCmd2.ExecuteNonQuery();
                 }
             }
-
             using (var alterCmd = conn.CreateCommand())
             {
                 alterCmd.CommandText = "PRAGMA table_info(Productos);";
@@ -222,7 +206,6 @@ namespace Punto_de_Venta.Datos
                         }
                     }
                 }
-
                 if (!tieneSeVendePorPeso)
                 {
                     using var updateCmd = conn.CreateCommand();
@@ -231,12 +214,9 @@ namespace Punto_de_Venta.Datos
                 }
             }
         }
-
         public static void MigrarVentasYMovimientosSiEsNecesario()
         {
             using var conn = GetConnection();
-
-            // 1. MIGRAR MOVIMIENTOS DE CAJA
             using (var checkMovCmd = conn.CreateCommand())
             {
                 checkMovCmd.CommandText = "SELECT COUNT(1) FROM MovimientosCaja;";
@@ -281,13 +261,10 @@ namespace Punto_de_Venta.Datos
                     }
                 }
             }
-
-            // 2. MIGRAR VENTAS
             using (var checkVentasCmd = conn.CreateCommand())
             {
                 checkVentasCmd.CommandText = "SELECT COUNT(1) FROM Ventas;";
                 long countVentas = (long)(checkVentasCmd.ExecuteScalar() ?? 0L);
-
                 string txtVentas = Path.Combine(DbFolder, "ventas.txt");
                 if (countVentas == 0 && File.Exists(txtVentas))
                 {
@@ -300,7 +277,6 @@ namespace Punto_de_Venta.Datos
                             if (string.IsNullOrWhiteSpace(line)) continue;
                             var parts = line.Split(new[] { "//" }, StringSplitOptions.None);
                             if (parts.Length < 7) continue;
-
                             if (!int.TryParse(parts[0], out var id)) continue;
                             var fechaStr = parts[1].Trim();
                             decimal.TryParse(parts[2], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var total);
@@ -332,12 +308,9 @@ namespace Punto_de_Venta.Datos
                 }
             }
         }
-
         public static void MigrarCortesYPrestamosSiEsNecesario()
         {
             using var conn = GetConnection();
-
-            // 1. MIGRAR CORTES DE CAJA
             using (var checkCortesCmd = conn.CreateCommand())
             {
                 checkCortesCmd.CommandText = "SELECT COUNT(1) FROM CortesCaja;";
@@ -404,18 +377,18 @@ namespace Punto_de_Venta.Datos
                     {
                         var lines = File.ReadAllLines(txtPrestamos);
 
-                        using var insertDeudor = conn.CreateCommand();
-                        insertDeudor.Transaction = tr;
-                        insertDeudor.CommandText = @"
+                        using var InsertarDeudor = conn.CreateCommand();
+                        InsertarDeudor.Transaction = tr;
+                        InsertarDeudor.CommandText = @"
                             INSERT INTO Deudores (Id, Nombre, Telefono, Concepto, MontoOriginal, TotalAbonado)
                             VALUES (@id, @nom, @tel, @con, @monto, @abonado);";
 
-                        var pId = insertDeudor.Parameters.Add("@id", Microsoft.Data.Sqlite.SqliteType.Integer);
-                        var pNom = insertDeudor.Parameters.Add("@nom", Microsoft.Data.Sqlite.SqliteType.Text);
-                        var pTel = insertDeudor.Parameters.Add("@tel", Microsoft.Data.Sqlite.SqliteType.Text);
-                        var pCon = insertDeudor.Parameters.Add("@con", Microsoft.Data.Sqlite.SqliteType.Text);
-                        var pMonto = insertDeudor.Parameters.Add("@monto", Microsoft.Data.Sqlite.SqliteType.Real);
-                        var pAbonado = insertDeudor.Parameters.Add("@abonado", Microsoft.Data.Sqlite.SqliteType.Real);
+                        var pId = InsertarDeudor.Parameters.Add("@id", Microsoft.Data.Sqlite.SqliteType.Integer);
+                        var pNom = InsertarDeudor.Parameters.Add("@nom", Microsoft.Data.Sqlite.SqliteType.Text);
+                        var pTel = InsertarDeudor.Parameters.Add("@tel", Microsoft.Data.Sqlite.SqliteType.Text);
+                        var pCon = InsertarDeudor.Parameters.Add("@con", Microsoft.Data.Sqlite.SqliteType.Text);
+                        var pMonto = InsertarDeudor.Parameters.Add("@monto", Microsoft.Data.Sqlite.SqliteType.Real);
+                        var pAbonado = InsertarDeudor.Parameters.Add("@abonado", Microsoft.Data.Sqlite.SqliteType.Real);
 
                         foreach (var line in lines)
                         {
@@ -453,7 +426,7 @@ namespace Punto_de_Venta.Datos
                             pMonto.Value = Convert.ToDouble(montoOriginal);
                             pAbonado.Value = Convert.ToDouble(totalAbonado);
 
-                            insertDeudor.ExecuteNonQuery();
+                            InsertarDeudor.ExecuteNonQuery();
                         }
 
                         tr.Commit();
@@ -469,7 +442,6 @@ namespace Punto_de_Venta.Datos
         public static void MigrarDesdeArchivosPlanosSiEsNecesario()
         {
             using var conn = GetConnection();
-
             using var checkCmd = conn.CreateCommand();
             checkCmd.CommandText = "SELECT COUNT(1) FROM Productos;";
             long count = (long)(checkCmd.ExecuteScalar() ?? 0L);
@@ -485,33 +457,30 @@ namespace Punto_de_Venta.Datos
                 return;
             }
 
-            using var transaction = conn.BeginTransaction();
+            using var transaccion = conn.BeginTransaction();
             try
             {
                 var lines = File.ReadAllLines(txtProductos);
                 foreach (var line in lines)
                 {
                     if (string.IsNullOrWhiteSpace(line)) continue;
-                    var parts = line.Split(new[] { "//" }, StringSplitOptions.None);
-                    if (parts.Length < 7) continue;
+                    var partes = line.Split(new[] { "//" }, StringSplitOptions.None);
+                    if (partes.Length < 7) continue;
 
-                    if (!int.TryParse(parts[0], out var id)) continue;
-                    var codigo = parts[1].Trim();
-                    var nombre = parts[2].Trim();
-                    var categoria = parts.Length > 3 ? parts[3].Trim() : "General";
+                    if (!int.TryParse(partes[0], out var id)) continue;
+                    var codigo = partes[1].Trim();
+                    var nombre = partes[2].Trim();
+                    var categoria = partes.Length > 3 ? partes[3].Trim() : "General";
 
-                    decimal.TryParse(parts[4], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var costo);
-                    decimal.TryParse(parts[5], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var ganancia);
-                    decimal.TryParse(parts[6], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var precio);
-
-                    int stock = 0;
-                    if (parts.Length > 7) int.TryParse(parts[7], out stock);
-
+                    decimal.TryParse(partes[4], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var costo);
+                    decimal.TryParse(partes[5], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var ganancia);
+                    decimal.TryParse(partes[6], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var precio);
+                    int cant = 0;
+                    if (partes.Length > 7) int.TryParse(partes[7], out cant);
                     bool pedirCantidad = false;
-                    if (parts.Length > 8) bool.TryParse(parts[8], out pedirCantidad);
-
+                    if (partes.Length > 8) bool.TryParse(partes[8], out pedirCantidad);
                     using var insertCmd = conn.CreateCommand();
-                    insertCmd.Transaction = transaction;
+                    insertCmd.Transaction = transaccion;
                     insertCmd.CommandText = @"
                         INSERT INTO Productos (Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar)
                         VALUES (@id, @codigo, @nombre, @categoria, @costo, @ganancia, @precio, @stock, @pedirCantidad);";
@@ -522,16 +491,16 @@ namespace Punto_de_Venta.Datos
                     insertCmd.Parameters.AddWithValue("@costo", costo);
                     insertCmd.Parameters.AddWithValue("@ganancia", ganancia);
                     insertCmd.Parameters.AddWithValue("@precio", precio);
-                    insertCmd.Parameters.AddWithValue("@stock", stock);
+                    insertCmd.Parameters.AddWithValue("@stock", cant);
                     insertCmd.Parameters.AddWithValue("@pedirCantidad", pedirCantidad ? 1 : 0);
                     insertCmd.ExecuteNonQuery();
                 }
 
-                transaction.Commit();
+                transaccion.Commit();
             }
             catch
             {
-                transaction.Rollback();
+                transaccion.Rollback();
                 throw;
             }
         }

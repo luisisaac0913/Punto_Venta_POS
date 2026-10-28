@@ -585,9 +585,6 @@ namespace Punto_de_Venta
                 MostrarErrorExportacion(exception);
             }
         }
-
-        // --- MÉTODOS DE DIBUJO DE QUESTPDF ---
-
         private static void GenerarPdfProductos(IEnumerable<Producto> products, string filePath)
         {
             var productList = products.OrderBy(p => p.Id).ToList();

@@ -12,15 +12,11 @@ namespace Punto_de_Venta.Datos
         private static void AsegurarTabla(SqliteConnection conn)
         {
             if (_tablaAsegurada) return;
-
-            // 1. Desactivar temporalmente foreign keys para evitar el error 19
             using (var pragmaCmd = conn.CreateCommand())
             {
                 pragmaCmd.CommandText = "PRAGMA foreign_keys = OFF;";
                 pragmaCmd.ExecuteNonQuery();
             }
-
-            // 2. Crear tabla desacoplada de Foreign Key estricta si no existe
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = @"
@@ -40,19 +36,15 @@ namespace Punto_de_Venta.Datos
                     );";
                 cmd.ExecuteNonQuery();
             }
-
             _tablaAsegurada = true;
         }
-
         public static List<Promocion> LoadAll()
         {
             var list = new List<Promocion>();
-
             try
             {
                 using var conn = DatabaseHelper.GetConnection();
                 AsegurarTabla(conn);
-
                 using var cmd = conn.CreateCommand();
                 cmd.CommandText = @"
                     SELECT Id, Nombre, Tipo, Activa, FechaInicio, FechaFin,
@@ -60,24 +52,23 @@ namespace Punto_de_Venta.Datos
                            ProductoIdSecundario, PrecioComboTotal, PorcentajeDescuento
                     FROM Promociones
                     ORDER BY Id DESC;";
-
-                using var reader = cmd.ExecuteReader();
-                while (reader.Read())
+                using var leer = cmd.ExecuteReader();
+                while (leer.Read())
                 {
                     list.Add(new Promocion
                     {
-                        Id = reader.GetInt32(0),
-                        Nombre = reader.GetString(1),
-                        Tipo = Enum.TryParse<TipoPromocion>(reader.GetString(2), out var t) ? t : TipoPromocion.Volumen,
-                        Activa = reader.GetInt32(3) == 1,
-                        FechaInicio = reader.IsDBNull(4) ? null : DateTime.Parse(reader.GetString(4)),
-                        FechaFin = reader.IsDBNull(5) ? null : DateTime.Parse(reader.GetString(5)),
-                        ProductoIdPrincipal = reader.GetInt32(6),
-                        CantidadMinima = reader.GetInt32(7),
-                        PrecioEspecial = Convert.ToDecimal(reader.GetDouble(8)),
-                        ProductoIdSecundario = reader.IsDBNull(9) ? 0 : reader.GetInt32(9),
-                        PrecioComboTotal = Convert.ToDecimal(reader.GetDouble(10)),
-                        PorcentajeDescuento = Convert.ToDecimal(reader.GetDouble(11))
+                        Id = leer.GetInt32(0),
+                        Nombre = leer.GetString(1),
+                        Tipo = Enum.TryParse<TipoPromocion>(leer.GetString(2), out var t) ? t : TipoPromocion.Volumen,
+                        Activa = leer.GetInt32(3) == 1,
+                        FechaInicio = leer.IsDBNull(4) ? null : DateTime.Parse(leer.GetString(4)),
+                        FechaFin = leer.IsDBNull(5) ? null : DateTime.Parse(leer.GetString(5)),
+                        ProductoIdPrincipal = leer.GetInt32(6),
+                        CantidadMinima = leer.GetInt32(7),
+                        PrecioEspecial = Convert.ToDecimal(leer.GetDouble(8)),
+                        ProductoIdSecundario = leer.IsDBNull(9) ? 0 : leer.GetInt32(9),
+                        PrecioComboTotal = Convert.ToDecimal(leer.GetDouble(10)),
+                        PorcentajeDescuento = Convert.ToDecimal(leer.GetDouble(11))
                     });
                 }
             }
@@ -85,29 +76,22 @@ namespace Punto_de_Venta.Datos
             {
                 System.Diagnostics.Debug.WriteLine($"[Promociones] Error cargando: {ex.Message}");
             }
-
             return list;
         }
 
         public static bool Save(Promocion promo, out string mensajeError)
         {
             mensajeError = string.Empty;
-
             try
             {
                 using var conn = DatabaseHelper.GetConnection();
-
-                // Desactivar validación de FK para esta inserción
                 using (var pragmaCmd = conn.CreateCommand())
                 {
                     pragmaCmd.CommandText = "PRAGMA foreign_keys = OFF;";
                     pragmaCmd.ExecuteNonQuery();
                 }
-
                 AsegurarTabla(conn);
-
                 using var cmd = conn.CreateCommand();
-
                 if (promo.Id == 0)
                 {
                     cmd.CommandText = @"
@@ -139,28 +123,20 @@ namespace Punto_de_Venta.Datos
                         WHERE Id = @id;";
                     cmd.Parameters.AddWithValue("@id", promo.Id);
                 }
-
                 cmd.Parameters.AddWithValue("@nom", promo.Nombre.Trim());
                 cmd.Parameters.AddWithValue("@tipo", promo.Tipo.ToString());
                 cmd.Parameters.AddWithValue("@act", promo.Activa ? 1 : 0);
-
-                // Fechas opcionales
                 cmd.Parameters.AddWithValue("@fi", promo.FechaInicio.HasValue ? promo.FechaInicio.Value.ToString("yyyy-MM-dd") : DBNull.Value);
                 cmd.Parameters.AddWithValue("@ff", promo.FechaFin.HasValue ? promo.FechaFin.Value.ToString("yyyy-MM-dd") : DBNull.Value);
-
-                // Parámetros numéricos
                 cmd.Parameters.AddWithValue("@p1", promo.ProductoIdPrincipal);
                 cmd.Parameters.AddWithValue("@cant", promo.CantidadMinima);
                 cmd.Parameters.AddWithValue("@esp", Convert.ToDouble(promo.PrecioEspecial));
-
                 if (promo.ProductoIdSecundario > 0)
                     cmd.Parameters.AddWithValue("@p2", promo.ProductoIdSecundario);
                 else
                     cmd.Parameters.AddWithValue("@p2", DBNull.Value);
-
                 cmd.Parameters.AddWithValue("@combo", Convert.ToDouble(promo.PrecioComboTotal));
                 cmd.Parameters.AddWithValue("@desc", Convert.ToDouble(promo.PorcentajeDescuento));
-
                 return cmd.ExecuteNonQuery() > 0;
             }
             catch (Exception ex)
@@ -169,28 +145,19 @@ namespace Punto_de_Venta.Datos
                 return false;
             }
         }
-
-        // ==========================================
-        // NUEVOS MÉTODOS AGREGADOS: UPDATE Y DELETE
-        // ==========================================
-
         public static bool Update(Promocion promo, out string mensajeError)
         {
-            // Reutilizamos la lógica de Save, ya que detecta automáticamente si Id > 0 hace el UPDATE.
             return Save(promo, out mensajeError);
         }
-
         public static bool Delete(int id)
         {
             try
             {
                 using var conn = DatabaseHelper.GetConnection();
                 AsegurarTabla(conn);
-
                 using var cmd = conn.CreateCommand();
                 cmd.CommandText = "DELETE FROM Promociones WHERE Id = @id;";
                 cmd.Parameters.AddWithValue("@id", id);
-
                 return cmd.ExecuteNonQuery() > 0;
             }
             catch (Exception ex)

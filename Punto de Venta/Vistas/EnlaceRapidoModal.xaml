@@ -26,7 +26,6 @@
                 <TextBlock Text="2. Busca y selecciona el producto" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,15,0,4" />
                 <TextBox x:Name="TxtBusqueda" Height="38" FontSize="14" Padding="10,0" VerticalContentAlignment="Center" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" TextChanged="TxtBusqueda_TextChanged" KeyDown="TxtBusqueda_KeyDown" />
 
-                <!-- Lista de Sugerencias Flotante -->
                 <Border x:Name="PopupSugerencias" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Margin="0,4,0,0" Visibility="Collapsed" MaxHeight="120">
                     <ListBox x:Name="ListaSugerencias" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource ThemeTextForeground}" ScrollViewer.VerticalScrollBarVisibility="Auto" SelectionChanged="ListaSugerencias_SelectionChanged" />
                 </Border>

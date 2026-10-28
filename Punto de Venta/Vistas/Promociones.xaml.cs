@@ -13,10 +13,7 @@ namespace Punto_de_Venta
     public partial class Promociones : UserControl
     {
         public ObservableCollection<Promocion> ListaPromociones { get; } = new ObservableCollection<Promocion>();
-
-        // Variable para controlar si estamos creando una nueva o editando una existente
         private Promocion _promocionEnEdicion = null;
-
         public Promociones()
         {
             InitializeComponent();
@@ -57,7 +54,6 @@ namespace Punto_de_Venta
                 e.Handled = true;
             }
         }
-
         #region Comportamiento del Formulario
         private void TipoPromoCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -93,7 +89,6 @@ namespace Punto_de_Venta
                     break;
             }
         }
-
         private static decimal ParseDecimalSeguro(string text)
         {
             const NumberStyles styles = NumberStyles.Number | NumberStyles.AllowDecimalPoint;
@@ -104,7 +99,6 @@ namespace Punto_de_Venta
             }
             return 0m;
         }
-
         private void FocusSearch()
         {
             Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
@@ -118,9 +112,7 @@ namespace Punto_de_Venta
             }));
         }
         #endregion
-
         #region Acciones del DataGrid (Activar, Editar, Eliminar)
-
         private void ToggleActiva_Click(object sender, RoutedEventArgs e)
         {
             if (sender is CheckBox cb && cb.DataContext is Promocion promo)
@@ -135,7 +127,6 @@ namespace Punto_de_Venta
                 }
             }
         }
-
         private void EliminarPromo_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.DataContext is Promocion promo)
@@ -165,10 +156,8 @@ namespace Punto_de_Venta
                 TituloFormularioText.Text = "Editar Promoción";
                 BtnGuardarPromo.Content = "Actualizar Cambios";
                 BtnCancelarEdicion.Visibility = Visibility.Visible;
-
                 NombrePromoBox.Text = promo.Nombre;
                 ProdId1Box.Text = promo.ProductoIdPrincipal.ToString();
-
                 foreach (ComboBoxItem item in TipoPromoCombo.Items)
                 {
                     if (item.Tag?.ToString() == promo.Tipo.ToString())
@@ -177,7 +166,6 @@ namespace Punto_de_Venta
                         break;
                     }
                 }
-
                 if (promo.Tipo == TipoPromocion.Volumen)
                 {
                     CantidadMinBox.Text = promo.CantidadMinima.ToString();
@@ -194,12 +182,10 @@ namespace Punto_de_Venta
                 }
             }
         }
-
         private void CancelarEdicion_Click(object sender, RoutedEventArgs e)
         {
             LimpiarFormulario();
         }
-
         private void LimpiarFormulario()
         {
             _promocionEnEdicion = null;
@@ -226,19 +212,15 @@ namespace Punto_de_Venta
                 NombrePromoBox.Focus();
                 return;
             }
-
             if (!int.TryParse(ProdId1Box.Text.Trim(), out var pId1) || pId1 <= 0)
             {
                 ToastNotification.Show("Ingresa un ID válido para el primer producto", ToastType.Warning);
                 ProdId1Box.Focus();
                 return;
             }
-
             var tipoStr = (TipoPromoCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Volumen";
             var tipo = Enum.Parse<TipoPromocion>(tipoStr);
-
             var promocion = _promocionEnEdicion ?? new Promocion { Activa = true };
-
             promocion.Nombre = NombrePromoBox.Text.Trim();
             promocion.Tipo = tipo;
             promocion.ProductoIdPrincipal = pId1;
@@ -260,7 +242,6 @@ namespace Punto_de_Venta
                     PrecioEspecialBox.Focus();
                     return;
                 }
-
                 promocion.CantidadMinima = cant;
                 promocion.PrecioEspecial = precioEsp;
 
@@ -283,10 +264,8 @@ namespace Punto_de_Venta
                     PrecioComboTotalBox.Focus();
                     return;
                 }
-
                 promocion.ProductoIdSecundario = pId2;
                 promocion.PrecioComboTotal = precioCombo;
-
                 promocion.CantidadMinima = 0;
                 promocion.PrecioEspecial = 0;
                 promocion.PorcentajeDescuento = 0;
@@ -300,18 +279,14 @@ namespace Punto_de_Venta
                     PorcentajeDescuentoBox.Focus();
                     return;
                 }
-
                 promocion.PorcentajeDescuento = pct > 1 ? pct / 100m : pct;
-
                 promocion.CantidadMinima = 0;
                 promocion.PrecioEspecial = 0;
                 promocion.ProductoIdSecundario = 0;
                 promocion.PrecioComboTotal = 0;
             }
-
             bool guardadoConExito;
             string error = string.Empty;
-
             if (_promocionEnEdicion != null)
             {
                 guardadoConExito = PromocionDbStore.Update(promocion, out error);
@@ -320,7 +295,6 @@ namespace Punto_de_Venta
             {
                 guardadoConExito = PromocionDbStore.Save(promocion, out error);
             }
-
             if (guardadoConExito)
             {
                 ToastNotification.Show(_promocionEnEdicion != null ? "Promoción actualizada" : "Promoción guardada con éxito", ToastType.Success);

@@ -64,15 +64,12 @@
             </Button>
         </Grid>
 
-        <!-- Dos columnas principales -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="380" />
                 <ColumnDefinition Width="24" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-
-            <!-- COLUMNA IZQUIERDA: Búsqueda y Añadir -->
             <Grid Grid.Column="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
@@ -80,7 +77,6 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- Tarjeta de Búsqueda -->
                 <Border Grid.Row="0" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="20" Padding="20" Effect="{StaticResource AppleCardShadow}">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -145,8 +141,6 @@
                         </Border>
                     </Grid>
                 </Border>
-
-                <!-- Tarjeta de Añadir -->
                 <Border Grid.Row="2" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="20" Padding="20" Effect="{StaticResource AppleCardShadow}">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -175,7 +169,6 @@
                 </Border>
             </Grid>
 
-            <!-- COLUMNA DERECHA: Cola, Generación e Impresión -->
             <Grid Grid.Column="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -183,7 +176,6 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!-- Tarjeta Superior: Cola de Impresión -->
                 <Border Grid.Row="0" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="20" Padding="20" Effect="{StaticResource AppleCardShadow}">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -221,7 +213,6 @@
                                     <DataGridTextColumn Header="PRODUCTO" Binding="{Binding Producto.Nombre}" Width="2*" />
                                     <DataGridTextColumn Header="CÓDIGO" Binding="{Binding Producto.Codigo}" Width="1*" />
                                     <DataGridTextColumn Header="CANTIDAD" Binding="{Binding Cantidad}" Width="0.8*" ElementStyle="{StaticResource {x:Type TextBlock}}" />
-                                    <!-- Nueva columna de eliminar -->
                                     <DataGridTemplateColumn Width="60">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
@@ -237,7 +228,6 @@
                     </Grid>
                 </Border>
 
-                <!-- Tarjeta Inferior: Vista Previa e Impresión -->
                 <Border Grid.Row="2" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="20" Padding="20" Effect="{StaticResource AppleCardShadow}">
                     <Grid>
                         <Grid.RowDefinitions>

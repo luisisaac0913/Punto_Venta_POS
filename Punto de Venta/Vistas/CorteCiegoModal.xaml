@@ -11,7 +11,6 @@
         PreviewKeyDown="Window_PreviewKeyDown"
         Loaded="Window_Loaded">
 
-    <!-- Tarjeta principal con RenderTransform para el efecto elástico -->
     <Border x:Name="ModalRootBorder"
             Background="{DynamicResource ThemeSurfaceBackground}" 
             CornerRadius="18" 
@@ -28,17 +27,14 @@
             <DropShadowEffect BlurRadius="28" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.22" />
         </Border.Effect>
 
-        <!-- Animación de entrada elástica al cargar -->
         <Border.Triggers>
             <EventTrigger RoutedEvent="Border.Loaded">
                 <BeginStoryboard>
                     <Storyboard>
-                        <!-- Desvanecido suave -->
                         <DoubleAnimation Storyboard.TargetName="ModalRootBorder"
                                          Storyboard.TargetProperty="Opacity"
                                          From="0.0" To="1.0"
                                          Duration="0:0:0.16" />
-                        <!-- Expansión elástica en X -->
                         <DoubleAnimation Storyboard.TargetName="ModalScaleTransform"
                                          Storyboard.TargetProperty="ScaleX"
                                          From="0.94" To="1.0"
@@ -47,7 +43,6 @@
                                 <BackEase Amplitude="0.35" EasingMode="EaseOut" />
                             </DoubleAnimation.EasingFunction>
                         </DoubleAnimation>
-                        <!-- Expansión elástica en Y -->
                         <DoubleAnimation Storyboard.TargetName="ModalScaleTransform"
                                          Storyboard.TargetProperty="ScaleY"
                                          From="0.94" To="1.0"
@@ -67,17 +62,11 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-
-            <!-- Cabecera -->
             <StackPanel Grid.Row="0" Margin="0,0,0,14">
                 <TextBlock Text="Corte de Turno" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" TextAlignment="Center" />
                 <TextBlock Text="Ingresa los billetes de distinto valor" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Margin="0,3,0,0" />
             </StackPanel>
-
-            <!-- Contenido Principal: Desglose de piezas -->
             <StackPanel Grid.Row="1" VerticalAlignment="Center">
-
-                <!-- Fila 1: $500 y $200 -->
                 <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -100,7 +89,6 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Fila 2: $100 y $50 -->
                 <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -123,7 +111,6 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Fila 3: $20 y Monedas (monto en $) -->
                 <Grid Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -146,7 +133,6 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- Total Calculado en tiempo real -->
                 <TextBlock Text="Total en caja:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
                 <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="10" BorderBrush="{DynamicResource ThemeAccent}" BorderThickness="1.5" Height="44">
                     <TextBox x:Name="CountedAmountBox"
@@ -162,7 +148,6 @@
                              HorizontalContentAlignment="Center" />
                 </Border>
 
-                <!-- Panel de Resultado de Auditoría -->
                 <Border x:Name="AuditPanel" Visibility="Collapsed" Background="{DynamicResource ThemeInputBackground}" CornerRadius="12" Margin="0,12,0,0" Padding="12">
                     <StackPanel>
                         <Grid Margin="0,2">
@@ -182,7 +167,6 @@
                 </Border>
             </StackPanel>
 
-            <!-- Botones de Acción -->
             <Grid Grid.Row="2" Margin="0,14,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

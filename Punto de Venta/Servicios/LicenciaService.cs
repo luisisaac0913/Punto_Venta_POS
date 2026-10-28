@@ -8,21 +8,16 @@ namespace Punto_de_Venta.Servicios
 {
     public static class LicenciaService
     {
-        // Ruta donde se ocultará el archivo de la licencia
         private static readonly string LicenciaPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "POS_DataStorage",
             "licencia.key"
         );
-
-        // Semilla de seguridad (Salt) para que el hash sea único para tu software
         private const string SALT = "POS_DataStorage_SecureKey_2026";
-
         public static string ObtenerIdentificadorHardware()
         {
             string motherboardId = string.Empty;
             string cpuId = string.Empty;
-
             try
             {
                 using var searcher = new ManagementObjectSearcher("SELECT SerialNumber FROM Win32_BaseBoard");
@@ -33,7 +28,6 @@ namespace Punto_de_Venta.Servicios
                 }
             }
             catch { }
-
             try
             {
                 using var searcher = new ManagementObjectSearcher("SELECT ProcessorId FROM Win32_Processor");
@@ -44,14 +38,10 @@ namespace Punto_de_Venta.Servicios
                 }
             }
             catch { }
-
             string hardwareId = $"{motherboardId}-{cpuId}";
             if (hardwareId == "-") hardwareId = Environment.MachineName;
-
             return hardwareId;
         }
-
-        // Convierte el texto del hardware en una cadena encriptada SHA-256
         private static string GenerarHash(string input)
         {
             using (SHA256 sha256 = SHA256.Create())
@@ -62,9 +52,7 @@ namespace Punto_de_Venta.Servicios
                 return builder.ToString();
             }
         }
-
         public static bool LicenciaExiste() => File.Exists(LicenciaPath);
-
         public static void ActivarLicencia()
         {
             string hwId = ObtenerIdentificadorHardware();
@@ -72,15 +60,12 @@ namespace Punto_de_Venta.Servicios
             Directory.CreateDirectory(Path.GetDirectoryName(LicenciaPath)!);
             File.WriteAllText(LicenciaPath, hash);
         }
-
         public static bool ValidarLicencia()
         {
             if (!LicenciaExiste()) return false;
-
             string hashGuardado = File.ReadAllText(LicenciaPath).Trim();
             string hwIdActual = ObtenerIdentificadorHardware();
             string hashActual = GenerarHash(hwIdActual);
-
             return hashGuardado == hashActual;
         }
     }
