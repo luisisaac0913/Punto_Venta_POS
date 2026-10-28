@@ -429,7 +429,7 @@
                                         </Viewbox>
                                     </Border>
                                     <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
-                                        <TextBlock Text="Préstamos" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock Text="Prestamos" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
                                         <TextBlock Text="Cuentas por cobrar" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
                                     </StackPanel>
                                 </Grid>
@@ -459,7 +459,7 @@
                                             <Path Data="{StaticResource IconGraficas}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                         </Canvas>
                                     </Viewbox>
-                                    <TextBlock Text="Gráficas" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                    <TextBlock Text="Graficas" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                 </StackPanel>
                             </Button>
 
@@ -496,7 +496,7 @@
                                             <Path Data="{StaticResource IconConfiguracion}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                         </Canvas>
                                     </Viewbox>
-                                    <TextBlock Text="Configuración" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                    <TextBlock Text="Configuracion" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                 </StackPanel>
                             </Button>
                         </UniformGrid>

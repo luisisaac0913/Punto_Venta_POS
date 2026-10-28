@@ -182,12 +182,12 @@ namespace Punto_de_Venta
         {
             var culture = CultureInfo.GetCultureInfo("es-MX");
             var periodSales = Sales.Where(s => s.FechaHora >= _filtroInicio && s.FechaHora <= _filtroFin && !string.Equals(s.Estado, "Cancelada", StringComparison.OrdinalIgnoreCase)).ToList();
-
             var totalVentas = periodSales.Sum(s => s.Total);
             var totalItems = periodSales.Sum(s => s.CantidadTotal);
             var totalProfit = periodSales.Sum(s => s.GananciaTotal);
             var totalGastos = _movimientos.Where(m => m.FechaHora >= _filtroInicio && m.FechaHora <= _filtroFin && (m.Tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase))).Sum(m => m.Monto);
-            var balanceNeto = totalVentas - totalGastos;
+            var fondosIniciales = _movimientos.Where(m => m.FechaHora >= _filtroInicio && m.FechaHora <= _filtroFin && m.Tipo.Equals("Fondo", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
+            var balanceNeto = fondosIniciales + totalVentas - totalGastos;
 
             TotalSalesTodayText.Text = totalVentas.ToString("C2", culture);
             TotalProfitText.Text = totalProfit.ToString("C2", culture);

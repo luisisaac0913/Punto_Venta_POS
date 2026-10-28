@@ -39,18 +39,7 @@ namespace Punto_de_Venta
             DebtorsView.Filter = MatchesSearch;
             DataContext = this;
 
-            try
-            {
-                foreach (var debtor in PrestamoDB.Load())
-                {
-                    Debtors.Add(debtor);
-                }
-            }
-            catch (Exception exception)
-            {
-                _loadFailed = true;
-                ToastNotification.Show($"Error al cargar la libreta: {exception.Message}", ToastType.Error);
-            }
+            CargarDeudoresDesdeBaseDatos();
 
             try
             {
@@ -75,19 +64,45 @@ namespace Punto_de_Venta
             Unloaded += (_, _) => _clockTimer.Stop();
         }
 
+        private void CargarDeudoresDesdeBaseDatos()
+        {
+            try
+            {
+                Debtors.Clear();
+                foreach (var debtor in PrestamoDB.Load())
+                {
+                    Debtors.Add(debtor);
+                }
+                _loadFailed = false;
+            }
+            catch (Exception exception)
+            {
+                _loadFailed = true;
+                ToastNotification.Show($"Error al cargar la libreta: {exception.Message}", ToastType.Error);
+            }
+        }
+
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (this.Visibility == Visibility.Visible)
             {
+                // ACTUALIZACIÓN DINÁMICA: Refresca la BD cada vez que entras a la pantalla
+                CargarDeudoresDesdeBaseDatos();
+                UpdateDashboardKPIs();
+                SetNextId();
+                DebtorsView.Refresh();
+
                 this.Focus();
                 FocusSearch();
                 Keyboard.Focus(this);
             }
         }
+
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             FocusSearch();
         }
+
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             FocusSearch();

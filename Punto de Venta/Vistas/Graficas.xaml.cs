@@ -208,6 +208,8 @@ namespace Punto_de_Venta
         private void NavCategorias_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.Categorias; RefreshData(); }
         private void NavHorasBtn_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.HorasPico; RefreshData(); }
         private void NavRentabilidadBtn_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.Rentabilidad; RefreshData(); }
+        private void NavRotacionBtn_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.Rotacion; RefreshData(); }
+        private void NavParetoBtn_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.Pareto; RefreshData(); }
         private void NavCortesBtn_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.CortesCaja; RefreshData(); }
         #endregion
 
@@ -239,7 +241,8 @@ namespace Punto_de_Venta
             var margenPct = totalVentas > 0 ? (totalGanancia / totalVentas) * 100m : 0m;
 
             var totalGastos = _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end && (m.Tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase))).Sum(m => m.Monto);
-            var balanceNeto = totalVentas - totalGastos;
+            var fondosIniciales = _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end && m.Tipo.Equals("Fondo", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
+            var balanceNeto = fondosIniciales + totalVentas - totalGastos;
 
             KpiVentaTotal.Text = totalVentas.ToString("C2", _mexicanCulture);
             KpiCostoTotal.Text = totalCosto.ToString("C2", _mexicanCulture);
@@ -262,6 +265,8 @@ namespace Punto_de_Venta
             ActualizarEstiloBotonSidebar(NavCategoriasBtn, _currentView == ChartView.Categorias);
             ActualizarEstiloBotonSidebar(NavHorasBtn, _currentView == ChartView.HorasPico);
             ActualizarEstiloBotonSidebar(NavRentabilidadBtn, _currentView == ChartView.Rentabilidad);
+            ActualizarEstiloBotonSidebar(NavRotacionBtn, _currentView == ChartView.Rotacion);
+            ActualizarEstiloBotonSidebar(NavParetoBtn, _currentView == ChartView.Pareto);
             ActualizarEstiloBotonSidebar(NavCortesBtn, _currentView == ChartView.CortesCaja);
 
             MainChartView.Visibility = Visibility.Collapsed;
@@ -270,6 +275,7 @@ namespace Punto_de_Venta
 
             if (_currentView == ChartView.CortesCaja) { CortesContainerView.Visibility = Visibility.Visible; CargarTablaCortes(selectedCortes); }
             else if (_currentView == ChartView.MetodosPago) { PieChartView.Visibility = Visibility.Visible; CargarGraficaMetodosPago(selectedSales); }
+            else if (_currentView == ChartView.Pareto) { PieChartView.Visibility = Visibility.Visible; CargarGraficaPareto(selectedSales); }
             else
             {
                 MainChartView.Visibility = Visibility.Visible;
@@ -279,15 +285,17 @@ namespace Punto_de_Venta
                     case ChartView.Categorias: CargarGraficaCategorias(selectedSales); break;
                     case ChartView.HorasPico: CargarGraficaHorasPico(selectedSales); break;
                     case ChartView.Rentabilidad: CargarGraficaRentabilidad(selectedSales); break;
+                    case ChartView.Rotacion: CargarGraficaRotacion(selectedSales, (end - start).Days + 1); break;
                 }
             }
 
             if (_currentView == ChartView.Rentabilidad) { TopListTitleText.Text = "Top Rentables (Utilidad)"; CargarTopProductosPorUtilidad(selectedSales); }
+            else if (_currentView == ChartView.Rotacion) { TopListTitleText.Text = "Productos con Mayor Riesgo (Poco Stock)"; CargarTopRotacion(selectedSales); }
             else { TopListTitleText.Text = "Top Productos Vendidos"; CargarTopProductos(selectedSales); }
         }
         #endregion
 
-        #region Renderizado de Gráficas
+        #region Renderizado de Gráficas (Nuevas y Existentes)
         private void CargarGraficaFinanciera(decimal venta, decimal costo, decimal ganancia, decimal gastos)
         {
             ChartTitleText.Text = "Venta Total vs Costo vs Ganancia vs Gastos";
@@ -325,10 +333,75 @@ namespace Punto_de_Venta
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SeriesPie)));
         }
 
+        private void CargarGraficaPareto(List<Venta> sales)
+        {
+            ChartTitleText.Text = "Análisis ABC (Pareto) - Clasificación de Catálogo";
+            var dict = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var s in sales)
+            {
+                if (s.Productos.Count > 0) { foreach (var p in s.Productos) dict[p.Nombre] = dict.GetValueOrDefault(p.Nombre) + (p.Precio * p.Cantidad); }
+                else { foreach (var (name, qty) in ParseLegacySummary(s.ProductosResumen)) { var precio = _catalog.FirstOrDefault(c => string.Equals(c.Nombre, name, StringComparison.OrdinalIgnoreCase))?.Precio ?? 0; dict[name] = dict.GetValueOrDefault(name) + (precio * qty); } }
+            }
+
+            decimal totalVendido = dict.Values.Sum();
+            if (totalVendido == 0) totalVendido = 1; // Prevenir división por cero
+
+            double claseA = 0, claseB = 0, claseC = 0;
+            decimal acumulado = 0;
+
+            foreach (var item in dict.OrderByDescending(x => x.Value))
+            {
+                acumulado += item.Value;
+                decimal porcentaje = (acumulado / totalVendido) * 100m;
+
+                if (porcentaje <= 80m) claseA += (double)item.Value;
+                else if (porcentaje <= 95m) claseB += (double)item.Value;
+                else claseC += (double)item.Value;
+            }
+
+            SeriesPie = [
+                new PieSeries<double> { Name = "Clase A (80% Ingresos)", Values = [claseA], Fill = new SolidColorPaint(new SKColor(52, 199, 89)), InnerRadius = 50 },
+                new PieSeries<double> { Name = "Clase B (15% Ingresos)", Values = [claseB], Fill = new SolidColorPaint(new SKColor(255, 149, 0)), InnerRadius = 50 },
+                new PieSeries<double> { Name = "Clase C (5% Ingresos)", Values = [claseC], Fill = new SolidColorPaint(new SKColor(239, 68, 68)), InnerRadius = 50 }
+            ];
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SeriesPie)));
+        }
+
+        private void CargarGraficaRotacion(List<Venta> sales, int diasPeriodo)
+        {
+            ChartTitleText.Text = "Rotación vs Stock Actual (Top 7 Movimiento)";
+
+            var ventasPorProducto = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+            foreach (var s in sales)
+            {
+                if (s.Productos.Count > 0) { foreach (var p in s.Productos) ventasPorProducto[p.Nombre] = ventasPorProducto.GetValueOrDefault(p.Nombre) + p.Cantidad; }
+                else { foreach (var (name, qty) in ParseLegacySummary(s.ProductosResumen)) ventasPorProducto[name] = ventasPorProducto.GetValueOrDefault(name) + qty; }
+            }
+
+            // Unir ventas con el stock actual del catálogo
+            var rotacionList = new List<(string Nombre, decimal Vendido, decimal Stock)>();
+            foreach (var kvp in ventasPorProducto.OrderByDescending(x => x.Value).Take(7))
+            {
+                var stockItem = _catalog.FirstOrDefault(c => string.Equals(c.Nombre, kvp.Key, StringComparison.OrdinalIgnoreCase))?.Stock ?? 0;
+                rotacionList.Add((kvp.Key, kvp.Value, stockItem));
+            }
+
+            if (rotacionList.Count == 0) rotacionList.Add(("Sin datos", 0m, 0m));
+
+            SeriesPrincipal = [
+                new ColumnSeries<double> { Name = "Vendido (Periodo)", Values = rotacionList.Select(x => (double)x.Vendido).ToArray(), Fill = new SolidColorPaint(new SKColor(0, 122, 255)), MaxBarWidth = 35 },
+                new ColumnSeries<double> { Name = "Stock Actual Restante", Values = rotacionList.Select(x => (double)x.Stock).ToArray(), Fill = new SolidColorPaint(new SKColor(142, 142, 147)), MaxBarWidth = 35 }
+            ];
+            EjesXPrincipal = [new Axis { Labels = rotacionList.Select(x => x.Nombre).ToArray(), LabelsPaint = new SolidColorPaint(ObtenerColorTextoEje()), TextSize = 11 }];
+            EjesYPrincipal = [new Axis { MinLimit = 0, LabelsPaint = new SolidColorPaint(ObtenerColorTextoEje()), TextSize = 12 }];
+            NotifyChartProperties();
+        }
+
         private void CargarGraficaCategorias(List<Venta> sales)
         {
             ChartTitleText.Text = "Categorías con Mayor Volumen de Piezas";
-            var dict = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase); // CORREGIDO: int -> decimal
+            var dict = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var s in sales)
             {
@@ -376,14 +449,38 @@ namespace Punto_de_Venta
         #endregion
 
         #region Renderizado de Tablas (Top y Cortes)
+        private void CargarTopRotacion(List<Venta> sales)
+        {
+            TopProductos.Clear();
+            var dictVentas = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+            foreach (var s in sales)
+            {
+                if (s.Productos.Count > 0) { foreach (var p in s.Productos) dictVentas[p.Nombre] = dictVentas.GetValueOrDefault(p.Nombre) + p.Cantidad; }
+                else { foreach (var (name, qty) in ParseLegacySummary(s.ProductosResumen)) dictVentas[name] = dictVentas.GetValueOrDefault(name) + qty; }
+            }
+
+            // Ordenar por aquellos con MUCHA venta pero POCO stock actual (alto riesgo de desabasto)
+            var ranking = new List<(string Nombre, decimal Vendido, decimal StockRestante)>();
+            foreach (var kvp in dictVentas)
+            {
+                var prod = _catalog.FirstOrDefault(c => string.Equals(c.Nombre, kvp.Key, StringComparison.OrdinalIgnoreCase));
+                if (prod != null) ranking.Add((kvp.Key, kvp.Value, prod.Stock));
+            }
+
+            var top = ranking.OrderBy(x => x.StockRestante).ThenByDescending(x => x.Vendido).Take(5).ToList();
+
+            for (int i = 0; i < top.Count; i++) TopProductos.Add(new TopProductoItem(i + 1, top[i].Nombre, top[i].StockRestante, top[i].Vendido));
+            for (int i = top.Count; i < 5; i++) TopProductos.Add(new TopProductoItem(i + 1, "Sin datos", 0m, 0m));
+        }
+
         private void CargarTopProductosPorUtilidad(List<Venta> sales)
         {
             TopProductos.Clear();
-            var dict = new Dictionary<string, (decimal Qty, decimal Ganancia)>(StringComparer.OrdinalIgnoreCase); // CORREGIDO: int -> decimal
+            var dict = new Dictionary<string, (decimal Qty, decimal Ganancia)>(StringComparer.OrdinalIgnoreCase);
             foreach (var s in sales) { foreach (var p in s.Productos) { var cur = dict.GetValueOrDefault(p.Nombre); dict[p.Nombre] = (cur.Qty + p.Cantidad, cur.Ganancia + (p.Ganancia * p.Cantidad)); } }
             var top = dict.OrderByDescending(x => x.Value.Ganancia).ThenByDescending(x => x.Value.Qty).Take(5).ToList();
             for (int i = 0; i < top.Count; i++) TopProductos.Add(new TopProductoItem(i + 1, top[i].Key, top[i].Value.Qty, top[i].Value.Ganancia));
-            for (int i = top.Count; i < 5; i++) TopProductos.Add(new TopProductoItem(i + 1, "Sin datos", 0m, 0m)); // CORREGIDO: 0 -> 0m
+            for (int i = top.Count; i < 5; i++) TopProductos.Add(new TopProductoItem(i + 1, "Sin datos", 0m, 0m));
         }
         private void ExportarReporteDia_Click(object sender, RoutedEventArgs e)
         {
@@ -449,7 +546,7 @@ namespace Punto_de_Venta
             var totalGastos = gastosList.Sum(m => m.Monto);
             var balanceNeto = totalVentas - totalGastos;
 
-            var dictTop = new Dictionary<string, (decimal Qty, decimal Ingreso)>(StringComparer.OrdinalIgnoreCase); // CORREGIDO: int -> decimal
+            var dictTop = new Dictionary<string, (decimal Qty, decimal Ingreso)>(StringComparer.OrdinalIgnoreCase);
             foreach (var s in sales)
             {
                 if (s.Productos.Count > 0) { foreach (var p in s.Productos) { var cur = dictTop.GetValueOrDefault(p.Nombre); dictTop[p.Nombre] = (cur.Qty + p.Cantidad, cur.Ingreso + (p.Precio * p.Cantidad)); } }
@@ -617,7 +714,7 @@ namespace Punto_de_Venta
         private void CargarTopProductos(List<Venta> sales)
         {
             TopProductos.Clear();
-            var dict = new Dictionary<string, (decimal Qty, decimal Ingreso)>(StringComparer.OrdinalIgnoreCase); // CORREGIDO: int -> decimal
+            var dict = new Dictionary<string, (decimal Qty, decimal Ingreso)>(StringComparer.OrdinalIgnoreCase);
             foreach (var s in sales)
             {
                 if (s.Productos.Count > 0) { foreach (var p in s.Productos) { var cur = dict.GetValueOrDefault(p.Nombre); dict[p.Nombre] = (cur.Qty + p.Cantidad, cur.Ingreso + (p.Precio * p.Cantidad)); } }
@@ -625,7 +722,7 @@ namespace Punto_de_Venta
             }
             var top = dict.OrderByDescending(x => x.Value.Ingreso).ThenByDescending(x => x.Value.Qty).Take(5).ToList();
             for (int i = 0; i < top.Count; i++) TopProductos.Add(new TopProductoItem(i + 1, top[i].Key, top[i].Value.Qty, top[i].Value.Ingreso));
-            for (int i = top.Count; i < 5; i++) TopProductos.Add(new TopProductoItem(i + 1, "Sin datos", 0m, 0m)); // CORREGIDO: 0 -> 0m
+            for (int i = top.Count; i < 5; i++) TopProductos.Add(new TopProductoItem(i + 1, "Sin datos", 0m, 0m));
         }
         #endregion
 
@@ -684,10 +781,10 @@ namespace Punto_de_Venta
 
         #region Enumeradores y Records
         private enum Period { Day, Week, Month, Year, Custom }
-        private enum ChartView { Finanzas, MetodosPago, Categorias, HorasPico, Rentabilidad, CortesCaja }
+        private enum ChartView { Finanzas, MetodosPago, Categorias, HorasPico, Rentabilidad, CortesCaja, Rotacion, Pareto } // NUEVAS VISTAS AÑADIDAS
     }
 
-    public sealed record TopProductoItem(int Posicion, string Nombre, decimal Cantidad, decimal Ingreso); // CORREGIDO: int Cantidad -> decimal Cantidad
+    public sealed record TopProductoItem(int Posicion, string Nombre, decimal Cantidad, decimal Ingreso);
     public sealed record CorteAuditoriaItem(int TurnoId, string FechaHoraFormateada, string FolioTexto, string EsperadoFormateado, string ContadoFormateado, string DiferenciaFormateada, Brush BadgeBackground, Brush BadgeForeground);
     #endregion
 }
