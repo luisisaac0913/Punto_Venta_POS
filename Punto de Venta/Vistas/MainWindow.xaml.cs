@@ -550,7 +550,7 @@ namespace Punto_de_Venta
                 var inicioSemana = hoy.AddDays(-6);
                 var sales = VentaDB.Load().Where(sale =>
                 {
-                    var fechaLocal = sale.FechaHora.ToLocalTime().Date;
+                    var fechaLocal = sale.FechaHora.Date;
                     return sale.Estado != "Cancelada" && fechaLocal >= inicioSemana && fechaLocal <= hoy;
                 }).ToList();
 
@@ -755,7 +755,7 @@ namespace Punto_de_Venta
                     {
                         for (var day = weekStart; day <= today; day = day.AddDays(1))
                         {
-                            var dailySales = sales.Where(s => s.FechaHora.ToLocalTime().Date == day).ToList();
+                            var dailySales = sales.Where(s => s.FechaHora.Date == day).ToList();
                             var dailyTotal = dailySales.Sum(s => s.Total);
                             var dailyProfit = dailySales.Sum(s => s.GananciaTotal);
 

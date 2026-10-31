@@ -178,12 +178,29 @@ namespace Punto_de_Venta
             var totalGastos = _movimientos.Where(m => m.FechaHora >= _filtroInicio && m.FechaHora <= _filtroFin && (m.Tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase))).Sum(m => m.Monto);
             var entradasExtras = _movimientos.Where(m => m.FechaHora >= _filtroInicio && m.FechaHora <= _filtroFin && m.Tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
             var fondosIniciales = _movimientos.Where(m => m.FechaHora >= _filtroInicio && m.FechaHora <= _filtroFin && m.Tipo.Equals("Fondo", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
+            var ventasEfectivo = periodSales
+                .Where(s => !string.Equals(s.Estado, "Fiado", StringComparison.OrdinalIgnoreCase))
+                .Sum(s =>
+                    string.Equals(s.MetodoPago, "Efectivo", StringComparison.OrdinalIgnoreCase) ? s.Total :
+                    string.Equals(s.MetodoPago, "Mixto", StringComparison.OrdinalIgnoreCase) ? Math.Max(0m, s.PagoEfectivo - s.Cambio) : 0m);
+
             var turno = TurnoCajaManager.ObtenerTurnoActivo();
+            decimal balanceNeto;
             if (turno != null && _periodoSeleccionado == "Dia")
             {
-                fondosIniciales = turno.FondoInicial;
+                var ventasEfectivoTurno = Sales
+                    .Where(s => string.Equals(s.Estado, "Abierta", StringComparison.OrdinalIgnoreCase))
+                    .Sum(s =>
+                        string.Equals(s.MetodoPago, "Efectivo", StringComparison.OrdinalIgnoreCase) ? s.Total :
+                        string.Equals(s.MetodoPago, "Mixto", StringComparison.OrdinalIgnoreCase) ? Math.Max(0m, s.PagoEfectivo - s.Cambio) : 0m);
+                var entradasTurno = _movimientos.Where(m => m.CorteCajaId == turno.Id && m.Tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
+                var salidasTurno = _movimientos.Where(m => m.CorteCajaId == turno.Id && (m.Tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase))).Sum(m => m.Monto);
+                balanceNeto = turno.FondoInicial + ventasEfectivoTurno + entradasTurno - salidasTurno;
             }
-            var balanceNeto = fondosIniciales + entradasExtras + totalVentas - totalGastos;
+            else
+            {
+                balanceNeto = fondosIniciales + entradasExtras + ventasEfectivo - totalGastos;
+            }
             TotalSalesTodayText.Text = totalVentas.ToString("C2", culture);
             TotalProfitText.Text = totalProfit.ToString("C2", culture);
             TotalProductsSoldText.Text = $"{totalItems} pzas";
@@ -197,7 +214,7 @@ namespace Punto_de_Venta
             {
                 foreach (var item in sale.Productos)
                 {
-                    if (item.Ganancia <= 0)
+                    if (item.Ganancia <= 0 && item.Costo <= 0)
                     {
                         var catalogProd = _catalog.FirstOrDefault(p => p.Id == item.Id || string.Equals(p.Nombre, item.Nombre, StringComparison.OrdinalIgnoreCase));
                         if (catalogProd is not null && catalogProd.Ganancia > 0) { item.Costo = catalogProd.Costo; item.Ganancia = catalogProd.Ganancia; }

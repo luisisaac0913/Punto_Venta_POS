@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using Punto_de_Venta.Modelos;
 using System;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ namespace Punto_de_Venta.Datos
             using var conn = DatabaseHelper.GetConnection();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT Id, FechaHora, FondoInicial, VentasEfectivo, EntradasEfectivo, SalidasEfectivo, TotalEsperado, TotalContado, Observaciones 
+                SELECT Id, FechaHora, FondoInicial, VentasEfectivo, EntradasEfectivo, SalidasEfectivo, TotalEsperado, TotalContado, Observaciones, COALESCE(Estado, 'Cerrado') 
                 FROM CortesCaja 
                 ORDER BY Id ASC;";
             using var reader = cmd.ExecuteReader();
@@ -30,6 +30,7 @@ namespace Punto_de_Venta.Datos
                 var esperado = Convert.ToDecimal(reader.GetDouble(6));
                 var contado = Convert.ToDecimal(reader.GetDouble(7));
                 var notas = reader.IsDBNull(8) ? string.Empty : reader.GetString(8);
+                var estado = reader.IsDBNull(9) ? "Cerrado" : reader.GetString(9);
                 if (!DateTime.TryParse(fechaStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fecha))
                 {
                     DateTime.TryParse(fechaStr, CultureInfo.GetCultureInfo("es-MX"), DateTimeStyles.None, out fecha);
@@ -38,6 +39,7 @@ namespace Punto_de_Venta.Datos
                 {
                     Id = id,
                     FechaHora = fecha,
+                    Estado = estado,
                     FondoInicial = fondo,
                     VentasEfectivo = ventas,
                     EntradasEfectivo = entradas,

@@ -1,4 +1,4 @@
-﻿using LiveChartsCore;
+using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using Punto_de_Venta.Datos;
@@ -98,7 +98,7 @@ namespace Punto_de_Venta
             {
                 foreach (var item in sale.Productos)
                 {
-                    if (item.Ganancia <= 0)
+                    if (item.Ganancia <= 0 && item.Costo <= 0)
                     {
                         var catalogProd = _catalog.FirstOrDefault(p => p.Id == item.Id || string.Equals(p.Nombre, item.Nombre, StringComparison.OrdinalIgnoreCase));
                         if (catalogProd is not null && catalogProd.Ganancia > 0) { item.Costo = catalogProd.Costo; item.Ganancia = catalogProd.Ganancia; }
@@ -238,13 +238,10 @@ namespace Punto_de_Venta
             var margenPct = totalVentas > 0 ? (totalGanancia / totalVentas) * 100m : 0m;
             var totalGastos = _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end && (m.Tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase))).Sum(m => m.Monto);
             var entradasExtras = _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end && m.Tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
-            var fondosIniciales = _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end && m.Tipo.Equals("Fondo", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
-            if (_currentPeriod == Period.Day && start == DateTime.Today)
-            {
-                var turno = TurnoCajaManager.ObtenerTurnoActivo();
-                if (turno != null) fondosIniciales = turno.FondoInicial;
-            }
-            var balanceNeto = fondosIniciales + entradasExtras + totalVentas - totalGastos;
+            var ventasCobradas = selectedSales
+                .Where(s => !string.Equals(s.Estado, "Fiado", StringComparison.OrdinalIgnoreCase) && !string.Equals(s.MetodoPago, "Fiado", StringComparison.OrdinalIgnoreCase))
+                .Sum(s => s.Total);
+            var balanceNeto = ventasCobradas + entradasExtras - totalGastos;
             KpiVentaTotal.Text = totalVentas.ToString("C2", _mexicanCulture);
             KpiCostoTotal.Text = totalCosto.ToString("C2", _mexicanCulture);
             KpiGananciaNeta.Text = totalGanancia.ToString("C2", _mexicanCulture);
@@ -538,7 +535,11 @@ namespace Punto_de_Venta
             var totalGanancia = sales.Sum(s => s.GananciaTotal);
             var gastosList = movimientos.Where(m => m.Tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase)).ToList();
             var totalGastos = gastosList.Sum(m => m.Monto);
-            var balanceNeto = totalVentas - totalGastos;
+            var entradasExtras = movimientos.Where(m => m.Tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
+            var ventasCobradas = sales
+                .Where(s => !string.Equals(s.Estado, "Fiado", StringComparison.OrdinalIgnoreCase) && !string.Equals(s.MetodoPago, "Fiado", StringComparison.OrdinalIgnoreCase))
+                .Sum(s => s.Total);
+            var balanceNeto = ventasCobradas + entradasExtras - totalGastos;
 
             var dictTop = new Dictionary<string, (decimal Qty, decimal Ingreso)>(StringComparer.OrdinalIgnoreCase);
             foreach (var s in sales)
@@ -621,8 +622,8 @@ namespace Punto_de_Venta
                                     table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten4).PaddingVertical(3).Text(c.TotalEsperado.ToString("C2", culture)).AlignRight();
                                     table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten4).PaddingVertical(3).Text(c.TotalContado.ToString("C2", culture)).AlignRight();
 
-                                    var diffColor = c.Diferencia == 0 ? QuestPDF.Helpers.Colors.Green.Darken2 : (c.Diferencia > 0 ? QuestPDF.Helpers.Colors.Orange.Darken2 : QuestPDF.Helpers.Colors.Red.Darken2);
-                                    var diffText = c.Diferencia == 0 ? "Exacto" : c.Diferencia.ToString("C2", culture);
+                                    var diffColor = string.Equals(c.Estado, "Abierto", StringComparison.OrdinalIgnoreCase) ? QuestPDF.Helpers.Colors.Blue.Darken2 : (c.Diferencia == 0 ? QuestPDF.Helpers.Colors.Green.Darken2 : (c.Diferencia > 0 ? QuestPDF.Helpers.Colors.Orange.Darken2 : QuestPDF.Helpers.Colors.Red.Darken2));
+                                    var diffText = string.Equals(c.Estado, "Abierto", StringComparison.OrdinalIgnoreCase) ? "Turno Abierto" : (c.Diferencia == 0 ? "Exacto" : c.Diferencia.ToString("C2", culture));
                                     table.Cell().BorderBottom(1).BorderColor(QuestPDF.Helpers.Colors.Grey.Lighten4).PaddingVertical(3).Text(diffText).FontColor(diffColor).Bold().AlignRight();
                                 }
                             });
@@ -697,7 +698,8 @@ namespace Punto_de_Venta
             {
                 var dif = c.Diferencia;
                 string difTexto; Brush bgBrush; Brush fgBrush;
-                if (dif == 0m) { difTexto = "$0.00 Exacto"; bgBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(30, 52, 199, 89)); fgBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(40, 160, 70)); }
+                if (string.Equals(c.Estado, "Abierto", StringComparison.OrdinalIgnoreCase)) { difTexto = "Turno Abierto"; bgBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(30, 0, 122, 255)); fgBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 122, 255)); }
+                else if (dif == 0m) { difTexto = "$0.00 Exacto"; bgBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(30, 52, 199, 89)); fgBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(40, 160, 70)); }
                 else if (dif > 0m) { difTexto = $"+{dif.ToString("C2", _mexicanCulture)} Sobrante"; bgBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(30, 255, 149, 0)); fgBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(215, 120, 0)); }
                 else { difTexto = $"{dif.ToString("C2", _mexicanCulture)} Faltante"; bgBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(30, 255, 59, 48)); fgBrush = new SolidColorBrush(System.Windows.Media.Color.FromRgb(215, 40, 30)); }
 
