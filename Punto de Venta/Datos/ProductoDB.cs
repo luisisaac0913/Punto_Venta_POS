@@ -28,7 +28,7 @@ namespace Punto_de_Venta.Datos
                     Costo = Convert.ToDecimal(reader.GetDouble(4)),
                     Ganancia = Convert.ToDecimal(reader.GetDouble(5)),
                     Precio = Convert.ToDecimal(reader.GetDouble(6)),
-                    Stock = reader.GetInt32(7),
+                    Stock = Convert.ToDecimal(reader.GetDouble(7)),
                     PedirCantidadAlCobrar = reader.GetInt32(8) == 1,
                     SeVendePorPeso = reader.GetInt32(9) == 1 
                 });
@@ -78,7 +78,7 @@ namespace Punto_de_Venta.Datos
                 var pCosto = insertar.Parameters.Add("@costo", SqliteType.Real);
                 var pGanancia = insertar.Parameters.Add("@ganancia", SqliteType.Real);
                 var pPrecio = insertar.Parameters.Add("@precio", SqliteType.Real);
-                var pStock = insertar.Parameters.Add("@stock", SqliteType.Integer);
+                var pStock = insertar.Parameters.Add("@stock", SqliteType.Real);
                 var pPedir = insertar.Parameters.Add("@pedirCantidad", SqliteType.Integer);
                 var pPeso = insertar.Parameters.Add("@seVendePorPeso", SqliteType.Integer);
                 foreach (var prod in products)
@@ -90,7 +90,7 @@ namespace Punto_de_Venta.Datos
                     pCosto.Value = Convert.ToDouble(prod.Costo);
                     pGanancia.Value = Convert.ToDouble(prod.Ganancia);
                     pPrecio.Value = Convert.ToDouble(prod.Precio);
-                    pStock.Value = prod.Stock;
+                    pStock.Value = Convert.ToDouble(prod.Stock);
                     pPedir.Value = prod.PedirCantidadAlCobrar ? 1 : 0;
                     pPeso.Value = prod.SeVendePorPeso ? 1 : 0;
                     insertar.ExecuteNonQuery();
@@ -129,7 +129,7 @@ namespace Punto_de_Venta.Datos
                     Costo = Convert.ToDecimal(reader.GetDouble(4)),
                     Ganancia = Convert.ToDecimal(reader.GetDouble(5)),
                     Precio = Convert.ToDecimal(reader.GetDouble(6)),
-                    Stock = reader.GetInt32(7),
+                    Stock = Convert.ToDecimal(reader.GetDouble(7)),
                     PedirCantidadAlCobrar = reader.GetInt32(8) == 1,
                     SeVendePorPeso = reader.GetInt32(9) == 1 
                 };

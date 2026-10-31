@@ -15,7 +15,7 @@ namespace Punto_de_Venta.Datos
             using var conn = DatabaseHelper.GetConnection();
             using (var cmd = conn.CreateCommand())
             {
-                cmd.CommandText = "SELECT Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago FROM Ventas ORDER BY Id ASC;";
+                cmd.CommandText = "SELECT Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago, COALESCE(PagoEfectivo, 0), COALESCE(PagoTarjeta, 0), COALESCE(PagoTransferencia, 0) FROM Ventas ORDER BY Id ASC;";
                 using var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
@@ -27,7 +27,9 @@ namespace Punto_de_Venta.Datos
                     var estado = reader.GetString(5);
                     var metodoPagoRaw = reader.GetString(6);
                     var metodoPagoFinal = metodoPagoRaw;
-                    decimal pEfectivo = 0, pTarjeta = 0, pTransf = 0;
+                    decimal pEfectivo = Convert.ToDecimal(reader.GetDouble(7));
+                    decimal pTarjeta = Convert.ToDecimal(reader.GetDouble(8));
+                    decimal pTransf = Convert.ToDecimal(reader.GetDouble(9));
                     if (metodoPagoRaw != null && metodoPagoRaw.StartsWith("Mixto|"))
                     {
                         metodoPagoFinal = "Mixto";
@@ -73,7 +75,7 @@ namespace Punto_de_Venta.Datos
                             Id = rDet.GetInt32(2),
                             VentaId = ventaId,
                             Nombre = rDet.GetString(3),
-                            Cantidad = rDet.GetInt32(4),
+                            Cantidad = Convert.ToDecimal(rDet.GetDouble(4)),
                             Costo = Convert.ToDecimal(rDet.GetDouble(5)),
                             Ganancia = Convert.ToDecimal(rDet.GetDouble(6)),
                             Precio = Convert.ToDecimal(rDet.GetDouble(7)),
@@ -83,6 +85,84 @@ namespace Punto_de_Venta.Datos
                 }
             }
             return ventas.Values.ToList();
+        }
+
+        public static int ObtenerSiguienteId()
+        {
+            using var conn = DatabaseHelper.GetConnection();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT COALESCE(MAX(Id), 0) + 1 FROM Ventas;";
+            return Convert.ToInt32(cmd.ExecuteScalar() ?? 1);
+        }
+
+        public static void Insert(Venta sale)
+        {
+            using var conn = DatabaseHelper.GetConnection();
+            using var tr = conn.BeginTransaction();
+            try
+            {
+                string metodoGuardar = sale.MetodoPago ?? "Efectivo";
+                if (metodoGuardar == "Mixto")
+                {
+                    metodoGuardar = $"Mixto|E:{sale.PagoEfectivo.ToString(CultureInfo.InvariantCulture)}|T:{sale.PagoTarjeta.ToString(CultureInfo.InvariantCulture)}|Tr:{sale.PagoTransferencia.ToString(CultureInfo.InvariantCulture)}";
+                }
+
+                using (var insertVenta = conn.CreateCommand())
+                {
+                    insertVenta.Transaction = tr;
+                    insertVenta.CommandText = @"
+                        INSERT INTO Ventas (Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago, PagoEfectivo, PagoTarjeta, PagoTransferencia)
+                        VALUES (@id, @fecha, @total, @pago, @cambio, @estado, @metodo, @pEfec, @pTarj, @pTrans);";
+                    insertVenta.Parameters.AddWithValue("@id", sale.Id);
+                    insertVenta.Parameters.AddWithValue("@fecha", sale.FechaHora.ToString("o", CultureInfo.InvariantCulture));
+                    insertVenta.Parameters.AddWithValue("@total", Convert.ToDouble(sale.Total));
+                    insertVenta.Parameters.AddWithValue("@pago", Convert.ToDouble(sale.PagoCon));
+                    insertVenta.Parameters.AddWithValue("@cambio", Convert.ToDouble(sale.Cambio));
+                    insertVenta.Parameters.AddWithValue("@estado", sale.Estado ?? "Abierta");
+                    insertVenta.Parameters.AddWithValue("@metodo", metodoGuardar);
+                    insertVenta.Parameters.AddWithValue("@pEfec", Convert.ToDouble(sale.PagoEfectivo));
+                    insertVenta.Parameters.AddWithValue("@pTarj", Convert.ToDouble(sale.PagoTarjeta));
+                    insertVenta.Parameters.AddWithValue("@pTrans", Convert.ToDouble(sale.PagoTransferencia));
+                    insertVenta.ExecuteNonQuery();
+                }
+
+                if (sale.Productos != null && sale.Productos.Count > 0)
+                {
+                    using var insertDetalle = conn.CreateCommand();
+                    insertDetalle.Transaction = tr;
+                    insertDetalle.CommandText = @"
+                        INSERT INTO VentasDetalle (VentaId, ProductoId, Nombre, Cantidad, Costo, Ganancia, Precio, Categoria)
+                        VALUES (@vId, @pId, @nom, @cant, @costo, @gan, @precio, @cat);";
+                    var dVId = insertDetalle.Parameters.Add("@vId", SqliteType.Integer);
+                    var dPId = insertDetalle.Parameters.Add("@pId", SqliteType.Integer);
+                    var dNom = insertDetalle.Parameters.Add("@nom", SqliteType.Text);
+                    var dCant = insertDetalle.Parameters.Add("@cant", SqliteType.Real);
+                    var dCosto = insertDetalle.Parameters.Add("@costo", SqliteType.Real);
+                    var dGan = insertDetalle.Parameters.Add("@gan", SqliteType.Real);
+                    var dPrecio = insertDetalle.Parameters.Add("@precio", SqliteType.Real);
+                    var dCat = insertDetalle.Parameters.Add("@cat", SqliteType.Text);
+
+                    foreach (var det in sale.Productos)
+                    {
+                        dVId.Value = sale.Id;
+                        dPId.Value = det.Id;
+                        dNom.Value = det.Nombre ?? string.Empty;
+                        dCant.Value = Convert.ToDouble(det.Cantidad);
+                        dCosto.Value = Convert.ToDouble(det.Costo);
+                        dGan.Value = Convert.ToDouble(det.Ganancia);
+                        dPrecio.Value = Convert.ToDouble(det.Precio);
+                        dCat.Value = det.Categoria ?? "N/A";
+                        insertDetalle.ExecuteNonQuery();
+                    }
+                }
+
+                tr.Commit();
+            }
+            catch
+            {
+                tr.Rollback();
+                throw;
+            }
         }
 
         public static void Save(IEnumerable<Venta> ventas)
@@ -100,8 +180,8 @@ namespace Punto_de_Venta.Datos
                 using var insertVenta = conn.CreateCommand();
                 insertVenta.Transaction = tr;
                 insertVenta.CommandText = @"
-                    INSERT INTO Ventas (Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago)
-                    VALUES (@id, @fecha, @total, @pago, @cambio, @estado, @metodo);";
+                    INSERT INTO Ventas (Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago, PagoEfectivo, PagoTarjeta, PagoTransferencia)
+                    VALUES (@id, @fecha, @total, @pago, @cambio, @estado, @metodo, @pEfec, @pTarj, @pTrans);";
                 var vId = insertVenta.Parameters.Add("@id", SqliteType.Integer);
                 var vFecha = insertVenta.Parameters.Add("@fecha", SqliteType.Text);
                 var vTotal = insertVenta.Parameters.Add("@total", SqliteType.Real);
@@ -109,6 +189,9 @@ namespace Punto_de_Venta.Datos
                 var vCambio = insertVenta.Parameters.Add("@cambio", SqliteType.Real);
                 var vEstado = insertVenta.Parameters.Add("@estado", SqliteType.Text);
                 var vMetodo = insertVenta.Parameters.Add("@metodo", SqliteType.Text);
+                var vPEfec = insertVenta.Parameters.Add("@pEfec", SqliteType.Real);
+                var vPTarj = insertVenta.Parameters.Add("@pTarj", SqliteType.Real);
+                var vPTrans = insertVenta.Parameters.Add("@pTrans", SqliteType.Real);
                 using var insertDetalle = conn.CreateCommand();
                 insertDetalle.Transaction = tr;
                 insertDetalle.CommandText = @"
@@ -117,7 +200,7 @@ namespace Punto_de_Venta.Datos
                 var dVId = insertDetalle.Parameters.Add("@vId", SqliteType.Integer);
                 var dPId = insertDetalle.Parameters.Add("@pId", SqliteType.Integer);
                 var dNom = insertDetalle.Parameters.Add("@nom", SqliteType.Text);
-                var dCant = insertDetalle.Parameters.Add("@cant", SqliteType.Integer);
+                var dCant = insertDetalle.Parameters.Add("@cant", SqliteType.Real);
                 var dCosto = insertDetalle.Parameters.Add("@costo", SqliteType.Real);
                 var dGan = insertDetalle.Parameters.Add("@gan", SqliteType.Real);
                 var dPrecio = insertDetalle.Parameters.Add("@precio", SqliteType.Real);
@@ -136,6 +219,9 @@ namespace Punto_de_Venta.Datos
                         metodoGuardar = $"Mixto|E:{sale.PagoEfectivo.ToString(CultureInfo.InvariantCulture)}|T:{sale.PagoTarjeta.ToString(CultureInfo.InvariantCulture)}|Tr:{sale.PagoTransferencia.ToString(CultureInfo.InvariantCulture)}";
                     }
                     vMetodo.Value = metodoGuardar;
+                    vPEfec.Value = Convert.ToDouble(sale.PagoEfectivo);
+                    vPTarj.Value = Convert.ToDouble(sale.PagoTarjeta);
+                    vPTrans.Value = Convert.ToDouble(sale.PagoTransferencia);
                     insertVenta.ExecuteNonQuery();
                     if (sale.Productos != null && sale.Productos.Count > 0)
                     {
@@ -144,7 +230,7 @@ namespace Punto_de_Venta.Datos
                             dVId.Value = sale.Id;
                             dPId.Value = det.Id;
                             dNom.Value = det.Nombre ?? string.Empty;
-                            dCant.Value = det.Cantidad;
+                            dCant.Value = Convert.ToDouble(det.Cantidad);
                             dCosto.Value = Convert.ToDouble(det.Costo);
                             dGan.Value = Convert.ToDouble(det.Ganancia);
                             dPrecio.Value = Convert.ToDouble(det.Precio);

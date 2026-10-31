@@ -1,4 +1,4 @@
-using Punto_de_Venta.Datos;
+﻿using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using Punto_de_Venta.Vistas;
@@ -63,7 +63,7 @@ namespace Punto_de_Venta
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (this.Visibility == Visibility.Visible)
+            if ((bool)e.NewValue)
             {
                 RecargarDatosDesdeBD();
                 FocusSearch();
@@ -176,9 +176,14 @@ namespace Punto_de_Venta
             var totalItems = periodSales.Sum(s => s.CantidadTotal);
             var totalProfit = periodSales.Sum(s => s.GananciaTotal);
             var totalGastos = _movimientos.Where(m => m.FechaHora >= _filtroInicio && m.FechaHora <= _filtroFin && (m.Tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase))).Sum(m => m.Monto);
+            var entradasExtras = _movimientos.Where(m => m.FechaHora >= _filtroInicio && m.FechaHora <= _filtroFin && m.Tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
             var fondosIniciales = _movimientos.Where(m => m.FechaHora >= _filtroInicio && m.FechaHora <= _filtroFin && m.Tipo.Equals("Fondo", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
-            var balanceNeto = fondosIniciales + totalVentas - totalGastos;
-
+            var turno = TurnoCajaManager.ObtenerTurnoActivo();
+            if (turno != null && _periodoSeleccionado == "Dia")
+            {
+                fondosIniciales = turno.FondoInicial;
+            }
+            var balanceNeto = fondosIniciales + entradasExtras + totalVentas - totalGastos;
             TotalSalesTodayText.Text = totalVentas.ToString("C2", culture);
             TotalProfitText.Text = totalProfit.ToString("C2", culture);
             TotalProductsSoldText.Text = $"{totalItems} pzas";
@@ -305,7 +310,7 @@ namespace Punto_de_Venta
                 string textoTicket = TicketService.GenerarTextoTicket(
                     _selectedSale,
                     _selectedSale.Productos,
-                    _selectedSale.PagoEfectivo > 0 ? _selectedSale.PagoEfectivo : _selectedSale.Total,
+                    (_selectedSale.PagoCon > 0 ? _selectedSale.PagoCon : (_selectedSale.PagoEfectivo > 0 ? _selectedSale.PagoEfectivo : _selectedSale.Total)),
                     _selectedSale.Cambio,
                     config
                 );

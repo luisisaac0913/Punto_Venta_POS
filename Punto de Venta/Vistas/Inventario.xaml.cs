@@ -93,7 +93,7 @@ namespace Punto_de_Venta
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (this.Visibility == Visibility.Visible)
+            if ((bool)e.NewValue)
             {
                 try
                 {
@@ -707,8 +707,7 @@ namespace Punto_de_Venta
                 SeVendePorPeso = ScaleWeighCheckBox?.IsChecked == true
             };
 
-            var updatedProducts = Products.Append(newProduct).ToList();
-            if (!TrySave(updatedProducts))
+            if (!TrySave(new[] { newProduct }))
             {
                 return;
             }
@@ -793,8 +792,7 @@ namespace Punto_de_Venta
                 SeVendePorPeso = ScaleWeighCheckBox?.IsChecked == true
             };
 
-            var updatedProducts = Products.Select(product => product.Id == oldProduct.Id ? updatedProduct : product).ToList();
-            if (!TrySave(updatedProducts))
+            if (!TrySave(new[] { updatedProduct }))
             {
                 return;
             }
@@ -1027,7 +1025,7 @@ namespace Punto_de_Venta
 
             try
             {
-                ProductoDB.Save(Products);
+                ProductoDB.Save(new[] { _selectedProduct });
                 ProductsView.Refresh();
                 ToastNotification.Show($"+{addAmount} pzas añadidas ({_selectedProduct.Nombre}). Stock: {newStock}", ToastType.Success);
             }
@@ -1109,7 +1107,7 @@ namespace Punto_de_Venta
 
             prod.Stock += addAmount;
 
-            if (TrySave(Products))
+            if (TrySave(new[] { prod }))
             {
                 ProductsView.Refresh();
                 ToastNotification.Show($"+{addAmount} pzas añadidas a '{prod.Nombre}'. Nuevo Stock: {prod.Stock}", ToastType.Success);

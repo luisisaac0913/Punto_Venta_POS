@@ -70,7 +70,7 @@ namespace Punto_de_Venta.Datos
                     Costo REAL NOT NULL,
                     Ganancia REAL NOT NULL,
                     Precio REAL NOT NULL,
-                    Stock INTEGER NOT NULL,
+                    Stock REAL NOT NULL,
                     PedirCantidadAlCobrar INTEGER NOT NULL DEFAULT 0,
                     SeVendePorPeso INTEGER NOT NULL DEFAULT 0
                 );
@@ -98,7 +98,7 @@ namespace Punto_de_Venta.Datos
                     VentaId INTEGER NOT NULL,
                     ProductoId INTEGER NOT NULL,
                     Nombre TEXT NOT NULL,
-                    Cantidad INTEGER NOT NULL,
+                    Cantidad REAL NOT NULL,
                     Costo REAL NOT NULL,
                     Ganancia REAL NOT NULL,
                     Precio REAL NOT NULL,

@@ -1,4 +1,4 @@
-using LiveChartsCore;
+﻿using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using Punto_de_Venta.Datos;
@@ -81,7 +81,7 @@ namespace Punto_de_Venta
         }
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (this.Visibility == Visibility.Visible)
+            if ((bool)e.NewValue)
             {
                 this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                 {
@@ -219,7 +219,6 @@ namespace Punto_de_Venta
             var today = DateTime.Today;
             DateTime start = today;
             DateTime end = today;
-
             switch (_currentPeriod)
             {
                 case Period.Day: start = today; end = today; break;
@@ -228,10 +227,8 @@ namespace Punto_de_Venta
                 case Period.Year: start = new DateTime(today.Year, 1, 1); end = today; break;
                 case Period.Custom: start = _customStart.Date; end = _customEnd.Date; break;
             }
-
             var selectedSales = _sales.Where(s => s.FechaHora.Date >= start && s.FechaHora.Date <= end).ToList();
             var selectedCortes = _cortes.Where(c => c.FechaHora.Date >= start && c.FechaHora.Date <= end).ToList();
-
             var gananciaEsperada = _catalog.Sum(x => x.Ganancia * x.Stock);
             var totalVentas = selectedSales.Sum(s => s.Total);
             var totalGanancia = selectedSales.Sum(s => s.GananciaTotal);
@@ -239,11 +236,15 @@ namespace Punto_de_Venta
             var transacciones = selectedSales.Count;
             var ticketPromedio = transacciones > 0 ? totalVentas / transacciones : 0m;
             var margenPct = totalVentas > 0 ? (totalGanancia / totalVentas) * 100m : 0m;
-
             var totalGastos = _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end && (m.Tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase))).Sum(m => m.Monto);
+            var entradasExtras = _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end && m.Tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
             var fondosIniciales = _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end && m.Tipo.Equals("Fondo", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
-            var balanceNeto = fondosIniciales + totalVentas - totalGastos;
-
+            if (_currentPeriod == Period.Day && start == DateTime.Today)
+            {
+                var turno = TurnoCajaManager.ObtenerTurnoActivo();
+                if (turno != null) fondosIniciales = turno.FondoInicial;
+            }
+            var balanceNeto = fondosIniciales + entradasExtras + totalVentas - totalGastos;
             KpiVentaTotal.Text = totalVentas.ToString("C2", _mexicanCulture);
             KpiCostoTotal.Text = totalCosto.ToString("C2", _mexicanCulture);
             KpiGananciaNeta.Text = totalGanancia.ToString("C2", _mexicanCulture);
@@ -268,11 +269,9 @@ namespace Punto_de_Venta
             ActualizarEstiloBotonSidebar(NavRotacionBtn, _currentView == ChartView.Rotacion);
             ActualizarEstiloBotonSidebar(NavParetoBtn, _currentView == ChartView.Pareto);
             ActualizarEstiloBotonSidebar(NavCortesBtn, _currentView == ChartView.CortesCaja);
-
             MainChartView.Visibility = Visibility.Collapsed;
             PieChartView.Visibility = Visibility.Collapsed;
             CortesContainerView.Visibility = Visibility.Collapsed;
-
             if (_currentView == ChartView.CortesCaja) { CortesContainerView.Visibility = Visibility.Visible; CargarTablaCortes(selectedCortes); }
             else if (_currentView == ChartView.MetodosPago) { PieChartView.Visibility = Visibility.Visible; CargarGraficaMetodosPago(selectedSales); }
             else if (_currentView == ChartView.Pareto) { PieChartView.Visibility = Visibility.Visible; CargarGraficaPareto(selectedSales); }
@@ -288,7 +287,6 @@ namespace Punto_de_Venta
                     case ChartView.Rotacion: CargarGraficaRotacion(selectedSales, (end - start).Days + 1); break;
                 }
             }
-
             if (_currentView == ChartView.Rentabilidad) { TopListTitleText.Text = "Top Rentables (Utilidad)"; CargarTopProductosPorUtilidad(selectedSales); }
             else if (_currentView == ChartView.Rotacion) { TopListTitleText.Text = "Productos con Mayor Riesgo (Poco Stock)"; CargarTopRotacion(selectedSales); }
             else { TopListTitleText.Text = "Top Productos Vendidos"; CargarTopProductos(selectedSales); }

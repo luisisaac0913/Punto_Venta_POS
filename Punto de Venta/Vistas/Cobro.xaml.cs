@@ -25,6 +25,7 @@ namespace Punto_de_Venta.Vistas
     {
         #region Campos Privados y Colecciones
         private DispatcherTimer _typingTimer;
+        private bool _procesandoPago = false;
         private List<Producto> _catalog = new();
         private List<Promocion> _promocionesCargadas = new();
         private readonly DispatcherTimer _clockTimer;
@@ -44,7 +45,6 @@ namespace Punto_de_Venta.Vistas
             Language = XmlLanguage.GetLanguage("es-MX");
 
             Cart.CollectionChanged += Cart_CollectionChanged;
-            ((TextBox)FindName("SearchBox")).TextChanged += SearchBox_TextChanged;
             RefreshSummary();
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => ((TextBlock)FindName("ClockText")).Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
@@ -71,6 +71,7 @@ namespace Punto_de_Venta.Vistas
                 };
             }
         }
+
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             try
@@ -78,7 +79,7 @@ namespace Punto_de_Venta.Vistas
                 _catalog = ProductoDB.Load();
                 CargarPromocionesDesdeDb();
                 RefreshSuggestions();
-                ActualizarEstadoHardware();
+                ActualizarEstadoHardwareAsync(); // Ahora asíncrono
             }
             catch (Exception exception)
             {
@@ -88,7 +89,7 @@ namespace Punto_de_Venta.Vistas
             }
             if (Cart != null)
             {
-                Cart.Clear();
+                LimpiarEventosCarrito();
             }
             RefreshSummary();
             var searchBox = (TextBox)FindName("SearchBox");
@@ -114,7 +115,7 @@ namespace Punto_de_Venta.Vistas
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (this.Visibility == Visibility.Visible)
+            if ((bool)e.NewValue)
             {
                 try { _catalog = ProductoDB.Load(); } catch { _catalog = new(); }
 
@@ -152,12 +153,14 @@ namespace Punto_de_Venta.Vistas
             TotalScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, animY);
         }
 
-        private void ActualizarEstadoHardware()
+        // METODO OPTIMIZADO PARA NO CONGELAR LA UI
+        private async void ActualizarEstadoHardwareAsync()
         {
             try
             {
                 var config = AppConfig.Load();
 
+                // 1. Verificación de Báscula (Rápido, se queda en hilo UI)
                 if (config.BasculaHabilitada)
                 {
                     var puertosActivos = BasculaService.ObtenerPuertosDisponibles();
@@ -180,27 +183,32 @@ namespace Punto_de_Venta.Vistas
                     StatusScaleBadge.ToolTip = "Báscula deshabilitada en ajustes";
                 }
 
-                bool impresoraValida = false;
+                // 2. Verificación de Impresora (Lento, se va a hilo secundario)
                 string nombreImpresora = config.ImpresoraSeleccionada;
+                bool impresoraValida = false;
 
-                if (!string.IsNullOrWhiteSpace(nombreImpresora))
+                await Task.Run(() =>
                 {
-                    foreach (string printer in PrinterSettings.InstalledPrinters)
+                    if (!string.IsNullOrWhiteSpace(nombreImpresora))
                     {
-                        if (string.Equals(printer, nombreImpresora, StringComparison.OrdinalIgnoreCase))
+                        foreach (string printer in PrinterSettings.InstalledPrinters)
                         {
-                            impresoraValida = true;
-                            break;
+                            if (string.Equals(printer, nombreImpresora, StringComparison.OrdinalIgnoreCase))
+                            {
+                                impresoraValida = true;
+                                break;
+                            }
                         }
                     }
-                }
-                else
-                {
-                    var defaultSettings = new PrinterSettings();
-                    impresoraValida = defaultSettings.IsValid;
-                    nombreImpresora = defaultSettings.IsValid ? defaultSettings.PrinterName : "Ninguna";
-                }
+                    else
+                    {
+                        var defaultSettings = new PrinterSettings();
+                        impresoraValida = defaultSettings.IsValid;
+                        nombreImpresora = defaultSettings.IsValid ? defaultSettings.PrinterName : "Ninguna";
+                    }
+                });
 
+                // Regresamos a UI
                 if (impresoraValida)
                 {
                     DotPrinterStatus.Fill = new SolidColorBrush(Color.FromRgb(46, 204, 113));
@@ -386,6 +394,7 @@ namespace Punto_de_Venta.Vistas
 
             if (_itemEnPesaje != null && _itemEnPesaje.Cantidad == 0)
             {
+                _itemEnPesaje.PropertyChanged -= CartItem_PropertyChanged;
                 Cart.Remove(_itemEnPesaje);
                 ActualizarVisibilidadEmptyState();
             }
@@ -803,6 +812,123 @@ namespace Punto_de_Venta.Vistas
         }
         #endregion
 
+        #region Módulo Modo ReStock Rápido
+        private void OpenQuickRestockModal()
+        {
+            if (FindName("SuggestionsPopup") is System.Windows.Controls.Primitives.Popup popup)
+                popup.IsOpen = false;
+
+            QrScanCodeBox.Clear();
+            QrAddAmountBox.Text = "1";
+            QrFoundProductLabel.Text = string.Empty;
+            QrStatusMessage.Text = string.Empty;
+
+            QuickRestockOverlay.Visibility = Visibility.Visible;
+            QrScanCodeBox.Focus();
+            Keyboard.Focus(QrScanCodeBox);
+        }
+
+        private void CloseQuickRestock_Click(object sender, RoutedEventArgs e) => CloseQuickRestock();
+
+        private void CloseQuickRestock()
+        {
+            QuickRestockOverlay.Visibility = Visibility.Collapsed;
+            FocusSearch();
+        }
+
+        private void QrScanCodeBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter) return;
+
+            var code = QrScanCodeBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(code)) return;
+
+            var prod = _catalog.FirstOrDefault(p =>
+                string.Equals(p.Codigo, code, StringComparison.OrdinalIgnoreCase) ||
+                p.Id.ToString(CultureInfo.InvariantCulture) == code);
+
+            if (prod != null)
+            {
+                QrFoundProductLabel.Text = $"✅ {prod.Nombre} (Stock actual: {prod.Stock})";
+                QrStatusMessage.Text = string.Empty;
+                QrAddAmountBox.Focus();
+                QrAddAmountBox.SelectAll();
+            }
+            else
+            {
+                QrFoundProductLabel.Text = string.Empty;
+                QrStatusMessage.Text = "⚠️ Producto no encontrado con ese código.";
+                QrScanCodeBox.SelectAll();
+            }
+
+            e.Handled = true;
+        }
+
+        private void QrAddAmountBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                ConfirmQuickRestockProcess();
+                e.Handled = true;
+            }
+        }
+
+        private void ConfirmQuickRestock_Click(object sender, RoutedEventArgs e) => ConfirmQuickRestockProcess();
+
+        private void ConfirmQuickRestockProcess()
+        {
+            var code = QrScanCodeBox.Text.Trim();
+            var amountText = QrAddAmountBox.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                QrStatusMessage.Text = "Escanea o escribe un código.";
+                QrScanCodeBox.Focus();
+                return;
+            }
+
+            var prod = _catalog.FirstOrDefault(p =>
+                string.Equals(p.Codigo, code, StringComparison.OrdinalIgnoreCase) ||
+                p.Id.ToString(CultureInfo.InvariantCulture) == code);
+
+            if (prod == null)
+            {
+                QrStatusMessage.Text = "Producto no encontrado.";
+                QrScanCodeBox.Focus();
+                return;
+            }
+
+            if (!decimal.TryParse(amountText, NumberStyles.Any, CultureInfo.InvariantCulture, out var addAmount) || addAmount <= 0)
+            {
+                QrStatusMessage.Text = "Ingresa una cantidad entera mayor a 0.";
+                QrAddAmountBox.Focus();
+                QrAddAmountBox.SelectAll();
+                return;
+            }
+
+            prod.Stock += addAmount;
+
+            try
+            {
+                ProductoDB.Save(new[] { prod });
+
+                ToastNotification.Show($"+{addAmount} pzas añadidas a '{prod.Nombre}'. Nuevo Stock: {prod.Stock}", ToastType.Success);
+
+                QrScanCodeBox.Clear();
+                QrAddAmountBox.Text = "1";
+                QrFoundProductLabel.Text = $"Último: {prod.Nombre} (Stock: {prod.Stock})";
+                QrStatusMessage.Text = string.Empty;
+                QrScanCodeBox.Focus();
+            }
+            catch (Exception ex)
+            {
+                prod.Stock -= addAmount;
+                QrStatusMessage.Text = "Error al guardar en disco.";
+                ToastNotification.Show($"Error al guardar: {ex.Message}", ToastType.Error);
+            }
+        }
+        #endregion
+
         #region Agregar Rápido de Producto Nuevo
         private void OpenQuickAdd(string code)
         {
@@ -911,7 +1037,7 @@ namespace Punto_de_Venta.Vistas
             try
             {
                 var actualizado = _catalog.Append(nuevoProd).ToList();
-                ProductoDB.Save(actualizado);
+                ProductoDB.Save(new[] { nuevoProd });
                 _catalog = actualizado;
             }
             catch (Exception ex)
@@ -974,7 +1100,7 @@ namespace Punto_de_Venta.Vistas
 
         private void PaymentOverlay_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (ReferenceEquals(e.OriginalSource, PaymentOverlay))
+            if (!_procesandoPago && ReferenceEquals(e.OriginalSource, PaymentOverlay))
             {
                 PaymentOverlay.Visibility = Visibility.Collapsed;
                 FocusSearch();
@@ -989,13 +1115,14 @@ namespace Punto_de_Venta.Vistas
             }
         }
 
-        private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
+        private async void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.IsRepeat) return;
+            if (_procesandoPago) { e.Handled = true; return; }
 
             if (ScaleOverlay.Visibility == Visibility.Visible)
             {
-                if (e.Key == Key.Escape) { CancelScale_Click(this, new RoutedEventArgs()); e.Handled = true; Cart.Clear(); }
+                if (e.Key == Key.Escape) { CancelScale_Click(this, new RoutedEventArgs()); e.Handled = true; }
                 return;
             }
 
@@ -1039,8 +1166,8 @@ namespace Punto_de_Venta.Vistas
                         return;
                     }
 
-                    FinalizePayment();
                     e.Handled = true;
+                    await FinalizePaymentAsync();
                     return;
                 }
                 return;
@@ -1124,6 +1251,7 @@ namespace Punto_de_Venta.Vistas
                 {
                     if (Application.Current.MainWindow is MainWindow mainWindow)
                     {
+                        LimpiarEventosCarrito();
                         mainWindow.RegresarAlMenu();
                     }
                 }
@@ -1211,8 +1339,7 @@ namespace Punto_de_Venta.Vistas
                     });
                 }
 
-                var sales = VentaDB.Load();
-                var saleId = checked(sales.Select(s => s.Id).DefaultIfEmpty(0).Max() + 1);
+                var saleId = VentaDB.ObtenerSiguienteId();
                 var sale = new Venta
                 {
                     Id = saleId,
@@ -1238,21 +1365,25 @@ namespace Punto_de_Venta.Vistas
                     }).ToList()
                 };
 
+                var productosModificados = new List<Producto>();
                 foreach (var cartItem in Cart)
                 {
                     var prod = _catalog.FirstOrDefault(p => p.Id == cartItem.ProductoId);
-                    if (prod != null) prod.Stock = (decimal)Math.Max(0m, (decimal)prod.Stock - cartItem.Cantidad);
+                    if (prod != null)
+                    {
+                        prod.Stock = (decimal)Math.Max(0m, (decimal)prod.Stock - cartItem.Cantidad);
+                        productosModificados.Add(prod);
+                    }
                 }
 
                 PrestamoDB.Save(debtors);
-                VentaDB.Save(sales.Append(sale));
-                ProductoDB.Save(_catalog);
+                VentaDB.Insert(sale);
+                ProductoDB.Save(productosModificados);
 
                 var config = AppConfig.Load();
                 TicketService.GuardarCopiaDigital(sale, sale.Productos, 0m, 0m, config);
 
-                foreach (var item in Cart) item.PropertyChanged -= CartItem_PropertyChanged;
-                Cart.Clear();
+                LimpiarEventosCarrito(); // Fix de memoria
                 _saleNumber++;
                 RefreshSummary();
 
@@ -1416,6 +1547,10 @@ namespace Punto_de_Venta.Vistas
             ((Popup)FindName("SuggestionsPopup")).IsOpen = false;
             ((Grid)FindName("PaymentOverlay")).Visibility = Visibility.Visible;
 
+            ((TextBlock)FindName("PaymentMessage")).Text = string.Empty;
+            ((TextBlock)FindName("ChangeText")).Text = 0m.ToString("C2", CultureInfo.GetCultureInfo("es-MX"));
+            ((Button)FindName("FinalizeButton")).IsEnabled = false;
+
             if (RbMixto.IsChecked == true)
             {
                 MixedCashBox.Text = "0";
@@ -1426,19 +1561,16 @@ namespace Punto_de_Venta.Vistas
             }
             else
             {
-                CashReceivedBox.Clear();
-                CashReceivedBox.Focus();
+                PaymentMethod_Changed(this, new RoutedEventArgs());
             }
-
-            ((TextBlock)FindName("PaymentMessage")).Text = string.Empty;
-            ((TextBlock)FindName("ChangeText")).Text = 0m.ToString("C2", CultureInfo.GetCultureInfo("es-MX"));
-            ((Button)FindName("FinalizeButton")).IsEnabled = false;
         }
 
-        private void FinalizeButton_Click(object sender, RoutedEventArgs e) => FinalizePayment();
+        private async void FinalizeButton_Click(object sender, RoutedEventArgs e) => await FinalizePaymentAsync();
 
-        private void FinalizePayment()
+        private async Task FinalizePaymentAsync()
         {
+            if (_procesandoPago) return;
+
             var culture = CultureInfo.GetCultureInfo("es-MX");
             var total = Math.Round(ObtenerTotalNetoVenta(), 2);
             var totalBruto = Cart.Sum(item => item.Subtotal);
@@ -1487,8 +1619,9 @@ namespace Punto_de_Venta.Vistas
 
             try
             {
-                var sales = VentaDB.Load();
-                int saleId = checked(sales.Select(s => s.Id).DefaultIfEmpty(0).Max() + 1);
+                _procesandoPago = true;
+
+                int saleId = VentaDB.ObtenerSiguienteId();
 
                 var sale = new Venta
                 {
@@ -1518,38 +1651,49 @@ namespace Punto_de_Venta.Vistas
                     }).ToList()
                 };
 
+                var productosModificados = new List<Producto>();
                 foreach (var cartItem in Cart)
                 {
                     var prod = _catalog.FirstOrDefault(p => p.Id == cartItem.ProductoId);
-                    if (prod != null) prod.Stock = (decimal)Math.Max(0m, (decimal)prod.Stock - cartItem.Cantidad);
-                }
-
-                VentaDB.Save(sales.Append(sale));
-                ProductoDB.Save(_catalog);
-
-                if (paymentMethod == "Efectivo" || (paymentMethod == "Mixto" && pEfectivo > 0))
-                {
-                    CajonService.AbrirCajon();
-                }
-
-                var config = AppConfig.Load();
-                TicketService.GuardarCopiaDigital(sale, sale.Productos, amountReceived, change, config);
-
-                if (config.ImprimirTicketAutomatico)
-                {
-                    TicketService.ImprimirFisico(sale, sale.Productos, amountReceived, change, config);
-                }
-                else if (config.PreguntarAntesDeImprimir)
-                {
-                    Window window = Window.GetWindow(this) ?? Application.Current.MainWindow;
-                    var resultado = CustomMessageBox.Show(window, "¿Deseas imprimir el ticket de esta venta?", "Ticket de Venta", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                    if (resultado == MessageBoxResult.Yes)
+                    if (prod != null)
                     {
-                        TicketService.ImprimirFisico(sale, sale.Productos, amountReceived, change, config);
+                        prod.Stock = (decimal)Math.Max(0m, (decimal)prod.Stock - cartItem.Cantidad);
+                        productosModificados.Add(prod);
                     }
                 }
 
-                Cart.Clear();
+                await Task.Run(() =>
+                {
+                    VentaDB.Insert(sale);
+                    ProductoDB.Save(productosModificados);
+                });
+
+                var config = AppConfig.Load();
+                bool imprimir = config.ImprimirTicketAutomatico;
+
+                if (!imprimir && config.PreguntarAntesDeImprimir)
+                {
+                    Window window = Window.GetWindow(this) ?? Application.Current.MainWindow;
+                    var resultado = CustomMessageBox.Show(window, "¿Deseas imprimir el ticket de esta venta?", "Ticket de Venta", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    imprimir = (resultado == MessageBoxResult.Yes);
+                }
+
+                await Task.Run(() =>
+                {
+                    if (paymentMethod == "Efectivo" || (paymentMethod == "Mixto" && pEfectivo > 0))
+                    {
+                        CajonService.AbrirCajon();
+                    }
+
+                    TicketService.GuardarCopiaDigital(sale, sale.Productos, amountReceived, change, config);
+
+                    if (imprimir)
+                    {
+                        TicketService.ImprimirFisico(sale, sale.Productos, amountReceived, change, config);
+                    }
+                });
+
+                LimpiarEventosCarrito();
                 _saleNumber++;
                 RefreshSummary();
                 ((Grid)FindName("PaymentOverlay")).Visibility = Visibility.Collapsed;
@@ -1568,6 +1712,10 @@ namespace Punto_de_Venta.Vistas
                 _catalog = ProductoDB.Load();
                 ((TextBlock)FindName("PaymentMessage")).Text = $"Error crítico en BD: {exception.Message}";
                 ToastNotification.Show($"Error crítico al guardar venta en base de datos: {exception.Message}", ToastType.Error);
+            }
+            finally
+            {
+                _procesandoPago = false;
             }
         }
 
@@ -1673,16 +1821,28 @@ namespace Punto_de_Venta.Vistas
                 var searchBox = (TextBox)FindName("SearchBox");
                 if (searchBox != null)
                 {
-                    this.Focus(); 
-                    searchBox.Focus(); 
+                    this.Focus();
+                    searchBox.Focus();
                     Keyboard.Focus(searchBox);
                 }
             }));
         }
+
+        private void LimpiarEventosCarrito()
+        {
+            foreach (var item in Cart)
+            {
+                item.PropertyChanged -= CartItem_PropertyChanged;
+            }
+            Cart.Clear();
+            ActualizarVisibilidadEmptyState();
+        }
+
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             FocusSearch();
         }
+
         private void ShowPurchaseFeedback(bool succeeded, string message)
         {
             var feedback = (TextBlock)FindName("SearchMessage");
@@ -1785,123 +1945,6 @@ namespace Punto_de_Venta.Vistas
             if (FindName("PromotionsCountText") is TextBlock promoBlock)
             {
                 promoBlock.Text = resultadoPromo.PromocionesAplicadasCount.ToString(culture);
-            }
-        }
-        #endregion
-
-        #region Módulo Modo ReStock Rápido
-        private void OpenQuickRestockModal()
-        {
-            if (FindName("SuggestionsPopup") is System.Windows.Controls.Primitives.Popup popup)
-                popup.IsOpen = false;
-
-            QrScanCodeBox.Clear();
-            QrAddAmountBox.Text = "1";
-            QrFoundProductLabel.Text = string.Empty;
-            QrStatusMessage.Text = string.Empty;
-
-            QuickRestockOverlay.Visibility = Visibility.Visible;
-            QrScanCodeBox.Focus();
-            Keyboard.Focus(QrScanCodeBox);
-        }
-
-        private void CloseQuickRestock_Click(object sender, RoutedEventArgs e) => CloseQuickRestock();
-
-        private void CloseQuickRestock()
-        {
-            QuickRestockOverlay.Visibility = Visibility.Collapsed;
-            FocusSearch();
-        }
-
-        private void QrScanCodeBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key != Key.Enter) return;
-
-            var code = QrScanCodeBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(code)) return;
-
-            var prod = _catalog.FirstOrDefault(p =>
-                string.Equals(p.Codigo, code, StringComparison.OrdinalIgnoreCase) ||
-                p.Id.ToString(CultureInfo.InvariantCulture) == code);
-
-            if (prod != null)
-            {
-                QrFoundProductLabel.Text = $"✅ {prod.Nombre} (Stock actual: {prod.Stock})";
-                QrStatusMessage.Text = string.Empty;
-                QrAddAmountBox.Focus();
-                QrAddAmountBox.SelectAll();
-            }
-            else
-            {
-                QrFoundProductLabel.Text = string.Empty;
-                QrStatusMessage.Text = "⚠️ Producto no encontrado con ese código.";
-                QrScanCodeBox.SelectAll();
-            }
-
-            e.Handled = true;
-        }
-
-        private void QrAddAmountBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-            {
-                ConfirmQuickRestockProcess();
-                e.Handled = true;
-            }
-        }
-
-        private void ConfirmQuickRestock_Click(object sender, RoutedEventArgs e) => ConfirmQuickRestockProcess();
-
-        private void ConfirmQuickRestockProcess()
-        {
-            var code = QrScanCodeBox.Text.Trim();
-            var amountText = QrAddAmountBox.Text.Trim();
-
-            if (string.IsNullOrWhiteSpace(code))
-            {
-                QrStatusMessage.Text = "Escanea o escribe un código.";
-                QrScanCodeBox.Focus();
-                return;
-            }
-
-            var prod = _catalog.FirstOrDefault(p =>
-                string.Equals(p.Codigo, code, StringComparison.OrdinalIgnoreCase) ||
-                p.Id.ToString(CultureInfo.InvariantCulture) == code);
-
-            if (prod == null)
-            {
-                QrStatusMessage.Text = "Producto no encontrado.";
-                QrScanCodeBox.Focus();
-                return;
-            }
-
-            if (!decimal.TryParse(amountText, NumberStyles.Any, CultureInfo.InvariantCulture, out var addAmount) || addAmount <= 0)
-            {
-                QrStatusMessage.Text = "Ingresa una cantidad entera mayor a 0.";
-                QrAddAmountBox.Focus();
-                QrAddAmountBox.SelectAll();
-                return;
-            }
-
-            prod.Stock += addAmount;
-
-            try
-            {
-                ProductoDB.Save(_catalog);
-
-                ToastNotification.Show($"+{addAmount} pzas añadidas a '{prod.Nombre}'. Nuevo Stock: {prod.Stock}", ToastType.Success);
-
-                QrScanCodeBox.Clear();
-                QrAddAmountBox.Text = "1";
-                QrFoundProductLabel.Text = $"Último: {prod.Nombre} (Stock: {prod.Stock})";
-                QrStatusMessage.Text = string.Empty;
-                QrScanCodeBox.Focus();
-            }
-            catch (Exception ex)
-            {
-                prod.Stock -= addAmount;
-                QrStatusMessage.Text = "Error al guardar en disco.";
-                ToastNotification.Show($"Error al guardar: {ex.Message}", ToastType.Error);
             }
         }
         #endregion

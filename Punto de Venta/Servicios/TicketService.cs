@@ -52,7 +52,7 @@ namespace Punto_de_Venta.Servicios
             }
             sb.AppendLine(new string('-', ancho));
             sb.AppendLine(AlinearDerecha($"TOTAL: {venta.Total.ToString("C2", culture)}", ancho));
-            if (venta.MetodoPago == "Fiado")
+            if (venta.MetodoPago == "Fiado" || venta.Estado == "Fiado")
             {
                 sb.AppendLine(AlinearDerecha("CUENTA POR COBRAR (FIADO)", ancho));
             }

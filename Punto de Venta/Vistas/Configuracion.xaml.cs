@@ -30,7 +30,7 @@ namespace Punto_de_Venta
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (this.Visibility == Visibility.Visible)
+            if ((bool)e.NewValue)
             {
                 NavImpresion_Click(this, new RoutedEventArgs());
 
