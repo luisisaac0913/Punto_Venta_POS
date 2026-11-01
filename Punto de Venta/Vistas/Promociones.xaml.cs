@@ -1,4 +1,4 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Vistas;
 using System;
@@ -17,6 +17,8 @@ namespace Punto_de_Venta
         public Promociones()
         {
             InitializeComponent();
+            FechaInicioPicker.SelectedDate = DateTime.Today;
+            FechaFinPicker.SelectedDate = DateTime.Today.AddDays(7);
             CargarPromociones();
         }
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -36,6 +38,7 @@ namespace Punto_de_Venta
         {
             if ((bool)e.NewValue)
             {
+                CargarPromociones();
                 this.Focus();
                 FocusSearch();
                 Keyboard.Focus(this);
@@ -55,6 +58,17 @@ namespace Punto_de_Venta
             }
         }
         #region Comportamiento del Formulario
+        private void ChkTiempoLimite_Changed(object sender, RoutedEventArgs e)
+        {
+            if (PanelFechas == null) return;
+            bool usarFechas = ChkTiempoLimite.IsChecked == true;
+            PanelFechas.Visibility = usarFechas ? Visibility.Visible : Visibility.Collapsed;
+            if (usarFechas && !FechaInicioPicker.SelectedDate.HasValue && !FechaFinPicker.SelectedDate.HasValue)
+            {
+                FechaInicioPicker.SelectedDate = DateTime.Today;
+                FechaFinPicker.SelectedDate = DateTime.Today.AddDays(7);
+            }
+        }
         private void TipoPromoCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (TipoPromoCombo.SelectedItem is not ComboBoxItem item) return;
@@ -85,7 +99,7 @@ namespace Punto_de_Venta
                     PanelProducto2.Visibility = Visibility.Collapsed;
                     PanelVolumen.Visibility = Visibility.Collapsed;
                     PanelPrecioCombo.Visibility = Visibility.Collapsed;
-                    PanelPorcentaje.Visibility = Visibility.Visible;
+                    PanelPorcentaje.Visibility = Visibility.Collapsed;
                     break;
             }
         }
@@ -117,6 +131,13 @@ namespace Punto_de_Venta
         {
             if (sender is CheckBox cb && cb.DataContext is Promocion promo)
             {
+                if (promo.Activa && promo.EstaVencida)
+                {
+                    promo.Activa = false;
+                    cb.IsChecked = false;
+                    ToastNotification.Show("Esta promoción ya venció. Edita su fecha límite para reactivarla.", ToastType.Warning);
+                    return;
+                }
                 if (PromocionDbStore.Update(promo, out string error))
                 {
                     ToastNotification.Show(promo.Activa ? "Promoción Activada" : "Promoción Desactivada", ToastType.Info);
@@ -180,6 +201,12 @@ namespace Punto_de_Venta
                 {
                     PorcentajeDescuentoBox.Text = (promo.PorcentajeDescuento * 100).ToString("F0");
                 }
+
+                bool tieneFechas = promo.FechaInicio.HasValue || promo.FechaFin.HasValue;
+                ChkTiempoLimite.IsChecked = tieneFechas;
+                PanelFechas.Visibility = tieneFechas ? Visibility.Visible : Visibility.Collapsed;
+                FechaInicioPicker.SelectedDate = promo.FechaInicio;
+                FechaFinPicker.SelectedDate = promo.FechaFin;
             }
         }
         private void CancelarEdicion_Click(object sender, RoutedEventArgs e)
@@ -200,6 +227,10 @@ namespace Punto_de_Venta
             CantidadMinBox.Text = "3";
             if (PrecioComboTotalBox != null) PrecioComboTotalBox.Text = "0.00";
             if (PorcentajeDescuentoBox != null) PorcentajeDescuentoBox.Text = "50";
+            if (ChkTiempoLimite != null) ChkTiempoLimite.IsChecked = false;
+            if (PanelFechas != null) PanelFechas.Visibility = Visibility.Collapsed;
+            if (FechaInicioPicker != null) FechaInicioPicker.SelectedDate = DateTime.Today;
+            if (FechaFinPicker != null) FechaFinPicker.SelectedDate = DateTime.Today.AddDays(7);
         }
         #endregion
 
@@ -285,6 +316,40 @@ namespace Punto_de_Venta
                 promocion.ProductoIdSecundario = 0;
                 promocion.PrecioComboTotal = 0;
             }
+
+            if (ChkTiempoLimite.IsChecked == true)
+            {
+                var fInicio = FechaInicioPicker.SelectedDate?.Date;
+                var fFin = FechaFinPicker.SelectedDate?.Date;
+
+                if (!fInicio.HasValue && !fFin.HasValue)
+                {
+                    ToastNotification.Show("Selecciona al menos una fecha de inicio o de fin", ToastType.Warning);
+                    return;
+                }
+                if (fInicio.HasValue && fFin.HasValue && fFin.Value < fInicio.Value)
+                {
+                    ToastNotification.Show("La fecha de fin no puede ser menor a la fecha de inicio", ToastType.Warning);
+                    return;
+                }
+                if (fFin.HasValue && fFin.Value < DateTime.Today)
+                {
+                    ToastNotification.Show("La fecha límite no puede ser una fecha pasada", ToastType.Warning);
+                    return;
+                }
+
+                promocion.FechaInicio = fInicio;
+                promocion.FechaFin = fFin;
+                promocion.Activa = true;
+            }
+            else
+            {
+                bool estabaVencida = promocion.EstaVencida;
+                promocion.FechaInicio = null;
+                promocion.FechaFin = null;
+                if (estabaVencida) promocion.Activa = true;
+            }
+
             bool guardadoConExito;
             string error = string.Empty;
             if (_promocionEnEdicion != null)
@@ -300,10 +365,11 @@ namespace Punto_de_Venta
                 ToastNotification.Show(_promocionEnEdicion != null ? "Promoción actualizada" : "Promoción guardada con éxito", ToastType.Success);
                 LimpiarFormulario();
                 CargarPromociones();
+                FocusSearch();
             }
             else
             {
-                ToastNotification.Show($"Error al guardar: {error}", ToastType.Error);
+                ToastNotification.Show($"Error al guardar en BD: {error}", ToastType.Error);
             }
         }
         #endregion

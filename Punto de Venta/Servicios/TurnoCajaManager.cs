@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using System;
@@ -44,7 +44,7 @@ namespace Punto_de_Venta
 
                     updateCorteCmd.Parameters.AddWithValue("@monto", Convert.ToDouble(monto));
                     updateCorteCmd.Parameters.AddWithValue("@id", turnoActivo.Id);
-                    updateCorteCmd.ExecuteNonQuery();
+                    if (!string.IsNullOrEmpty(updateCorteCmd.CommandText)) updateCorteCmd.ExecuteNonQuery();
                 }
                 tr.Commit();
             }

@@ -1,4 +1,4 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using System;
@@ -66,6 +66,7 @@ namespace Punto_de_Venta
                 {
                     Debtors.Add(debtor);
                 }
+                try { _preciosCatalogo.Clear(); foreach (var prod in ProductoDB.Load()) { if (!string.IsNullOrWhiteSpace(prod.Nombre)) _preciosCatalogo[prod.Nombre.Trim()] = prod.Precio; } } catch { }
                 _loadFailed = false;
             }
             catch (Exception exception)
@@ -426,15 +427,35 @@ namespace Punto_de_Venta
             try
             {
                 PrestamoDB.Save(updatedDebtors);
-                TurnoCajaManager.RegistrarMovimientoEfectivo("Entrada", payment, $"Abono de cuenta: {updatedDebtor.Nombre}");
+                bool esEfectivo = RbAbonoEfectivo?.IsChecked != false;
+                string metodoTexto = esEfectivo ? "efectivo" : (RbAbonoTarjeta?.IsChecked == true ? "tarjeta" : "transferencia");
+                string tipoMov = esEfectivo ? "Entrada" : "Abono";
+                bool esTarjeta = RbAbonoTarjeta?.IsChecked == true;
+                string metodoPagoVenta = esEfectivo ? "Efectivo" : (esTarjeta ? "Tarjeta" : "Transferencia");
+                TurnoCajaManager.RegistrarMovimientoEfectivo(tipoMov, payment, $"Abono de {updatedDebtor.Nombre} de {payment.ToString("C2", culture)} en {metodoTexto}");
+                int nextVentaId = VentaDB.ObtenerSiguienteId();
+                VentaDB.Insert(new Venta
+                {
+                    Id = nextVentaId,
+                    FechaHora = DateTime.Now,
+                    Total = payment,
+                    PagoCon = payment,
+                    Cambio = 0m,
+                    Estado = "Abono",
+                    MetodoPago = metodoPagoVenta,
+                    PagoEfectivo = esEfectivo ? payment : 0m,
+                    PagoTarjeta = esTarjeta ? payment : 0m,
+                    PagoTransferencia = (!esEfectivo && !esTarjeta) ? payment : 0m,
+                    Productos = [new DetalleVenta { Id = 0, VentaId = nextVentaId, Nombre = $"Abono de {updatedDebtor.Nombre}", Cantidad = 1m, Costo = 0m, Ganancia = 0m, Precio = payment, Categoria = "Abono" }]
+                });
                 ReplaceDebtor(oldDebtor, updatedDebtor);
                 SelectDebtor(updatedDebtor);
                 UpdateDashboardKPIs();
                 UpdateSelectionButtons();
                 PaymentAmountBox.Clear();
                 var mensaje = updatedDebtor.SaldoRestante == 0
-                    ? $"Deuda liquidada. Entrada de {payment.ToString("C2", culture)} guardada en caja."
-                    : $"Abono de {payment.ToString("C2", culture)} registrado. Entrada guardada en caja.";
+                    ? $"Deuda liquidada ({payment.ToString("C2", culture)} en {metodoTexto})."
+                    : $"Abono de {payment.ToString("C2", culture)} en {metodoTexto} registrado.";
 
                 ShowStatus(mensaje, true);
             }

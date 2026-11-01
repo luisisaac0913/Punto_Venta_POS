@@ -270,6 +270,12 @@
                                             <Setter TargetName="StatusText" Property="Foreground" Value="#F39C12" />
                                             <Setter TargetName="StatusText" Property="Text" Value="Fiado" />
                                         </DataTrigger>
+                                        <DataTrigger Binding="{Binding Estado}" Value="Abono">
+                                            <Setter TargetName="StatusBadge" Property="Background" Value="#15AF52DE" />
+                                            <Setter TargetName="StatusBadge" Property="BorderBrush" Value="#40AF52DE" />
+                                            <Setter TargetName="StatusText" Property="Foreground" Value="#AF52DE" />
+                                            <Setter TargetName="StatusText" Property="Text" Value="Abono" />
+                                        </DataTrigger>
                                     </DataTemplate.Triggers>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
