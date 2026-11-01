@@ -1,4 +1,4 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using Punto_de_Venta.Vistas;
@@ -80,7 +80,34 @@ namespace Punto_de_Venta
                 _loadFailed = false;
                 try { _catalog = ProductoDB.Load(); } catch { _catalog = []; }
                 CargarMovimientosCaja();
-                var loadedSales = VentaDB.Load().OrderByDescending(s => s.FechaHora).ThenByDescending(s => s.Id);
+                var rawSales = VentaDB.Load();
+                foreach (var mov in _movimientos.Where(m => m.Concepto != null && m.Concepto.StartsWith("Abono de ", StringComparison.OrdinalIgnoreCase)))
+                {
+                    if (!rawSales.Any(s => string.Equals(s.Estado, "Abono", StringComparison.OrdinalIgnoreCase) && s.Total == mov.Monto && Math.Abs((s.FechaHora - mov.FechaHora).TotalMinutes) < 2))
+                    {
+                        bool esTarj = mov.Concepto.EndsWith("en tarjeta", StringComparison.OrdinalIgnoreCase);
+                        bool esTransf = mov.Concepto.EndsWith("en transferencia", StringComparison.OrdinalIgnoreCase);
+                        bool esEfec = !esTarj && !esTransf;
+                        int nextId = VentaDB.ObtenerSiguienteId();
+                        var nueva = new Venta
+                        {
+                            Id = nextId,
+                            FechaHora = mov.FechaHora,
+                            Total = mov.Monto,
+                            PagoCon = mov.Monto,
+                            Cambio = 0m,
+                            Estado = "Abono",
+                            MetodoPago = esEfec ? "Efectivo" : (esTarj ? "Tarjeta" : "Transferencia"),
+                            PagoEfectivo = esEfec ? mov.Monto : 0m,
+                            PagoTarjeta = esTarj ? mov.Monto : 0m,
+                            PagoTransferencia = esTransf ? mov.Monto : 0m,
+                            Productos = [new DetalleVenta { Id = 0, VentaId = nextId, Nombre = mov.Concepto, Cantidad = 1m, Costo = 0m, Ganancia = 0m, Precio = mov.Monto, Categoria = "Abono" }]
+                        };
+                        try { VentaDB.Insert(nueva); } catch { }
+                        rawSales.Add(nueva);
+                    }
+                }
+                var loadedSales = rawSales.OrderByDescending(s => s.FechaHora).ThenByDescending(s => s.Id);
                 foreach (var sale in loadedSales)
                 {
                     HydrateSaleProfit(sale);
@@ -171,7 +198,7 @@ namespace Punto_de_Venta
         private void RefreshMetrics()
         {
             var culture = CultureInfo.GetCultureInfo("es-MX");
-            var periodSales = Sales.Where(s => s.FechaHora >= _filtroInicio && s.FechaHora <= _filtroFin && !string.Equals(s.Estado, "Cancelada", StringComparison.OrdinalIgnoreCase)).ToList();
+            var periodSales = Sales.Where(s => s.FechaHora >= _filtroInicio && s.FechaHora <= _filtroFin && !string.Equals(s.Estado, "Cancelada", StringComparison.OrdinalIgnoreCase) && !string.Equals(s.Estado, "Abono", StringComparison.OrdinalIgnoreCase)).ToList();
             var totalVentas = periodSales.Sum(s => s.Total);
             var totalItems = periodSales.Sum(s => s.CantidadTotal);
             var totalProfit = periodSales.Sum(s => s.GananciaTotal);
@@ -210,6 +237,7 @@ namespace Punto_de_Venta
 
         private void HydrateSaleProfit(Venta sale)
         {
+            if (string.Equals(sale.Estado, "Abono", StringComparison.OrdinalIgnoreCase)) return;
             if (sale.Productos.Count > 0)
             {
                 foreach (var item in sale.Productos)
@@ -369,7 +397,7 @@ namespace Punto_de_Venta
                     var culture = CultureInfo.GetCultureInfo("es-MX");
                     var ventasFiltradas = SalesView.Cast<Venta>().ToList();
 
-                    var totalVentas = ventasFiltradas.Where(v => v.Estado != "Cancelada").Sum(v => v.Total);
+                    var totalVentas = ventasFiltradas.Where(v => v.Estado != "Cancelada" && v.Estado != "Abono").Sum(v => v.Total);
                     var totalGanancia = ventasFiltradas.Where(v => v.Estado != "Cancelada").Sum(v => v.GananciaTotal);
 
                     QuestPDF.Settings.License = LicenseType.Community;

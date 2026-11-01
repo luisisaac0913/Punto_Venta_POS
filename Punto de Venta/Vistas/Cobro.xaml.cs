@@ -1320,7 +1320,7 @@ namespace Punto_de_Venta.Vistas
             {
                 var debtors = PrestamoDB.Load();
                 var conceptSummary = string.Join(", ", Cart.Select(i => $"{i.Nombre} x{i.Cantidad:0.###}"));
-                var existingDebtor = debtors.FirstOrDefault(d => string.Equals(d.Nombre, debtorName, StringComparison.OrdinalIgnoreCase));
+                var existingDebtor = debtors.Where(d => string.Equals(d.Nombre, debtorName, StringComparison.OrdinalIgnoreCase) && d.SaldoRestante > 0).OrderByDescending(d => d.Id).FirstOrDefault();
 
                 if (existingDebtor is not null)
                 {

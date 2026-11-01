@@ -434,7 +434,7 @@
                     </Border>
                 </Grid>
                 <Grid x:Name="MovimientosOverlay" Grid.RowSpan="3" Panel.ZIndex="999" Background="#66000000" Visibility="Collapsed">
-                    <Border Width="550" MaxHeight="500" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="18" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
+                    <Border Width="620" MaxHeight="500" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="18" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -478,7 +478,7 @@
                                                             </Grid.ColumnDefinitions>
                                                             <TextBlock Grid.Column="0" Text="{Binding FechaHora, StringFormat=t}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
                                                             <TextBlock Grid.Column="1" Text="{Binding Tipo}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" />
-                                                            <TextBlock Grid.Column="2" Text="{Binding Concepto}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,8,0" />
+                                                            <TextBlock Grid.Column="2" Text="{Binding Concepto}" ToolTip="{Binding Concepto}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,8,0" />
                                                             <TextBlock Grid.Column="3" Text="{Binding Monto, StringFormat=C2}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                                                         </Grid>
                                                     </Border>

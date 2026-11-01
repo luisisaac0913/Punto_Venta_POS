@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Punto_de_Venta.Modelos
 {
@@ -24,6 +25,28 @@ namespace Punto_de_Venta.Modelos
         public int ProductoIdSecundario { get; set; }
         public decimal PrecioComboTotal { get; set; }     
         public decimal PorcentajeDescuento { get; set; }  
+
+        public bool EstaVencida => FechaFin.HasValue && DateTime.Today > FechaFin.Value.Date;
+        public bool PorIniciar => FechaInicio.HasValue && DateTime.Today < FechaInicio.Value.Date;
+
+        public string VigenciaTexto
+        {
+            get
+            {
+                if (EstaVencida)
+                    return $"Vencida ({FechaFin!.Value:dd/MM/yyyy})";
+                if (PorIniciar)
+                    return $"Inicia {FechaInicio!.Value:dd/MM/yyyy}";
+                if (FechaInicio.HasValue && FechaFin.HasValue)
+                    return $"{FechaInicio.Value:dd/MM/yyyy} - {FechaFin.Value:dd/MM/yyyy}";
+                if (FechaFin.HasValue)
+                    return $"Hasta {FechaFin.Value:dd/MM/yyyy}";
+                if (FechaInicio.HasValue)
+                    return $"Desde {FechaInicio.Value:dd/MM/yyyy}";
+                return "Indefinida";
+            }
+        }
+
         public bool EstaVigente()
         {
             if (!Activa) return false;

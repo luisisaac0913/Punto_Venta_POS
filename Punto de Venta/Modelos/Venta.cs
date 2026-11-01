@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -51,7 +51,7 @@ namespace Punto_de_Venta.Modelos
         public string ProductosResumen
         {
             get => Productos.Count > 0
-                ? string.Join(", ", Productos.Select(product => $"{product.Nombre} x{product.Cantidad:0.###}"))
+                ? string.Join(", ", Productos.Select(product => Estado == "Abono" ? product.Nombre : $"{product.Nombre} x{product.Cantidad:0.###}"))
                 : _productosResumenGuardado;
             set => _productosResumenGuardado = value ?? string.Empty;
         }
