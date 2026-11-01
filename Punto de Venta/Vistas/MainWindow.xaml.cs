@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
@@ -551,7 +551,7 @@ namespace Punto_de_Venta
                 var sales = VentaDB.Load().Where(sale =>
                 {
                     var fechaLocal = sale.FechaHora.Date;
-                    return sale.Estado != "Cancelada" && fechaLocal >= inicioSemana && fechaLocal <= hoy;
+                    return sale.Estado != "Cancelada" && sale.Estado != "Abono" && fechaLocal >= inicioSemana && fechaLocal <= hoy;
                 }).ToList();
 
                 ExportarPdf("Reporte_Ventas_Semanal.pdf", path => GenerarPdfVentas(sales, path));

@@ -58,7 +58,7 @@ namespace Punto_de_Venta
             DataContext = this;
 
             try { _catalog = ProductoDB.Load() ?? []; } catch { _catalog = []; }
-            try { _sales = VentaDB.Load().Where(s => s.Estado != "Cancelada").ToList(); foreach (var sale in _sales) HydrateSaleProfit(sale); }
+            try { _sales = VentaDB.Load().Where(s => s.Estado != "Cancelada" && s.Estado != "Abono").ToList(); foreach (var sale in _sales) HydrateSaleProfit(sale); }
             catch (Exception ex) { _sales = []; ToastNotification.Show($"Error al cargar ventas: {ex.Message}", ToastType.Error); }
 
             try { _cortes = CorteCajaDB.Load() ?? []; } catch { _cortes = []; }
@@ -75,7 +75,7 @@ namespace Punto_de_Venta
         private void RecargarDatosDesdeDisco()
         {
             try { _catalog = ProductoDB.Load() ?? []; } catch { _catalog = []; }
-            try { _sales = VentaDB.Load().Where(s => s.Estado != "Cancelada").ToList(); foreach (var sale in _sales) HydrateSaleProfit(sale); } catch { _sales = []; }
+            try { _sales = VentaDB.Load().Where(s => s.Estado != "Cancelada" && s.Estado != "Abono").ToList(); foreach (var sale in _sales) HydrateSaleProfit(sale); } catch { _sales = []; }
             try { _cortes = CorteCajaDB.Load() ?? []; } catch { _cortes = []; }
             try { _movimientos = MovimientoCajaDB.Load() ?? []; } catch { _movimientos = []; }
         }
@@ -94,6 +94,7 @@ namespace Punto_de_Venta
         }
         private void HydrateSaleProfit(Venta sale)
         {
+            if (string.Equals(sale.Estado, "Abono", StringComparison.OrdinalIgnoreCase)) return;
             if (sale.Productos.Count > 0)
             {
                 foreach (var item in sale.Productos)
@@ -237,7 +238,7 @@ namespace Punto_de_Venta
             var ticketPromedio = transacciones > 0 ? totalVentas / transacciones : 0m;
             var margenPct = totalVentas > 0 ? (totalGanancia / totalVentas) * 100m : 0m;
             var totalGastos = _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end && (m.Tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase))).Sum(m => m.Monto);
-            var entradasExtras = _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end && m.Tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
+            var entradasExtras = _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end && (m.Tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Abono", StringComparison.OrdinalIgnoreCase))).Sum(m => m.Monto);
             var ventasCobradas = selectedSales
                 .Where(s => !string.Equals(s.Estado, "Fiado", StringComparison.OrdinalIgnoreCase) && !string.Equals(s.MetodoPago, "Fiado", StringComparison.OrdinalIgnoreCase))
                 .Sum(s => s.Total);
@@ -270,7 +271,7 @@ namespace Punto_de_Venta
             PieChartView.Visibility = Visibility.Collapsed;
             CortesContainerView.Visibility = Visibility.Collapsed;
             if (_currentView == ChartView.CortesCaja) { CortesContainerView.Visibility = Visibility.Visible; CargarTablaCortes(selectedCortes); }
-            else if (_currentView == ChartView.MetodosPago) { PieChartView.Visibility = Visibility.Visible; CargarGraficaMetodosPago(selectedSales); }
+            else if (_currentView == ChartView.MetodosPago) { PieChartView.Visibility = Visibility.Visible; CargarGraficaMetodosPago(selectedSales, _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end).ToList()); }
             else if (_currentView == ChartView.Pareto) { PieChartView.Visibility = Visibility.Visible; CargarGraficaPareto(selectedSales); }
             else
             {
@@ -300,7 +301,7 @@ namespace Punto_de_Venta
             NotifyChartProperties();
         }
 
-        private void CargarGraficaMetodosPago(List<Venta> sales)
+        private void CargarGraficaMetodosPago(List<Venta> sales, List<MovimientoCaja> movimientos)
         {
             ChartTitleText.Text = "Distribución de Dinero Recibido por Método de Pago";
             double efectivo = 0, tarjeta = 0, transferencia = 0, fiado = 0;
@@ -315,15 +316,15 @@ namespace Punto_de_Venta
                 {
                     efectivo += (double)(s.PagoEfectivo - s.Cambio);
                     tarjeta += (double)s.PagoTarjeta;
-                    transferencia += (double)s.PagoTransferencia;
+                    transferencia += (double)s.PagoTransferencia; } } foreach (var m in movimientos.Where(m => m.Concepto != null && m.Concepto.StartsWith("Abono", StringComparison.OrdinalIgnoreCase))) { if (m.Concepto.EndsWith("en tarjeta", StringComparison.OrdinalIgnoreCase)) tarjeta += (double)m.Monto; else if (m.Concepto.EndsWith("en transferencia", StringComparison.OrdinalIgnoreCase)) transferencia += (double)m.Monto; else efectivo += (double)m.Monto; { fiado = Math.Max(0, fiado - (double)m.Monto);
                 }
             }
 
             SeriesPie = [
-                new PieSeries<double> { Name = "Efectivo", Values = [efectivo], Fill = new SolidColorPaint(new SKColor(52, 199, 89)), InnerRadius = 60 },
-                new PieSeries<double> { Name = "Tarjeta", Values = [tarjeta], Fill = new SolidColorPaint(new SKColor(0, 122, 255)), InnerRadius = 60 },
-                new PieSeries<double> { Name = "Transferencia", Values = [transferencia], Fill = new SolidColorPaint(new SKColor(175, 82, 222)), InnerRadius = 60 },
-                new PieSeries<double> { Name = "Fiado", Values = [fiado], Fill = new SolidColorPaint(new SKColor(255, 149, 0)), InnerRadius = 60 }
+                new PieSeries<double> { Name = $"Efectivo ({efectivo.ToString("C2", _mexicanCulture)})", Values = [efectivo], Fill = new SolidColorPaint(new SKColor(52, 199, 89)), InnerRadius = 60 },
+                new PieSeries<double> { Name = $"Tarjeta ({tarjeta.ToString("C2", _mexicanCulture)})", Values = [tarjeta], Fill = new SolidColorPaint(new SKColor(0, 122, 255)), InnerRadius = 60 },
+                new PieSeries<double> { Name = $"Transferencia ({transferencia.ToString("C2", _mexicanCulture)})", Values = [transferencia], Fill = new SolidColorPaint(new SKColor(175, 82, 222)), InnerRadius = 60 },
+                new PieSeries<double> { Name = $"Fiado ({fiado.ToString("C2", _mexicanCulture)})", Values = [fiado], Fill = new SolidColorPaint(new SKColor(255, 149, 0)), InnerRadius = 60 }
             ];
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SeriesPie)));
         }
@@ -535,7 +536,7 @@ namespace Punto_de_Venta
             var totalGanancia = sales.Sum(s => s.GananciaTotal);
             var gastosList = movimientos.Where(m => m.Tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase)).ToList();
             var totalGastos = gastosList.Sum(m => m.Monto);
-            var entradasExtras = movimientos.Where(m => m.Tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
+            var entradasExtras = movimientos.Where(m => m.Tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Abono", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
             var ventasCobradas = sales
                 .Where(s => !string.Equals(s.Estado, "Fiado", StringComparison.OrdinalIgnoreCase) && !string.Equals(s.MetodoPago, "Fiado", StringComparison.OrdinalIgnoreCase))
                 .Sum(s => s.Total);

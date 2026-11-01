@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Punto_de_Venta.Modelos;
 
@@ -41,35 +42,66 @@ namespace Punto_de_Venta.Datos
         public static List<Promocion> LoadAll()
         {
             var list = new List<Promocion>();
+            var idsPorDesactivar = new List<int>();
             try
             {
                 using var conn = DatabaseHelper.GetConnection();
                 AsegurarTabla(conn);
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = @"
-                    SELECT Id, Nombre, Tipo, Activa, FechaInicio, FechaFin,
-                           ProductoIdPrincipal, CantidadMinima, PrecioEspecial,
-                           ProductoIdSecundario, PrecioComboTotal, PorcentajeDescuento
-                    FROM Promociones
-                    ORDER BY Id DESC;";
-                using var leer = cmd.ExecuteReader();
-                while (leer.Read())
+                using (var cmd = conn.CreateCommand())
                 {
-                    list.Add(new Promocion
+                    cmd.CommandText = @"
+                        SELECT Id, Nombre, Tipo, Activa, FechaInicio, FechaFin,
+                               ProductoIdPrincipal, CantidadMinima, PrecioEspecial,
+                               ProductoIdSecundario, PrecioComboTotal, PorcentajeDescuento
+                        FROM Promociones
+                        ORDER BY Id DESC;";
+                    using var leer = cmd.ExecuteReader();
+                    while (leer.Read())
                     {
-                        Id = leer.GetInt32(0),
-                        Nombre = leer.GetString(1),
-                        Tipo = Enum.TryParse<TipoPromocion>(leer.GetString(2), out var t) ? t : TipoPromocion.Volumen,
-                        Activa = leer.GetInt32(3) == 1,
-                        FechaInicio = leer.IsDBNull(4) ? null : DateTime.Parse(leer.GetString(4)),
-                        FechaFin = leer.IsDBNull(5) ? null : DateTime.Parse(leer.GetString(5)),
-                        ProductoIdPrincipal = leer.GetInt32(6),
-                        CantidadMinima = leer.GetInt32(7),
-                        PrecioEspecial = Convert.ToDecimal(leer.GetDouble(8)),
-                        ProductoIdSecundario = leer.IsDBNull(9) ? 0 : leer.GetInt32(9),
-                        PrecioComboTotal = Convert.ToDecimal(leer.GetDouble(10)),
-                        PorcentajeDescuento = Convert.ToDecimal(leer.GetDouble(11))
-                    });
+                        DateTime? fInicio = null;
+                        if (!leer.IsDBNull(4) && DateTime.TryParse(leer.GetString(4), CultureInfo.InvariantCulture, DateTimeStyles.None, out var fi))
+                            fInicio = fi.Date;
+
+                        DateTime? fFin = null;
+                        if (!leer.IsDBNull(5) && DateTime.TryParse(leer.GetString(5), CultureInfo.InvariantCulture, DateTimeStyles.None, out var ff))
+                            fFin = ff.Date;
+
+                        var promo = new Promocion
+                        {
+                            Id = leer.GetInt32(0),
+                            Nombre = leer.GetString(1),
+                            Tipo = Enum.TryParse<TipoPromocion>(leer.GetString(2), out var t) ? t : TipoPromocion.Volumen,
+                            Activa = leer.GetInt32(3) == 1,
+                            FechaInicio = fInicio,
+                            FechaFin = fFin,
+                            ProductoIdPrincipal = leer.GetInt32(6),
+                            CantidadMinima = leer.GetInt32(7),
+                            PrecioEspecial = Convert.ToDecimal(leer.GetDouble(8)),
+                            ProductoIdSecundario = leer.IsDBNull(9) ? 0 : leer.GetInt32(9),
+                            PrecioComboTotal = Convert.ToDecimal(leer.GetDouble(10)),
+                            PorcentajeDescuento = Convert.ToDecimal(leer.GetDouble(11))
+                        };
+
+                        if (promo.Activa && promo.EstaVencida)
+                        {
+                            promo.Activa = false;
+                            idsPorDesactivar.Add(promo.Id);
+                        }
+
+                        list.Add(promo);
+                    }
+                }
+
+                if (idsPorDesactivar.Count > 0)
+                {
+                    using var updateCmd = conn.CreateCommand();
+                    updateCmd.CommandText = "UPDATE Promociones SET Activa = 0 WHERE Id = @id;";
+                    var pId = updateCmd.Parameters.Add("@id", SqliteType.Integer);
+                    foreach (var id in idsPorDesactivar)
+                    {
+                        pId.Value = id;
+                        updateCmd.ExecuteNonQuery();
+                    }
                 }
             }
             catch (Exception ex)
@@ -126,8 +158,8 @@ namespace Punto_de_Venta.Datos
                 cmd.Parameters.AddWithValue("@nom", promo.Nombre.Trim());
                 cmd.Parameters.AddWithValue("@tipo", promo.Tipo.ToString());
                 cmd.Parameters.AddWithValue("@act", promo.Activa ? 1 : 0);
-                cmd.Parameters.AddWithValue("@fi", promo.FechaInicio.HasValue ? promo.FechaInicio.Value.ToString("yyyy-MM-dd") : DBNull.Value);
-                cmd.Parameters.AddWithValue("@ff", promo.FechaFin.HasValue ? promo.FechaFin.Value.ToString("yyyy-MM-dd") : DBNull.Value);
+                cmd.Parameters.AddWithValue("@fi", promo.FechaInicio.HasValue ? promo.FechaInicio.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : DBNull.Value);
+                cmd.Parameters.AddWithValue("@ff", promo.FechaFin.HasValue ? promo.FechaFin.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : DBNull.Value);
                 cmd.Parameters.AddWithValue("@p1", promo.ProductoIdPrincipal);
                 cmd.Parameters.AddWithValue("@cant", promo.CantidadMinima);
                 cmd.Parameters.AddWithValue("@esp", Convert.ToDouble(promo.PrecioEspecial));
