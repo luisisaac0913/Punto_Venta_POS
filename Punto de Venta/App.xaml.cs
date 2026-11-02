@@ -1,8 +1,9 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using Punto_de_Venta.Servicios;
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -12,6 +13,7 @@ namespace Punto_de_Venta
 {
     public partial class App : Application
     {
+        private static Mutex? _singleInstanceMutex;
         public bool IsDarkMode { get; private set; }
 
         private static string ErrorLogPath => Path.Combine(
@@ -32,6 +34,14 @@ namespace Punto_de_Venta
         }
         protected override void OnStartup(StartupEventArgs e)
         {
+            _singleInstanceMutex = new Mutex(true, @"Global\POS_PuntoDeVenta_SingleInstance_Mutex", out bool createdNew);
+            if (!createdNew)
+            {
+                MessageBox.Show("El sistema Punto de Venta ya se encuentra en ejecucion.", "Aviso del Sistema", MessageBoxButton.OK, MessageBoxImage.Information);
+                Shutdown();
+                return;
+            }
+
             DispatcherUnhandledException += App_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
@@ -50,8 +60,8 @@ namespace Punto_de_Venta
             }
             else if (!LicenciaService.ValidarLicencia())
             {
-                MessageBox.Show("ERROR DE LICENCIA: El hardware de este equipo no coincide con el registro original de la instalación. Contacte a soporte técnico para reactivar el sistema.",
-                                "Violación de Seguridad", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("ERROR DE LICENCIA: El hardware de este equipo no coincide con el registro original de la instalacion. Contacte a soporte tecnico para reactivar el sistema.",
+                                "Violacion de Seguridad", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
                 return;
             }
@@ -112,14 +122,14 @@ namespace Punto_de_Venta
         {
             if (e.Exception is OutOfMemoryException)
             {
-                RegistrarErrorEnArchivo(e.Exception, "Falta Crítica de Memoria");
+                RegistrarErrorEnArchivo(e.Exception, "Falta Critica de Memoria");
                 return;
             }
 
             RegistrarErrorEnArchivo(e.Exception, "UI Dispatcher");
 
             MessageBox.Show(
-                $"Ocurrió un problema inesperado:\n\n{e.Exception.Message}\n\nLos detalles se guardaron en 'error_log.txt'.",
+                $"Ocurrio un problema inesperado:\n\n{e.Exception.Message}\n\nLos detalles se guardaron en 'error_log.txt'.",
                 "Aviso del Sistema",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
@@ -134,8 +144,8 @@ namespace Punto_de_Venta
                 RegistrarErrorEnArchivo(ex, "AppDomain Background");
 
                 MessageBox.Show(
-                    $"Error crítico en segundo plano:\n\n{ex.Message}\n\nSe registró el incidente en la bitácora.",
-                    "Error Crítico",
+                    $"Error critico en segundo plano:\n\n{ex.Message}\n\nSe registro el incidente en la bitacora.",
+                    "Error Critico",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
@@ -143,7 +153,7 @@ namespace Punto_de_Venta
 
         private void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
         {
-            RegistrarErrorEnArchivo(e.Exception, "TaskScheduler Asíncrono");
+            RegistrarErrorEnArchivo(e.Exception, "TaskScheduler Asincrono");
             e.SetObserved();
         }
 

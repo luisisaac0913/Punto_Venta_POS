@@ -28,7 +28,7 @@
                        Margin="0,0,10,0" 
                        VerticalAlignment="Center" />
             <TextBlock x:Name="MessageText" 
-                       Text="Operación completada" 
+                       Text="Operacion completada" 
                        FontFamily="Segoe UI Variable, Segoe UI, -apple-system" 
                        FontSize="13" 
                        FontWeight="SemiBold" 

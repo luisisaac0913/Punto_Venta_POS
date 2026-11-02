@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -63,7 +63,17 @@ namespace Punto_de_Venta.Servicios
                 {
                     return;
                 }
-                var extensionesValidas = new[] { ".txt", ".json", ".db" };
+                // Asegurar que las transacciones pendientes en WAL se sincronicen al archivo .db
+                try
+                {
+                    using var conn = Punto_de_Venta.Datos.DatabaseHelper.GetConnection();
+                    using var walCmd = conn.CreateCommand();
+                    walCmd.CommandText = "PRAGMA wal_checkpoint(TRUNCATE);";
+                    walCmd.ExecuteNonQuery();
+                }
+                catch { }
+
+                var extensionesValidas = new[] { ".txt", ".json", ".db", ".db-wal", ".db-shm" };
                 var archivos = Directory.GetFiles(AppDataFolder)
                     .Where(file => extensionesValidas.Contains(Path.GetExtension(file).ToLowerInvariant()))
                     .ToList();

@@ -310,7 +310,7 @@
                                         <TextBox x:Name="DebtorIdBox" Style="{StaticResource LoanTextBoxStyle}" IsReadOnly="True" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Teléfono / WhatsApp" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                        <TextBlock Text="Telefono / WhatsApp" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                         <TextBox x:Name="DebtorPhoneBox" Style="{StaticResource LoanTextBoxStyle}" KeyDown="DebtorField_KeyDown" />
                                     </StackPanel>
                                 </Grid>
@@ -345,7 +345,7 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBox x:Name="PaymentAmountBox" Grid.Column="0" Style="{StaticResource LoanTextBoxStyle}" KeyDown="PaymentAmountBox_KeyDown" Background="{DynamicResource ThemeSurfaceBackground}" />
                                             <Button x:Name="PayButton" Grid.Column="2" Content="ABONAR" Style="{StaticResource SuccessPayButtonStyle}" IsEnabled="False" Click="PayButton_Click" />
-                                            <Button x:Name="LiquidateButton" Grid.Column="4" Content="LIQUIDAR" Style="{StaticResource SuccessPayButtonStyle}" Background="#DBEAFE" Foreground="#1D4ED8" IsEnabled="False" Click="LiquidateButton_Click" ToolTip="Pagar el total restante automáticamente" />
+                                            <Button x:Name="LiquidateButton" Grid.Column="4" Content="LIQUIDAR" Style="{StaticResource SuccessPayButtonStyle}" Background="#DBEAFE" Foreground="#1D4ED8" IsEnabled="False" Click="LiquidateButton_Click" ToolTip="Pagar el total restante automaticamente" />
                                         </Grid>
                                     </StackPanel>
                                 </Border>
@@ -367,12 +367,12 @@
                                     <Button x:Name="ModifyButton" Grid.Row="0" Grid.Column="2" Content="MODIFICAR" Style="{StaticResource LoanButtonStyle}" IsEnabled="False" Click="ModifyButton_Click" />
                                     <Button x:Name="ViewHistoryButton" Grid.Row="2" Grid.Column="0" Content="📜 HISTORIAL" Style="{StaticResource LoanButtonStyle}" IsEnabled="False" Click="ViewHistoryButton_Click" />
                                     <Button x:Name="DeleteButton" Grid.Row="2" Grid.Column="2" Content="BORRAR" Style="{StaticResource DangerDeleteButtonStyle}" IsEnabled="False" Click="DeleteButton_Click" />
-                                    <Button x:Name="WhatsAppButton" Grid.Row="4" Grid.ColumnSpan="3" Content="Enviar Recordatorio de Cobro" Style="{StaticResource WhatsAppButtonStyle}" IsEnabled="False" Click="WhatsAppButton_Click" />
+                                    <Button x:Name="WhatsAppButton" Grid.Row="4" Grid.ColumnSpan="3" Content="📨Enviar recordatorio" Style="{StaticResource WhatsAppButtonStyle}" IsEnabled="False" Click="WhatsAppButton_Click" />
                                 </Grid>
                             </StackPanel>
                         </ScrollViewer>
                     </Border>
-                    <Button Grid.Row="2" Content="Limpiar Selección" Style="{StaticResource LoanButtonStyle}" Click="ClearSelectionButton_Click" />
+                    <Button Grid.Row="2" Content="Limpiar Seleccion" Style="{StaticResource LoanButtonStyle}" Click="ClearSelectionButton_Click" />
                 </Grid>
                 <Grid Grid.Column="2">
                     <Grid.RowDefinitions>
@@ -515,7 +515,7 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="TELÉFONO" Binding="{Binding Telefono}" Width="105" />
+                                <DataGridTextColumn Header="TELEFONO" Binding="{Binding Telefono}" Width="105" />
                                 <DataGridTextColumn Header="CONCEPTO" Binding="{Binding Concepto}" Width="1.4*" />
                                 <DataGridTextColumn Header="DEUDA RESTANTE" Binding="{Binding SaldoRestante, StringFormat={}{0:C2}}" Width="1.1*">
                                     <DataGridTextColumn.ElementStyle>
@@ -577,7 +577,7 @@
                                 </ScrollViewer>
                                 <ScrollViewer x:Name="PanelAbonosView" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
                                     <StackPanel>
-                                        <TextBlock x:Name="NoAbonosMessage" Text="Este cliente aún no registra abonos." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,20" Visibility="Collapsed" />
+                                        <TextBlock x:Name="NoAbonosMessage" Text="Este cliente aun no registra abonos." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,20" Visibility="Collapsed" />
                                         <ItemsControl x:Name="AbonosListControl">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>

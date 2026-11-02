@@ -40,7 +40,7 @@ namespace Punto_de_Venta.Vistas
             {
                 BotonesGrid.Columns = 2;
                 BotonesGrid.Children.Add(CrearBoton("No", MessageBoxResult.No, false));
-                BotonesGrid.Children.Add(CrearBoton("Sí", MessageBoxResult.Yes, true));
+                BotonesGrid.Children.Add(CrearBoton("Si", MessageBoxResult.Yes, true));
             }
             else if (botones == MessageBoxButton.OKCancel)
             {

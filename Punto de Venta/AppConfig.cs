@@ -9,6 +9,13 @@ namespace Punto_de_Venta
 {
     public class AppConfig
     {
+        public string MpAccessToken { get; set; } = string.Empty;
+        public string MpSucursalCaja { get; set; } = "SUC001CAJA001";
+        public bool PantallaReposoHabilitada { get; set; } = true;
+        public int PantallaReposoMinutos { get; set; } = 5;
+        public string CuentaClabe { get; set; } = string.Empty;
+        public string NombreBeneficiario { get; set; } = string.Empty;
+        public string BancoReceptor { get; set; } = string.Empty;
         public bool ModoOscuro { get; set; } = false;
         public bool ImprimirTicketAutomatico { get; set; } = false;
         public bool PreguntarAntesDeImprimir { get; set; } = true;
@@ -25,7 +32,7 @@ namespace Punto_de_Venta
         public bool BasculaHabilitada { get; set; } = false;
         public string BasculaPuerto { get; set; } = "COM1";
         public int BasculaBaudRate { get; set; } = 9600;
-        public string BasculaProtocolo { get; set; } = "Torrey / Rhino (Petición P)"; 
+        public string BasculaProtocolo { get; set; } = "Torrey / Rhino (Peticion P)"; 
         public bool BasculaModoPrecio { get; set; } = false;
 
         public string PinAdminHash { get; set; } = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";

@@ -1,4 +1,4 @@
-using Punto_de_Venta.Datos;
+﻿using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Vistas;
 using System;
@@ -10,7 +10,7 @@ using System.Windows.Input;
 
 namespace Punto_de_Venta
 {
-    public partial class Promociones : UserControl
+    public partial class Promociones : UserControl, ILimpiarSeleccion
     {
         public ObservableCollection<Promocion> ListaPromociones { get; } = new ObservableCollection<Promocion>();
         private Promocion _promocionEnEdicion = null;
@@ -135,12 +135,12 @@ namespace Punto_de_Venta
                 {
                     promo.Activa = false;
                     cb.IsChecked = false;
-                    ToastNotification.Show("Esta promoción ya venció. Edita su fecha límite para reactivarla.", ToastType.Warning);
+                    ToastNotification.Show("Esta promocion ya vencio. Edita su fecha limite para reactivarla.", ToastType.Warning);
                     return;
                 }
                 if (PromocionDbStore.Update(promo, out string error))
                 {
-                    ToastNotification.Show(promo.Activa ? "Promoción Activada" : "Promoción Desactivada", ToastType.Info);
+                    ToastNotification.Show(promo.Activa ? "Promocion Activada" : "Promocion Desactivada", ToastType.Info);
                 }
                 else
                 {
@@ -153,16 +153,16 @@ namespace Punto_de_Venta
             if (sender is Button btn && btn.DataContext is Promocion promo)
             {
                 Window window = Window.GetWindow(this) ?? Application.Current.MainWindow;
-                if (CustomMessageBox.Show(window, $"¿Estás seguro de eliminar la promoción '{promo.Nombre}'?", "Eliminar Promoción", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                if (CustomMessageBox.Show(window, $"¿Estas seguro de eliminar la promocion '{promo.Nombre}'?", "Eliminar Promocion", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
                     if (PromocionDbStore.Delete(promo.Id))
                     {
-                        ToastNotification.Show("Promoción eliminada", ToastType.Success);
+                        ToastNotification.Show("Promocion eliminada", ToastType.Success);
                         CargarPromociones();
                     }
                     else
                     {
-                        ToastNotification.Show("Error al eliminar la promoción de la base de datos.", ToastType.Error);
+                        ToastNotification.Show("Error al eliminar la promocion de la base de datos.", ToastType.Error);
                     }
                 }
             }
@@ -174,7 +174,7 @@ namespace Punto_de_Venta
             {
                 _promocionEnEdicion = promo;
 
-                TituloFormularioText.Text = "Editar Promoción";
+                TituloFormularioText.Text = "Editar Promocion";
                 BtnGuardarPromo.Content = "Actualizar Cambios";
                 BtnCancelarEdicion.Visibility = Visibility.Visible;
                 NombrePromoBox.Text = promo.Nombre;
@@ -213,11 +213,17 @@ namespace Punto_de_Venta
         {
             LimpiarFormulario();
         }
+        public void LimpiarSeleccion()
+        {
+            PromocionesGrid.SelectedItem = null;
+            LimpiarFormulario();
+        }
+
         private void LimpiarFormulario()
         {
             _promocionEnEdicion = null;
-            TituloFormularioText.Text = "Nueva Promoción";
-            BtnGuardarPromo.Content = "Guardar Promoción";
+            TituloFormularioText.Text = "Nueva Promocion";
+            BtnGuardarPromo.Content = "Guardar Promocion";
             BtnCancelarEdicion.Visibility = Visibility.Collapsed;
 
             NombrePromoBox.Clear();
@@ -239,13 +245,13 @@ namespace Punto_de_Venta
         {
             if (string.IsNullOrWhiteSpace(NombrePromoBox.Text))
             {
-                ToastNotification.Show("Ingresa un nombre para la promoción", ToastType.Warning);
+                ToastNotification.Show("Ingresa un nombre para la promocion", ToastType.Warning);
                 NombrePromoBox.Focus();
                 return;
             }
             if (!int.TryParse(ProdId1Box.Text.Trim(), out var pId1) || pId1 <= 0)
             {
-                ToastNotification.Show("Ingresa un ID válido para el primer producto", ToastType.Warning);
+                ToastNotification.Show("Ingresa un ID valido para el primer producto", ToastType.Warning);
                 ProdId1Box.Focus();
                 return;
             }
@@ -263,7 +269,7 @@ namespace Punto_de_Venta
 
                 if (cant < 2)
                 {
-                    ToastNotification.Show("La cantidad mínima para volumen debe ser al menos 2", ToastType.Warning);
+                    ToastNotification.Show("La cantidad minima para volumen debe ser al menos 2", ToastType.Warning);
                     CantidadMinBox.Focus();
                     return;
                 }
@@ -284,7 +290,7 @@ namespace Punto_de_Venta
             {
                 if (!int.TryParse(ProdId2Box.Text.Trim(), out var pId2) || pId2 <= 0)
                 {
-                    ToastNotification.Show("Ingresa el ID válido para el segundo producto del combo", ToastType.Warning);
+                    ToastNotification.Show("Ingresa el ID valido para el segundo producto del combo", ToastType.Warning);
                     ProdId2Box.Focus();
                     return;
                 }
@@ -334,7 +340,7 @@ namespace Punto_de_Venta
                 }
                 if (fFin.HasValue && fFin.Value < DateTime.Today)
                 {
-                    ToastNotification.Show("La fecha límite no puede ser una fecha pasada", ToastType.Warning);
+                    ToastNotification.Show("La fecha limite no puede ser una fecha pasada", ToastType.Warning);
                     return;
                 }
 
@@ -362,7 +368,7 @@ namespace Punto_de_Venta
             }
             if (guardadoConExito)
             {
-                ToastNotification.Show(_promocionEnEdicion != null ? "Promoción actualizada" : "Promoción guardada con éxito", ToastType.Success);
+                ToastNotification.Show(_promocionEnEdicion != null ? "Promocion actualizada" : "Promocion guardada con exito", ToastType.Success);
                 LimpiarFormulario();
                 CargarPromociones();
                 FocusSearch();

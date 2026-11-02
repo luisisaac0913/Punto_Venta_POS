@@ -1,7 +1,7 @@
 ﻿<Window x:Class="Punto_de_Venta.ActivacionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Activación del Sistema" Height="300" Width="450"
+        Title="Activacion del Sistema" Height="300" Width="450"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterScreen">
 
@@ -9,8 +9,8 @@
             BorderBrush="{DynamicResource ThemeBorder}" 
             BorderThickness="1" CornerRadius="16" Padding="30">
         <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="🔒 Activación Requerida" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-            <TextBlock Text="Este equipo no está registrado. Ingrese la Clave Maestra de Administrador para amarrar el sistema a este hardware." 
+            <TextBlock Text="🔒 Activacion Requerida" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+            <TextBlock Text="Este equipo no esta registrado. Ingrese la Clave Maestra de Administrador para amarrar el sistema a este hardware." 
                        FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,20"/>
 
             <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,20">

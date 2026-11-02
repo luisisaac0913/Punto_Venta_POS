@@ -91,9 +91,16 @@ namespace Punto_de_Venta
             BusinessAddressBox.Text = _config.DireccionNegocio ?? string.Empty;
             FooterMessageBox.Text = _config.MensajePie ?? string.Empty;
 
+            ConfigBancoBox.Text = _config.BancoReceptor ?? string.Empty;
+            ConfigBeneficiarioBox.Text = _config.NombreBeneficiario ?? string.Empty;
+            ConfigClabeBox.Text = _config.CuentaClabe ?? string.Empty;
+
             DarkModeCheckBox.IsChecked = _config.ModoOscuro;
             AskBeforePrintCheckBox.IsChecked = _config.PreguntarAntesDeImprimir;
             AutoPrintCheckBox.IsChecked = _config.ImprimirTicketAutomatico;
+
+            ConfigMpTokenBox.Password = _config.MpAccessToken ?? string.Empty;
+            ConfigMpCajaBox.Text = _config.MpSucursalCaja ?? string.Empty;
 
             if (NoPrintOrSaveCheckBox != null)
                 NoPrintOrSaveCheckBox.IsChecked = !_config.PreguntarAntesDeImprimir && !_config.ImprimirTicketAutomatico;
@@ -101,6 +108,17 @@ namespace Punto_de_Venta
             BackupFolderBox.Text = _config.RutaRespaldos ?? string.Empty;
             RequirePinCheckBox.IsChecked = _config.SolicitarPinAdmin;
             EnableScaleCheckBox.IsChecked = _config.BasculaHabilitada;
+            if (PrintersComboBox.Items.Count > 1)
+            {
+                if (!string.IsNullOrEmpty(_config.ImpresoraSeleccionada) && PrintersComboBox.Items.Contains(_config.ImpresoraSeleccionada))
+                    PrintersComboBox.SelectedItem = _config.ImpresoraSeleccionada;
+                else
+                    PrintersComboBox.SelectedIndex = 0;
+            }
+            if (ScalePortComboBox.Items.Count > 0 && ScalePortComboBox.Items.Contains(_config.BasculaPuerto))
+            {
+                ScalePortComboBox.SelectedItem = _config.BasculaPuerto;
+            }
 
             foreach (ComboBoxItem item in ScaleBaudRateComboBox.Items)
             {
@@ -127,6 +145,17 @@ namespace Punto_de_Venta
                 ScaleProtocolComboBox.SelectedIndex = 0;
 
             ActualizarVistaPreviaTicket();
+
+            StandbyCheckBox.IsChecked = _config.PantallaReposoHabilitada;
+            foreach (ComboBoxItem item in CmbTiempoReposo.Items)
+            {
+                if (item.Tag?.ToString() == _config.PantallaReposoMinutos.ToString())
+                {
+                    CmbTiempoReposo.SelectedItem = item;
+                    break;
+                }
+            }
+            if (CmbTiempoReposo.SelectedItem == null) CmbTiempoReposo.SelectedIndex = 2; // Default 5 mins
         }
 
         private void ColorButton_Click(object sender, RoutedEventArgs e)
@@ -220,7 +249,7 @@ namespace Punto_de_Venta
                 baudRate = b;
 
             _isTestingScale = true;
-            ScaleTestResultText.Text = "Conectando y leyendo báscula...";
+            ScaleTestResultText.Text = "Conectando y leyendo bascula...";
             ScaleTestResultText.Foreground = (Brush)FindResource("ThemeMutedForeground");
 
             var (exito, peso, error) = await Task.Run(() =>
@@ -235,13 +264,13 @@ namespace Punto_de_Venta
             {
                 ScaleTestResultText.Text = $"✅ Lectura exitosa: {peso:0.000} kg";
                 ScaleTestResultText.Foreground = (Brush)FindResource("SystemGreen");
-                ToastNotification.Show($"Báscula conectada: {peso:0.000} kg", ToastType.Success);
+                ToastNotification.Show($"Bascula conectada: {peso:0.000} kg", ToastType.Success);
             }
             else
             {
                 ScaleTestResultText.Text = $"❌ Fallo: {error}";
                 ScaleTestResultText.Foreground = new SolidColorBrush(Color.FromRgb(255, 59, 48));
-                ToastNotification.Show($"Error en báscula: {error}", ToastType.Error);
+                ToastNotification.Show($"Error en bascula: {error}", ToastType.Error);
             }
         }
 
@@ -324,7 +353,7 @@ namespace Punto_de_Venta
             {
                 var dialog = new Microsoft.Win32.OpenFolderDialog
                 {
-                    Title = "Seleccionar carpeta para respaldos automáticos",
+                    Title = "Seleccionar carpeta para respaldos automaticos",
                     Multiselect = false
                 };
 
@@ -371,6 +400,14 @@ namespace Punto_de_Venta
         {
             try
             {
+                string clabe = ConfigClabeBox.Text.Trim();
+                if (!string.IsNullOrEmpty(clabe) && clabe.Length != 18)
+                {
+                    ToastNotification.Show("Por seguridad, la cuenta CLABE debe tener exactamente 18 digitos.", ToastType.Warning);
+                    ConfigClabeBox.Focus();
+                    return;
+                }
+
                 var printerSel = PrintersComboBox.SelectedItem?.ToString() ?? string.Empty;
                 _config.ImpresoraSeleccionada = (printerSel.StartsWith("(") || printerSel.StartsWith("Cargando")) ? string.Empty : printerSel;
 
@@ -382,6 +419,10 @@ namespace Punto_de_Venta
                 _config.DireccionNegocio = BusinessAddressBox.Text.Trim();
                 _config.MensajePie = FooterMessageBox.Text.Trim();
 
+                _config.BancoReceptor = ConfigBancoBox.Text.Trim();
+                _config.NombreBeneficiario = ConfigBeneficiarioBox.Text.Trim();
+                _config.CuentaClabe = clabe;
+
                 var modoOscuroSeleccionado = DarkModeCheckBox.IsChecked == true;
                 _config.ModoOscuro = modoOscuroSeleccionado;
                 _config.ColorAcentoHex = _selectedColorHex;
@@ -391,7 +432,10 @@ namespace Punto_de_Venta
                 _config.BasculaPuerto = ScalePortComboBox.SelectedItem?.ToString() ?? "COM1";
                 if (ScaleBaudRateComboBox.SelectedItem is ComboBoxItem baudItem && int.TryParse(baudItem.Tag?.ToString(), out var baud))
                     _config.BasculaBaudRate = baud;
-                _config.BasculaProtocolo = (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Torrey / Rhino (Petición P)";
+                _config.BasculaProtocolo = (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Torrey / Rhino (Peticion P)";
+
+                _config.MpAccessToken = ConfigMpTokenBox.Password.Trim();
+                _config.MpSucursalCaja = ConfigMpCajaBox.Text.Trim();
 
                 bool noPrintSave = NoPrintOrSaveCheckBox?.IsChecked == true;
                 _config.PreguntarAntesDeImprimir = !noPrintSave && (AskBeforePrintCheckBox.IsChecked == true);
@@ -404,12 +448,18 @@ namespace Punto_de_Venta
                     var nuevoPin = NewPinBox.Password.Trim();
                     if (nuevoPin.Length < 4)
                     {
-                        ToastNotification.Show("El PIN debe tener al menos 4 dígitos numéricos", ToastType.Warning);
+                        ToastNotification.Show("El PIN debe tener al menos 4 digitos numericos", ToastType.Warning);
                         NewPinBox.Focus();
                         return;
                     }
                     _config.EstablecerNuevoPin(nuevoPin);
                     NewPinBox.Clear();
+                }
+
+                _config.PantallaReposoHabilitada = StandbyCheckBox.IsChecked == true;
+                if (CmbTiempoReposo.SelectedItem is ComboBoxItem tiempoItem && int.TryParse(tiempoItem.Tag?.ToString(), out var minutos))
+                {
+                    _config.PantallaReposoMinutos = minutos;
                 }
 
                 _config.MensajeWhatsAppRecordatorio = WhatsAppTemplateBox.Text.Trim();
@@ -428,13 +478,15 @@ namespace Punto_de_Venta
 
                     if (mainWindow.FindName("TxtTituloDashboard") is TextBlock tituloDash)
                         tituloDash.Text = _config.NombreNegocio;
+
+                    mainWindow.ActualizarConfiguracionReposo(_config);
                 }
 
-                ToastNotification.Show("Configuración guardada exitosamente", ToastType.Success);
+                ToastNotification.Show("Configuracion guardada exitosamente", ToastType.Success);
             }
             catch (Exception ex)
             {
-                ToastNotification.Show($"Error al guardar configuración: {ex.Message}", ToastType.Error);
+                ToastNotification.Show($"Error al guardar configuracion: {ex.Message}", ToastType.Error);
             }
         }
 

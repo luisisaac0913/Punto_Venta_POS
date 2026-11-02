@@ -17,7 +17,7 @@ using System.Windows.Threading;
 
 namespace Punto_de_Venta
 {
-    public partial class Inventario : UserControl
+    public partial class Inventario : UserControl, ILimpiarSeleccion
     {
         #region Campos Privados y Colecciones
         private readonly DispatcherTimer _clockTimer;
@@ -34,7 +34,7 @@ namespace Punto_de_Venta
         public ICollectionView ProductsView { get; }
         #endregion
 
-        #region Constructor e Inicialización
+        #region Constructor e Inicializacion
         public Inventario()
         {
             InitializeComponent();
@@ -159,7 +159,7 @@ namespace Punto_de_Venta
                 e.Handled = true;
                 return;
             }
-            if (e.Key == Key.F && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+            if (e.Key == Key.F1)
             {
                 ModifyButton_Click(null, null);
                 e.Handled = true;
@@ -171,16 +171,23 @@ namespace Punto_de_Venta
                 e.Handled = true;
                 return;
             }
-            if (e.Key == Key.F && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            if (e.Key == Key.F && ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control || (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift))
             {
-                FocusCodeBox();
+                if (SearchBox.IsFocused)
+                {
+                    FocusCodeBox();
+                }
+                else
+                {
+                    SearchBox.Focus();
+                }
                 e.Handled = true;
                 return;
             }
         }
         #endregion
 
-        #region Módulos de Lotes (Uso y Creación)
+        #region Modulos de Lotes (Uso y Creacion)
 
         private void OpenLotesModal_Click(object sender, RoutedEventArgs e)
         {
@@ -213,7 +220,7 @@ namespace Punto_de_Venta
 
             if (!CanWrite()) return;
 
-            int productosActualizados = 0;
+            var productosModificados = new List<Producto>();
 
             foreach (var item in lote.Articulos)
             {
@@ -224,22 +231,23 @@ namespace Punto_de_Venta
                 if (productoBD != null)
                 {
                     productoBD.Stock += item.Cantidad;
-                    productosActualizados++;
+                    productosModificados.Add(productoBD);
                 }
             }
 
+            int productosActualizados = productosModificados.Count;
             if (productosActualizados > 0)
             {
-                if (TrySave(Products))
+                if (TrySave(productosModificados))
                 {
                     ProductsView.Refresh();
-                    ToastNotification.Show($"Lote ingresado. Se actualizó el stock de {productosActualizados} artículos.", ToastType.Success);
+                    ToastNotification.Show($"Lote ingresado. Se actualizo el stock de {productosActualizados} articulos.", ToastType.Success);
                     CloseLotesModal_Click(null, null);
                 }
             }
             else
             {
-                ToastNotification.Show("No se encontró ningún artículo de este lote en tu catálogo actual.", ToastType.Warning);
+                ToastNotification.Show("No se encontro ningun articulo de este lote en tu catalogo actual.", ToastType.Warning);
             }
         }
         private void OpenGestorLotes_Click(object sender, RoutedEventArgs e)
@@ -248,7 +256,7 @@ namespace Punto_de_Venta
             NuevoLoteProveedorBox.Clear();
             GestorLoteCodigoBox.Clear();
             GestorLoteCantidadBox.Text = "1";
-            GestorLoteProductoEncontrado.Text = "Esperando código...";
+            GestorLoteProductoEncontrado.Text = "Esperando codigo...";
             NuevoLoteItems.Clear();
 
             GestorLotesOverlay.Visibility = Visibility.Visible;
@@ -328,13 +336,13 @@ namespace Punto_de_Venta
 
             if (prod == null)
             {
-                ToastNotification.Show("Busca un producto válido antes de añadirlo.", ToastType.Warning);
+                ToastNotification.Show("Busca un producto valido antes de añadirlo.", ToastType.Warning);
                 return;
             }
 
             if (!decimal.TryParse(GestorLoteCantidadBox.Text.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var qty) || qty <= 0)
             {
-                ToastNotification.Show("Ingresa una cantidad válida mayor a 0.", ToastType.Warning);
+                ToastNotification.Show("Ingresa una cantidad valida mayor a 0.", ToastType.Warning);
                 return;
             }
 
@@ -342,7 +350,7 @@ namespace Punto_de_Venta
 
             GestorLoteCodigoBox.Clear();
             GestorLoteCantidadBox.Text = "1";
-            GestorLoteProductoEncontrado.Text = "Esperando código...";
+            GestorLoteProductoEncontrado.Text = "Esperando codigo...";
             GestorLoteCodigoBox.Focus();
         }
 
@@ -367,7 +375,7 @@ namespace Punto_de_Venta
             try
             {
                 LoteDB.Save(Lotes);
-                ToastNotification.Show($"Lote '{nombre}' guardado con éxito.", ToastType.Success);
+                ToastNotification.Show($"Lote '{nombre}' guardado con exito.", ToastType.Success);
                 CloseGestorLotes_Click(null, null);
             }
             catch (Exception ex)
@@ -377,7 +385,7 @@ namespace Punto_de_Venta
         }
         #endregion
 
-        #region Módulo Enlace Rápido e Impresión de Etiquetas
+        #region Modulo Enlace Rapido e Impresion de Etiquetas
         private void BtnEnlaceRapido_Click(object sender, RoutedEventArgs e)
         {
             var modal = new Vistas.EnlaceRapidoModal();
@@ -435,7 +443,7 @@ namespace Punto_de_Venta
                 }
                 else
                 {
-                    ToastNotification.Show("No se pudo enviar la etiqueta a la impresora térmica.", ToastType.Error);
+                    ToastNotification.Show("No se pudo enviar la etiqueta a la impresora termica.", ToastType.Error);
                 }
             }
             catch (Exception ex)
@@ -445,7 +453,7 @@ namespace Punto_de_Venta
         }
         #endregion
 
-        #region Búsqueda y Filtros
+        #region Busqueda y Filtros
         private void FocusSearch()
         {
             this.Dispatcher.BeginInvoke(
@@ -515,7 +523,7 @@ namespace Punto_de_Venta
         }
         #endregion
 
-        #region Interacción con Formulario y DataGrid
+        #region Interaccion con Formulario y DataGrid
         private void AskQuantityCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             if (_isUpdatingForm) return;
@@ -689,7 +697,7 @@ namespace Punto_de_Venta
             }
             catch (OverflowException)
             {
-                ShowValidationError("Límite numérico de ID alcanzado.", "ProductNameBox");
+                ShowValidationError("Limite numerico de ID alcanzado.", "ProductNameBox");
                 return;
             }
 
@@ -733,7 +741,7 @@ namespace Punto_de_Venta
             var window = Window.GetWindow(this) ?? Application.Current.MainWindow;
             var confirm = CustomMessageBox.Show(window,
                 $"¿Seguro que deseas eliminar '{productToDelete.Nombre}' del inventario?",
-                "Confirmar Eliminación",
+                "Confirmar Eliminacion",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
 
@@ -773,7 +781,7 @@ namespace Punto_de_Venta
             }
             if (HasDuplicateCode(code, _selectedProduct.Id))
             {
-                ShowValidationError("Ya existe otro producto con ese código de barras.", "ProductCodeBox");
+                ShowValidationError("Ya existe otro producto con ese codigo de barras.", "ProductCodeBox");
                 return;
             }
 
@@ -812,6 +820,8 @@ namespace Punto_de_Venta
             FocusCodeBox();
         }
 
+        public void LimpiarSeleccion() => ClearSelectionButton_Click(this, new RoutedEventArgs());
+
         private void ClearSelectionButton_Click(object sender, RoutedEventArgs e)
         {
             ClearSelectionAndForm();
@@ -819,7 +829,7 @@ namespace Punto_de_Venta
         }
         #endregion
 
-        #region Métodos Auxiliares
+        #region Metodos Auxiliares
         private void ClearSelectionAndForm()
         {
             ProductGrid.SelectedItem = null;
@@ -856,7 +866,7 @@ namespace Punto_de_Venta
 
             if (!decimal.TryParse(StockBox.Text.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out stock) || stock < 0)
             {
-                ShowValidationError("Introduce un stock válido igual o mayor que cero.", "StockBox");
+                ShowValidationError("Introduce un stock valido igual o mayor que cero.", "StockBox");
                 return false;
             }
             const NumberStyles styles = NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite | NumberStyles.AllowDecimalPoint;
@@ -866,14 +876,14 @@ namespace Punto_de_Venta
                              decimal.TryParse(costText, styles, esCulture, out cost);
             if (!parsedCost || cost < 0)
             {
-                ShowValidationError("Introduce un costo decimal válido igual o mayor que cero.", "ProductCostBox");
+                ShowValidationError("Introduce un costo decimal valido igual o mayor que cero.", "ProductCostBox");
                 return false;
             }
             var parsedMargin = decimal.TryParse(marginText, styles, usCulture, out margin) ||
                                decimal.TryParse(marginText, styles, esCulture, out margin);
             if (!parsedMargin || margin < 0)
             {
-                ShowValidationError("Introduce una ganancia decimal válida igual o mayor que cero.", "ProductMarginBox");
+                ShowValidationError("Introduce una ganancia decimal valida igual o mayor que cero.", "ProductMarginBox");
                 return false;
             }
             price = cost + margin;
@@ -899,7 +909,7 @@ namespace Punto_de_Venta
                 return true;
             }
 
-            ToastNotification.Show("El archivo de inventario no está disponible para escritura", ToastType.Error);
+            ToastNotification.Show("El archivo de inventario no esta disponible para escritura", ToastType.Error);
             return false;
         }
 
@@ -986,7 +996,7 @@ namespace Punto_de_Venta
         }
         #endregion
 
-        #region Módulo Modo ReStock Rápido (Modal Instantáneo)
+        #region Modulo Modo ReStock Rapido (Modal Instantaneo)
         private void OpenQuickRestockModal_Click(object sender, RoutedEventArgs e)
         {
             QrScanCodeBox.Clear();
@@ -1056,7 +1066,7 @@ namespace Punto_de_Venta
             else
             {
                 QrFoundProductLabel.Text = string.Empty;
-                QrStatusMessage.Text = "⚠️ Producto no encontrado con ese código.";
+                QrStatusMessage.Text = "⚠️ Producto no encontrado con ese codigo.";
                 QrScanCodeBox.SelectAll();
             }
 
@@ -1081,7 +1091,7 @@ namespace Punto_de_Venta
 
             if (string.IsNullOrWhiteSpace(code))
             {
-                QrStatusMessage.Text = "Escanea o escribe un código.";
+                QrStatusMessage.Text = "Escanea o escribe un codigo.";
                 QrScanCodeBox.Focus();
                 return;
             }
@@ -1099,7 +1109,7 @@ namespace Punto_de_Venta
 
             if (!decimal.TryParse(amountText, NumberStyles.Any, CultureInfo.InvariantCulture, out var addAmount) || addAmount <= 0)
             {
-                QrStatusMessage.Text = "Ingresa una cantidad válida mayor a 0.";
+                QrStatusMessage.Text = "Ingresa una cantidad valida mayor a 0.";
                 QrAddAmountBox.Focus();
                 QrAddAmountBox.SelectAll();
                 return;
@@ -1114,7 +1124,7 @@ namespace Punto_de_Venta
 
                 QrScanCodeBox.Clear();
                 QrAddAmountBox.Text = "1";
-                QrFoundProductLabel.Text = $"Último: {prod.Nombre} (Stock: {prod.Stock})";
+                QrFoundProductLabel.Text = $"Ultimo: {prod.Nombre} (Stock: {prod.Stock})";
                 QrStatusMessage.Text = string.Empty;
                 QrScanCodeBox.Focus();
             }

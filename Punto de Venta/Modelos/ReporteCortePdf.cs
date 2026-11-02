@@ -33,7 +33,7 @@ namespace Punto_de_Venta.Reportes
                     {
                         row.RelativeItem().Column(col =>
                         {
-                            col.Item().Text("Miscelánea Jaz").FontSize(28).Bold().FontColor(PdfColors.Black);
+                            col.Item().Text("Miscelanea Jaz").FontSize(28).Bold().FontColor(PdfColors.Black);
                             col.Item().PaddingTop(2).LineHorizontal(2).LineColor("#1597a7");
 
                             col.Item().PaddingTop(5).Text($"Reporte de Operaciones y Corte de Caja").FontSize(14).SemiBold().FontColor(PdfColors.Grey.Darken3);
@@ -62,7 +62,7 @@ namespace Punto_de_Venta.Reportes
                                 inner.Item().PaddingBottom(5).Text("Egresos y Resultados").FontSize(12).SemiBold().FontColor("#1597a7");
                                 inner.Item().Text($"Gastos/Salidas: {corte.SalidasEfectivo.ToString("C2", mx)}");
                                 inner.Item().PaddingTop(5).Text($"Total Esperado en Caja: {corte.TotalEsperado.ToString("C2", mx)}").SemiBold().FontSize(11);
-                                inner.Item().Text($"Total Contado Físico: {corte.TotalContado.ToString("C2", mx)}").SemiBold().FontSize(11);
+                                inner.Item().Text($"Total Contado Fisico: {corte.TotalContado.ToString("C2", mx)}").SemiBold().FontSize(11);
 
                                 var difColor = corte.Diferencia < 0 ? PdfColors.Red.Medium : (corte.Diferencia > 0 ? PdfColors.Orange.Medium : PdfColors.Green.Medium);
                                 string difTexto = corte.Diferencia == 0 ? "EXACTO" : (corte.Diferencia < 0 ? "FALTANTE" : "SOBRANTE");
@@ -108,14 +108,14 @@ namespace Punto_de_Venta.Reportes
                             row.RelativeItem().AlignCenter().Column(inner =>
                             {
                                 inner.Item().LineHorizontal(1).LineColor(PdfColors.Black);
-                                inner.Item().PaddingTop(5).Text("Entregó (Nombre y Firma)").FontSize(11).SemiBold();
+                                inner.Item().PaddingTop(5).Text("Entrego (Nombre y Firma)").FontSize(11).SemiBold();
                                 inner.Item().Text("Cajero en Turno").FontSize(9).FontColor(PdfColors.Grey.Medium);
                             });
                             row.ConstantItem(50);
                             row.RelativeItem().AlignCenter().Column(inner =>
                             {
                                 inner.Item().LineHorizontal(1).LineColor(PdfColors.Black);
-                                inner.Item().PaddingTop(5).Text("Recibió (Nombre y Firma)").FontSize(11).SemiBold();
+                                inner.Item().PaddingTop(5).Text("Recibio (Nombre y Firma)").FontSize(11).SemiBold();
                                 inner.Item().Text("Administrador / Gerente").FontSize(9).FontColor(PdfColors.Grey.Medium);
                             });
                         });

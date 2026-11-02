@@ -148,7 +148,7 @@ namespace Punto_de_Venta.Vistas
                 if (!decimal.TryParse(textoFondo, NumberStyles.Any, CultureInfo.InvariantCulture, out _) &&
                     !decimal.TryParse(textoFondo, NumberStyles.Any, CultureInfo.GetCultureInfo("es-MX"), out _))
                 {
-                    CustomMessageBox.Show("El monto inicial del fondo de caja contiene caracteres inválidos. Solo usa números y un punto decimal.", "Fondo Inválido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    CustomMessageBox.Show("El monto inicial del fondo de caja contiene caracteres invalidos. Solo usa numeros y un punto decimal.", "Fondo Invalido", MessageBoxButton.OK, MessageBoxImage.Warning);
                     TxtFondoCaja.Focus();
                     TxtFondoCaja.SelectAll();
                     return;
@@ -157,7 +157,7 @@ namespace Punto_de_Venta.Vistas
 
             if (!string.IsNullOrWhiteSpace(TxtPinAdmin.Password) && TxtPinAdmin.Password.Length < 4)
             {
-                CustomMessageBox.Show("El PIN debe tener al menos 4 dígitos numéricos o dejarse vacío por ahora.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show("El PIN debe tener al menos 4 digitos numericos o dejarse vacio por ahora.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
                 TxtPinAdmin.Focus();
                 return;
             }

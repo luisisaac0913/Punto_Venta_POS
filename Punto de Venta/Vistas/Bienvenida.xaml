@@ -1,7 +1,7 @@
 ﻿<Window x:Class="Punto_de_Venta.Vistas.Bienvenida"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Configuración Inicial" Height="620" Width="850"
+        Title="Configuracion Inicial" Height="620" Width="850"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterScreen"
         TextElement.Foreground="{DynamicResource ThemeTextForeground}"
@@ -141,13 +141,13 @@
                     </StackPanel>
 
                     <StackPanel x:Name="PanelPaso1" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
-                        <TextBlock Text="Información de tu tienda" FontSize="26" FontWeight="Bold" Margin="0,0,0,8" />
+                        <TextBlock Text="Informacion de tu tienda" FontSize="26" FontWeight="Bold" Margin="0,0,0,8" />
                         <TextBlock Text="Paso 1 de 3" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,32" />
 
                         <TextBlock Text="Nombre de la Tienda *" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <TextBox x:Name="TxtNombreNegocio" Style="{StaticResource FormInputStyle}" Margin="0,0,0,20" />
 
-                        <TextBlock Text="Dirección (Opcional)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBlock Text="Direccion (Opcional)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <TextBox x:Name="TxtDireccion" Style="{StaticResource FormInputStyle}" Margin="0,0,0,20" />
 
                         <TextBlock Text="Mensaje del Ticket" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
@@ -157,10 +157,10 @@
                     <StackPanel x:Name="PanelPaso2" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
                         <TextBlock Text="Dispositivos conectados" FontSize="26" FontWeight="Bold" Margin="0,0,0,8" />
                         <TextBlock Text="Paso 2 de 3" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,32" />
-                        <TextBlock Text="Impresora Térmica" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBlock Text="Impresora Termica" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <ComboBox x:Name="CmbImpresoras" Margin="0,0,0,32" />
-                        <CheckBox x:Name="ChkUsarBascula" Content="Conectar báscula digital al sistema" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,20" />
-                        <TextBlock Text="Puerto de la Báscula" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <CheckBox x:Name="ChkUsarBascula" Content="Conectar bascula digital al sistema" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,20" />
+                        <TextBlock Text="Puerto de la Bascula" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <ComboBox x:Name="CmbPuertosCOM" />
                     </StackPanel>
                     <StackPanel x:Name="PanelPaso3" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
@@ -170,9 +170,9 @@
                         <TextBlock Text="Fondo de caja inicial ($)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <TextBox x:Name="TxtFondoCaja" Text="500.00" Style="{StaticResource FormInputStyle}" Margin="0,0,0,32" />
 
-                        <TextBlock Text="PIN de Administrador (4 dígitos)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBlock Text="PIN de Administrador (4 digitos)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <PasswordBox x:Name="TxtPinAdmin" MaxLength="4" Style="{StaticResource FormPasswordStyle}" Margin="0,0,0,8" />
-                        <TextBlock Text="Este código es para autorizar cancelaciones. Déjalo vacío si no deseas usar PIN por ahora." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" />
+                        <TextBlock Text="Este codigo es para autorizar cancelaciones. Dejalo vacio si no deseas usar PIN por ahora." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" />
                     </StackPanel>
                 </Grid>
 
@@ -182,7 +182,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <Button x:Name="BtnAnterior" Grid.Column="0" HorizontalAlignment="Left" Content="Atrás" Width="100" Style="{StaticResource StepButtonStyle}" Background="Transparent" Foreground="{DynamicResource ThemeTextForeground}" Visibility="Hidden" Click="BtnAnterior_Click" />
+                    <Button x:Name="BtnAnterior" Grid.Column="0" HorizontalAlignment="Left" Content="Atras" Width="100" Style="{StaticResource StepButtonStyle}" Background="Transparent" Foreground="{DynamicResource ThemeTextForeground}" Visibility="Hidden" Click="BtnAnterior_Click" />
                     <Button x:Name="BtnSiguiente" Grid.Column="1" Content="Siguiente" Width="140" Style="{StaticResource StepButtonStyle}" Click="BtnSiguiente_Click" />
                     <Button x:Name="BtnFinalizar" Grid.Column="1" Content="Comenzar a Vender" Width="180" Style="{StaticResource StepButtonStyle}" Background="#34C759" Visibility="Hidden" Click="BtnFinalizar_Click" />
                 </Grid>

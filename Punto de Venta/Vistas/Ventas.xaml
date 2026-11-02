@@ -155,7 +155,7 @@
                     <Button Content="📥 Exportar Excel (F8)" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,12,0" Height="36" Padding="12,0" Foreground="{DynamicResource ThemeAccent}" Click="ExportButton_Click" ToolTip="Descargar historial filtrado en archivo Excel/CSV" />
                     <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Padding="3" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
-                            <Button x:Name="BtnPeriodoDia" Content="Día" Style="{StaticResource PeriodSegmentButtonStyle}" Click="BtnPeriodo_Click" Tag="Dia" />
+                            <Button x:Name="BtnPeriodoDia" Content="Dia" Style="{StaticResource PeriodSegmentButtonStyle}" Click="BtnPeriodo_Click" Tag="Dia" />
                             <Button x:Name="BtnPeriodoSemana" Content="Semana" Style="{StaticResource PeriodSegmentButtonStyle}" Click="BtnPeriodo_Click" Tag="Semana" />
                             <Button x:Name="BtnPeriodoMes" Content="Mes" Style="{StaticResource PeriodSegmentButtonStyle}" Click="BtnPeriodo_Click" Tag="Mes" />
                             <Button x:Name="BtnPeriodoCustom" Content="Personalizado" Style="{StaticResource PeriodSegmentButtonStyle}" Click="BtnPeriodo_Click" Tag="Custom" />
@@ -280,7 +280,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="MÉTODO" Binding="{Binding MetodoPago}" Width="110">
+                        <DataGridTextColumn Header="METODO" Binding="{Binding MetodoPago}" Width="110">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="HorizontalAlignment" Value="Center" />
@@ -349,8 +349,8 @@
                 </Border>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="🖨️ REIMPRIMIR (F7)" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,10,0" Height="52" Padding="14,0" IsEnabled="{Binding ElementName=ReturnButton, Path=IsEnabled}" Click="ReprintTicketButton_Click" ToolTip="Imprimir copia del ticket de la venta seleccionada" />
-                    <Button Content="📄 DETALLES" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,10,0" Height="52" Padding="14,0" IsEnabled="{Binding ElementName=ReturnButton, Path=IsEnabled}" Click="ViewDetailsButton_Click" ToolTip="Ver qué se vendió (Doble clic en la tabla)" />
-                    <Button x:Name="ReturnButton" Content="DEVOLUCIÓN" Style="{StaticResource AppleDangerButtonStyle}" MinWidth="130" Margin="0,0,10,0" IsEnabled="False" Click="ReturnButton_Click" ToolTip="Cancelar venta y retornar mercancía" />
+                    <Button Content="📄 DETALLES" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,10,0" Height="52" Padding="14,0" IsEnabled="{Binding ElementName=ReturnButton, Path=IsEnabled}" Click="ViewDetailsButton_Click" ToolTip="Ver que se vendio (Doble clic en la tabla)" />
+                    <Button x:Name="ReturnButton" Content="DEVOLUCION" Style="{StaticResource AppleDangerButtonStyle}" MinWidth="130" Margin="0,0,10,0" IsEnabled="False" Click="ReturnButton_Click" ToolTip="Cancelar venta y retornar mercancia" />
                     <Button Content="CERRAR CAJA" Style="{StaticResource ApplePrimaryActionButtonStyle}" MinWidth="150" Click="CashCloseButton_Click" ToolTip="Hacer corte ciego de caja" />
                 </StackPanel>
             </Grid>

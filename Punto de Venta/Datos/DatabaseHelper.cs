@@ -119,7 +119,7 @@ namespace Punto_de_Venta.Datos
                 );
                 CREATE INDEX IF NOT EXISTS IX_Movimientos_FechaHora ON MovimientosCaja(FechaHora);
 
-                -- 5. DEUDORES / PRÉSTAMOS
+                -- 5. DEUDORES / PRESTAMOS
                 CREATE TABLE IF NOT EXISTS Deudores (
                     Id INTEGER PRIMARY KEY,
                     Nombre TEXT NOT NULL,
@@ -129,7 +129,7 @@ namespace Punto_de_Venta.Datos
                     TotalAbonado REAL NOT NULL DEFAULT 0
                 );
 
-                -- 6. ABONOS DE PRÉSTAMOS
+                -- 6. ABONOS DE PRESTAMOS
                 CREATE TABLE IF NOT EXISTS Abonos (
                     Id INTEGER PRIMARY KEY,
                     DeudorId INTEGER NOT NULL,

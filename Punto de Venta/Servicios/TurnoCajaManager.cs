@@ -19,7 +19,7 @@ namespace Punto_de_Venta
         public static void RegistrarMovimientoEfectivo(string tipo, decimal monto, string concepto)
         {
             var turnoActivo = ObtenerTurnoActivo();
-            if (turnoActivo == null) throw new InvalidOperationException("No se pueden registrar movimientos. La caja está cerrada.");
+            if (turnoActivo == null) throw new InvalidOperationException("No se pueden registrar movimientos. La caja esta cerrada.");
             using var conn = DatabaseHelper.GetConnection();
             using var tr = conn.BeginTransaction();
             try

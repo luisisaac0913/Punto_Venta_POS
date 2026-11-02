@@ -51,7 +51,7 @@ namespace Punto_de_Venta
         public event PropertyChangedEventHandler? PropertyChanged;
         #endregion
 
-        #region Inicialización y Constructor
+        #region Inicializacion y Constructor
         public Graficas()
         {
             InitializeComponent();
@@ -164,7 +164,7 @@ namespace Punto_de_Venta
         private void HelpOverlay_MouseDown(object sender, MouseButtonEventArgs e) { if (ReferenceEquals(e.OriginalSource, HelpOverlay)) HelpOverlay.Visibility = Visibility.Collapsed; }
         #endregion
 
-        #region Navegación y Filtros de Fecha
+        #region Navegacion y Filtros de Fecha
         private void RestoreNormalPeriods()
         {
             NormalPeriodContainer.Visibility = Visibility.Visible;
@@ -291,7 +291,7 @@ namespace Punto_de_Venta
         }
         #endregion
 
-        #region Renderizado de Gráficas (Nuevas y Existentes)
+        #region Renderizado de Graficas (Nuevas y Existentes)
         private void CargarGraficaFinanciera(decimal venta, decimal costo, decimal ganancia, decimal gastos)
         {
             ChartTitleText.Text = "Venta Total vs Costo vs Ganancia vs Gastos";
@@ -303,7 +303,7 @@ namespace Punto_de_Venta
 
         private void CargarGraficaMetodosPago(List<Venta> sales, List<MovimientoCaja> movimientos)
         {
-            ChartTitleText.Text = "Distribución de Dinero Recibido por Método de Pago";
+            ChartTitleText.Text = "Distribucion de Dinero Recibido por Metodo de Pago";
             double efectivo = 0, tarjeta = 0, transferencia = 0, fiado = 0;
 
             foreach (var s in sales)
@@ -331,7 +331,7 @@ namespace Punto_de_Venta
 
         private void CargarGraficaPareto(List<Venta> sales)
         {
-            ChartTitleText.Text = "Análisis ABC (Pareto) - Clasificación de Catálogo";
+            ChartTitleText.Text = "Analisis ABC (Pareto) - Clasificacion de Catalogo";
             var dict = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var s in sales)
@@ -366,7 +366,7 @@ namespace Punto_de_Venta
 
         private void CargarGraficaRotacion(List<Venta> sales, int diasPeriodo)
         {
-            ChartTitleText.Text = "Rotación vs Stock Actual (Top 7 Movimiento)";
+            ChartTitleText.Text = "Rotacion vs Stock Actual (Top 7 Movimiento)";
 
             var ventasPorProducto = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
             foreach (var s in sales)
@@ -394,7 +394,7 @@ namespace Punto_de_Venta
 
         private void CargarGraficaCategorias(List<Venta> sales)
         {
-            ChartTitleText.Text = "Categorías con Mayor Volumen de Piezas";
+            ChartTitleText.Text = "Categorias con Mayor Volumen de Piezas";
             var dict = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var s in sales)
@@ -429,7 +429,7 @@ namespace Punto_de_Venta
 
         private void CargarGraficaRentabilidad(List<Venta> sales)
         {
-            ChartTitleText.Text = "Top 7 Artículos que Dejan Mayor Ganancia Real ($)";
+            ChartTitleText.Text = "Top 7 Articulos que Dejan Mayor Ganancia Real ($)";
             var dict = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
             foreach (var s in sales) { foreach (var p in s.Productos) { decimal margenArticulo = p.Ganancia * p.Cantidad; dict[p.Nombre] = dict.GetValueOrDefault(p.Nombre) + margenArticulo; } }
             var sorted = dict.OrderByDescending(x => x.Value).Take(7).ToList();
@@ -597,7 +597,7 @@ namespace Punto_de_Venta
 
                         if (chartImage != null)
                         {
-                            col.Item().PaddingTop(15).Text("ANÁLISIS VISUAL").SemiBold().FontSize(12).FontColor(QuestPDF.Helpers.Colors.Grey.Darken3);
+                            col.Item().PaddingTop(15).Text("ANALISIS VISUAL").SemiBold().FontSize(12).FontColor(QuestPDF.Helpers.Colors.Grey.Darken3);
                             col.Item().PaddingTop(5).Height(240).Image(chartImage);
                         }
 
@@ -658,7 +658,7 @@ namespace Punto_de_Venta
 
                     page.Footer().AlignCenter().Text(x =>
                     {
-                        x.Span("Generado el: " + DateTime.Now.ToString("dd/MM/yyyy hh:mm tt", culture) + "  |  Página ");
+                        x.Span("Generado el: " + DateTime.Now.ToString("dd/MM/yyyy hh:mm tt", culture) + "  |  Pagina ");
                         x.CurrentPageNumber();
                         x.Span(" de ");
                         x.TotalPages();

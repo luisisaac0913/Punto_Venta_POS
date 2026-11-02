@@ -1,4 +1,4 @@
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
@@ -21,23 +21,45 @@ namespace Punto_de_Venta
 {
     public partial class MainWindow : Window
     {
-        #region Campos Privados y Caché
+        #region Campos Privados y Cache
         private readonly DispatcherTimer _clockTimer;
         private bool _isShuttingDown;
+        private Point _lastMousePosition;
+        private bool _reposoHabilitado;
+        private System.Windows.Threading.DispatcherTimer _inactivityTimer;
+        private System.Windows.Threading.DispatcherTimer _standbyClockTimer;
         private readonly Dictionary<string, UserControl> _vistasCache = new Dictionary<string, UserControl>();
         #endregion
 
-        #region Inicialización
+        #region Inicializacion
         public MainWindow()
         {
             InitializeComponent();
+
+            _standbyClockTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _standbyClockTimer.Tick += (s, args) =>
+            {
+                ActualizarRelojReposo();
+            };
+
+            _inactivityTimer = new System.Windows.Threading.DispatcherTimer();
+            _inactivityTimer.Tick += (s, args) =>
+            {
+                MostrarPantallaReposo();
+            };
+
+            // Cargamos la configuracion ANTES de usarla para evitar el error
+            var config = AppConfig.Load();
+
+            ActualizarConfiguracionReposo(config);
+
+            System.Windows.Input.InputManager.Current.PreProcessInput += Global_PreProcessInput;
 
             QuestPDF.Settings.License = LicenseType.Community;
             QuestPDF.Settings.UseSystemFonts = true;
 
             try
             {
-                var config = AppConfig.Load();
                 if (!string.IsNullOrWhiteSpace(config.NombreNegocio))
                 {
                     if (FindName("TxtMiniLogo") is TextBlock miniLogo)
@@ -63,8 +85,8 @@ namespace Punto_de_Venta
 
                     try
                     {
-                        var config = AppConfig.Load();
-                        BackupService.GenerarRespaldo("Cierre", config.RutaRespaldos);
+                        var cierreConfig = AppConfig.Load();
+                        BackupService.GenerarRespaldo("Cierre", cierreConfig.RutaRespaldos);
                     }
                     catch
                     {
@@ -80,7 +102,105 @@ namespace Punto_de_Venta
         }
         #endregion
 
-        #region Gestión de Ventana y Reloj
+        #region Gestion de Ventana y Reloj
+
+        public void ActualizarConfiguracionReposo(AppConfig config)
+        {
+            _inactivityTimer.Stop();
+
+            _reposoHabilitado = config != null && config.PantallaReposoHabilitada && config.PantallaReposoMinutos > 0;
+
+            if (_reposoHabilitado)
+            {
+                _inactivityTimer.Interval = TimeSpan.FromMinutes(config.PantallaReposoMinutos);
+                _inactivityTimer.Start();
+
+            }
+        }
+
+        private void Global_PreProcessInput(object sender, System.Windows.Input.PreProcessInputEventArgs e)
+        {
+            bool userInputDetected = false;
+
+            // Detectar si presionaron una tecla
+            if (e.StagingItem.Input is System.Windows.Input.KeyboardEventArgs keyboardArgs)
+            {
+                if (keyboardArgs.RoutedEvent == System.Windows.Input.Keyboard.PreviewKeyDownEvent ||
+                    keyboardArgs.RoutedEvent == System.Windows.Input.Keyboard.KeyDownEvent)
+                {
+                    userInputDetected = true;
+                }
+            }
+            // Detectar raton (Clics o movimiento real)
+            else if (e.StagingItem.Input is System.Windows.Input.MouseEventArgs mouseArgs)
+            {
+                if (mouseArgs.RoutedEvent == System.Windows.Input.Mouse.PreviewMouseDownEvent ||
+                    mouseArgs.RoutedEvent == System.Windows.Input.Mouse.MouseDownEvent ||
+                    mouseArgs.RoutedEvent == System.Windows.Input.Mouse.MouseWheelEvent)
+                {
+                    userInputDetected = true;
+                }
+                else if (mouseArgs.RoutedEvent == System.Windows.Input.Mouse.MouseMoveEvent)
+                {
+                    Point currentPosition = mouseArgs.GetPosition(this);
+                    if (Math.Abs(currentPosition.X - _lastMousePosition.X) > 5 ||
+                        Math.Abs(currentPosition.Y - _lastMousePosition.Y) > 5)
+                    {
+                        userInputDetected = true;
+                        _lastMousePosition = currentPosition;
+                    }
+                }
+            }
+
+            if (userInputDetected)
+            {
+                if (StandbyOverlay.Visibility == Visibility.Visible)
+                {
+                    OcultarPantallaReposo();
+                }
+
+                if (_reposoHabilitado) { _inactivityTimer.Stop(); _inactivityTimer.Start(); }
+
+            }
+        }
+
+        private void MostrarPantallaReposo()
+        {
+            _inactivityTimer.Stop();
+            ActualizarRelojReposo();
+            _standbyClockTimer.Start();
+            try { _lastMousePosition = Mouse.GetPosition(this); } catch { }
+            StandbyOverlay.Visibility = Visibility.Visible;
+            MainGrid.Effect = new System.Windows.Media.Effects.BlurEffect { Radius = 15 };
+        }
+
+        private void OcultarPantallaReposo()
+        {
+            StandbyOverlay.Visibility = Visibility.Collapsed;
+            _standbyClockTimer.Stop();
+            MainGrid.Effect = null;
+            if (_reposoHabilitado)
+            {
+                _inactivityTimer.Stop();
+                _inactivityTimer.Start();
+            }
+        }
+
+        private void ActualizarRelojReposo()
+        {
+            StandbyClockText.Text = DateTime.Now.ToString("h:mm tt", System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+            if (FindName("StandbyDateText") is TextBlock standbyDate)
+            {
+                var culture = System.Globalization.CultureInfo.GetCultureInfo("es-MX");
+                standbyDate.Text = culture.TextInfo.ToTitleCase(DateTime.Now.ToString("dddd, d 'de' MMMM 'de' yyyy", culture));
+            }
+        }
+
+        private void StandbyOverlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            OcultarPantallaReposo();
+        }
+
         private void ModernTitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount == 2)
@@ -114,7 +234,7 @@ namespace Punto_de_Venta
         }
         #endregion
 
-        #region Navegación y Rutas (Vistas Modulares)
+        #region Navegacion y Rutas (Vistas Modulares)
         private void AbrirVista<T>() where T : UserControl, new()
         {
             string nombreVista = typeof(T).Name;
@@ -130,7 +250,8 @@ namespace Punto_de_Venta
             ContenedorVistas.Content = _vistasCache[nombreVista];
             ContenedorVistas.Visibility = Visibility.Visible;
 
-            Dispatcher.BeginInvoke(new Action(() => {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
                 _vistasCache[nombreVista].Focus();
             }), DispatcherPriority.Loaded);
         }
@@ -183,6 +304,8 @@ namespace Punto_de_Venta
 
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            if (StandbyOverlay != null && StandbyOverlay.Visibility == Visibility.Visible) OcultarPantallaReposo();
+
             if (ExportarOverlay != null && ExportarOverlay.Visibility == Visibility.Visible)
             {
                 if (e.Key == Key.Escape)
@@ -200,6 +323,16 @@ namespace Punto_de_Venta
                     CerrarImportar();
                     e.Handled = true;
                 }
+                return;
+            }
+
+            // Atajo universal: Ctrl + L limpia la seleccion de la vista abierta
+            if (ContenedorVistas.Visibility == Visibility.Visible
+                && e.Key == Key.L && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control
+                && ContenedorVistas.Content is ILimpiarSeleccion vistaConSeleccion)
+            {
+                vistaConSeleccion.LimpiarSeleccion();
+                e.Handled = true;
                 return;
             }
 
@@ -256,7 +389,7 @@ namespace Punto_de_Venta
         }
         #endregion
 
-        #region Importación de Base de Datos (Archivos CSV)
+        #region Importacion de Base de Datos (Archivos CSV)
         private void AbrirModalImportar_Click(object sender, RoutedEventArgs e)
         {
             if (FindName("ImportarOverlay") is Grid overlay)
@@ -295,7 +428,7 @@ namespace Punto_de_Venta
 
                 if (lineasNuevas.Length == 0)
                 {
-                    ToastNotification.Show("El archivo seleccionado está completamente vacío.", ToastType.Warning);
+                    ToastNotification.Show("El archivo seleccionado esta completamente vacio.", ToastType.Warning);
                     return;
                 }
 
@@ -355,12 +488,12 @@ namespace Punto_de_Venta
                 }
                 else
                 {
-                    ToastNotification.Show("No se detectó ningún producto válido. Verifica que el archivo sea un CSV con el orden de columnas correcto.", ToastType.Warning);
+                    ToastNotification.Show("No se detecto ningun producto valido. Verifica que el archivo sea un CSV con el orden de columnas correcto.", ToastType.Warning);
                 }
             }
             catch (Exception ex)
             {
-                ToastNotification.Show($"Error crítico al leer el archivo: {ex.Message}", ToastType.Error);
+                ToastNotification.Show($"Error critico al leer el archivo: {ex.Message}", ToastType.Error);
             }
         }
 
@@ -474,7 +607,7 @@ namespace Punto_de_Venta
         }
         #endregion
 
-        #region Exportación (Archivos PDF)
+        #region Exportacion (Archivos PDF)
         private void Exportar_Click(object sender, RoutedEventArgs e)
         {
             if (FindName("ExportarOverlay") is Grid overlay)
@@ -601,7 +734,7 @@ namespace Punto_de_Venta
 
                     page.Header().Column(c =>
                     {
-                        c.Item().Text("CATÁLOGO DE PRODUCTOS").SemiBold().FontSize(18).FontColor(Colors.Blue.Darken2);
+                        c.Item().Text("CATALOGO DE PRODUCTOS").SemiBold().FontSize(18).FontColor(Colors.Blue.Darken2);
                         c.Item().Text($"Total de productos registrados: {productList.Count}").FontSize(11).FontColor(Colors.Grey.Darken1);
                         c.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                     });
@@ -622,7 +755,7 @@ namespace Punto_de_Venta
                         table.Header(header =>
                         {
                             header.Cell().Text("ID").SemiBold();
-                            header.Cell().Text("CÓDIGO").SemiBold();
+                            header.Cell().Text("CODIGO").SemiBold();
                             header.Cell().Text("NOMBRE").SemiBold();
                             header.Cell().Text("STOCK").SemiBold();
                             header.Cell().Text("COSTO").SemiBold().AlignRight();
@@ -644,7 +777,7 @@ namespace Punto_de_Venta
 
                     page.Footer().AlignCenter().Text(x =>
                     {
-                        x.Span("Página ");
+                        x.Span("Pagina ");
                         x.CurrentPageNumber();
                         x.Span(" de ");
                         x.TotalPages();
@@ -669,7 +802,7 @@ namespace Punto_de_Venta
 
                     page.Header().Column(c =>
                     {
-                        c.Item().Text("REPORTE DE PRÉSTAMOS Y DEUDAS").SemiBold().FontSize(18).FontColor(Colors.Blue.Darken2);
+                        c.Item().Text("REPORTE DE PRESTAMOS Y DEUDAS").SemiBold().FontSize(18).FontColor(Colors.Blue.Darken2);
                         c.Item().Text($"TOTAL SALDO PENDIENTE POR COBRAR: {debtorList.Sum(d => d.SaldoRestante).ToString("C2", culture)}").FontSize(12).FontColor(Colors.Red.Darken2).SemiBold();
                         c.Item().PaddingVertical(5).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                     });
@@ -718,7 +851,7 @@ namespace Punto_de_Venta
 
                     page.Footer().AlignCenter().Text(x =>
                     {
-                        x.Span("Página ");
+                        x.Span("Pagina ");
                         x.CurrentPageNumber();
                         x.Span(" de ");
                         x.TotalPages();
@@ -762,7 +895,7 @@ namespace Punto_de_Venta
                             totalWeek += dailyTotal;
                             totalProfitWeek += dailyProfit;
 
-                            col.Item().PaddingTop(10).Text($"Día: {day.ToString("dd/MM/yyyy", culture)}").Bold().FontSize(12);
+                            col.Item().PaddingTop(10).Text($"Dia: {day.ToString("dd/MM/yyyy", culture)}").Bold().FontSize(12);
 
                             col.Item().PaddingTop(5).PaddingBottom(5).Table(table =>
                             {
@@ -818,7 +951,7 @@ namespace Punto_de_Venta
                                 }
                             });
 
-                            col.Item().PaddingBottom(10).AlignRight().Text($"Total del día: {dailyTotal.ToString("C2", culture)} | Ganancia: {dailyProfit.ToString("C2", culture)}").SemiBold().FontColor(Colors.Green.Darken2);
+                            col.Item().PaddingBottom(10).AlignRight().Text($"Total del dia: {dailyTotal.ToString("C2", culture)} | Ganancia: {dailyProfit.ToString("C2", culture)}").SemiBold().FontColor(Colors.Green.Darken2);
                             col.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten3);
                         }
 
@@ -831,7 +964,7 @@ namespace Punto_de_Venta
 
                     page.Footer().AlignCenter().Text(x =>
                     {
-                        x.Span("Página ");
+                        x.Span("Pagina ");
                         x.CurrentPageNumber();
                         x.Span(" de ");
                         x.TotalPages();
