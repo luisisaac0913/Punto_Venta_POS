@@ -17,11 +17,15 @@ using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Net.Http;
+using System.Text.Json;
 using System.Windows.Threading;
+using QRCoder;
+using System.Windows.Media.Imaging;
 
 namespace Punto_de_Venta.Vistas
 {
-    public partial class Cobro : UserControl
+    public partial class Cobro : UserControl, ILimpiarSeleccion
     {
         #region Campos Privados y Colecciones
         private DispatcherTimer _typingTimer;
@@ -33,11 +37,13 @@ namespace Punto_de_Venta.Vistas
         private bool _purchaseFeedbackVisible;
         private ItemCarrito? _itemEnPesaje;
         private bool _modalAbierto = false;
+        private System.Windows.Threading.DispatcherTimer _timerMp;
+        private string _refMpActual = "";
 
         public ObservableCollection<ItemCarrito> Cart { get; } = new();
         #endregion
 
-        #region Inicialización y Constructor
+        #region Inicializacion y Constructor
         public Cobro()
         {
             InitializeComponent();
@@ -49,6 +55,8 @@ namespace Punto_de_Venta.Vistas
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => ((TextBlock)FindName("ClockText")).Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
             _clockTimer.Start();
+            _timerMp = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+            _timerMp.Tick += TimerMp_Tick;
             ActualizarVisibilidadEmptyState();
             _typingTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
             _typingTimer.Tick += (s, args) =>
@@ -79,13 +87,13 @@ namespace Punto_de_Venta.Vistas
                 _catalog = ProductoDB.Load();
                 CargarPromocionesDesdeDb();
                 RefreshSuggestions();
-                ActualizarEstadoHardwareAsync(); // Ahora asíncrono
+                ActualizarEstadoHardwareAsync(); // Ahora asincrono
             }
             catch (Exception exception)
             {
                 _catalog = new();
                 if (FindName("SuggestionsPopup") is Popup popup) popup.IsOpen = false;
-                ToastNotification.Show($"No se pudo cargar el catálogo: {exception.Message}", ToastType.Error);
+                ToastNotification.Show($"No se pudo cargar el catalogo: {exception.Message}", ToastType.Error);
             }
             if (Cart != null)
             {
@@ -113,11 +121,263 @@ namespace Punto_de_Venta.Vistas
             EmptyCartPanel.Visibility = tieneArticulos ? Visibility.Collapsed : Visibility.Visible;
         }
 
+        private async void BtnCobrarMP_Click(object sender, RoutedEventArgs e)
+        {
+            var config = AppConfig.Load();
+            if (string.IsNullOrEmpty(config.MpAccessToken))
+            {
+                ToastNotification.Show("Falta configurar el Token de Mercado Pago en Ajustes", ToastType.Warning);
+                return;
+            }
+
+            BtnCobrarMP.IsEnabled = false;
+            BtnCobrarMP.Content = "⏳ Conectando...";
+            var total = Math.Round(ObtenerTotalNetoVenta(), 2);
+            string userId = config.MpAccessToken.Split('-')[1]; // El Access Token trae tu UserID incrustado
+
+            try
+            {
+                // 1. Preparamos los datos del cobro (Formato oficial de Mercado Pago)
+                var ordenMp = new
+                {
+                    external_reference = $"TICKET_{_saleNumber}",
+                    title = "Venta en Mostrador",
+                    description = "Compra de productos en ferreteria",
+                    total_amount = total,
+                    items = new[]
+                    {
+                new {
+                    title = "Total de compra",
+                    unit_price = total,
+                    quantity = 1,
+                    unit_measure = "unit",
+                    total_amount = total
+                }
+            }
+                };
+
+                string jsonBody = JsonSerializer.Serialize(ordenMp);
+                var content = new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json");
+
+                // 2. Enviamos la instruccion a los servidores de Mercado Pago
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.MpAccessToken}");
+
+                    // Endpoint para inyectar el cobro al codigo QR fijo de tu mostrador
+                    string url = $"https://api.mercadopago.com/instore/orders/qr/seller/collectors/{userId}/pos/{config.MpSucursalCaja}/qrs";
+
+                    var response = await client.PutAsync(url, content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        BtnCobrarMP.Content = "✅ ¡Listo! Que el cliente escanee";
+                        BtnCobrarMP.Background = new SolidColorBrush(Color.FromRgb(46, 204, 113)); // Verde
+                        ToastNotification.Show("Cobro enviado a Mercado Pago. El cliente ya puede escanear.", ToastType.Success);
+
+                        // NUEVO: Mostramos el QR de Mercado Pago en pantalla en lugar del de SPEI
+                        MostrarQrMercadoPagoEnPantalla();
+
+                        _refMpActual = $"TICKET_{_saleNumber}";
+                        _timerMp.Start();
+                    }
+                    else
+                    {
+                        string errorResponse = await response.Content.ReadAsStringAsync();
+                        BtnCobrarMP.Content = "❌ Error al enviar";
+                        BtnCobrarMP.Background = new SolidColorBrush(Color.FromRgb(231, 76, 60)); // Rojo
+                        ToastNotification.Show("No se pudo conectar con Mercado Pago.", ToastType.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                BtnCobrarMP.Content = "❌ Falla de red";
+                ToastNotification.Show($"Error de conexion: {ex.Message}", ToastType.Error);
+            }
+            finally
+            {
+                // Restauramos el boton despues de 4 segundos
+                await Task.Delay(4000);
+                BtnCobrarMP.IsEnabled = true;
+                BtnCobrarMP.Content = "Mercado Pago";
+                BtnCobrarMP.Background = new SolidColorBrush(Color.FromRgb(0, 158, 227)); // Azul MP original
+            }
+        }
+
+        private async void TimerMp_Tick(object? sender, EventArgs e)
+        {
+            _timerMp.Stop();
+
+            if (string.IsNullOrWhiteSpace(_refMpActual) || RbTransferencia?.IsChecked != true || PaymentOverlay?.Visibility != Visibility.Visible || !this.IsVisible)
+            {
+                return;
+            }
+
+            var config = AppConfig.Load();
+            if (string.IsNullOrWhiteSpace(config.MpAccessToken)) return;
+
+            try
+            {
+                using var client = new HttpClient();
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.MpAccessToken}");
+
+                string url = $"https://api.mercadopago.com/v1/payments/search?external_reference={_refMpActual}";
+                var response = await client.GetAsync(url);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+
+                    if (doc.RootElement.TryGetProperty("results", out var results) &&
+                        results.ValueKind == JsonValueKind.Array &&
+                        results.GetArrayLength() > 0)
+                    {
+                        var status = results[0].GetProperty("status").GetString();
+
+                        if (status == "approved")
+                        {
+                            ToastNotification.Show("✅ Pago de Mercado Pago aprobado automaticamente.", ToastType.Success);
+                            FinalizeButton_Click(null, null);
+                            return;
+                        }
+                        else if (status == "rejected")
+                        {
+                            ToastNotification.Show("❌ El pago fue rechazado por Mercado Pago.", ToastType.Error);
+                            BtnCobrarMP.Content = "❌ Pago rechazado";
+                            BtnCobrarMP.Background = new SolidColorBrush(Color.FromRgb(231, 76, 60));
+                            return;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            if (RbTransferencia?.IsChecked == true && PaymentOverlay?.Visibility == Visibility.Visible && this.IsVisible)
+            {
+                _timerMp.Start();
+            }
+        }
+
+        private async void MostrarQrMercadoPagoEnPantalla()
+        {
+            var config = AppConfig.Load();
+            string payloadMp = "";
+
+            try
+            {
+                using (var client = new System.Net.Http.HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.MpAccessToken}");
+
+                    // Consultamos la caja directamente por su ID para extraer su texto QR oficial
+                    var response = await client.GetAsync($"https://api.mercadopago.com/pos?external_id={config.MpSucursalCaja}");
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string json = await response.Content.ReadAsStringAsync();
+                        using (System.Text.Json.JsonDocument doc = System.Text.Json.JsonDocument.Parse(json))
+                        {
+                            var results = doc.RootElement.GetProperty("results");
+                            if (results.GetArrayLength() > 0)
+                            {
+                                // Extraemos la cadena EMVCo (ej. 00020101021243650016COM.MERCADOLIBRE...)
+                                payloadMp = results[0].GetProperty("qr_code").GetString();
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            if (string.IsNullOrEmpty(payloadMp))
+            {
+                ToastNotification.Show("No se pudo cargar el QR de Mercado Pago en pantalla.", ToastType.Error);
+                return;
+            }
+
+            // Usamos tu misma logica exacta de QRCoder para reemplazar la imagen en la UI
+            using (QRCoder.QRCodeGenerator qrGenerator = new QRCoder.QRCodeGenerator())
+            {
+                // ECCLevel.M es ideal porque las cadenas de Mercado Pago son muy largas y densas
+                QRCoder.QRCodeData qrCodeData = qrGenerator.CreateQrCode(payloadMp, QRCoder.QRCodeGenerator.ECCLevel.M);
+                using (QRCoder.QRCode qrCode = new QRCoder.QRCode(qrCodeData))
+                {
+                    using (System.Drawing.Bitmap qrBitmap = qrCode.GetGraphic(20, System.Drawing.Color.Black, System.Drawing.Color.White, true))
+                    {
+                        using (var memory = new System.IO.MemoryStream())
+                        {
+                            qrBitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+                            memory.Position = 0;
+
+                            var bitmapImage = new System.Windows.Media.Imaging.BitmapImage();
+                            bitmapImage.BeginInit();
+                            bitmapImage.StreamSource = memory;
+                            bitmapImage.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                            bitmapImage.EndInit();
+
+                            QrCodeImage.Source = bitmapImage;
+
+                            if (QrInfoText != null)
+                                QrInfoText.Text = "Escanea con Mercado Pago";
+                        }
+                    }
+                }
+            }
+        }
+
+        private void GenerarQrDePago(decimal montoTotal)
+        {
+            var config = AppConfig.Load();
+            string clabe = string.IsNullOrWhiteSpace(config.CuentaClabe) ? "000000000000000000" : config.CuentaClabe;
+            string beneficiario = string.IsNullOrWhiteSpace(config.NombreBeneficiario) ? "Mi Negocio" : config.NombreBeneficiario;
+            string referencia = _saleNumber.ToString().PadLeft(7, '0');
+            var datosSpei = new
+            {
+                cl = clabe,
+                no = beneficiario,
+                mo = montoTotal,
+                @ref = referencia,
+                con = $"Cobro {referencia}"
+            };
+
+            // Serializamos el objeto a un string JSON compacto
+            string payloadQr = System.Text.Json.JsonSerializer.Serialize(datosSpei);
+
+            using (QRCoder.QRCodeGenerator qrGenerator = new QRCoder.QRCodeGenerator())
+            {
+                QRCoder.QRCodeData qrCodeData = qrGenerator.CreateQrCode(payloadQr, QRCoder.QRCodeGenerator.ECCLevel.Q);
+                using (QRCoder.QRCode qrCode = new QRCoder.QRCode(qrCodeData))
+                {
+                    using (System.Drawing.Bitmap qrBitmap = qrCode.GetGraphic(20, System.Drawing.Color.Black, System.Drawing.Color.White, true))
+                    {
+                        using (var memory = new System.IO.MemoryStream())
+                        {
+                            qrBitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+                            memory.Position = 0;
+
+                            var bitmapImage = new System.Windows.Media.Imaging.BitmapImage();
+                            bitmapImage.BeginInit();
+                            bitmapImage.StreamSource = memory;
+                            bitmapImage.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                            bitmapImage.EndInit();
+
+                            QrCodeImage.Source = bitmapImage;
+                        }
+                    }
+                }
+            }
+        }
+
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if ((bool)e.NewValue)
             {
                 try { _catalog = ProductoDB.Load(); } catch { _catalog = new(); }
+                ActualizarEstadoHardwareAsync();
 
                 this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                 {
@@ -160,8 +420,8 @@ namespace Punto_de_Venta.Vistas
             {
                 var config = AppConfig.Load();
 
-                // 1. Verificación de Báscula (Rápido, se queda en hilo UI)
-                if (config.BasculaHabilitada)
+                // 1. Verificacion de Bascula (Verde solo si esta habilitada en ajustes y el puerto existe)
+                if (config.BasculaHabilitada && !string.IsNullOrWhiteSpace(config.BasculaPuerto))
                 {
                     var puertosActivos = BasculaService.ObtenerPuertosDisponibles();
                     bool puertoDetectado = Array.Exists(puertosActivos, p => string.Equals(p, config.BasculaPuerto, StringComparison.OrdinalIgnoreCase));
@@ -169,27 +429,34 @@ namespace Punto_de_Venta.Vistas
                     if (puertoDetectado)
                     {
                         DotScaleStatus.Fill = new SolidColorBrush(Color.FromRgb(46, 204, 113));
-                        StatusScaleBadge.ToolTip = $"Báscula conectada en {config.BasculaPuerto}";
+                        StatusScaleBadge.Opacity = 1.0;
+                        StatusScaleBadge.ToolTip = $"Bascula conectada en {config.BasculaPuerto}";
                     }
                     else
                     {
-                        DotScaleStatus.Fill = new SolidColorBrush(Color.FromRgb(231, 76, 60));
+                        DotScaleStatus.Fill = new SolidColorBrush(Color.FromRgb(142, 142, 147));
+                        StatusScaleBadge.Opacity = 0.5;
                         StatusScaleBadge.ToolTip = $"Puerto {config.BasculaPuerto} no detectado en el equipo";
                     }
                 }
                 else
                 {
                     DotScaleStatus.Fill = new SolidColorBrush(Color.FromRgb(142, 142, 147));
-                    StatusScaleBadge.ToolTip = "Báscula deshabilitada en ajustes";
+                    StatusScaleBadge.Opacity = 0.5;
+                    StatusScaleBadge.ToolTip = "Bascula deshabilitada en ajustes";
                 }
 
-                // 2. Verificación de Impresora (Lento, se va a hilo secundario)
-                string nombreImpresora = config.ImpresoraSeleccionada;
+                // 2. Verificacion de Impresora (Verde solo si hay una impresora seleccionada en el POS, la impresion esta activa y existe en Windows)
+                string nombreImpresora = config.ImpresoraSeleccionada?.Trim() ?? string.Empty;
+                bool impresionHabilitada = !string.IsNullOrWhiteSpace(nombreImpresora)
+                    && !nombreImpresora.StartsWith("(")
+                    && !nombreImpresora.Contains("Ninguna", StringComparison.OrdinalIgnoreCase)
+                    && (config.PreguntarAntesDeImprimir || config.ImprimirTicketAutomatico);
                 bool impresoraValida = false;
 
-                await Task.Run(() =>
+                if (impresionHabilitada)
                 {
-                    if (!string.IsNullOrWhiteSpace(nombreImpresora))
+                    await Task.Run(() =>
                     {
                         foreach (string printer in PrinterSettings.InstalledPrinters)
                         {
@@ -199,38 +466,35 @@ namespace Punto_de_Venta.Vistas
                                 break;
                             }
                         }
-                    }
-                    else
-                    {
-                        var defaultSettings = new PrinterSettings();
-                        impresoraValida = defaultSettings.IsValid;
-                        nombreImpresora = defaultSettings.IsValid ? defaultSettings.PrinterName : "Ninguna";
-                    }
-                });
+                    });
+                }
 
-                // Regresamos a UI
                 if (impresoraValida)
                 {
                     DotPrinterStatus.Fill = new SolidColorBrush(Color.FromRgb(46, 204, 113));
+                    StatusPrinterBadge.Opacity = 1.0;
                     StatusPrinterBadge.ToolTip = $"Impresora lista: {nombreImpresora}";
                 }
                 else
                 {
-                    DotPrinterStatus.Fill = new SolidColorBrush(Color.FromRgb(231, 76, 60));
-                    StatusPrinterBadge.ToolTip = string.IsNullOrWhiteSpace(nombreImpresora)
-                        ? "No hay impresora térmica configurada ni predeterminada"
+                    DotPrinterStatus.Fill = new SolidColorBrush(Color.FromRgb(142, 142, 147));
+                    StatusPrinterBadge.Opacity = 0.5;
+                    StatusPrinterBadge.ToolTip = !impresionHabilitada
+                        ? "Impresora desactivada en ajustes"
                         : $"Impresora no encontrada: {nombreImpresora}";
                 }
             }
             catch
             {
                 DotScaleStatus.Fill = new SolidColorBrush(Color.FromRgb(142, 142, 147));
+                StatusScaleBadge.Opacity = 0.5;
                 DotPrinterStatus.Fill = new SolidColorBrush(Color.FromRgb(142, 142, 147));
+                StatusPrinterBadge.Opacity = 0.5;
             }
         }
         #endregion
 
-        #region Módulo de Pesaje con Báscula (F8)
+        #region Modulo de Pesaje con Bascula (F8)
 
         private async void AbrirModalPesaje()
         {
@@ -312,7 +576,7 @@ namespace Punto_de_Venta.Vistas
                 ScaleInputLabel.Text = "PESO DETECTADO (KG)";
                 ScaleResultLabel.Text = "Importe total:";
                 ScaleValueInput.Text = _itemEnPesaje.Cantidad > 0 ? _itemEnPesaje.Cantidad.ToString("0.000", CultureInfo.InvariantCulture) : "0.000";
-                ScaleStatusText.Text = "Listo para leer báscula.";
+                ScaleStatusText.Text = "Listo para leer bascula.";
             }
 
             ScaleValueInput.Focus();
@@ -322,7 +586,7 @@ namespace Punto_de_Venta.Vistas
 
         private async Task ConsultarBasculaAsync()
         {
-            ScaleStatusText.Text = "⏳ Conectando con la báscula...";
+            ScaleStatusText.Text = "⏳ Conectando con la bascula...";
             var resultado = await BasculaService.ObtenerPesoAsync();
 
             if (resultado.Exito && resultado.Peso > 0)
@@ -334,7 +598,7 @@ namespace Punto_de_Venta.Vistas
             else
             {
                 ScaleStatusText.Text = string.IsNullOrEmpty(resultado.Error)
-                    ? "⚠️ Ingresa el peso manual si la báscula está apagada."
+                    ? "⚠️ Ingresa el peso manual si la bascula esta apagada."
                     : $"⚠️ {resultado.Error}";
             }
         }
@@ -432,7 +696,7 @@ namespace Punto_de_Venta.Vistas
             if (!decimal.TryParse(ScaleValueInput.Text.Trim(), styles, usCulture, out var valorIngresado) &&
                 !decimal.TryParse(ScaleValueInput.Text.Trim(), styles, mxCulture, out valorIngresado) || valorIngresado <= 0)
             {
-                ToastNotification.Show("Ingresa una cantidad válida mayor a 0", ToastType.Warning);
+                ToastNotification.Show("Ingresa una cantidad valida mayor a 0", ToastType.Warning);
                 ScaleValueInput.Focus();
                 ScaleValueInput.SelectAll();
                 return;
@@ -455,7 +719,7 @@ namespace Punto_de_Venta.Vistas
         }
         #endregion
 
-        #region Búsqueda y Sugerencias de Catálogo
+        #region Busqueda y Sugerencias de Catalogo
         private void CargarPromocionesDesdeDb()
         {
             try
@@ -801,7 +1065,7 @@ namespace Punto_de_Venta.Vistas
                 cartGrid.ScrollIntoView(ultimo);
 
             ToastNotification.Show(
-                $"Se quitó '{selectedItem.Nombre}' del carrito",
+                $"Se quito '{selectedItem.Nombre}' del carrito",
                 ToastType.Info);
 
             ActualizarVisibilidadEmptyState();
@@ -812,7 +1076,7 @@ namespace Punto_de_Venta.Vistas
         }
         #endregion
 
-        #region Módulo Modo ReStock Rápido
+        #region Modulo Modo ReStock Rapido
         private void OpenQuickRestockModal()
         {
             if (FindName("SuggestionsPopup") is System.Windows.Controls.Primitives.Popup popup)
@@ -857,7 +1121,7 @@ namespace Punto_de_Venta.Vistas
             else
             {
                 QrFoundProductLabel.Text = string.Empty;
-                QrStatusMessage.Text = "⚠️ Producto no encontrado con ese código.";
+                QrStatusMessage.Text = "⚠️ Producto no encontrado con ese codigo.";
                 QrScanCodeBox.SelectAll();
             }
 
@@ -882,7 +1146,7 @@ namespace Punto_de_Venta.Vistas
 
             if (string.IsNullOrWhiteSpace(code))
             {
-                QrStatusMessage.Text = "Escanea o escribe un código.";
+                QrStatusMessage.Text = "Escanea o escribe un codigo.";
                 QrScanCodeBox.Focus();
                 return;
             }
@@ -916,7 +1180,7 @@ namespace Punto_de_Venta.Vistas
 
                 QrScanCodeBox.Clear();
                 QrAddAmountBox.Text = "1";
-                QrFoundProductLabel.Text = $"Último: {prod.Nombre} (Stock: {prod.Stock})";
+                QrFoundProductLabel.Text = $"Ultimo: {prod.Nombre} (Stock: {prod.Stock})";
                 QrStatusMessage.Text = string.Empty;
                 QrScanCodeBox.Focus();
             }
@@ -929,7 +1193,7 @@ namespace Punto_de_Venta.Vistas
         }
         #endregion
 
-        #region Agregar Rápido de Producto Nuevo
+        #region Agregar Rapido de Producto Nuevo
         private void OpenQuickAdd(string code)
         {
             ((Popup)FindName("SuggestionsPopup")).IsOpen = false;
@@ -1006,16 +1270,16 @@ namespace Punto_de_Venta.Vistas
 
             if (!decimal.TryParse(QuickCostBox.Text.Trim(), styles, usCulture, out var cost) && !decimal.TryParse(QuickCostBox.Text.Trim(), styles, esCulture, out cost) || cost < 0)
             {
-                QuickValidationMessage.Text = "Costo no válido.";
-                ToastNotification.Show("Introduce un costo válido", ToastType.Warning);
+                QuickValidationMessage.Text = "Costo no valido.";
+                ToastNotification.Show("Introduce un costo valido", ToastType.Warning);
                 QuickCostBox.Focus();
                 return;
             }
 
             if (!decimal.TryParse(QuickMarginBox.Text.Trim(), styles, usCulture, out var margin) && !decimal.TryParse(QuickMarginBox.Text.Trim(), styles, esCulture, out margin) || margin < 0)
             {
-                QuickValidationMessage.Text = "Ganancia no válida.";
-                ToastNotification.Show("Introduce una ganancia válida", ToastType.Warning);
+                QuickValidationMessage.Text = "Ganancia no valida.";
+                ToastNotification.Show("Introduce una ganancia valida", ToastType.Warning);
                 QuickMarginBox.Focus();
                 return;
             }
@@ -1113,6 +1377,12 @@ namespace Punto_de_Venta.Vistas
             {
                 CloseQuickRestock();
             }
+        }
+
+        public void LimpiarSeleccion()
+        {
+            CartGrid.SelectedIndex = -1;
+            FocusSearch();
         }
 
         private async void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -1377,8 +1647,7 @@ namespace Punto_de_Venta.Vistas
                 }
 
                 PrestamoDB.Save(debtors);
-                VentaDB.Insert(sale);
-                ProductoDB.Save(productosModificados);
+                VentaDB.RegistrarVentaConStock(sale, productosModificados);
 
                 var config = AppConfig.Load();
                 TicketService.GuardarCopiaDigital(sale, sale.Productos, 0m, 0m, config);
@@ -1398,7 +1667,7 @@ namespace Punto_de_Venta.Vistas
             catch (Exception ex)
             {
                 _catalog = ProductoDB.Load();
-                ToastNotification.Show($"Error crítico al guardar préstamo: {ex.Message}", ToastType.Error);
+                ToastNotification.Show($"Error critico al guardar prestamo: {ex.Message}", ToastType.Error);
             }
         }
 
@@ -1447,7 +1716,7 @@ namespace Punto_de_Venta.Vistas
 
             if (!decimal.TryParse(MovementAmountBox.Text, out decimal monto) || monto <= 0)
             {
-                MovementValidationMessage.Text = "Ingresa un monto válido mayor a 0.";
+                MovementValidationMessage.Text = "Ingresa un monto valido mayor a 0.";
                 MovementAmountBox.Focus();
                 return;
             }
@@ -1479,7 +1748,7 @@ namespace Punto_de_Venta.Vistas
                     TurnoCajaManager.RegistrarMovimientoEfectivo(tipoMovimiento, monto, concepto);
                 }
 
-                ToastNotification.Show($"Se registró {tipoMovimiento} por {monto:C2}", ToastType.Success);
+                ToastNotification.Show($"Se registro {tipoMovimiento} por {monto:C2}", ToastType.Success);
                 CashMovementOverlay.Visibility = Visibility.Collapsed;
                 MovementAmountBox.Clear();
                 MovementConceptBox.Clear();
@@ -1494,6 +1763,7 @@ namespace Punto_de_Venta.Vistas
         #region Proceso de Cobro de Venta
         private void PaymentMethod_Changed(object sender, RoutedEventArgs e)
         {
+            _timerMp?.Stop();
             if (RbMixto == null || RbEfectivo == null) return;
             var total = Math.Round(ObtenerTotalNetoVenta(), 2);
 
@@ -1501,6 +1771,7 @@ namespace Punto_de_Venta.Vistas
             {
                 SinglePaymentLabel.Visibility = Visibility.Collapsed;
                 SinglePaymentContainer.Visibility = Visibility.Collapsed;
+                if (QrContainer != null) QrContainer.Visibility = Visibility.Collapsed;
                 MixedPaymentContainer.Visibility = Visibility.Visible;
 
                 MixedCashBox.Text = "0";
@@ -1513,19 +1784,37 @@ namespace Punto_de_Venta.Vistas
             else
             {
                 SinglePaymentLabel.Visibility = Visibility.Visible;
-                SinglePaymentContainer.Visibility = Visibility.Visible;
                 MixedPaymentContainer.Visibility = Visibility.Collapsed;
 
                 if (RbEfectivo.IsChecked == true)
                 {
+                    if (QrContainer != null) QrContainer.Visibility = Visibility.Collapsed;
+                    SinglePaymentContainer.Visibility = Visibility.Visible;
+                    SinglePaymentLabel.Text = "Dinero Recibido";
+
                     CashReceivedBox.IsReadOnly = false;
                     CashReceivedBox.Clear();
                     CashReceivedBox.Focus();
                 }
-                else
+                else if (RbTarjeta.IsChecked == true)
                 {
+                    if (QrContainer != null) QrContainer.Visibility = Visibility.Collapsed;
+                    SinglePaymentContainer.Visibility = Visibility.Visible;
+                    SinglePaymentLabel.Text = "Monto en Terminal";
+
                     CashReceivedBox.Text = total.ToString("0.00", CultureInfo.InvariantCulture);
                     CashReceivedBox.IsReadOnly = true;
+                    CalcularCambioVisual();
+                }
+                else if (RbTransferencia.IsChecked == true)
+                {
+                    SinglePaymentContainer.Visibility = Visibility.Collapsed;
+                    SinglePaymentLabel.Text = "Transferencia SPEI";
+                    if (QrContainer != null) QrContainer.Visibility = Visibility.Visible;
+
+                    CashReceivedBox.Text = total.ToString("0.00", CultureInfo.InvariantCulture);
+                    CashReceivedBox.IsReadOnly = true;
+                    GenerarQrDePago(total);
                     CalcularCambioVisual();
                 }
             }
@@ -1538,7 +1827,7 @@ namespace Punto_de_Venta.Vistas
             if (Cart.Count == 0)
             {
                 ShowPurchaseFeedback(false, "No hay productos para cobrar.");
-                ToastNotification.Show("El carrito está vacío", ToastType.Warning);
+                ToastNotification.Show("El carrito esta vacio", ToastType.Warning);
                 FocusSearch();
                 return;
             }
@@ -1664,8 +1953,7 @@ namespace Punto_de_Venta.Vistas
 
                 await Task.Run(() =>
                 {
-                    VentaDB.Insert(sale);
-                    ProductoDB.Save(productosModificados);
+                    VentaDB.RegistrarVentaConStock(sale, productosModificados);
                 });
 
                 var config = AppConfig.Load();
@@ -1710,8 +1998,8 @@ namespace Punto_de_Venta.Vistas
             catch (Exception exception)
             {
                 _catalog = ProductoDB.Load();
-                ((TextBlock)FindName("PaymentMessage")).Text = $"Error crítico en BD: {exception.Message}";
-                ToastNotification.Show($"Error crítico al guardar venta en base de datos: {exception.Message}", ToastType.Error);
+                ((TextBlock)FindName("PaymentMessage")).Text = $"Error critico en BD: {exception.Message}";
+                ToastNotification.Show($"Error critico al guardar venta en base de datos: {exception.Message}", ToastType.Error);
             }
             finally
             {
@@ -1813,11 +2101,20 @@ namespace Punto_de_Venta.Vistas
         }
         #endregion
 
-        #region Utilidades, Cálculos y Retroalimentación
+        #region Utilidades, Calculos y Retroalimentacion
         private void FocusSearch()
         {
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+            Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
             {
+                if (CashMovementOverlay.IsVisible ||
+                    CreditOverlay.IsVisible ||
+                    PaymentOverlay.IsVisible ||
+                    QuickAddOverlay.IsVisible ||
+                    QuickRestockOverlay.IsVisible)
+                {
+                    return;
+                }
+
                 var searchBox = (TextBox)FindName("SearchBox");
                 if (searchBox != null)
                 {
@@ -1885,10 +2182,10 @@ namespace Punto_de_Venta.Vistas
                 }
                 else if (nextCount == product.Stock)
                 {
-                    searchMessage.Text = $"⚠️ Última pieza.";
+                    searchMessage.Text = $"⚠️ Ultima pieza.";
                     searchMessage.Foreground = Brushes.DarkGoldenrod;
                     _purchaseFeedbackVisible = true;
-                    ToastNotification.Show($"Última pieza de '{product.Nombre}'", ToastType.Info);
+                    ToastNotification.Show($"Ultima pieza de '{product.Nombre}'", ToastType.Info);
                 }
                 else
                 {

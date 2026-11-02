@@ -110,12 +110,12 @@
                 </Border>
                 <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Padding="20">
                     <StackPanel>
-                        <TextBlock x:Name="TituloFormularioText" Text="Nueva Promoción" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
+                        <TextBlock x:Name="TituloFormularioText" Text="Nueva Promocion" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
                         <TextBlock Text="Nombre descriptivo" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                         <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,12" Height="38">
                             <TextBox x:Name="NombrePromoBox" Background="Transparent" BorderThickness="0" Padding="10,0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
                         </Border>
-                        <TextBlock Text="Tipo de Promoción" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                        <TextBlock Text="Tipo de Promocion" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                         <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,12" Height="38">
                             <ComboBox x:Name="TipoPromoCombo" Background="Transparent" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" VerticalContentAlignment="Center" SelectionChanged="TipoPromoCombo_SelectionChanged">
                                 <ComboBoxItem Content="Volumen (Ej: 3 por $45)" IsSelected="True" Tag="Volumen" />
@@ -140,7 +140,7 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Cantidad Mínima" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                <TextBlock Text="Cantidad Minima" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Height="38">
                                     <TextBox x:Name="CantidadMinBox" Text="3" Background="Transparent" BorderThickness="0" Padding="10,0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
                                 </Border>
@@ -164,7 +164,7 @@
                                 <TextBox x:Name="PorcentajeDescuentoBox" Text="50" Background="Transparent" BorderThickness="0" Padding="10,0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
                             </Border>
                         </StackPanel>
-                        <CheckBox x:Name="ChkTiempoLimite" Content="Definir tiempo límite (fechas)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" Margin="2,2,0,10" Cursor="Hand" Checked="ChkTiempoLimite_Changed" Unchecked="ChkTiempoLimite_Changed" />
+                        <CheckBox x:Name="ChkTiempoLimite" Content="Definir tiempo limite (fechas)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" Margin="2,2,0,10" Cursor="Hand" Checked="ChkTiempoLimite_Changed" Unchecked="ChkTiempoLimite_Changed" />
                         <Grid x:Name="PanelFechas" Visibility="Collapsed" Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -178,7 +178,7 @@
                                 </Border>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Fecha Fin (Límite)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                <TextBlock Text="Fecha Fin (Limite)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Height="38" Padding="4,0">
                                     <DatePicker x:Name="FechaFinPicker" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
                                 </Border>
@@ -198,7 +198,7 @@
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>
-                            <Button x:Name="BtnGuardarPromo" Grid.Column="1" Content="Guardar Promoción" Height="44" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="Bold" Cursor="Hand" Click="GuardarPromo_Click">
+                            <Button x:Name="BtnGuardarPromo" Grid.Column="1" Content="Guardar Promocion" Height="44" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="Bold" Cursor="Hand" Click="GuardarPromo_Click">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{DynamicResource ThemeAccent}" CornerRadius="12">

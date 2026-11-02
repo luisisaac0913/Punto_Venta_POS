@@ -260,14 +260,14 @@
                                     <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" Margin="0,0,10,0" />
                                     <Grid Grid.Column="1">
                                         <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" CaretBrush="{DynamicResource ThemeAccent}" TextChanged="SearchBox_TextChanged" />
-                                        <TextBlock x:Name="SearchPlaceholder" Text="id, código o nombre..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
+                                        <TextBlock x:Name="SearchPlaceholder" Text="id, codigo o nombre..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
                                     </Grid>
                                 </Grid>
                             </Border>
 
-                            <Button Grid.Column="2" Content="📦 Cargar Lote" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Height="48" Padding="16,0" Click="OpenLotesModal_Click" ToolTip="Ingresar mercancía masiva por proveedor" />
+                            <Button Grid.Column="2" Content="📦 Cargar Lote" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Height="48" Padding="16,0" Click="OpenLotesModal_Click" ToolTip="Ingresar mercancia masiva por proveedor" />
 
-                            <Button Grid.Column="4" Content="ReStock rápido" Style="{StaticResource PrimaryAddButtonStyle}" Height="48" Padding="16,0" Click="OpenQuickRestockModal_Click" ToolTip="Escanear y reabastecer a gran velocidad" />
+                            <Button Grid.Column="4" Content="ReStock rapido" Style="{StaticResource PrimaryAddButtonStyle}" Height="48" Padding="16,0" Click="OpenQuickRestockModal_Click" ToolTip="Escanear y reabastecer a gran velocidad" />
 
                             <Border Grid.Column="6" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="13" Padding="4" Height="48">
                                 <StackPanel Orientation="Horizontal">
@@ -328,7 +328,7 @@
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50" />
-                                    <DataGridTextColumn Header="CÓDIGO" Binding="{Binding Codigo}" Width="120" />
+                                    <DataGridTextColumn Header="CODIGO" Binding="{Binding Codigo}" Width="120" />
                                     <DataGridTextColumn Header="NOMBRE" Binding="{Binding Nombre}" Width="1.2*" />
                                     <DataGridTemplateColumn Header="STOCK" Width="100">
                                         <DataGridTemplateColumn.CellTemplate>
@@ -369,7 +369,7 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="CATEGORÍA" Binding="{Binding Categoria}" Width="0.9*" />
+                                    <DataGridTextColumn Header="CATEGORIA" Binding="{Binding Categoria}" Width="0.9*" />
                                     <DataGridTextColumn Header="COSTO" Binding="{Binding Costo, StringFormat={}{0:C2}}" Width="85" />
                                     <DataGridTextColumn Header="GANANCIA" Binding="{Binding Ganancia, StringFormat={}{0:C2}}" Width="95" />
                                     <DataGridTextColumn Header="PRECIO" Binding="{Binding Precio, StringFormat={}{0:C2}}" Width="105">
@@ -401,7 +401,7 @@
                                             <TextBox x:Name="ProductIdBox" Style="{StaticResource FormTextBoxStyle}" IsReadOnly="True" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Código" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,5" />
+                                            <TextBlock Text="Codigo" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,5" />
                                             <TextBox x:Name="ProductCodeBox" Style="{StaticResource FormTextBoxStyle}" KeyDown="ProductCodeBox_KeyDown" />
                                         </StackPanel>
                                     </Grid>
@@ -416,7 +416,7 @@
                                             <ColumnDefinition Width="1*" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0">
-                                            <TextBlock Text="Categoría" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,5" />
+                                            <TextBlock Text="Categoria" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,5" />
                                             <TextBox x:Name="ProductCategoryBox" Style="{StaticResource FormTextBoxStyle}" KeyDown="ProductCategoryBox_KeyDown" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
@@ -425,7 +425,7 @@
                                         </StackPanel>
                                     </Grid>
 
-                                    <TextBlock Text="Reabastecimiento Rápido" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,6" />
+                                    <TextBlock Text="Reabastecimiento Rapido" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,6" />
                                     <Grid Margin="0,0,0,12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -480,7 +480,7 @@
                                     </Grid>
                                 </StackPanel>
                             </Border>
-                            <Button Content="Limpiar Selección" Style="{StaticResource PillButtonStyle}" Margin="0,12,0,0" Click="ClearSelectionButton_Click" />
+                            <Button Content="Limpiar Seleccion" Style="{StaticResource PillButtonStyle}" Margin="0,12,0,0" Click="ClearSelectionButton_Click" />
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
@@ -488,10 +488,10 @@
             <Grid x:Name="QuickRestockOverlay" Background="#66000000" Visibility="Collapsed" Panel.ZIndex="100">
                 <Border Width="460" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="24" Padding="28,24" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                     <StackPanel>
-                        <TextBlock Text="⚡ ReStock Rápido" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                        <TextBlock Text="Escanea el código de barras y añade la cantidad surtida:" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,16" />
+                        <TextBlock Text="⚡ ReStock Rapido" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                        <TextBlock Text="Escanea el codigo de barras y añade la cantidad surtida:" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,16" />
 
-                        <TextBlock Text="Código del Producto (Escanea aquí)" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                        <TextBlock Text="Codigo del Producto (Escanea aqui)" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                         <Border Height="44" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Margin="0,0,0,12" Padding="10,0">
                             <TextBox x:Name="QrScanCodeBox" Background="Transparent" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" KeyDown="QrScanCodeBox_KeyDown" />
                         </Border>
@@ -545,7 +545,7 @@
                         <Grid Grid.Row="0" Margin="0,0,0,16">
                             <StackPanel>
                                 <TextBlock Text="📦 Carga de Lotes Frecuentes" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                                <TextBlock Text="Selecciona un pedido pre-configurado para abastecer el stock automáticamente." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" />
+                                <TextBlock Text="Selecciona un pedido pre-configurado para abastecer el stock automaticamente." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" />
                             </StackPanel>
                         </Grid>
                         <Grid Grid.Row="1" Margin="0,0,0,20">
@@ -673,7 +673,7 @@
 
                         <StackPanel Grid.Row="0" Margin="0,0,0,16">
                             <TextBlock Text="⚙️ Diseñador de Lotes" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                            <TextBlock Text="Crea un paquete de abastecimiento asignándole un nombre, proveedor y los productos que incluye." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock Text="Crea un paquete de abastecimiento asignandole un nombre, proveedor y los productos que incluye." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" />
 
                             <Grid Margin="0,16,0,0">
                                 <Grid.ColumnDefinitions>
@@ -703,10 +703,10 @@
                                 <StackPanel>
                                     <TextBlock Text="Agregar Producto" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,12" />
 
-                                    <TextBlock Text="Código (Escanea o escribe + Enter)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                    <TextBlock Text="Codigo (Escanea o escribe + Enter)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                     <TextBox x:Name="GestorLoteCodigoBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,12" KeyDown="GestorLoteCodigoBox_KeyDown" />
 
-                                    <TextBlock x:Name="GestorLoteProductoEncontrado" Text="Esperando código..." FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="2,-4,0,12" MinHeight="18" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="GestorLoteProductoEncontrado" Text="Esperando codigo..." FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="2,-4,0,12" MinHeight="18" TextWrapping="Wrap" />
 
                                     <TextBlock Text="Cantidad predeterminada a sumar" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                     <TextBox x:Name="GestorLoteCantidadBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,16" Text="1" KeyDown="GestorLoteCantidadBox_KeyDown" />

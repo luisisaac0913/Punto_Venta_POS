@@ -17,11 +17,12 @@ namespace Punto_de_Venta.Datos
             var json = File.ReadAllText(path);
             return JsonSerializer.Deserialize<List<LoteRestock>>(json) ?? new List<LoteRestock>();
         }
+
         public static void Save(IEnumerable<LoteRestock> lotes)
         {
             Directory.CreateDirectory(DatabaseHelper.DbFolder);
             var json = JsonSerializer.Serialize(lotes, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(FilePath, json);
+            SafeFileStore.WriteAllLinesAtomic(FilePath, [json]);
         }
     }
 }

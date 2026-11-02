@@ -94,7 +94,7 @@ namespace Punto_de_Venta.Servicios
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[CajonService] No se pudo abrir el cajón: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[CajonService] No se pudo abrir el cajon: {ex.Message}");
                 return false;
             }
         }

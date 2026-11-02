@@ -104,7 +104,7 @@ namespace Punto_de_Venta.Vistas
 
             if (string.IsNullOrWhiteSpace(nuevoCodigo))
             {
-                ToastNotification.Show("Escanea un código primero", ToastType.Warning);
+                ToastNotification.Show("Escanea un codigo primero", ToastType.Warning);
                 TxtCodigo.Focus();
                 return;
             }
@@ -123,7 +123,7 @@ namespace Punto_de_Venta.Vistas
                 try
                 {
                     ProductoDB.Save(_catalogo);
-                    ToastNotification.Show($"Código enlazado a '{productoEnDb.Nombre}'", ToastType.Success);
+                    ToastNotification.Show($"Codigo enlazado a '{productoEnDb.Nombre}'", ToastType.Success);
                     _catalogo = ProductoDB.Load();
                     _productoSeleccionado = null;
 

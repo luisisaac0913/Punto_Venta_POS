@@ -19,7 +19,7 @@ namespace Punto_de_Venta
             if (TxtPassword.Password == CLAVE_MAESTRA)
             {
                 LicenciaService.ActivarLicencia();
-                CustomMessageBox.Show("Equipo registrado exitosamente. La licencia ha sido enlazada a este hardware.", "Activación Completada", MessageBoxButton.OK, MessageBoxImage.Information);
+                CustomMessageBox.Show("Equipo registrado exitosamente. La licencia ha sido enlazada a este hardware.", "Activacion Completada", MessageBoxButton.OK, MessageBoxImage.Information);
                 this.DialogResult = true; 
                 this.Close();
             }

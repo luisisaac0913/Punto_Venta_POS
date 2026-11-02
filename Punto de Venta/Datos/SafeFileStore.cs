@@ -11,7 +11,7 @@ namespace Punto_de_Venta.Datos
         private static readonly object FileLock = new();
         #endregion
 
-        #region Escritura Atómica Segura
+        #region Escritura Atomica Segura
         public static void WriteAllLinesAtomic(string destinationPath, IEnumerable<string> lines, Encoding? encoding = null)
         {
             encoding ??= new UTF8Encoding(false);

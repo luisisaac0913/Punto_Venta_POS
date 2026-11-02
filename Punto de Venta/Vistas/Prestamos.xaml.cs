@@ -1,4 +1,4 @@
-using Punto_de_Venta.Datos;
+﻿using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using System;
@@ -19,7 +19,7 @@ using System.Windows.Threading;
 
 namespace Punto_de_Venta
 {
-    public partial class Prestamos : UserControl
+    public partial class Prestamos : UserControl, ILimpiarSeleccion
     {
         private readonly DispatcherTimer _clockTimer;
         private Deudor? _selectedDebtor;
@@ -259,7 +259,7 @@ namespace Punto_de_Venta
             }
             catch (OverflowException)
             {
-                ShowStatus("No se puede asignar un ID nuevo: se alcanzó el límite numérico.", false);
+                ShowStatus("No se puede asignar un ID nuevo: se alcanzo el limite numerico.", false);
                 return;
             }
             var newDebtor = new Deudor
@@ -281,7 +281,7 @@ namespace Punto_de_Venta
             ClearSearchAndSelect(newDebtor);
             UpdateDashboardKPIs();
             SetNextId();
-            ShowStatus("Préstamo añadido.", true);
+            ShowStatus("Prestamo añadido.", true);
         }
         private void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
@@ -363,7 +363,7 @@ namespace Punto_de_Venta
                 SelectDebtor(updatedDebtor);
             }
             UpdateDashboardKPIs();
-            ShowStatus("Préstamo modificado.", true);
+            ShowStatus("Prestamo modificado.", true);
         }
         #region Operaciones de Pago
         private void PayButton_Click(object sender, RoutedEventArgs e) => ApplyPayment();
@@ -386,7 +386,7 @@ namespace Punto_de_Venta
             }
             if (_selectedDebtor.SaldoRestante <= 0)
             {
-                ShowStatus("Este préstamo ya está completamente saldado.", false);
+                ShowStatus("Este prestamo ya esta completamente saldado.", false);
                 return;
             }
             var turnoActual = TurnoCajaManager.ObtenerTurnoActivo();
@@ -400,7 +400,7 @@ namespace Punto_de_Venta
             var paymentText = PaymentAmountBox.Text.Trim();
             if (!TryParseAmount(paymentText, out var payment) || payment <= 0)
             {
-                ShowStatus("Introduce un monto de abono válido y mayor a $0.00.", false);
+                ShowStatus("Introduce un monto de abono valido y mayor a $0.00.", false);
                 PaymentAmountBox.Focus();
                 return;
             }
@@ -464,7 +464,7 @@ namespace Punto_de_Venta
                 Debtors.Clear();
                 foreach (var d in PrestamoDB.Load()) Debtors.Add(d);
                 DebtorsView.Refresh();
-                ToastNotification.Show($"Error crítico al procesar abono: {ex.Message}", ToastType.Error);
+                ToastNotification.Show($"Error critico al procesar abono: {ex.Message}", ToastType.Error);
             }
         }
         #endregion
@@ -476,7 +476,7 @@ namespace Punto_de_Venta
             var telefono = DebtorPhoneBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(telefono))
             {
-                ShowStatus("Ingresa el número celular del cliente (10 dígitos).", false);
+                ShowStatus("Ingresa el numero celular del cliente (10 digitos).", false);
                 DebtorPhoneBox.Focus();
                 return;
             }
@@ -487,7 +487,7 @@ namespace Punto_de_Venta
             }
             if (digitos.Length < 10)
             {
-                ShowStatus("El número celular no es válido.", false);
+                ShowStatus("El numero celular no es valido.", false);
                 DebtorPhoneBox.Focus();
                 return;
             }
@@ -734,6 +734,8 @@ namespace Punto_de_Venta
             }
         }
         #endregion
+        public void LimpiarSeleccion() => ClearSelectionButton_Click(this, new RoutedEventArgs());
+
         private void ClearSelectionButton_Click(object sender, RoutedEventArgs e)
         {
             DebtorGrid.SelectedItem = null;
@@ -756,7 +758,7 @@ namespace Punto_de_Venta
             }
             if (!TryParseAmount(AmountBox.Text, out amount) || amount <= 0)
             {
-                ShowStatus("Introduce una deuda válida y mayor que cero.", false);
+                ShowStatus("Introduce una deuda valida y mayor que cero.", false);
                 AmountBox.Focus();
                 return false;
             }
@@ -772,7 +774,7 @@ namespace Punto_de_Venta
         private bool CanWrite()
         {
             if (!_loadFailed) return true;
-            ShowStatus("No se guardaron cambios porque los datos contienen información inválida.", false);
+            ShowStatus("No se guardaron cambios porque los datos contienen informacion invalida.", false);
             return false;
         }
         private bool TrySave(IEnumerable<Deudor> debtors)
@@ -784,7 +786,7 @@ namespace Punto_de_Venta
             }
             catch (Exception exception)
             {
-                ShowStatus($"No se pudo guardar la información: {exception.Message}", false);
+                ShowStatus($"No se pudo guardar la informacion: {exception.Message}", false);
                 return false;
             }
         }

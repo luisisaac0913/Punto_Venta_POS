@@ -15,7 +15,7 @@ using System.Windows.Shapes;
 
 namespace Punto_de_Venta
 {
-    public partial class CodigosBarrasWindow : UserControl
+    public partial class CodigosBarrasWindow : UserControl, ILimpiarSeleccion
     {
         private List<Producto> _catalogo = new();
         public ObservableCollection<Producto> ResultadosBusqueda { get; set; } = new();
@@ -52,7 +52,7 @@ namespace Punto_de_Venta
             }
             catch
             {
-                CustomMessageBox.Show("Error al cargar el catálogo de productos.");
+                CustomMessageBox.Show("Error al cargar el catalogo de productos.");
             }
         }
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -111,6 +111,13 @@ namespace Punto_de_Venta
             }
         }
 
+        public void LimpiarSeleccion()
+        {
+            SearchResultsList.SelectedItem = null;
+            PrintQueueGrid.SelectedItem = null;
+            SearchBox.Focus();
+        }
+
         private void SearchResultsList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             AddSelectedProduct();
@@ -147,7 +154,7 @@ namespace Punto_de_Venta
             {
                 if (string.IsNullOrWhiteSpace(prod.Codigo) || prod.Codigo.Length < 2)
                 {
-                    CustomMessageBox.Show("Este producto no tiene un código de barras válido asignado.", "Código Inválido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    CustomMessageBox.Show("Este producto no tiene un codigo de barras valido asignado.", "Codigo Invalido", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
@@ -197,7 +204,7 @@ namespace Punto_de_Venta
         {
             if (ColaImpresion.Count == 0)
             {
-                CustomMessageBox.Show("Agrega al menos un producto a la cola de impresión.", "Aviso");
+                CustomMessageBox.Show("Agrega al menos un producto a la cola de impresion.", "Aviso");
                 return;
             }
 
@@ -322,7 +329,7 @@ namespace Punto_de_Venta
             PrintDialog printDialog = new PrintDialog();
             if (printDialog.ShowDialog() == true)
             {
-                printDialog.PrintDocument(_documentoActual.DocumentPaginator, "Impresión de Etiquetas A4");
+                printDialog.PrintDocument(_documentoActual.DocumentPaginator, "Impresion de Etiquetas A4");
             }
         }
 

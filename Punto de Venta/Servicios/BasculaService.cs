@@ -57,7 +57,7 @@ namespace Punto_de_Venta.Servicios
                 }
                 mensajeError = string.IsNullOrWhiteSpace(respuesta)
                     ? "La bascula no respondio en el tiempo limite. Ay Jaz"
-                    : $"Respuesta no válida de la bascula: '{respuesta.Trim()}'";
+                    : $"Respuesta no valida de la bascula: '{respuesta.Trim()}'";
                 return false;
             }
             catch (Exception ex)
@@ -82,7 +82,7 @@ namespace Punto_de_Venta.Servicios
 
             if (!config.BasculaHabilitada)
             {
-                return (false, 0m, "La bascula está desactivada en la configuracion.");
+                return (false, 0m, "La bascula esta desactivada en la configuracion.");
             }
             return await Task.Run(() =>
             {
@@ -128,7 +128,7 @@ namespace Punto_de_Venta.Servicios
                     }
 
                     return (false, 0m, string.IsNullOrWhiteSpace(respuesta)
-                        ? "Sin respuesta de la báscula."
+                        ? "Sin respuesta de la bascula."
                         : $"Trama no reconocida: '{respuesta.Trim()}'.");
                 }
                 catch (Exception ex)

@@ -101,59 +101,35 @@ namespace Punto_de_Venta.Datos
             using var tr = conn.BeginTransaction();
             try
             {
-                string metodoGuardar = sale.MetodoPago ?? "Efectivo";
-                if (metodoGuardar == "Mixto")
-                {
-                    metodoGuardar = $"Mixto|E:{sale.PagoEfectivo.ToString(CultureInfo.InvariantCulture)}|T:{sale.PagoTarjeta.ToString(CultureInfo.InvariantCulture)}|Tr:{sale.PagoTransferencia.ToString(CultureInfo.InvariantCulture)}";
-                }
+                InsertInternal(conn, tr, sale);
+                tr.Commit();
+            }
+            catch
+            {
+                tr.Rollback();
+                throw;
+            }
+        }
 
-                using (var insertVenta = conn.CreateCommand())
-                {
-                    insertVenta.Transaction = tr;
-                    insertVenta.CommandText = @"
-                        INSERT INTO Ventas (Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago, PagoEfectivo, PagoTarjeta, PagoTransferencia)
-                        VALUES (@id, @fecha, @total, @pago, @cambio, @estado, @metodo, @pEfec, @pTarj, @pTrans);";
-                    insertVenta.Parameters.AddWithValue("@id", sale.Id);
-                    insertVenta.Parameters.AddWithValue("@fecha", sale.FechaHora.ToString("o", CultureInfo.InvariantCulture));
-                    insertVenta.Parameters.AddWithValue("@total", Convert.ToDouble(sale.Total));
-                    insertVenta.Parameters.AddWithValue("@pago", Convert.ToDouble(sale.PagoCon));
-                    insertVenta.Parameters.AddWithValue("@cambio", Convert.ToDouble(sale.Cambio));
-                    insertVenta.Parameters.AddWithValue("@estado", sale.Estado ?? "Abierta");
-                    insertVenta.Parameters.AddWithValue("@metodo", metodoGuardar);
-                    insertVenta.Parameters.AddWithValue("@pEfec", Convert.ToDouble(sale.PagoEfectivo));
-                    insertVenta.Parameters.AddWithValue("@pTarj", Convert.ToDouble(sale.PagoTarjeta));
-                    insertVenta.Parameters.AddWithValue("@pTrans", Convert.ToDouble(sale.PagoTransferencia));
-                    insertVenta.ExecuteNonQuery();
-                }
+        public static void RegistrarVentaConStock(Venta sale, IEnumerable<Producto> productosModificados)
+        {
+            using var conn = DatabaseHelper.GetConnection();
+            using var tr = conn.BeginTransaction();
+            try
+            {
+                InsertInternal(conn, tr, sale);
 
-                if (sale.Productos != null && sale.Productos.Count > 0)
-                {
-                    using var insertDetalle = conn.CreateCommand();
-                    insertDetalle.Transaction = tr;
-                    insertDetalle.CommandText = @"
-                        INSERT INTO VentasDetalle (VentaId, ProductoId, Nombre, Cantidad, Costo, Ganancia, Precio, Categoria)
-                        VALUES (@vId, @pId, @nom, @cant, @costo, @gan, @precio, @cat);";
-                    var dVId = insertDetalle.Parameters.Add("@vId", SqliteType.Integer);
-                    var dPId = insertDetalle.Parameters.Add("@pId", SqliteType.Integer);
-                    var dNom = insertDetalle.Parameters.Add("@nom", SqliteType.Text);
-                    var dCant = insertDetalle.Parameters.Add("@cant", SqliteType.Real);
-                    var dCosto = insertDetalle.Parameters.Add("@costo", SqliteType.Real);
-                    var dGan = insertDetalle.Parameters.Add("@gan", SqliteType.Real);
-                    var dPrecio = insertDetalle.Parameters.Add("@precio", SqliteType.Real);
-                    var dCat = insertDetalle.Parameters.Add("@cat", SqliteType.Text);
+                using var updateProd = conn.CreateCommand();
+                updateProd.Transaction = tr;
+                updateProd.CommandText = "UPDATE Productos SET Stock = @stock WHERE Id = @id;";
+                var pId = updateProd.Parameters.Add("@id", SqliteType.Integer);
+                var pStock = updateProd.Parameters.Add("@stock", SqliteType.Real);
 
-                    foreach (var det in sale.Productos)
-                    {
-                        dVId.Value = sale.Id;
-                        dPId.Value = det.Id;
-                        dNom.Value = det.Nombre ?? string.Empty;
-                        dCant.Value = Convert.ToDouble(det.Cantidad);
-                        dCosto.Value = Convert.ToDouble(det.Costo);
-                        dGan.Value = Convert.ToDouble(det.Ganancia);
-                        dPrecio.Value = Convert.ToDouble(det.Precio);
-                        dCat.Value = det.Categoria ?? "N/A";
-                        insertDetalle.ExecuteNonQuery();
-                    }
+                foreach (var prod in productosModificados)
+                {
+                    pId.Value = prod.Id;
+                    pStock.Value = Convert.ToDouble(prod.Stock);
+                    updateProd.ExecuteNonQuery();
                 }
 
                 tr.Commit();
@@ -165,33 +141,45 @@ namespace Punto_de_Venta.Datos
             }
         }
 
-        public static void Save(IEnumerable<Venta> ventas)
+        public static void ActualizarEstado(int ventaId, string nuevoEstado)
         {
             using var conn = DatabaseHelper.GetConnection();
-            using var tr = conn.BeginTransaction();
-            try
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "UPDATE Ventas SET Estado = @estado WHERE Id = @id;";
+            cmd.Parameters.AddWithValue("@estado", nuevoEstado);
+            cmd.Parameters.AddWithValue("@id", ventaId);
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void InsertInternal(SqliteConnection conn, SqliteTransaction tr, Venta sale)
+        {
+            string metodoGuardar = sale.MetodoPago ?? "Efectivo";
+            if (metodoGuardar == "Mixto")
             {
-                using (var delCmd = conn.CreateCommand())
-                {
-                    delCmd.Transaction = tr;
-                    delCmd.CommandText = "DELETE FROM VentasDetalle; DELETE FROM Ventas;";
-                    delCmd.ExecuteNonQuery();
-                }
-                using var insertVenta = conn.CreateCommand();
+                metodoGuardar = $"Mixto|E:{sale.PagoEfectivo.ToString(CultureInfo.InvariantCulture)}|T:{sale.PagoTarjeta.ToString(CultureInfo.InvariantCulture)}|Tr:{sale.PagoTransferencia.ToString(CultureInfo.InvariantCulture)}";
+            }
+
+            using (var insertVenta = conn.CreateCommand())
+            {
                 insertVenta.Transaction = tr;
                 insertVenta.CommandText = @"
                     INSERT INTO Ventas (Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago, PagoEfectivo, PagoTarjeta, PagoTransferencia)
                     VALUES (@id, @fecha, @total, @pago, @cambio, @estado, @metodo, @pEfec, @pTarj, @pTrans);";
-                var vId = insertVenta.Parameters.Add("@id", SqliteType.Integer);
-                var vFecha = insertVenta.Parameters.Add("@fecha", SqliteType.Text);
-                var vTotal = insertVenta.Parameters.Add("@total", SqliteType.Real);
-                var vPago = insertVenta.Parameters.Add("@pago", SqliteType.Real);
-                var vCambio = insertVenta.Parameters.Add("@cambio", SqliteType.Real);
-                var vEstado = insertVenta.Parameters.Add("@estado", SqliteType.Text);
-                var vMetodo = insertVenta.Parameters.Add("@metodo", SqliteType.Text);
-                var vPEfec = insertVenta.Parameters.Add("@pEfec", SqliteType.Real);
-                var vPTarj = insertVenta.Parameters.Add("@pTarj", SqliteType.Real);
-                var vPTrans = insertVenta.Parameters.Add("@pTrans", SqliteType.Real);
+                insertVenta.Parameters.AddWithValue("@id", sale.Id);
+                insertVenta.Parameters.AddWithValue("@fecha", sale.FechaHora.ToString("o", CultureInfo.InvariantCulture));
+                insertVenta.Parameters.AddWithValue("@total", Convert.ToDouble(sale.Total));
+                insertVenta.Parameters.AddWithValue("@pago", Convert.ToDouble(sale.PagoCon));
+                insertVenta.Parameters.AddWithValue("@cambio", Convert.ToDouble(sale.Cambio));
+                insertVenta.Parameters.AddWithValue("@estado", sale.Estado ?? "Abierta");
+                insertVenta.Parameters.AddWithValue("@metodo", metodoGuardar);
+                insertVenta.Parameters.AddWithValue("@pEfec", Convert.ToDouble(sale.PagoEfectivo));
+                insertVenta.Parameters.AddWithValue("@pTarj", Convert.ToDouble(sale.PagoTarjeta));
+                insertVenta.Parameters.AddWithValue("@pTrans", Convert.ToDouble(sale.PagoTransferencia));
+                insertVenta.ExecuteNonQuery();
+            }
+
+            if (sale.Productos != null && sale.Productos.Count > 0)
+            {
                 using var insertDetalle = conn.CreateCommand();
                 insertDetalle.Transaction = tr;
                 insertDetalle.CommandText = @"
@@ -205,6 +193,55 @@ namespace Punto_de_Venta.Datos
                 var dGan = insertDetalle.Parameters.Add("@gan", SqliteType.Real);
                 var dPrecio = insertDetalle.Parameters.Add("@precio", SqliteType.Real);
                 var dCat = insertDetalle.Parameters.Add("@cat", SqliteType.Text);
+
+                foreach (var det in sale.Productos)
+                {
+                    dVId.Value = sale.Id;
+                    dPId.Value = det.Id;
+                    dNom.Value = det.Nombre ?? string.Empty;
+                    dCant.Value = Convert.ToDouble(det.Cantidad);
+                    dCosto.Value = Convert.ToDouble(det.Costo);
+                    dGan.Value = Convert.ToDouble(det.Ganancia);
+                    dPrecio.Value = Convert.ToDouble(det.Precio);
+                    dCat.Value = det.Categoria ?? "N/A";
+                    insertDetalle.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public static void Save(IEnumerable<Venta> ventas)
+        {
+            using var conn = DatabaseHelper.GetConnection();
+            using var tr = conn.BeginTransaction();
+            try
+            {
+                // Guardado atomico con UPSERT: no borra la tabla de ventas
+                using var insertVenta = conn.CreateCommand();
+                insertVenta.Transaction = tr;
+                insertVenta.CommandText = @"
+                    INSERT INTO Ventas (Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago, PagoEfectivo, PagoTarjeta, PagoTransferencia)
+                    VALUES (@id, @fecha, @total, @pago, @cambio, @estado, @metodo, @pEfec, @pTarj, @pTrans)
+                    ON CONFLICT(Id) DO UPDATE SET
+                        FechaHora = excluded.FechaHora,
+                        Total = excluded.Total,
+                        PagoCon = excluded.PagoCon,
+                        Cambio = excluded.Cambio,
+                        Estado = excluded.Estado,
+                        MetodoPago = excluded.MetodoPago,
+                        PagoEfectivo = excluded.PagoEfectivo,
+                        PagoTarjeta = excluded.PagoTarjeta,
+                        PagoTransferencia = excluded.PagoTransferencia;";
+                var vId = insertVenta.Parameters.Add("@id", SqliteType.Integer);
+                var vFecha = insertVenta.Parameters.Add("@fecha", SqliteType.Text);
+                var vTotal = insertVenta.Parameters.Add("@total", SqliteType.Real);
+                var vPago = insertVenta.Parameters.Add("@pago", SqliteType.Real);
+                var vCambio = insertVenta.Parameters.Add("@cambio", SqliteType.Real);
+                var vEstado = insertVenta.Parameters.Add("@estado", SqliteType.Text);
+                var vMetodo = insertVenta.Parameters.Add("@metodo", SqliteType.Text);
+                var vPEfec = insertVenta.Parameters.Add("@pEfec", SqliteType.Real);
+                var vPTarj = insertVenta.Parameters.Add("@pTarj", SqliteType.Real);
+                var vPTrans = insertVenta.Parameters.Add("@pTrans", SqliteType.Real);
+
                 foreach (var sale in ventas)
                 {
                     vId.Value = sale.Id;
@@ -223,21 +260,6 @@ namespace Punto_de_Venta.Datos
                     vPTarj.Value = Convert.ToDouble(sale.PagoTarjeta);
                     vPTrans.Value = Convert.ToDouble(sale.PagoTransferencia);
                     insertVenta.ExecuteNonQuery();
-                    if (sale.Productos != null && sale.Productos.Count > 0)
-                    {
-                        foreach (var det in sale.Productos)
-                        {
-                            dVId.Value = sale.Id;
-                            dPId.Value = det.Id;
-                            dNom.Value = det.Nombre ?? string.Empty;
-                            dCant.Value = Convert.ToDouble(det.Cantidad);
-                            dCosto.Value = Convert.ToDouble(det.Costo);
-                            dGan.Value = Convert.ToDouble(det.Ganancia);
-                            dPrecio.Value = Convert.ToDouble(det.Precio);
-                            dCat.Value = det.Categoria ?? "N/A";
-                            insertDetalle.ExecuteNonQuery();
-                        }
-                    }
                 }
                 tr.Commit();
             }

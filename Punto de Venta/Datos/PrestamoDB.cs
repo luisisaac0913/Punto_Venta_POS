@@ -64,6 +64,7 @@ namespace Punto_de_Venta.Datos
             }
             return deudores.Values.ToList();
         }
+
         public static void Save(IEnumerable<Deudor> debtors)
         {
             using var conn = DatabaseHelper.GetConnection();
@@ -71,28 +72,36 @@ namespace Punto_de_Venta.Datos
 
             try
             {
-                using (var delCmd = conn.CreateCommand())
-                {
-                    delCmd.Transaction = tr;
-                    delCmd.CommandText = "DELETE FROM Abonos; DELETE FROM Deudores;";
-                    delCmd.ExecuteNonQuery();
-                }
+                // Guardado atomico con UPSERT: no borra la base de datos
                 using var insertDeudor = conn.CreateCommand();
                 insertDeudor.Transaction = tr;
                 insertDeudor.CommandText = @"
                     INSERT INTO Deudores (Id, Nombre, Telefono, Concepto, MontoOriginal, TotalAbonado)
-                    VALUES (@id, @nom, @tel, @con, @monto, @abonado);";
+                    VALUES (@id, @nom, @tel, @con, @monto, @abonado)
+                    ON CONFLICT(Id) DO UPDATE SET 
+                        Nombre = excluded.Nombre,
+                        Telefono = excluded.Telefono,
+                        Concepto = excluded.Concepto,
+                        MontoOriginal = excluded.MontoOriginal,
+                        TotalAbonado = excluded.TotalAbonado;";
+
                 var dId = insertDeudor.Parameters.Add("@id", SqliteType.Integer);
                 var dNom = insertDeudor.Parameters.Add("@nom", SqliteType.Text);
                 var dTel = insertDeudor.Parameters.Add("@tel", SqliteType.Text);
                 var dCon = insertDeudor.Parameters.Add("@con", SqliteType.Text);
                 var dMonto = insertDeudor.Parameters.Add("@monto", SqliteType.Real);
                 var dAbonado = insertDeudor.Parameters.Add("@abonado", SqliteType.Real);
+
                 using var insertAbono = conn.CreateCommand();
                 insertAbono.Transaction = tr;
                 insertAbono.CommandText = @"
                     INSERT INTO Abonos (Id, DeudorId, Fecha, Monto)
-                    VALUES (@aId, @dId, @fecha, @monto);";
+                    VALUES (@aId, @dId, @fecha, @monto)
+                    ON CONFLICT(Id) DO UPDATE SET
+                        DeudorId = excluded.DeudorId,
+                        Fecha = excluded.Fecha,
+                        Monto = excluded.Monto;";
+
                 var aId = insertAbono.Parameters.Add("@aId", SqliteType.Integer);
                 var aDId = insertAbono.Parameters.Add("@dId", SqliteType.Integer);
                 var aFecha = insertAbono.Parameters.Add("@fecha", SqliteType.Text);

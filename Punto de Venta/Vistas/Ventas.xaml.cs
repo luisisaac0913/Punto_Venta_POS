@@ -1,4 +1,4 @@
-using Punto_de_Venta.Datos;
+﻿using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using Punto_de_Venta.Vistas;
@@ -25,7 +25,7 @@ using System.Windows.Threading;
 
 namespace Punto_de_Venta
 {
-    public partial class Ventas : UserControl
+    public partial class Ventas : UserControl, ILimpiarSeleccion
     {
         private readonly DispatcherTimer _clockTimer;
         private List<Producto> _catalog = [];
@@ -103,7 +103,7 @@ namespace Punto_de_Venta
                             PagoTransferencia = esTransf ? mov.Monto : 0m,
                             Productos = [new DetalleVenta { Id = 0, VentaId = nextId, Nombre = mov.Concepto, Cantidad = 1m, Costo = 0m, Ganancia = 0m, Precio = mov.Monto, Categoria = "Abono" }]
                         };
-                        try { VentaDB.Insert(nueva); } catch { }
+                        // Visualizacion en memoria sin escritura innecesaria durante la carga
                         rawSales.Add(nueva);
                     }
                 }
@@ -304,6 +304,13 @@ namespace Punto_de_Venta
             }));
         }
 
+        public void LimpiarSeleccion()
+        {
+            // SalesGrid_SelectionChanged actualiza _selectedSale y el boton de devolucion
+            SalesGrid.SelectedItem = null;
+            FocusSearch();
+        }
+
         private void SalesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             _selectedSale = SalesGrid.SelectedItem as Venta;
@@ -366,12 +373,12 @@ namespace Punto_de_Venta
                 if (impreso)
                     ToastNotification.Show($"🖨️ Copia del Ticket #{_selectedSale.Id} enviada a imprimir.", ToastType.Success);
                 else
-                    ToastNotification.Show("No se pudo conectar con la impresora térmica.", ToastType.Error);
+                    ToastNotification.Show("No se pudo conectar con la impresora termica.", ToastType.Error);
             }
             catch (Exception ex)
             {
                 ViewDetailsButton_Click(null, null);
-                ToastNotification.Show($"Impresión fallida: {ex.Message}", ToastType.Error);
+                ToastNotification.Show($"Impresion fallida: {ex.Message}", ToastType.Error);
             }
         }
 
@@ -464,13 +471,13 @@ namespace Punto_de_Venta
                             {
                                 f.Item().PaddingBottom(5).Row(row =>
                                 {
-                                    row.RelativeItem().Text($"Ventas válidas: {totalVentas.ToString("C2", culture)}").Bold().FontSize(11).FontColor(QuestPDF.Helpers.Colors.Blue.Darken2);
-                                    row.RelativeItem().AlignRight().Text($"Ganancia válida: {totalGanancia.ToString("C2", culture)}").Bold().FontSize(11).FontColor(QuestPDF.Helpers.Colors.Green.Darken2);
+                                    row.RelativeItem().Text($"Ventas validas: {totalVentas.ToString("C2", culture)}").Bold().FontSize(11).FontColor(QuestPDF.Helpers.Colors.Blue.Darken2);
+                                    row.RelativeItem().AlignRight().Text($"Ganancia valida: {totalGanancia.ToString("C2", culture)}").Bold().FontSize(11).FontColor(QuestPDF.Helpers.Colors.Green.Darken2);
                                 });
                                 f.Item().LineHorizontal(1).LineColor(QuestPDF.Helpers.Colors.Grey.Lighten2);
                                 f.Item().AlignCenter().PaddingTop(5).Text(x =>
                                 {
-                                    x.Span("Página ");
+                                    x.Span("Pagina ");
                                     x.CurrentPageNumber();
                                     x.Span(" de ");
                                     x.TotalPages();
@@ -495,17 +502,25 @@ namespace Punto_de_Venta
 
             if (_selectedSale.Estado == "Fiado")
             {
-                var res = CustomMessageBox.Show(Application.Current.MainWindow, "Esta venta fue fiada. Al cancelarla se repondrá el inventario, pero recuerda ajustar la deuda manualmente en Préstamos si aplica.\n\n¿Deseas continuar?", "Devolución de Fiado", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                var res = CustomMessageBox.Show(Application.Current.MainWindow, "Esta venta fue fiada. Al cancelarla se repondra el inventario, pero recuerda ajustar la deuda manualmente en Prestamos si aplica.\n\n¿Deseas continuar?", "Devolucion de Fiado", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                 if (res != MessageBoxResult.Yes) return;
             }
             if (_selectedSale.Estado != "Abierta" && _selectedSale.Estado != "Fiado") { ToastNotification.Show("Solo se pueden devolver ventas abiertas del turno o fiadas", ToastType.Warning); return; }
-            var result = CustomMessageBox.Show(Application.Current.MainWindow, "¿Deseas marcar esta venta como devuelta/cancelada?", "Confirmar devolución", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var result = CustomMessageBox.Show(Application.Current.MainWindow, "¿Deseas marcar esta venta como devuelta/cancelada?", "Confirmar devolucion", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result != MessageBoxResult.Yes) return;
 
             var previousState = _selectedSale.Estado;
-            _selectedSale.Estado = "Cancelada";
-
-            if (!TrySave()) { _selectedSale.Estado = previousState; return; }
+            try
+            {
+                VentaDB.ActualizarEstado(_selectedSale.Id, "Cancelada");
+                _selectedSale.Estado = "Cancelada";
+            }
+            catch (Exception ex)
+            {
+                _selectedSale.Estado = previousState;
+                ToastNotification.Show($"Error al cancelar venta: {ex.Message}", ToastType.Error);
+                return;
+            }
 
             try
             {
@@ -526,7 +541,7 @@ namespace Punto_de_Venta
             if (!CanWrite()) return;
 
             var turnoActivo = TurnoCajaManager.ObtenerTurnoActivo();
-            if (turnoActivo == null) { ToastNotification.Show("No hay ningún turno abierto. Primero debe registrar un Fondo de Caja.", ToastType.Info); return; }
+            if (turnoActivo == null) { ToastNotification.Show("No hay ningun turno abierto. Primero debe registrar un Fondo de Caja.", ToastType.Info); return; }
 
             decimal fondo = turnoActivo.FondoInicial;
             decimal entradas = 0m;
@@ -551,7 +566,7 @@ namespace Punto_de_Venta
 
             var totalEnCajon = fondo + cashSales + entradas - salidas;
 
-            if (totalEnCajon == 0 && cashSales == 0 && entradas == 0 && salidas == 0 && fondo == 0) { ToastNotification.Show("El turno está en ceros. No hay ventas ni movimientos.", ToastType.Info); return; }
+            if (totalEnCajon == 0 && cashSales == 0 && entradas == 0 && salidas == 0 && fondo == 0) { ToastNotification.Show("El turno esta en ceros. No hay ventas ni movimientos.", ToastType.Info); return; }
 
             var modalCiego = new CorteCiegoModal(totalEnCajon) { Owner = Application.Current.MainWindow };
             modalCiego.ShowDialog();
@@ -576,10 +591,10 @@ namespace Punto_de_Venta
 
                 ToastNotification.Show("Corte de caja finalizado exitosamente", ToastType.Success);
             }
-            catch (Exception ex) { ToastNotification.Show($"Error al registrar auditoría: {ex.Message}", ToastType.Error); }
+            catch (Exception ex) { ToastNotification.Show($"Error al registrar auditoria: {ex.Message}", ToastType.Error); }
         }
 
-        private bool CanWrite() { if (!_loadFailed) return true; ToastNotification.Show("No se encontró ventas.txt, cambios bloqueados", ToastType.Error); return false; }
+        private bool CanWrite() { if (!_loadFailed) return true; ToastNotification.Show("No se encontro ventas.txt, cambios bloqueados", ToastType.Error); return false; }
         private bool TrySave() { try { VentaDB.Save(Sales); _loadFailed = false; return true; } catch (Exception exception) { ToastNotification.Show($"Error al guardar ventas: {exception.Message}", ToastType.Error); return false; } }
 
         private static List<(string Name, int Quantity)> ParseProductSummary(string summary)

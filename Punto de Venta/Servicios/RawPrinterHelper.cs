@@ -40,7 +40,7 @@ namespace Punto_de_Venta.Servicios
             var pUnmanagedBytes = Marshal.AllocCoTaskMem(bytes.Length);
             Marshal.Copy(bytes, 0, pUnmanagedBytes, bytes.Length);
 
-            var di = new DOCINFOA { pDocName = "Etiqueta Código de Barras", pDataType = "RAW" };
+            var di = new DOCINFOA { pDocName = "Etiqueta Codigo de Barras", pDataType = "RAW" };
             bool success = false;
 
             if (OpenPrinter(szPrinterName.Normalize(), out var hPrinter, IntPtr.Zero))

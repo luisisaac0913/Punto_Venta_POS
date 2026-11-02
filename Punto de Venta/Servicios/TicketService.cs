@@ -31,7 +31,7 @@ namespace Punto_de_Venta.Servicios
             sb.AppendLine(new string('-', ancho));
             sb.AppendLine($"Folio: #{venta.Id}");
             sb.AppendLine($"Fecha: {venta.FechaHora:dd/MM/yyyy hh:mm tt}");
-            sb.AppendLine($"Método: {venta.MetodoPago}");
+            sb.AppendLine($"Metodo: {venta.MetodoPago}");
             sb.AppendLine(new string('-', ancho));
             sb.AppendLine(ancho == 42 ? "CANT  DESCRIPCION            PRECIO   IMPORTE" : "CANT DESCRIPCION       PRECIO IMPORTE");
             sb.AppendLine(new string('-', ancho));

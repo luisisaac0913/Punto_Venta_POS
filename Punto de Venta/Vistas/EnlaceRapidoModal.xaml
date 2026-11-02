@@ -17,10 +17,10 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <TextBlock Text="🔗 Enlace Rápido de Códigos" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,15" />
+            <TextBlock Text="🔗 Enlace Rapido de Codigos" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,15" />
 
             <StackPanel Grid.Row="1">
-                <TextBlock Text="1. Escanea el código físico" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
+                <TextBlock Text="1. Escanea el codigo fisico" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
                 <TextBox x:Name="TxtCodigo" Height="38" FontSize="14" Padding="10,0" VerticalContentAlignment="Center" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" KeyDown="TxtCodigo_KeyDown" />
 
                 <TextBlock Text="2. Busca y selecciona el producto" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,15,0,4" />

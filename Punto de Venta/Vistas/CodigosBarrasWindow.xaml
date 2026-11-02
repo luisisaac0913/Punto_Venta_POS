@@ -185,7 +185,7 @@
                         </Grid.RowDefinitions>
 
                         <Grid Grid.Row="0" Margin="0,0,0,12">
-                            <TextBlock Text="2. Cola de Impresión" FontFamily="Segoe UI Variable, Segoe UI" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
+                            <TextBlock Text="2. Cola de Impresion" FontFamily="Segoe UI Variable, Segoe UI" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
                             <Button Content="Limpiar lista" HorizontalAlignment="Right" VerticalAlignment="Center" Background="Transparent" Foreground="#E74C3C" BorderThickness="0" Cursor="Hand" FontWeight="SemiBold" Click="ClearQueue_Click" />
                         </Grid>
 
@@ -211,7 +211,7 @@
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="PRODUCTO" Binding="{Binding Producto.Nombre}" Width="2*" />
-                                    <DataGridTextColumn Header="CÓDIGO" Binding="{Binding Producto.Codigo}" Width="1*" />
+                                    <DataGridTextColumn Header="CODIGO" Binding="{Binding Producto.Codigo}" Width="1*" />
                                     <DataGridTextColumn Header="CANTIDAD" Binding="{Binding Cantidad}" Width="0.8*" ElementStyle="{StaticResource {x:Type TextBlock}}" />
                                     <DataGridTemplateColumn Width="60">
                                         <DataGridTemplateColumn.CellTemplate>
