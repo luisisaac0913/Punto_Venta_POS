@@ -41,6 +41,7 @@ namespace Punto_de_Venta.Vistas
         private string _refMpActual = "";
 
         public ObservableCollection<ItemCarrito> Cart { get; } = new();
+        private readonly ObservableCollection<VentaEnEspera> _ventasEnEspera = new();
         #endregion
 
         #region Inicializacion y Constructor
@@ -51,6 +52,10 @@ namespace Punto_de_Venta.Vistas
             Language = XmlLanguage.GetLanguage("es-MX");
 
             Cart.CollectionChanged += Cart_CollectionChanged;
+            if (VentasEnEsperaListBox != null)
+            {
+                VentasEnEsperaListBox.ItemsSource = _ventasEnEspera;
+            }
             RefreshSummary();
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => ((TextBlock)FindName("ClockText")).Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
@@ -86,6 +91,7 @@ namespace Punto_de_Venta.Vistas
             {
                 _catalog = ProductoDB.Load();
                 CargarPromocionesDesdeDb();
+                CargarVentasEnEsperaDesdeDb();
                 RefreshSuggestions();
                 ActualizarEstadoHardwareAsync(); // Ahora asincrono
             }
@@ -377,6 +383,7 @@ namespace Punto_de_Venta.Vistas
             if ((bool)e.NewValue)
             {
                 try { _catalog = ProductoDB.Load(); } catch { _catalog = new(); }
+                CargarVentasEnEsperaDesdeDb();
                 ActualizarEstadoHardwareAsync();
 
                 this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
@@ -1052,17 +1059,20 @@ namespace Punto_de_Venta.Vistas
         {
             var cartGrid = (DataGrid)FindName("CartGrid");
 
-            if (cartGrid.SelectedItem is not ItemCarrito selectedItem)
+            var selectedItem = cartGrid?.SelectedItem as ItemCarrito ?? Cart.LastOrDefault();
+            if (selectedItem == null)
                 return;
 
             selectedItem.PropertyChanged -= CartItem_PropertyChanged;
             Cart.Remove(selectedItem);
 
             var ultimo = Cart.LastOrDefault();
-            cartGrid.SelectedItem = ultimo;
-
-            if (ultimo != null)
-                cartGrid.ScrollIntoView(ultimo);
+            if (cartGrid != null)
+            {
+                cartGrid.SelectedItem = ultimo;
+                if (ultimo != null)
+                    cartGrid.ScrollIntoView(ultimo);
+            }
 
             ToastNotification.Show(
                 $"Se quito '{selectedItem.Nombre}' del carrito",
@@ -1320,6 +1330,12 @@ namespace Punto_de_Venta.Vistas
         #region Atajos de Teclado Centralizados
         private bool CerrarModalActivo()
         {
+            if (VentasEnEsperaOverlay != null && VentasEnEsperaOverlay.Visibility == Visibility.Visible)
+            {
+                CloseVentasEnEspera();
+                return true;
+            }
+
             if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible)
             {
                 PaymentOverlay.Visibility = Visibility.Collapsed;
@@ -1409,6 +1425,14 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
+            if (VentasEnEsperaOverlay != null && VentasEnEsperaOverlay.Visibility == Visibility.Visible)
+            {
+                if (e.Key == Key.Escape) { CloseVentasEnEspera(); e.Handled = true; return; }
+                if (e.Key == Key.Enter) { RecuperarVentaSeleccionada(); e.Handled = true; return; }
+                if (e.Key == Key.Delete) { DescartarVentaSeleccionada(); e.Handled = true; return; }
+                return;
+            }
+
             if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible)
             {
                 if (e.Key == Key.F1) { RbEfectivo.IsChecked = true; e.Handled = true; return; }
@@ -1475,6 +1499,19 @@ namespace Punto_de_Venta.Vistas
             if (e.Key == Key.F10 || (e.Key == Key.System && e.SystemKey == Key.F10)) { OpenQuickRestockModal(); e.Handled = true; return; }
             if (e.Key == Key.F8) { AbrirModalPesaje(); e.Handled = true; return; }
             if (e.Key == Key.F5) { CajonService.AbrirCajon(); e.Handled = true; return; }
+            if (e.Key == Key.F2)
+            {
+                e.Handled = true;
+                if (Cart.Count > 0)
+                {
+                    PausarVentaActual();
+                }
+                else
+                {
+                    AbrirModalVentasEnEspera();
+                }
+                return;
+            }
             if (e.Key == Key.F4) { OpenCashMovement(); e.Handled = true; return; }
 
             if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control && e.Key == Key.Left || e.Key == Key.Tab)
@@ -1506,7 +1543,7 @@ namespace Punto_de_Venta.Vistas
 
                 e.Handled = true;
             }
-            else if (e.Key == Key.Delete)
+            else if (e.Key == Key.Delete || e.Key == Key.Back)
             {
                 var searchBox = (TextBox)FindName("SearchBox");
                 if (searchBox != null && (!searchBox.IsKeyboardFocusWithin || string.IsNullOrEmpty(searchBox.Text)))
@@ -1626,11 +1663,12 @@ namespace Punto_de_Venta.Vistas
                             Id = item.ProductoId,
                             VentaId = saleId,
                             Nombre = item.Nombre,
-                            Cantidad = item.Cantidad,
+                            Cantidad = Math.Round(item.Cantidad, 3),
                             Costo = item.Costo,
                             Ganancia = precioDescuento - item.Costo,
                             Precio = precioDescuento,
-                            Categoria = item.Categoria
+                            Categoria = item.Categoria,
+                            SeVendePorPeso = item.SeVendePorPeso
                         };
                     }).ToList()
                 };
@@ -1832,6 +1870,7 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
             CargarPromocionesDesdeDb();
+                CargarVentasEnEsperaDesdeDb();
             RefreshSummary();
             ((Popup)FindName("SuggestionsPopup")).IsOpen = false;
             ((Grid)FindName("PaymentOverlay")).Visibility = Visibility.Visible;
@@ -1931,11 +1970,12 @@ namespace Punto_de_Venta.Vistas
                             Id = item.ProductoId,
                             VentaId = saleId,
                             Nombre = item.Nombre,
-                            Cantidad = item.Cantidad,
+                            Cantidad = Math.Round(item.Cantidad, 3),
                             Costo = item.Costo,
                             Ganancia = precioDescuento - item.Costo,
                             Precio = precioDescuento,
-                            Categoria = item.Categoria
+                            Categoria = item.Categoria,
+                            SeVendePorPeso = item.SeVendePorPeso
                         };
                     }).ToList()
                 };
@@ -2196,7 +2236,12 @@ namespace Punto_de_Venta.Vistas
 
             if (existingItem != null)
             {
-                existingItem.Cantidad += cantidad;
+                existingItem.Cantidad = Math.Round(existingItem.Cantidad + cantidad, 3);
+                if (CartGrid != null)
+                {
+                    CartGrid.SelectedItem = existingItem;
+                    CartGrid.ScrollIntoView(existingItem);
+                }
                 RefreshSummary();
                 return;
             }
@@ -2210,11 +2255,17 @@ namespace Punto_de_Venta.Vistas
                 Ganancia = product.Ganancia,
                 Precio = product.Precio,
                 Categoria = string.IsNullOrWhiteSpace(product.Categoria) ? "N/A" : product.Categoria,
-                Cantidad = cantidad
+                Cantidad = Math.Round(cantidad, 3),
+                SeVendePorPeso = product.SeVendePorPeso
             };
             ActualizarVisibilidadEmptyState();
             newItem.PropertyChanged += CartItem_PropertyChanged;
             Cart.Add(newItem);
+            if (CartGrid != null)
+            {
+                CartGrid.SelectedItem = newItem;
+                CartGrid.ScrollIntoView(newItem);
+            }
             RefreshSummary();
         }
 
@@ -2223,7 +2274,8 @@ namespace Punto_de_Venta.Vistas
             if (Cart == null || Cart.Count == 0) return 0m;
             var subtotalBruto = Cart.Sum(item => item.Subtotal);
             var resultadoPromo = PromocionEngine.Evaluar(Cart, _promocionesCargadas ?? new());
-            return Math.Max(0m, subtotalBruto - resultadoPromo.DescuentoTotal);
+            var totalConDescuento = Math.Max(0m, subtotalBruto - resultadoPromo.DescuentoTotal);
+            return Math.Round(totalConDescuento, 0, MidpointRounding.AwayFromZero);
         }
 
         private void Cart_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => RefreshSummary();
@@ -2235,13 +2287,322 @@ namespace Punto_de_Venta.Vistas
             var itemCount = Cart.Count;
             var subtotalBruto = Cart.Sum(item => item.Subtotal);
             var resultadoPromo = PromocionEngine.Evaluar(Cart, _promocionesCargadas ?? new());
-            var totalConDescuento = Math.Max(0m, subtotalBruto - resultadoPromo.DescuentoTotal);
+            var totalNetoRedondeado = ObtenerTotalNetoVenta();
             ((TextBlock)FindName("ProductCountText")).Text = itemCount.ToString(culture);
-            ((TextBlock)FindName("TotalText")).Text = totalConDescuento.ToString("C2", culture);
+            ((TextBlock)FindName("TotalText")).Text = totalNetoRedondeado.ToString("C2", culture);
             ((TextBlock)FindName("SaleNumberText")).Text = $"#{_saleNumber}";
             if (FindName("PromotionsCountText") is TextBlock promoBlock)
             {
                 promoBlock.Text = resultadoPromo.PromocionesAplicadasCount.ToString(culture);
+            }
+        }
+        #endregion
+
+        #region Ventas en Espera (Carrito en Pausa)
+        private void CargarVentasEnEsperaDesdeDb()
+        {
+            try
+            {
+                var lista = VentaEnEsperaDB.Load();
+                _ventasEnEspera.Clear();
+                foreach (var v in lista)
+                {
+                    _ventasEnEspera.Add(v);
+                }
+                ActualizarBadgeVentasEnEspera();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar ventas en espera: {ex.Message}");
+            }
+        }
+
+        private void ActualizarBadgeVentasEnEspera()
+        {
+            int conteo = _ventasEnEspera.Count;
+            if (TxtVentasEsperaBadge != null)
+            {
+                TxtVentasEsperaBadge.Text = $"En espera ({conteo})";
+            }
+            if (TxtVentasEsperaVacio != null)
+            {
+                TxtVentasEsperaVacio.Visibility = conteo == 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        private string GenerarIdentificadorInteligente(IReadOnlyCollection<ItemCarrito> items)
+        {
+            var hora = DateTime.Now.ToString("HH:mm");
+            if (items == null || items.Count == 0)
+                return $"Venta ({hora})";
+
+            var topItem = items.OrderByDescending(i => i.Subtotal).FirstOrDefault();
+            string nombreBase = topItem != null ? topItem.Nombre : "Producto";
+            if (nombreBase.Length > 24)
+                nombreBase = nombreBase.Substring(0, 24).Trim() + "...";
+
+            int otros = items.Count - 1;
+            if (otros <= 0)
+            {
+                return $"{nombreBase} ({hora})";
+            }
+            else if (otros == 1)
+            {
+                return $"{nombreBase} y 1 articulo mas ({hora})";
+            }
+            else
+            {
+                return $"{nombreBase} y {otros} articulos mas ({hora})";
+            }
+        }
+
+        private void PausarVentaActual(bool mostrarToast = true)
+        {
+            if (Cart == null || Cart.Count == 0)
+            {
+                if (mostrarToast)
+                {
+                    ToastNotification.Show("No hay productos en el carrito para pausar.", ToastType.Warning);
+                }
+                return;
+            }
+
+            try
+            {
+                var totalNeto = ObtenerTotalNetoVenta();
+                var identificador = GenerarIdentificadorInteligente(Cart);
+
+                var nueva = new VentaEnEspera
+                {
+                    FechaHora = DateTime.Now,
+                    Identificador = identificador,
+                    TotalNeto = totalNeto,
+                    TotalItems = Cart.Count,
+                    Items = Cart.Select(i => new ItemCarrito
+                    {
+                        ProductoId = i.ProductoId,
+                        Codigo = i.Codigo,
+                        Nombre = i.Nombre,
+                        Costo = i.Costo,
+                        Ganancia = i.Ganancia,
+                        Precio = i.Precio,
+                        Categoria = i.Categoria,
+                        Cantidad = i.Cantidad
+                    }).ToList()
+                };
+
+                VentaEnEsperaDB.Save(nueva);
+
+                foreach (var item in Cart)
+                {
+                    item.PropertyChanged -= CartItem_PropertyChanged;
+                }
+                Cart.Clear();
+                ActualizarVisibilidadEmptyState();
+                RefreshSummary();
+
+                CargarVentasEnEsperaDesdeDb();
+
+                if (mostrarToast)
+                {
+                    ToastNotification.Show($"Venta en pausa: {identificador}", ToastType.Success);
+                }
+
+                FocusSearch();
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"Error al pausar la venta: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void AbrirModalVentasEnEspera()
+        {
+            CargarVentasEnEsperaDesdeDb();
+            if (VentasEnEsperaOverlay != null)
+            {
+                VentasEnEsperaOverlay.Visibility = Visibility.Visible;
+                if (VentasEnEsperaListBox != null && _ventasEnEspera.Count > 0)
+                {
+                    VentasEnEsperaListBox.SelectedIndex = 0;
+                    VentasEnEsperaListBox.Focus();
+                }
+            }
+        }
+
+        private void CloseVentasEnEspera()
+        {
+            if (VentasEnEsperaOverlay != null)
+            {
+                VentasEnEsperaOverlay.Visibility = Visibility.Collapsed;
+            }
+            FocusSearch();
+        }
+
+        private void BtnVentasEnEspera_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender != BtnVentasEnEsperaBadge && Cart.Count > 0)
+            {
+                PausarVentaActual();
+                return;
+            }
+
+            AbrirModalVentasEnEspera();
+        }
+
+        private void CloseVentasEnEspera_Click(object sender, RoutedEventArgs e)
+        {
+            CloseVentasEnEspera();
+        }
+
+        private void VentasEnEsperaOverlay_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource == VentasEnEsperaOverlay)
+            {
+                CloseVentasEnEspera();
+            }
+        }
+
+        private void VentasEnEsperaListBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                RecuperarVentaSeleccionada();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Delete)
+            {
+                DescartarVentaSeleccionada();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                CloseVentasEnEspera();
+                e.Handled = true;
+            }
+        }
+
+        private void VentasEnEsperaListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            RecuperarVentaSeleccionada();
+        }
+
+        private void RecuperarVentaEnEspera_Click(object sender, RoutedEventArgs e)
+        {
+            RecuperarVentaSeleccionada();
+        }
+
+        private void DescartarVentaEnEspera_Click(object sender, RoutedEventArgs e)
+        {
+            DescartarVentaSeleccionada();
+        }
+
+        private void RecuperarVentaSeleccionada()
+        {
+            if (VentasEnEsperaListBox?.SelectedItem is not VentaEnEspera venta)
+            {
+                ToastNotification.Show("Selecciona una venta de la lista para recuperarla.", ToastType.Warning);
+                return;
+            }
+
+            if (Cart != null && Cart.Count > 0)
+            {
+                Window? parent = Window.GetWindow(this);
+                var resp = parent != null
+                    ? CustomMessageBox.Show(
+                        parent,
+                        "Hay articulos en la venta actual.\n\nDeseas pausar la venta actual y recuperar la venta seleccionada?",
+                        "Venta en curso",
+                        MessageBoxButton.YesNo)
+                    : CustomMessageBox.Show(
+                        "Hay articulos en la venta actual.\n\nDeseas pausar la venta actual y recuperar la venta seleccionada?",
+                        "Venta en curso",
+                        MessageBoxButton.YesNo);
+
+                if (resp != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                PausarVentaActual(mostrarToast: false);
+            }
+
+            try
+            {
+                foreach (var it in Cart)
+                {
+                    it.PropertyChanged -= CartItem_PropertyChanged;
+                }
+                Cart.Clear();
+
+                if (venta.Items != null)
+                {
+                    foreach (var item in venta.Items)
+                    {
+                        item.PropertyChanged += CartItem_PropertyChanged;
+                        Cart.Add(item);
+                    }
+                }
+
+                var ultimoItemRecuperado = Cart.LastOrDefault();
+                if (CartGrid != null && ultimoItemRecuperado != null)
+                {
+                    CartGrid.SelectedItem = ultimoItemRecuperado;
+                    CartGrid.ScrollIntoView(ultimoItemRecuperado);
+                }
+
+                VentaEnEsperaDB.Delete(venta.Id);
+                _ventasEnEspera.Remove(venta);
+                ActualizarBadgeVentasEnEspera();
+
+                ActualizarVisibilidadEmptyState();
+                RefreshSummary();
+                CloseVentasEnEspera();
+
+                ToastNotification.Show($"Venta recuperada: {venta.Identificador}", ToastType.Success);
+                FocusSearch();
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"Error al recuperar la venta: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void DescartarVentaSeleccionada()
+        {
+            if (VentasEnEsperaListBox?.SelectedItem is not VentaEnEspera venta)
+            {
+                ToastNotification.Show("Selecciona una venta de la lista para descartarla.", ToastType.Warning);
+                return;
+            }
+
+            Window? parent = Window.GetWindow(this);
+            var resp = parent != null
+                ? CustomMessageBox.Show(
+                    parent,
+                    $"Deseas eliminar permanentemente esta venta en espera?\n\n{venta.Identificador} - {venta.TotalNetoFormateado}",
+                    "Descartar venta en espera",
+                    MessageBoxButton.YesNo)
+                : CustomMessageBox.Show(
+                    $"Deseas eliminar permanentemente esta venta en espera?\n\n{venta.Identificador} - {venta.TotalNetoFormateado}",
+                    "Descartar venta en espera",
+                    MessageBoxButton.YesNo);
+
+            if (resp != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            try
+            {
+                VentaEnEsperaDB.Delete(venta.Id);
+                _ventasEnEspera.Remove(venta);
+                ActualizarBadgeVentasEnEspera();
+                ToastNotification.Show("Venta en espera eliminada.", ToastType.Info);
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"Error al descartar la venta: {ex.Message}", ToastType.Error);
             }
         }
         #endregion

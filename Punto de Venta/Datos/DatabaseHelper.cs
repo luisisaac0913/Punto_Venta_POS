@@ -166,6 +166,16 @@ namespace Punto_de_Venta.Datos
                     PrecioComboTotal REAL DEFAULT 0.0,
                     PorcentajeDescuento REAL DEFAULT 0.0
                 );
+
+                CREATE TABLE IF NOT EXISTS VentasEnEspera (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    FechaHora TEXT NOT NULL,
+                    Identificador TEXT NOT NULL,
+                    TotalNeto REAL NOT NULL,
+                    TotalItems REAL NOT NULL,
+                    CarritoJson TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS IX_VentasEnEspera_FechaHora ON VentasEnEspera(FechaHora);
             ";
             cmd.ExecuteNonQuery();
             ActualizarEsquemaVentas();

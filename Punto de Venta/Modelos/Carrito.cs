@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+using System;
+using System.ComponentModel;
 
 namespace Punto_de_Venta.Modelos
 {
@@ -13,15 +14,17 @@ namespace Punto_de_Venta.Modelos
         public decimal Ganancia { get; set; }
         public decimal Precio { get; set; }
         public string Categoria { get; set; } = "N/A";
+        public bool SeVendePorPeso { get; set; }
 
         public decimal Cantidad
         {
             get => _cantidad;
             set
             {
-                if (_cantidad != value)
+                var valorRedondeado = Math.Round(value, 3);
+                if (_cantidad != valorRedondeado)
                 {
-                    _cantidad = value;
+                    _cantidad = valorRedondeado;
                     OnPropertyChanged(nameof(Cantidad));
                     OnPropertyChanged(nameof(Subtotal));
                 }
