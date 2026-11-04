@@ -1,4 +1,4 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using Punto_de_Venta.Vistas;
@@ -620,8 +620,8 @@ namespace Punto_de_Venta
             catch (Exception ex) { ToastNotification.Show($"Error al registrar auditoria: {ex.Message}", ToastType.Error); }
         }
 
-        private bool CanWrite() { if (!_loadFailed) return true; ToastNotification.Show("No se encontro ventas.txt, cambios bloqueados", ToastType.Error); return false; }
-        private bool TrySave() { try { VentaDB.Save(Sales); _loadFailed = false; return true; } catch (Exception exception) { ToastNotification.Show($"Error al guardar ventas: {exception.Message}", ToastType.Error); return false; } }
+        private bool CanWrite() { if (!_loadFailed) return true; ToastNotification.Show("Error al acceder a base de datos de ventas, cambios bloqueados", ToastType.Error); return false; }
+
 
         private static List<(string Name, int Quantity)> ParseProductSummary(string summary)
         {

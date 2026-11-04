@@ -1,4 +1,4 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using System;
@@ -17,11 +17,7 @@ using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Net.Http;
-using System.Text.Json;
 using System.Windows.Threading;
-using QRCoder;
-using System.Windows.Media.Imaging;
 
 namespace Punto_de_Venta.Vistas
 {
@@ -37,8 +33,6 @@ namespace Punto_de_Venta.Vistas
         private bool _purchaseFeedbackVisible;
         private ItemCarrito? _itemEnPesaje;
         private bool _modalAbierto = false;
-        private System.Windows.Threading.DispatcherTimer _timerMp;
-        private string _refMpActual = "";
 
         public ObservableCollection<ItemCarrito> Cart { get; } = new();
         private readonly ObservableCollection<VentaEnEspera> _ventasEnEspera = new();
@@ -60,8 +54,6 @@ namespace Punto_de_Venta.Vistas
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => ((TextBlock)FindName("ClockText")).Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
             _clockTimer.Start();
-            _timerMp = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-            _timerMp.Tick += TimerMp_Tick;
             ActualizarVisibilidadEmptyState();
             _typingTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
             _typingTimer.Tick += (s, args) =>
@@ -125,257 +117,6 @@ namespace Punto_de_Venta.Vistas
         {
             bool tieneArticulos = CartGrid.Items.Count > 0;
             EmptyCartPanel.Visibility = tieneArticulos ? Visibility.Collapsed : Visibility.Visible;
-        }
-
-        private async void BtnCobrarMP_Click(object sender, RoutedEventArgs e)
-        {
-            var config = AppConfig.Load();
-            if (string.IsNullOrEmpty(config.MpAccessToken))
-            {
-                ToastNotification.Show("Falta configurar el Token de Mercado Pago en Ajustes", ToastType.Warning);
-                return;
-            }
-
-            BtnCobrarMP.IsEnabled = false;
-            BtnCobrarMP.Content = "⏳ Conectando...";
-            var total = Math.Round(ObtenerTotalNetoVenta(), 2);
-            string userId = config.MpAccessToken.Split('-')[1]; // El Access Token trae tu UserID incrustado
-
-            try
-            {
-                // 1. Preparamos los datos del cobro (Formato oficial de Mercado Pago)
-                var ordenMp = new
-                {
-                    external_reference = $"TICKET_{_saleNumber}",
-                    title = "Venta en Mostrador",
-                    description = "Compra de productos en ferreteria",
-                    total_amount = total,
-                    items = new[]
-                    {
-                new {
-                    title = "Total de compra",
-                    unit_price = total,
-                    quantity = 1,
-                    unit_measure = "unit",
-                    total_amount = total
-                }
-            }
-                };
-
-                string jsonBody = JsonSerializer.Serialize(ordenMp);
-                var content = new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json");
-
-                // 2. Enviamos la instruccion a los servidores de Mercado Pago
-                using (var client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.MpAccessToken}");
-
-                    // Endpoint para inyectar el cobro al codigo QR fijo de tu mostrador
-                    string url = $"https://api.mercadopago.com/instore/orders/qr/seller/collectors/{userId}/pos/{config.MpSucursalCaja}/qrs";
-
-                    var response = await client.PutAsync(url, content);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        BtnCobrarMP.Content = "✅ ¡Listo! Que el cliente escanee";
-                        BtnCobrarMP.Background = new SolidColorBrush(Color.FromRgb(46, 204, 113)); // Verde
-                        ToastNotification.Show("Cobro enviado a Mercado Pago. El cliente ya puede escanear.", ToastType.Success);
-
-                        // NUEVO: Mostramos el QR de Mercado Pago en pantalla en lugar del de SPEI
-                        MostrarQrMercadoPagoEnPantalla();
-
-                        _refMpActual = $"TICKET_{_saleNumber}";
-                        _timerMp.Start();
-                    }
-                    else
-                    {
-                        string errorResponse = await response.Content.ReadAsStringAsync();
-                        BtnCobrarMP.Content = "❌ Error al enviar";
-                        BtnCobrarMP.Background = new SolidColorBrush(Color.FromRgb(231, 76, 60)); // Rojo
-                        ToastNotification.Show("No se pudo conectar con Mercado Pago.", ToastType.Error);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                BtnCobrarMP.Content = "❌ Falla de red";
-                ToastNotification.Show($"Error de conexion: {ex.Message}", ToastType.Error);
-            }
-            finally
-            {
-                // Restauramos el boton despues de 4 segundos
-                await Task.Delay(4000);
-                BtnCobrarMP.IsEnabled = true;
-                BtnCobrarMP.Content = "Mercado Pago";
-                BtnCobrarMP.Background = new SolidColorBrush(Color.FromRgb(0, 158, 227)); // Azul MP original
-            }
-        }
-
-        private async void TimerMp_Tick(object? sender, EventArgs e)
-        {
-            _timerMp.Stop();
-
-            if (string.IsNullOrWhiteSpace(_refMpActual) || RbTransferencia?.IsChecked != true || PaymentOverlay?.Visibility != Visibility.Visible || !this.IsVisible)
-            {
-                return;
-            }
-
-            var config = AppConfig.Load();
-            if (string.IsNullOrWhiteSpace(config.MpAccessToken)) return;
-
-            try
-            {
-                using var client = new HttpClient();
-                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.MpAccessToken}");
-
-                string url = $"https://api.mercadopago.com/v1/payments/search?external_reference={_refMpActual}";
-                var response = await client.GetAsync(url);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    string json = await response.Content.ReadAsStringAsync();
-                    using var doc = JsonDocument.Parse(json);
-
-                    if (doc.RootElement.TryGetProperty("results", out var results) &&
-                        results.ValueKind == JsonValueKind.Array &&
-                        results.GetArrayLength() > 0)
-                    {
-                        var status = results[0].GetProperty("status").GetString();
-
-                        if (status == "approved")
-                        {
-                            ToastNotification.Show("✅ Pago de Mercado Pago aprobado automaticamente.", ToastType.Success);
-                            FinalizeButton_Click(null, null);
-                            return;
-                        }
-                        else if (status == "rejected")
-                        {
-                            ToastNotification.Show("❌ El pago fue rechazado por Mercado Pago.", ToastType.Error);
-                            BtnCobrarMP.Content = "❌ Pago rechazado";
-                            BtnCobrarMP.Background = new SolidColorBrush(Color.FromRgb(231, 76, 60));
-                            return;
-                        }
-                    }
-                }
-            }
-            catch
-            {
-            }
-
-            if (RbTransferencia?.IsChecked == true && PaymentOverlay?.Visibility == Visibility.Visible && this.IsVisible)
-            {
-                _timerMp.Start();
-            }
-        }
-
-        private async void MostrarQrMercadoPagoEnPantalla()
-        {
-            var config = AppConfig.Load();
-            string payloadMp = "";
-
-            try
-            {
-                using (var client = new System.Net.Http.HttpClient())
-                {
-                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.MpAccessToken}");
-
-                    // Consultamos la caja directamente por su ID para extraer su texto QR oficial
-                    var response = await client.GetAsync($"https://api.mercadopago.com/pos?external_id={config.MpSucursalCaja}");
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        string json = await response.Content.ReadAsStringAsync();
-                        using (System.Text.Json.JsonDocument doc = System.Text.Json.JsonDocument.Parse(json))
-                        {
-                            var results = doc.RootElement.GetProperty("results");
-                            if (results.GetArrayLength() > 0)
-                            {
-                                // Extraemos la cadena EMVCo (ej. 00020101021243650016COM.MERCADOLIBRE...)
-                                payloadMp = results[0].GetProperty("qr_code").GetString();
-                            }
-                        }
-                    }
-                }
-            }
-            catch { }
-
-            if (string.IsNullOrEmpty(payloadMp))
-            {
-                ToastNotification.Show("No se pudo cargar el QR de Mercado Pago en pantalla.", ToastType.Error);
-                return;
-            }
-
-            // Usamos tu misma logica exacta de QRCoder para reemplazar la imagen en la UI
-            using (QRCoder.QRCodeGenerator qrGenerator = new QRCoder.QRCodeGenerator())
-            {
-                // ECCLevel.M es ideal porque las cadenas de Mercado Pago son muy largas y densas
-                QRCoder.QRCodeData qrCodeData = qrGenerator.CreateQrCode(payloadMp, QRCoder.QRCodeGenerator.ECCLevel.M);
-                using (QRCoder.QRCode qrCode = new QRCoder.QRCode(qrCodeData))
-                {
-                    using (System.Drawing.Bitmap qrBitmap = qrCode.GetGraphic(20, System.Drawing.Color.Black, System.Drawing.Color.White, true))
-                    {
-                        using (var memory = new System.IO.MemoryStream())
-                        {
-                            qrBitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
-                            memory.Position = 0;
-
-                            var bitmapImage = new System.Windows.Media.Imaging.BitmapImage();
-                            bitmapImage.BeginInit();
-                            bitmapImage.StreamSource = memory;
-                            bitmapImage.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                            bitmapImage.EndInit();
-
-                            QrCodeImage.Source = bitmapImage;
-
-                            if (QrInfoText != null)
-                                QrInfoText.Text = "Escanea con Mercado Pago";
-                        }
-                    }
-                }
-            }
-        }
-
-        private void GenerarQrDePago(decimal montoTotal)
-        {
-            var config = AppConfig.Load();
-            string clabe = string.IsNullOrWhiteSpace(config.CuentaClabe) ? "000000000000000000" : config.CuentaClabe;
-            string beneficiario = string.IsNullOrWhiteSpace(config.NombreBeneficiario) ? "Mi Negocio" : config.NombreBeneficiario;
-            string referencia = _saleNumber.ToString().PadLeft(7, '0');
-            var datosSpei = new
-            {
-                cl = clabe,
-                no = beneficiario,
-                mo = montoTotal,
-                @ref = referencia,
-                con = $"Cobro {referencia}"
-            };
-
-            // Serializamos el objeto a un string JSON compacto
-            string payloadQr = System.Text.Json.JsonSerializer.Serialize(datosSpei);
-
-            using (QRCoder.QRCodeGenerator qrGenerator = new QRCoder.QRCodeGenerator())
-            {
-                QRCoder.QRCodeData qrCodeData = qrGenerator.CreateQrCode(payloadQr, QRCoder.QRCodeGenerator.ECCLevel.Q);
-                using (QRCoder.QRCode qrCode = new QRCoder.QRCode(qrCodeData))
-                {
-                    using (System.Drawing.Bitmap qrBitmap = qrCode.GetGraphic(20, System.Drawing.Color.Black, System.Drawing.Color.White, true))
-                    {
-                        using (var memory = new System.IO.MemoryStream())
-                        {
-                            qrBitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
-                            memory.Position = 0;
-
-                            var bitmapImage = new System.Windows.Media.Imaging.BitmapImage();
-                            bitmapImage.BeginInit();
-                            bitmapImage.StreamSource = memory;
-                            bitmapImage.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                            bitmapImage.EndInit();
-
-                            QrCodeImage.Source = bitmapImage;
-                        }
-                    }
-                }
-            }
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -1801,7 +1542,6 @@ namespace Punto_de_Venta.Vistas
         #region Proceso de Cobro de Venta
         private void PaymentMethod_Changed(object sender, RoutedEventArgs e)
         {
-            _timerMp?.Stop();
             if (RbMixto == null || RbEfectivo == null) return;
             var total = Math.Round(ObtenerTotalNetoVenta(), 2);
 
@@ -1809,7 +1549,6 @@ namespace Punto_de_Venta.Vistas
             {
                 SinglePaymentLabel.Visibility = Visibility.Collapsed;
                 SinglePaymentContainer.Visibility = Visibility.Collapsed;
-                if (QrContainer != null) QrContainer.Visibility = Visibility.Collapsed;
                 MixedPaymentContainer.Visibility = Visibility.Visible;
 
                 MixedCashBox.Text = "0";
@@ -1826,7 +1565,6 @@ namespace Punto_de_Venta.Vistas
 
                 if (RbEfectivo.IsChecked == true)
                 {
-                    if (QrContainer != null) QrContainer.Visibility = Visibility.Collapsed;
                     SinglePaymentContainer.Visibility = Visibility.Visible;
                     SinglePaymentLabel.Text = "Dinero Recibido";
 
@@ -1836,7 +1574,6 @@ namespace Punto_de_Venta.Vistas
                 }
                 else if (RbTarjeta.IsChecked == true)
                 {
-                    if (QrContainer != null) QrContainer.Visibility = Visibility.Collapsed;
                     SinglePaymentContainer.Visibility = Visibility.Visible;
                     SinglePaymentLabel.Text = "Monto en Terminal";
 
@@ -1846,13 +1583,11 @@ namespace Punto_de_Venta.Vistas
                 }
                 else if (RbTransferencia.IsChecked == true)
                 {
-                    SinglePaymentContainer.Visibility = Visibility.Collapsed;
-                    SinglePaymentLabel.Text = "Transferencia SPEI";
-                    if (QrContainer != null) QrContainer.Visibility = Visibility.Visible;
+                    SinglePaymentContainer.Visibility = Visibility.Visible;
+                    SinglePaymentLabel.Text = "Monto por Transferencia";
 
                     CashReceivedBox.Text = total.ToString("0.00", CultureInfo.InvariantCulture);
                     CashReceivedBox.IsReadOnly = true;
-                    GenerarQrDePago(total);
                     CalcularCambioVisual();
                 }
             }

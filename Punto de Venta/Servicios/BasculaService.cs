@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO.Ports;
 using System.Text.RegularExpressions;
@@ -56,7 +56,7 @@ namespace Punto_de_Venta.Servicios
                     return true;
                 }
                 mensajeError = string.IsNullOrWhiteSpace(respuesta)
-                    ? "La bascula no respondio en el tiempo limite. Ay Jaz"
+                    ? "La bascula no respondio en el tiempo limite."
                     : $"Respuesta no valida de la bascula: '{respuesta.Trim()}'";
                 return false;
             }

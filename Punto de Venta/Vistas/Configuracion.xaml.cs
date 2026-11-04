@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using Punto_de_Venta.Servicios;
 using System;
 using System.Collections.Generic;
@@ -91,16 +91,11 @@ namespace Punto_de_Venta
             BusinessAddressBox.Text = _config.DireccionNegocio ?? string.Empty;
             FooterMessageBox.Text = _config.MensajePie ?? string.Empty;
 
-            ConfigBancoBox.Text = _config.BancoReceptor ?? string.Empty;
-            ConfigBeneficiarioBox.Text = _config.NombreBeneficiario ?? string.Empty;
-            ConfigClabeBox.Text = _config.CuentaClabe ?? string.Empty;
 
             DarkModeCheckBox.IsChecked = _config.ModoOscuro;
             AskBeforePrintCheckBox.IsChecked = _config.PreguntarAntesDeImprimir;
             AutoPrintCheckBox.IsChecked = _config.ImprimirTicketAutomatico;
 
-            ConfigMpTokenBox.Password = _config.MpAccessToken ?? string.Empty;
-            ConfigMpCajaBox.Text = _config.MpSucursalCaja ?? string.Empty;
 
             if (NoPrintOrSaveCheckBox != null)
                 NoPrintOrSaveCheckBox.IsChecked = !_config.PreguntarAntesDeImprimir && !_config.ImprimirTicketAutomatico;
@@ -400,14 +395,6 @@ namespace Punto_de_Venta
         {
             try
             {
-                string clabe = ConfigClabeBox.Text.Trim();
-                if (!string.IsNullOrEmpty(clabe) && clabe.Length != 18)
-                {
-                    ToastNotification.Show("Por seguridad, la cuenta CLABE debe tener exactamente 18 digitos.", ToastType.Warning);
-                    ConfigClabeBox.Focus();
-                    return;
-                }
-
                 var printerSel = PrintersComboBox.SelectedItem?.ToString() ?? string.Empty;
                 _config.ImpresoraSeleccionada = (printerSel.StartsWith("(") || printerSel.StartsWith("Cargando")) ? string.Empty : printerSel;
 
@@ -419,9 +406,6 @@ namespace Punto_de_Venta
                 _config.DireccionNegocio = BusinessAddressBox.Text.Trim();
                 _config.MensajePie = FooterMessageBox.Text.Trim();
 
-                _config.BancoReceptor = ConfigBancoBox.Text.Trim();
-                _config.NombreBeneficiario = ConfigBeneficiarioBox.Text.Trim();
-                _config.CuentaClabe = clabe;
 
                 var modoOscuroSeleccionado = DarkModeCheckBox.IsChecked == true;
                 _config.ModoOscuro = modoOscuroSeleccionado;
@@ -434,8 +418,6 @@ namespace Punto_de_Venta
                     _config.BasculaBaudRate = baud;
                 _config.BasculaProtocolo = (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Torrey / Rhino (Peticion P)";
 
-                _config.MpAccessToken = ConfigMpTokenBox.Password.Trim();
-                _config.MpSucursalCaja = ConfigMpCajaBox.Text.Trim();
 
                 bool noPrintSave = NoPrintOrSaveCheckBox?.IsChecked == true;
                 _config.PreguntarAntesDeImprimir = !noPrintSave && (AskBeforePrintCheckBox.IsChecked == true);

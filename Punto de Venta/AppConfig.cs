@@ -1,4 +1,4 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using System;
 using System.IO;
 using System.Security.Cryptography;
@@ -9,13 +9,8 @@ namespace Punto_de_Venta
 {
     public class AppConfig
     {
-        public string MpAccessToken { get; set; } = string.Empty;
-        public string MpSucursalCaja { get; set; } = "SUC001CAJA001";
         public bool PantallaReposoHabilitada { get; set; } = true;
         public int PantallaReposoMinutos { get; set; } = 5;
-        public string CuentaClabe { get; set; } = string.Empty;
-        public string NombreBeneficiario { get; set; } = string.Empty;
-        public string BancoReceptor { get; set; } = string.Empty;
         public bool ModoOscuro { get; set; } = false;
         public bool ImprimirTicketAutomatico { get; set; } = false;
         public bool PreguntarAntesDeImprimir { get; set; } = true;
