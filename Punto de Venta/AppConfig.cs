@@ -32,11 +32,18 @@ namespace Punto_de_Venta
 
         public string PinAdminHash { get; set; } = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 
-        private static readonly string ConfigPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "POS_DataStorage",
-            "config.json"
-        );
+        private static string ConfigPath
+        {
+            get
+            {
+                string baseDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "POS_DataStorage");
+                string subConfig = Path.Combine(baseDir, "Configuracion", "config.json");
+                if (File.Exists(subConfig)) return subConfig;
+                return Path.Combine(baseDir, "config.json");
+            }
+        }
 
         public static AppConfig Load()
         {

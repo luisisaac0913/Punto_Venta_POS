@@ -863,13 +863,13 @@
 
                             <TextBlock Style="{StaticResource ShortcutTextStyle}"><Run Text="Enter" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" /><Run Text="  Añadir" /></TextBlock>
 
-                            <TextBlock Style="{StaticResource ShortcutTextStyle}"><Run Text="Ctrl+← / Tab" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" /><Run Text="  Buscar" /></TextBlock>
+                            <TextBlock Style="{StaticResource ShortcutTextStyle}"><Run Text="Ctrl←/Tab" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" /><Run Text="  Buscar" /></TextBlock>
 
                             <TextBlock Style="{StaticResource ShortcutTextStyle}"><Run Text="F8" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" /><Run Text="  Pesar Bascula" /></TextBlock>
 
                             <TextBlock Style="{StaticResource ShortcutTextStyle}"><Run Text="Shift+Enter" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" /><Run Text="  Cobrar" /></TextBlock>
 
-                            <TextBlock Style="{StaticResource ShortcutTextStyle}"><Run Text="Backspace" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" /><Run Text="  Quitar" /></TextBlock>
+                            <TextBlock Style="{StaticResource ShortcutTextStyle}"><Run Text="Supr" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" /><Run Text="  Quitar" /></TextBlock>
 
                             <TextBlock Style="{StaticResource ShortcutTextStyle}"><Run Text="F10" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" /><Run Text="  Stock Rapido" /></TextBlock>
 
@@ -1872,11 +1872,11 @@
 
                                                             <TextBlock Text="{Binding HoraFormateada}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
 
-                                                            <TextBlock Text=" â€¢ " FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
+                                                            <TextBlock Text=" &#x2022; " FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
 
                                                             <TextBlock Text="{Binding TiempoTranscurrido}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" />
 
-                                                            <TextBlock Text=" â€¢ " FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
+                                                            <TextBlock Text=" &#x2022; " FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
 
                                                             <TextBlock Text="{Binding TotalItemsFormateado}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
 

@@ -1,5 +1,6 @@
 using Microsoft.Win32;
 using Punto_de_Venta.Servicios;
+using Punto_de_Venta.Vistas;
 using System;
 using System.Collections.Generic;
 using System.Drawing.Printing;
@@ -489,5 +490,52 @@ namespace Punto_de_Venta
                 e.Handled = true;
             }
         }
+        #region Google Drive
+        private async void BtnRespaldoDrive_Click(object sender, RoutedEventArgs e)
+        {
+            BtnRespaldoDrive.IsEnabled = false;
+            BtnRespaldoDrive.Content = "Subiendo respaldo...";
+            PanelProgresoDrive.Visibility = Visibility.Visible;
+            ProgressBarDrive.Value = 0;
+            TxtProgresoDrive.Text = "Comprimiendo y conectando...";
+            var progressReporter = new Progress<int>(porcentaje =>
+            {
+                ProgressBarDrive.Value = porcentaje;
+                TxtProgresoDrive.Text = $"Subiendo a Drive: {porcentaje}%";
+            });
+            try
+            {
+                bool completado = await GoogleDriveBackupService.RespaldarEnDriveAsync(progressReporter);
+                if (completado)
+                {
+                    TxtProgresoDrive.Text = "¡Carga completada al 100%!";
+                    ToastNotification.Show("Respaldo subido a Google Drive exitosamente", ToastType.Success);
+                }
+                else
+                {
+                    ToastNotification.Show("No se pudo completar la subida a Google Drive", ToastType.Error);
+                }
+            }
+            catch (FileNotFoundException fnf)
+            {
+                CustomMessageBox.Show(Window.GetWindow(this) ?? Application.Current.MainWindow,
+                    fnf.Message,
+                    "Credenciales de Google Drive requeridas",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"Fallo al respaldar en Google Drive: {ex.Message}", ToastType.Error);
+            }
+            finally
+            {
+                BtnRespaldoDrive.IsEnabled = true;
+                BtnRespaldoDrive.Content = "☁️ Subir Respaldo a Google Drive";
+                await Task.Delay(2000);
+                PanelProgresoDrive.Visibility = Visibility.Collapsed;
+            }
+        }
+        #endregion
     }
 }

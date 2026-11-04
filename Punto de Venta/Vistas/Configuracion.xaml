@@ -404,7 +404,7 @@
                                         <CheckBox x:Name="RequirePinCheckBox" Grid.Column="1" VerticalAlignment="Center" />
                                     </Grid>
                                 </Border>
-
+                                
                                 <TextBlock Text="Cambiar PIN de administrador (minimo 4 digitos)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <PasswordBox x:Name="NewPinBox" 
                                              Height="38" 
@@ -452,6 +452,44 @@
                                         </Button.Template>
                                     </Button>
                                 </Grid>
+                                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" 
+        BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,10,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Copia de Seguridad en Google Drive" FontSize="13" FontWeight="SemiBold" 
+                   Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4"/>
+                                        <TextBlock Text="Sube una copia cifrada directamente al Google Drive personal del cliente." 
+                   FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,12"/>
+
+                                        <!-- Barra de Progreso y Etiqueta de Porcentaje -->
+                                        <Grid x:Name="PanelProgresoDrive" Visibility="Collapsed" Margin="0,0,0,10">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <ProgressBar x:Name="ProgressBarDrive" Height="8" Minimum="0" Maximum="100" Value="0"
+                         Foreground="{DynamicResource ThemeAccent}" Background="{DynamicResource ThemeSurfaceBackground}"
+                         BorderThickness="0"/>
+
+                                            <TextBlock x:Name="TxtProgresoDrive" Grid.Row="1" Text="Preparando... 0%" FontSize="11" 
+                       Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,4,0,0"/>
+                                        </Grid>
+
+                                        <!-- Boton de Disparo -->
+                                        <Button x:Name="BtnRespaldoDrive" Content="☁️ Subir Respaldo a Google Drive" Height="38" Padding="18,0"
+                HorizontalAlignment="Left" Background="{DynamicResource ThemeAccent}" Foreground="White" 
+                BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontWeight="Bold" Cursor="Hand"
+                Click="BtnRespaldoDrive_Click">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
 
                             <StackPanel x:Name="PanelAtajos" Visibility="Collapsed">

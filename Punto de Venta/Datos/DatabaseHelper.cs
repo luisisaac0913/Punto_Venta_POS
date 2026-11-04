@@ -9,7 +9,15 @@ namespace Punto_de_Venta.Datos
         public static string DbFolder => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "POS_DataStorage");
-        public static string DbPath => Path.Combine(DbFolder, "pos_data.db");
+        public static string DbPath
+        {
+            get
+            {
+                string subDb = Path.Combine(DbFolder, "BaseDatos", "pos_data.db");
+                if (File.Exists(subDb)) return subDb;
+                return Path.Combine(DbFolder, "pos_data.db");
+            }
+        }
         public static string ConnectionString => new SqliteConnectionStringBuilder
         {
             DataSource = DbPath,
