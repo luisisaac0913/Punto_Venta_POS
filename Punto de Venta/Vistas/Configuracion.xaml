@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Punto_de_Venta.Configuracion"
+<UserControl x:Class="Punto_de_Venta.Configuracion"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         MinWidth="960" MinHeight="600"
@@ -160,77 +160,6 @@
                                 <TextBlock Text="Mensaje al pie del ticket" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <TextBox x:Name="FooterMessageBox" Style="{StaticResource FormTextBoxStyle}" Height="54" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" Padding="10,6" Margin="0,0,0,12" TextChanged="TicketField_TextChanged" />
 
-                                <!-- SECCION DE TRANSFERENCIAS Y QR -->
-                                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Padding="24" Margin="0,0,0,20">
-                                    <StackPanel>
-                                        <TextBlock Text="DATOS BANCARIOS PARA CODIGO QR" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,12" />
-
-                                        <!-- Alerta de seguridad visible -->
-                                        <Border Background="#15E74C3C" BorderBrush="#50E74C3C" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,16">
-                                            <TextBlock Text="⚠️ INFORMACION SENSIBLE: El sistema generara el codigo QR y enviara el dinero de las transferencias exactamente a esta cuenta. Verifica que la CLABE y el beneficiario sean correctos antes de guardar." TextWrapping="Wrap" FontSize="12" FontWeight="SemiBold" Foreground="#E74C3C" />
-                                        </Border>
-
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="12" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="12" />
-                                                <ColumnDefinition Width="1.5*" />
-                                            </Grid.ColumnDefinitions>
-
-                                            <StackPanel Grid.Column="0">
-                                                <TextBlock Text="Banco Receptor" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
-                                                <Border Height="40" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8">
-                                                    <TextBox x:Name="ConfigBancoBox" Background="Transparent" BorderThickness="0" Padding="10,0" VerticalContentAlignment="Center" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" />
-                                                </Border>
-                                            </StackPanel>
-
-                                            <StackPanel Grid.Column="2">
-                                                <TextBlock Text="Nombre del Titular" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
-                                                <Border Height="40" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8">
-                                                    <TextBox x:Name="ConfigBeneficiarioBox" Background="Transparent" BorderThickness="0" Padding="10,0" VerticalContentAlignment="Center" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" />
-                                                </Border>
-                                            </StackPanel>
-
-                                            <StackPanel Grid.Column="4">
-                                                <TextBlock Text="Cuenta CLABE (18 digitos)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
-                                                <Border Height="40" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8">
-                                                    <TextBox x:Name="ConfigClabeBox" MaxLength="18" Background="Transparent" BorderThickness="0" Padding="10,0" VerticalContentAlignment="Center" FontFamily="Consolas, Courier New" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" />
-                                                </Border>
-                                            </StackPanel>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
-                                <!-- SECCION DE MERCADO PAGO -->
-                                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Padding="24" Margin="0,0,0,20">
-                                    <StackPanel>
-                                        <TextBlock Text="CONEXION CON MERCADO PAGO (API)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,12" />
-
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="2*" />
-                                                <ColumnDefinition Width="12" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-
-                                            <StackPanel Grid.Column="0">
-                                                <TextBlock Text="Access Token de Produccion" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
-                                                <Border Height="40" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8">
-                                                    <!-- Usamos PasswordBox por seguridad -->
-                                                    <PasswordBox x:Name="ConfigMpTokenBox" Background="Transparent" BorderThickness="0" Padding="10,0" VerticalContentAlignment="Center" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" />
-                                                </Border>
-                                            </StackPanel>
-
-                                            <StackPanel Grid.Column="2">
-                                                <TextBlock Text="ID de Caja (Sucursal)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
-                                                <Border Height="40" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8">
-                                                    <TextBox x:Name="ConfigMpCajaBox" Background="Transparent" BorderThickness="0" Padding="10,0" VerticalContentAlignment="Center" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" />
-                                                </Border>
-                                            </StackPanel>
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
                             </StackPanel>
 
                             <StackPanel x:Name="PanelPersonalizacion" Visibility="Collapsed">

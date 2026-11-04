@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -58,7 +58,26 @@ namespace Punto_de_Venta.Modelos
 
         public decimal CantidadTotal
         {
-            get => Productos.Count > 0 ? Productos.Sum(product => product.Cantidad) : _cantidadTotalGuardada;
+            get
+            {
+                if (Productos != null && Productos.Count > 0)
+                {
+                    decimal piezas = 0m;
+                    foreach (var p in Productos)
+                    {
+                        if (p.SeVendePorPeso || p.Cantidad % 1m != 0m)
+                        {
+                            piezas += 1m;
+                        }
+                        else
+                        {
+                            piezas += p.Cantidad;
+                        }
+                    }
+                    return piezas;
+                }
+                return Math.Ceiling(_cantidadTotalGuardada);
+            }
             set => _cantidadTotalGuardada = value;
         }
 
@@ -95,5 +114,6 @@ namespace Punto_de_Venta.Modelos
         public decimal Precio { get; set; }
         public decimal Subtotal => Precio * Cantidad;
         public string Categoria { get; set; } = "N/A";
+        public bool SeVendePorPeso { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using System;
@@ -17,11 +17,7 @@ using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Net.Http;
-using System.Text.Json;
 using System.Windows.Threading;
-using QRCoder;
-using System.Windows.Media.Imaging;
 
 namespace Punto_de_Venta.Vistas
 {
@@ -37,10 +33,9 @@ namespace Punto_de_Venta.Vistas
         private bool _purchaseFeedbackVisible;
         private ItemCarrito? _itemEnPesaje;
         private bool _modalAbierto = false;
-        private System.Windows.Threading.DispatcherTimer _timerMp;
-        private string _refMpActual = "";
 
         public ObservableCollection<ItemCarrito> Cart { get; } = new();
+        private readonly ObservableCollection<VentaEnEspera> _ventasEnEspera = new();
         #endregion
 
         #region Inicializacion y Constructor
@@ -51,12 +46,14 @@ namespace Punto_de_Venta.Vistas
             Language = XmlLanguage.GetLanguage("es-MX");
 
             Cart.CollectionChanged += Cart_CollectionChanged;
+            if (VentasEnEsperaListBox != null)
+            {
+                VentasEnEsperaListBox.ItemsSource = _ventasEnEspera;
+            }
             RefreshSummary();
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => ((TextBlock)FindName("ClockText")).Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
             _clockTimer.Start();
-            _timerMp = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-            _timerMp.Tick += TimerMp_Tick;
             ActualizarVisibilidadEmptyState();
             _typingTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
             _typingTimer.Tick += (s, args) =>
@@ -86,6 +83,7 @@ namespace Punto_de_Venta.Vistas
             {
                 _catalog = ProductoDB.Load();
                 CargarPromocionesDesdeDb();
+                CargarVentasEnEsperaDesdeDb();
                 RefreshSuggestions();
                 ActualizarEstadoHardwareAsync(); // Ahora asincrono
             }
@@ -121,262 +119,12 @@ namespace Punto_de_Venta.Vistas
             EmptyCartPanel.Visibility = tieneArticulos ? Visibility.Collapsed : Visibility.Visible;
         }
 
-        private async void BtnCobrarMP_Click(object sender, RoutedEventArgs e)
-        {
-            var config = AppConfig.Load();
-            if (string.IsNullOrEmpty(config.MpAccessToken))
-            {
-                ToastNotification.Show("Falta configurar el Token de Mercado Pago en Ajustes", ToastType.Warning);
-                return;
-            }
-
-            BtnCobrarMP.IsEnabled = false;
-            BtnCobrarMP.Content = "⏳ Conectando...";
-            var total = Math.Round(ObtenerTotalNetoVenta(), 2);
-            string userId = config.MpAccessToken.Split('-')[1]; // El Access Token trae tu UserID incrustado
-
-            try
-            {
-                // 1. Preparamos los datos del cobro (Formato oficial de Mercado Pago)
-                var ordenMp = new
-                {
-                    external_reference = $"TICKET_{_saleNumber}",
-                    title = "Venta en Mostrador",
-                    description = "Compra de productos en ferreteria",
-                    total_amount = total,
-                    items = new[]
-                    {
-                new {
-                    title = "Total de compra",
-                    unit_price = total,
-                    quantity = 1,
-                    unit_measure = "unit",
-                    total_amount = total
-                }
-            }
-                };
-
-                string jsonBody = JsonSerializer.Serialize(ordenMp);
-                var content = new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json");
-
-                // 2. Enviamos la instruccion a los servidores de Mercado Pago
-                using (var client = new HttpClient())
-                {
-                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.MpAccessToken}");
-
-                    // Endpoint para inyectar el cobro al codigo QR fijo de tu mostrador
-                    string url = $"https://api.mercadopago.com/instore/orders/qr/seller/collectors/{userId}/pos/{config.MpSucursalCaja}/qrs";
-
-                    var response = await client.PutAsync(url, content);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        BtnCobrarMP.Content = "✅ ¡Listo! Que el cliente escanee";
-                        BtnCobrarMP.Background = new SolidColorBrush(Color.FromRgb(46, 204, 113)); // Verde
-                        ToastNotification.Show("Cobro enviado a Mercado Pago. El cliente ya puede escanear.", ToastType.Success);
-
-                        // NUEVO: Mostramos el QR de Mercado Pago en pantalla en lugar del de SPEI
-                        MostrarQrMercadoPagoEnPantalla();
-
-                        _refMpActual = $"TICKET_{_saleNumber}";
-                        _timerMp.Start();
-                    }
-                    else
-                    {
-                        string errorResponse = await response.Content.ReadAsStringAsync();
-                        BtnCobrarMP.Content = "❌ Error al enviar";
-                        BtnCobrarMP.Background = new SolidColorBrush(Color.FromRgb(231, 76, 60)); // Rojo
-                        ToastNotification.Show("No se pudo conectar con Mercado Pago.", ToastType.Error);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                BtnCobrarMP.Content = "❌ Falla de red";
-                ToastNotification.Show($"Error de conexion: {ex.Message}", ToastType.Error);
-            }
-            finally
-            {
-                // Restauramos el boton despues de 4 segundos
-                await Task.Delay(4000);
-                BtnCobrarMP.IsEnabled = true;
-                BtnCobrarMP.Content = "Mercado Pago";
-                BtnCobrarMP.Background = new SolidColorBrush(Color.FromRgb(0, 158, 227)); // Azul MP original
-            }
-        }
-
-        private async void TimerMp_Tick(object? sender, EventArgs e)
-        {
-            _timerMp.Stop();
-
-            if (string.IsNullOrWhiteSpace(_refMpActual) || RbTransferencia?.IsChecked != true || PaymentOverlay?.Visibility != Visibility.Visible || !this.IsVisible)
-            {
-                return;
-            }
-
-            var config = AppConfig.Load();
-            if (string.IsNullOrWhiteSpace(config.MpAccessToken)) return;
-
-            try
-            {
-                using var client = new HttpClient();
-                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.MpAccessToken}");
-
-                string url = $"https://api.mercadopago.com/v1/payments/search?external_reference={_refMpActual}";
-                var response = await client.GetAsync(url);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    string json = await response.Content.ReadAsStringAsync();
-                    using var doc = JsonDocument.Parse(json);
-
-                    if (doc.RootElement.TryGetProperty("results", out var results) &&
-                        results.ValueKind == JsonValueKind.Array &&
-                        results.GetArrayLength() > 0)
-                    {
-                        var status = results[0].GetProperty("status").GetString();
-
-                        if (status == "approved")
-                        {
-                            ToastNotification.Show("✅ Pago de Mercado Pago aprobado automaticamente.", ToastType.Success);
-                            FinalizeButton_Click(null, null);
-                            return;
-                        }
-                        else if (status == "rejected")
-                        {
-                            ToastNotification.Show("❌ El pago fue rechazado por Mercado Pago.", ToastType.Error);
-                            BtnCobrarMP.Content = "❌ Pago rechazado";
-                            BtnCobrarMP.Background = new SolidColorBrush(Color.FromRgb(231, 76, 60));
-                            return;
-                        }
-                    }
-                }
-            }
-            catch
-            {
-            }
-
-            if (RbTransferencia?.IsChecked == true && PaymentOverlay?.Visibility == Visibility.Visible && this.IsVisible)
-            {
-                _timerMp.Start();
-            }
-        }
-
-        private async void MostrarQrMercadoPagoEnPantalla()
-        {
-            var config = AppConfig.Load();
-            string payloadMp = "";
-
-            try
-            {
-                using (var client = new System.Net.Http.HttpClient())
-                {
-                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {config.MpAccessToken}");
-
-                    // Consultamos la caja directamente por su ID para extraer su texto QR oficial
-                    var response = await client.GetAsync($"https://api.mercadopago.com/pos?external_id={config.MpSucursalCaja}");
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        string json = await response.Content.ReadAsStringAsync();
-                        using (System.Text.Json.JsonDocument doc = System.Text.Json.JsonDocument.Parse(json))
-                        {
-                            var results = doc.RootElement.GetProperty("results");
-                            if (results.GetArrayLength() > 0)
-                            {
-                                // Extraemos la cadena EMVCo (ej. 00020101021243650016COM.MERCADOLIBRE...)
-                                payloadMp = results[0].GetProperty("qr_code").GetString();
-                            }
-                        }
-                    }
-                }
-            }
-            catch { }
-
-            if (string.IsNullOrEmpty(payloadMp))
-            {
-                ToastNotification.Show("No se pudo cargar el QR de Mercado Pago en pantalla.", ToastType.Error);
-                return;
-            }
-
-            // Usamos tu misma logica exacta de QRCoder para reemplazar la imagen en la UI
-            using (QRCoder.QRCodeGenerator qrGenerator = new QRCoder.QRCodeGenerator())
-            {
-                // ECCLevel.M es ideal porque las cadenas de Mercado Pago son muy largas y densas
-                QRCoder.QRCodeData qrCodeData = qrGenerator.CreateQrCode(payloadMp, QRCoder.QRCodeGenerator.ECCLevel.M);
-                using (QRCoder.QRCode qrCode = new QRCoder.QRCode(qrCodeData))
-                {
-                    using (System.Drawing.Bitmap qrBitmap = qrCode.GetGraphic(20, System.Drawing.Color.Black, System.Drawing.Color.White, true))
-                    {
-                        using (var memory = new System.IO.MemoryStream())
-                        {
-                            qrBitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
-                            memory.Position = 0;
-
-                            var bitmapImage = new System.Windows.Media.Imaging.BitmapImage();
-                            bitmapImage.BeginInit();
-                            bitmapImage.StreamSource = memory;
-                            bitmapImage.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                            bitmapImage.EndInit();
-
-                            QrCodeImage.Source = bitmapImage;
-
-                            if (QrInfoText != null)
-                                QrInfoText.Text = "Escanea con Mercado Pago";
-                        }
-                    }
-                }
-            }
-        }
-
-        private void GenerarQrDePago(decimal montoTotal)
-        {
-            var config = AppConfig.Load();
-            string clabe = string.IsNullOrWhiteSpace(config.CuentaClabe) ? "000000000000000000" : config.CuentaClabe;
-            string beneficiario = string.IsNullOrWhiteSpace(config.NombreBeneficiario) ? "Mi Negocio" : config.NombreBeneficiario;
-            string referencia = _saleNumber.ToString().PadLeft(7, '0');
-            var datosSpei = new
-            {
-                cl = clabe,
-                no = beneficiario,
-                mo = montoTotal,
-                @ref = referencia,
-                con = $"Cobro {referencia}"
-            };
-
-            // Serializamos el objeto a un string JSON compacto
-            string payloadQr = System.Text.Json.JsonSerializer.Serialize(datosSpei);
-
-            using (QRCoder.QRCodeGenerator qrGenerator = new QRCoder.QRCodeGenerator())
-            {
-                QRCoder.QRCodeData qrCodeData = qrGenerator.CreateQrCode(payloadQr, QRCoder.QRCodeGenerator.ECCLevel.Q);
-                using (QRCoder.QRCode qrCode = new QRCoder.QRCode(qrCodeData))
-                {
-                    using (System.Drawing.Bitmap qrBitmap = qrCode.GetGraphic(20, System.Drawing.Color.Black, System.Drawing.Color.White, true))
-                    {
-                        using (var memory = new System.IO.MemoryStream())
-                        {
-                            qrBitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
-                            memory.Position = 0;
-
-                            var bitmapImage = new System.Windows.Media.Imaging.BitmapImage();
-                            bitmapImage.BeginInit();
-                            bitmapImage.StreamSource = memory;
-                            bitmapImage.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                            bitmapImage.EndInit();
-
-                            QrCodeImage.Source = bitmapImage;
-                        }
-                    }
-                }
-            }
-        }
-
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if ((bool)e.NewValue)
             {
                 try { _catalog = ProductoDB.Load(); } catch { _catalog = new(); }
+                CargarVentasEnEsperaDesdeDb();
                 ActualizarEstadoHardwareAsync();
 
                 this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
@@ -1052,17 +800,20 @@ namespace Punto_de_Venta.Vistas
         {
             var cartGrid = (DataGrid)FindName("CartGrid");
 
-            if (cartGrid.SelectedItem is not ItemCarrito selectedItem)
+            var selectedItem = cartGrid?.SelectedItem as ItemCarrito ?? Cart.LastOrDefault();
+            if (selectedItem == null)
                 return;
 
             selectedItem.PropertyChanged -= CartItem_PropertyChanged;
             Cart.Remove(selectedItem);
 
             var ultimo = Cart.LastOrDefault();
-            cartGrid.SelectedItem = ultimo;
-
-            if (ultimo != null)
-                cartGrid.ScrollIntoView(ultimo);
+            if (cartGrid != null)
+            {
+                cartGrid.SelectedItem = ultimo;
+                if (ultimo != null)
+                    cartGrid.ScrollIntoView(ultimo);
+            }
 
             ToastNotification.Show(
                 $"Se quito '{selectedItem.Nombre}' del carrito",
@@ -1320,6 +1071,12 @@ namespace Punto_de_Venta.Vistas
         #region Atajos de Teclado Centralizados
         private bool CerrarModalActivo()
         {
+            if (VentasEnEsperaOverlay != null && VentasEnEsperaOverlay.Visibility == Visibility.Visible)
+            {
+                CloseVentasEnEspera();
+                return true;
+            }
+
             if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible)
             {
                 PaymentOverlay.Visibility = Visibility.Collapsed;
@@ -1409,6 +1166,14 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
+            if (VentasEnEsperaOverlay != null && VentasEnEsperaOverlay.Visibility == Visibility.Visible)
+            {
+                if (e.Key == Key.Escape) { CloseVentasEnEspera(); e.Handled = true; return; }
+                if (e.Key == Key.Enter) { RecuperarVentaSeleccionada(); e.Handled = true; return; }
+                if (e.Key == Key.Delete) { DescartarVentaSeleccionada(); e.Handled = true; return; }
+                return;
+            }
+
             if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible)
             {
                 if (e.Key == Key.F1) { RbEfectivo.IsChecked = true; e.Handled = true; return; }
@@ -1475,6 +1240,19 @@ namespace Punto_de_Venta.Vistas
             if (e.Key == Key.F10 || (e.Key == Key.System && e.SystemKey == Key.F10)) { OpenQuickRestockModal(); e.Handled = true; return; }
             if (e.Key == Key.F8) { AbrirModalPesaje(); e.Handled = true; return; }
             if (e.Key == Key.F5) { CajonService.AbrirCajon(); e.Handled = true; return; }
+            if (e.Key == Key.F2)
+            {
+                e.Handled = true;
+                if (Cart.Count > 0)
+                {
+                    PausarVentaActual();
+                }
+                else
+                {
+                    AbrirModalVentasEnEspera();
+                }
+                return;
+            }
             if (e.Key == Key.F4) { OpenCashMovement(); e.Handled = true; return; }
 
             if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control && e.Key == Key.Left || e.Key == Key.Tab)
@@ -1506,7 +1284,7 @@ namespace Punto_de_Venta.Vistas
 
                 e.Handled = true;
             }
-            else if (e.Key == Key.Delete)
+            else if (e.Key == Key.Delete || e.Key == Key.Back)
             {
                 var searchBox = (TextBox)FindName("SearchBox");
                 if (searchBox != null && (!searchBox.IsKeyboardFocusWithin || string.IsNullOrEmpty(searchBox.Text)))
@@ -1626,11 +1404,12 @@ namespace Punto_de_Venta.Vistas
                             Id = item.ProductoId,
                             VentaId = saleId,
                             Nombre = item.Nombre,
-                            Cantidad = item.Cantidad,
+                            Cantidad = Math.Round(item.Cantidad, 3),
                             Costo = item.Costo,
                             Ganancia = precioDescuento - item.Costo,
                             Precio = precioDescuento,
-                            Categoria = item.Categoria
+                            Categoria = item.Categoria,
+                            SeVendePorPeso = item.SeVendePorPeso
                         };
                     }).ToList()
                 };
@@ -1763,7 +1542,6 @@ namespace Punto_de_Venta.Vistas
         #region Proceso de Cobro de Venta
         private void PaymentMethod_Changed(object sender, RoutedEventArgs e)
         {
-            _timerMp?.Stop();
             if (RbMixto == null || RbEfectivo == null) return;
             var total = Math.Round(ObtenerTotalNetoVenta(), 2);
 
@@ -1771,7 +1549,6 @@ namespace Punto_de_Venta.Vistas
             {
                 SinglePaymentLabel.Visibility = Visibility.Collapsed;
                 SinglePaymentContainer.Visibility = Visibility.Collapsed;
-                if (QrContainer != null) QrContainer.Visibility = Visibility.Collapsed;
                 MixedPaymentContainer.Visibility = Visibility.Visible;
 
                 MixedCashBox.Text = "0";
@@ -1788,7 +1565,6 @@ namespace Punto_de_Venta.Vistas
 
                 if (RbEfectivo.IsChecked == true)
                 {
-                    if (QrContainer != null) QrContainer.Visibility = Visibility.Collapsed;
                     SinglePaymentContainer.Visibility = Visibility.Visible;
                     SinglePaymentLabel.Text = "Dinero Recibido";
 
@@ -1798,7 +1574,6 @@ namespace Punto_de_Venta.Vistas
                 }
                 else if (RbTarjeta.IsChecked == true)
                 {
-                    if (QrContainer != null) QrContainer.Visibility = Visibility.Collapsed;
                     SinglePaymentContainer.Visibility = Visibility.Visible;
                     SinglePaymentLabel.Text = "Monto en Terminal";
 
@@ -1808,13 +1583,11 @@ namespace Punto_de_Venta.Vistas
                 }
                 else if (RbTransferencia.IsChecked == true)
                 {
-                    SinglePaymentContainer.Visibility = Visibility.Collapsed;
-                    SinglePaymentLabel.Text = "Transferencia SPEI";
-                    if (QrContainer != null) QrContainer.Visibility = Visibility.Visible;
+                    SinglePaymentContainer.Visibility = Visibility.Visible;
+                    SinglePaymentLabel.Text = "Monto por Transferencia";
 
                     CashReceivedBox.Text = total.ToString("0.00", CultureInfo.InvariantCulture);
                     CashReceivedBox.IsReadOnly = true;
-                    GenerarQrDePago(total);
                     CalcularCambioVisual();
                 }
             }
@@ -1832,6 +1605,7 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
             CargarPromocionesDesdeDb();
+                CargarVentasEnEsperaDesdeDb();
             RefreshSummary();
             ((Popup)FindName("SuggestionsPopup")).IsOpen = false;
             ((Grid)FindName("PaymentOverlay")).Visibility = Visibility.Visible;
@@ -1931,11 +1705,12 @@ namespace Punto_de_Venta.Vistas
                             Id = item.ProductoId,
                             VentaId = saleId,
                             Nombre = item.Nombre,
-                            Cantidad = item.Cantidad,
+                            Cantidad = Math.Round(item.Cantidad, 3),
                             Costo = item.Costo,
                             Ganancia = precioDescuento - item.Costo,
                             Precio = precioDescuento,
-                            Categoria = item.Categoria
+                            Categoria = item.Categoria,
+                            SeVendePorPeso = item.SeVendePorPeso
                         };
                     }).ToList()
                 };
@@ -2196,7 +1971,12 @@ namespace Punto_de_Venta.Vistas
 
             if (existingItem != null)
             {
-                existingItem.Cantidad += cantidad;
+                existingItem.Cantidad = Math.Round(existingItem.Cantidad + cantidad, 3);
+                if (CartGrid != null)
+                {
+                    CartGrid.SelectedItem = existingItem;
+                    CartGrid.ScrollIntoView(existingItem);
+                }
                 RefreshSummary();
                 return;
             }
@@ -2210,11 +1990,17 @@ namespace Punto_de_Venta.Vistas
                 Ganancia = product.Ganancia,
                 Precio = product.Precio,
                 Categoria = string.IsNullOrWhiteSpace(product.Categoria) ? "N/A" : product.Categoria,
-                Cantidad = cantidad
+                Cantidad = Math.Round(cantidad, 3),
+                SeVendePorPeso = product.SeVendePorPeso
             };
             ActualizarVisibilidadEmptyState();
             newItem.PropertyChanged += CartItem_PropertyChanged;
             Cart.Add(newItem);
+            if (CartGrid != null)
+            {
+                CartGrid.SelectedItem = newItem;
+                CartGrid.ScrollIntoView(newItem);
+            }
             RefreshSummary();
         }
 
@@ -2223,7 +2009,8 @@ namespace Punto_de_Venta.Vistas
             if (Cart == null || Cart.Count == 0) return 0m;
             var subtotalBruto = Cart.Sum(item => item.Subtotal);
             var resultadoPromo = PromocionEngine.Evaluar(Cart, _promocionesCargadas ?? new());
-            return Math.Max(0m, subtotalBruto - resultadoPromo.DescuentoTotal);
+            var totalConDescuento = Math.Max(0m, subtotalBruto - resultadoPromo.DescuentoTotal);
+            return Math.Round(totalConDescuento, 0, MidpointRounding.AwayFromZero);
         }
 
         private void Cart_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => RefreshSummary();
@@ -2235,13 +2022,322 @@ namespace Punto_de_Venta.Vistas
             var itemCount = Cart.Count;
             var subtotalBruto = Cart.Sum(item => item.Subtotal);
             var resultadoPromo = PromocionEngine.Evaluar(Cart, _promocionesCargadas ?? new());
-            var totalConDescuento = Math.Max(0m, subtotalBruto - resultadoPromo.DescuentoTotal);
+            var totalNetoRedondeado = ObtenerTotalNetoVenta();
             ((TextBlock)FindName("ProductCountText")).Text = itemCount.ToString(culture);
-            ((TextBlock)FindName("TotalText")).Text = totalConDescuento.ToString("C2", culture);
+            ((TextBlock)FindName("TotalText")).Text = totalNetoRedondeado.ToString("C2", culture);
             ((TextBlock)FindName("SaleNumberText")).Text = $"#{_saleNumber}";
             if (FindName("PromotionsCountText") is TextBlock promoBlock)
             {
                 promoBlock.Text = resultadoPromo.PromocionesAplicadasCount.ToString(culture);
+            }
+        }
+        #endregion
+
+        #region Ventas en Espera (Carrito en Pausa)
+        private void CargarVentasEnEsperaDesdeDb()
+        {
+            try
+            {
+                var lista = VentaEnEsperaDB.Load();
+                _ventasEnEspera.Clear();
+                foreach (var v in lista)
+                {
+                    _ventasEnEspera.Add(v);
+                }
+                ActualizarBadgeVentasEnEspera();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar ventas en espera: {ex.Message}");
+            }
+        }
+
+        private void ActualizarBadgeVentasEnEspera()
+        {
+            int conteo = _ventasEnEspera.Count;
+            if (TxtVentasEsperaBadge != null)
+            {
+                TxtVentasEsperaBadge.Text = $"En espera ({conteo})";
+            }
+            if (TxtVentasEsperaVacio != null)
+            {
+                TxtVentasEsperaVacio.Visibility = conteo == 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        private string GenerarIdentificadorInteligente(IReadOnlyCollection<ItemCarrito> items)
+        {
+            var hora = DateTime.Now.ToString("HH:mm");
+            if (items == null || items.Count == 0)
+                return $"Venta ({hora})";
+
+            var topItem = items.OrderByDescending(i => i.Subtotal).FirstOrDefault();
+            string nombreBase = topItem != null ? topItem.Nombre : "Producto";
+            if (nombreBase.Length > 24)
+                nombreBase = nombreBase.Substring(0, 24).Trim() + "...";
+
+            int otros = items.Count - 1;
+            if (otros <= 0)
+            {
+                return $"{nombreBase} ({hora})";
+            }
+            else if (otros == 1)
+            {
+                return $"{nombreBase} y 1 articulo mas ({hora})";
+            }
+            else
+            {
+                return $"{nombreBase} y {otros} articulos mas ({hora})";
+            }
+        }
+
+        private void PausarVentaActual(bool mostrarToast = true)
+        {
+            if (Cart == null || Cart.Count == 0)
+            {
+                if (mostrarToast)
+                {
+                    ToastNotification.Show("No hay productos en el carrito para pausar.", ToastType.Warning);
+                }
+                return;
+            }
+
+            try
+            {
+                var totalNeto = ObtenerTotalNetoVenta();
+                var identificador = GenerarIdentificadorInteligente(Cart);
+
+                var nueva = new VentaEnEspera
+                {
+                    FechaHora = DateTime.Now,
+                    Identificador = identificador,
+                    TotalNeto = totalNeto,
+                    TotalItems = Cart.Count,
+                    Items = Cart.Select(i => new ItemCarrito
+                    {
+                        ProductoId = i.ProductoId,
+                        Codigo = i.Codigo,
+                        Nombre = i.Nombre,
+                        Costo = i.Costo,
+                        Ganancia = i.Ganancia,
+                        Precio = i.Precio,
+                        Categoria = i.Categoria,
+                        Cantidad = i.Cantidad
+                    }).ToList()
+                };
+
+                VentaEnEsperaDB.Save(nueva);
+
+                foreach (var item in Cart)
+                {
+                    item.PropertyChanged -= CartItem_PropertyChanged;
+                }
+                Cart.Clear();
+                ActualizarVisibilidadEmptyState();
+                RefreshSummary();
+
+                CargarVentasEnEsperaDesdeDb();
+
+                if (mostrarToast)
+                {
+                    ToastNotification.Show($"Venta en pausa: {identificador}", ToastType.Success);
+                }
+
+                FocusSearch();
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"Error al pausar la venta: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void AbrirModalVentasEnEspera()
+        {
+            CargarVentasEnEsperaDesdeDb();
+            if (VentasEnEsperaOverlay != null)
+            {
+                VentasEnEsperaOverlay.Visibility = Visibility.Visible;
+                if (VentasEnEsperaListBox != null && _ventasEnEspera.Count > 0)
+                {
+                    VentasEnEsperaListBox.SelectedIndex = 0;
+                    VentasEnEsperaListBox.Focus();
+                }
+            }
+        }
+
+        private void CloseVentasEnEspera()
+        {
+            if (VentasEnEsperaOverlay != null)
+            {
+                VentasEnEsperaOverlay.Visibility = Visibility.Collapsed;
+            }
+            FocusSearch();
+        }
+
+        private void BtnVentasEnEspera_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender != BtnVentasEnEsperaBadge && Cart.Count > 0)
+            {
+                PausarVentaActual();
+                return;
+            }
+
+            AbrirModalVentasEnEspera();
+        }
+
+        private void CloseVentasEnEspera_Click(object sender, RoutedEventArgs e)
+        {
+            CloseVentasEnEspera();
+        }
+
+        private void VentasEnEsperaOverlay_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.OriginalSource == VentasEnEsperaOverlay)
+            {
+                CloseVentasEnEspera();
+            }
+        }
+
+        private void VentasEnEsperaListBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                RecuperarVentaSeleccionada();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Delete)
+            {
+                DescartarVentaSeleccionada();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                CloseVentasEnEspera();
+                e.Handled = true;
+            }
+        }
+
+        private void VentasEnEsperaListBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            RecuperarVentaSeleccionada();
+        }
+
+        private void RecuperarVentaEnEspera_Click(object sender, RoutedEventArgs e)
+        {
+            RecuperarVentaSeleccionada();
+        }
+
+        private void DescartarVentaEnEspera_Click(object sender, RoutedEventArgs e)
+        {
+            DescartarVentaSeleccionada();
+        }
+
+        private void RecuperarVentaSeleccionada()
+        {
+            if (VentasEnEsperaListBox?.SelectedItem is not VentaEnEspera venta)
+            {
+                ToastNotification.Show("Selecciona una venta de la lista para recuperarla.", ToastType.Warning);
+                return;
+            }
+
+            if (Cart != null && Cart.Count > 0)
+            {
+                Window? parent = Window.GetWindow(this);
+                var resp = parent != null
+                    ? CustomMessageBox.Show(
+                        parent,
+                        "Hay articulos en la venta actual.\n\nDeseas pausar la venta actual y recuperar la venta seleccionada?",
+                        "Venta en curso",
+                        MessageBoxButton.YesNo)
+                    : CustomMessageBox.Show(
+                        "Hay articulos en la venta actual.\n\nDeseas pausar la venta actual y recuperar la venta seleccionada?",
+                        "Venta en curso",
+                        MessageBoxButton.YesNo);
+
+                if (resp != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                PausarVentaActual(mostrarToast: false);
+            }
+
+            try
+            {
+                foreach (var it in Cart)
+                {
+                    it.PropertyChanged -= CartItem_PropertyChanged;
+                }
+                Cart.Clear();
+
+                if (venta.Items != null)
+                {
+                    foreach (var item in venta.Items)
+                    {
+                        item.PropertyChanged += CartItem_PropertyChanged;
+                        Cart.Add(item);
+                    }
+                }
+
+                var ultimoItemRecuperado = Cart.LastOrDefault();
+                if (CartGrid != null && ultimoItemRecuperado != null)
+                {
+                    CartGrid.SelectedItem = ultimoItemRecuperado;
+                    CartGrid.ScrollIntoView(ultimoItemRecuperado);
+                }
+
+                VentaEnEsperaDB.Delete(venta.Id);
+                _ventasEnEspera.Remove(venta);
+                ActualizarBadgeVentasEnEspera();
+
+                ActualizarVisibilidadEmptyState();
+                RefreshSummary();
+                CloseVentasEnEspera();
+
+                ToastNotification.Show($"Venta recuperada: {venta.Identificador}", ToastType.Success);
+                FocusSearch();
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"Error al recuperar la venta: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void DescartarVentaSeleccionada()
+        {
+            if (VentasEnEsperaListBox?.SelectedItem is not VentaEnEspera venta)
+            {
+                ToastNotification.Show("Selecciona una venta de la lista para descartarla.", ToastType.Warning);
+                return;
+            }
+
+            Window? parent = Window.GetWindow(this);
+            var resp = parent != null
+                ? CustomMessageBox.Show(
+                    parent,
+                    $"Deseas eliminar permanentemente esta venta en espera?\n\n{venta.Identificador} - {venta.TotalNetoFormateado}",
+                    "Descartar venta en espera",
+                    MessageBoxButton.YesNo)
+                : CustomMessageBox.Show(
+                    $"Deseas eliminar permanentemente esta venta en espera?\n\n{venta.Identificador} - {venta.TotalNetoFormateado}",
+                    "Descartar venta en espera",
+                    MessageBoxButton.YesNo);
+
+            if (resp != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            try
+            {
+                VentaEnEsperaDB.Delete(venta.Id);
+                _ventasEnEspera.Remove(venta);
+                ActualizarBadgeVentasEnEspera();
+                ToastNotification.Show("Venta en espera eliminada.", ToastType.Info);
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"Error al descartar la venta: {ex.Message}", ToastType.Error);
             }
         }
         #endregion

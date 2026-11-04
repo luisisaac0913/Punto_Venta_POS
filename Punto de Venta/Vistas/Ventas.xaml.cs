@@ -1,4 +1,4 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using Punto_de_Venta.Vistas;
@@ -200,7 +200,28 @@ namespace Punto_de_Venta
             var culture = CultureInfo.GetCultureInfo("es-MX");
             var periodSales = Sales.Where(s => s.FechaHora >= _filtroInicio && s.FechaHora <= _filtroFin && !string.Equals(s.Estado, "Cancelada", StringComparison.OrdinalIgnoreCase) && !string.Equals(s.Estado, "Abono", StringComparison.OrdinalIgnoreCase)).ToList();
             var totalVentas = periodSales.Sum(s => s.Total);
-            var totalItems = periodSales.Sum(s => s.CantidadTotal);
+            int totalPiezasFisicas = 0;
+            foreach (var sale in periodSales)
+            {
+                if (sale.Productos != null && sale.Productos.Count > 0)
+                {
+                    foreach (var det in sale.Productos)
+                    {
+                        if (det.SeVendePorPeso || det.Cantidad % 1m != 0m)
+                        {
+                            totalPiezasFisicas += 1;
+                        }
+                        else
+                        {
+                            totalPiezasFisicas += (int)det.Cantidad;
+                        }
+                    }
+                }
+                else
+                {
+                    totalPiezasFisicas += (int)Math.Ceiling(sale.CantidadTotal);
+                }
+            }
             var totalProfit = periodSales.Sum(s => s.GananciaTotal);
             var totalGastos = _movimientos.Where(m => m.FechaHora >= _filtroInicio && m.FechaHora <= _filtroFin && (m.Tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || m.Tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase))).Sum(m => m.Monto);
             var entradasExtras = _movimientos.Where(m => m.FechaHora >= _filtroInicio && m.FechaHora <= _filtroFin && m.Tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase)).Sum(m => m.Monto);
@@ -230,7 +251,7 @@ namespace Punto_de_Venta
             }
             TotalSalesTodayText.Text = totalVentas.ToString("C2", culture);
             TotalProfitText.Text = totalProfit.ToString("C2", culture);
-            TotalProductsSoldText.Text = $"{totalItems} pzas";
+            TotalProductsSoldText.Text = $"{totalPiezasFisicas} pzas";
             MetricGastosText.Text = totalGastos.ToString("C2", culture);
             MetricBalanceText.Text = balanceNeto.ToString("C2", culture);
         }
@@ -242,10 +263,15 @@ namespace Punto_de_Venta
             {
                 foreach (var item in sale.Productos)
                 {
-                    if (item.Ganancia <= 0 && item.Costo <= 0)
+                    var catalogProd = _catalog.FirstOrDefault(p => p.Id == item.Id || string.Equals(p.Nombre, item.Nombre, StringComparison.OrdinalIgnoreCase));
+                    if (catalogProd is not null)
                     {
-                        var catalogProd = _catalog.FirstOrDefault(p => p.Id == item.Id || string.Equals(p.Nombre, item.Nombre, StringComparison.OrdinalIgnoreCase));
-                        if (catalogProd is not null && catalogProd.Ganancia > 0) { item.Costo = catalogProd.Costo; item.Ganancia = catalogProd.Ganancia; }
+                        item.SeVendePorPeso = catalogProd.SeVendePorPeso;
+                        if (item.Ganancia <= 0 && item.Costo <= 0 && catalogProd.Ganancia > 0)
+                        {
+                            item.Costo = catalogProd.Costo;
+                            item.Ganancia = catalogProd.Ganancia;
+                        }
                     }
                 }
             }
@@ -594,8 +620,8 @@ namespace Punto_de_Venta
             catch (Exception ex) { ToastNotification.Show($"Error al registrar auditoria: {ex.Message}", ToastType.Error); }
         }
 
-        private bool CanWrite() { if (!_loadFailed) return true; ToastNotification.Show("No se encontro ventas.txt, cambios bloqueados", ToastType.Error); return false; }
-        private bool TrySave() { try { VentaDB.Save(Sales); _loadFailed = false; return true; } catch (Exception exception) { ToastNotification.Show($"Error al guardar ventas: {exception.Message}", ToastType.Error); return false; } }
+        private bool CanWrite() { if (!_loadFailed) return true; ToastNotification.Show("Error al acceder a base de datos de ventas, cambios bloqueados", ToastType.Error); return false; }
+
 
         private static List<(string Name, int Quantity)> ParseProductSummary(string summary)
         {
