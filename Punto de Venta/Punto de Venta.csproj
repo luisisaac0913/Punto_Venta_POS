@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="credentials.json" />
     <None Remove="Imagenes\Blanco.png" />
     <None Remove="Imagenes\Intro.mp4" />
     <None Remove="Imagenes\Logo.ico" />
@@ -34,6 +35,9 @@
     <Content Include="Imagenes\Intro.mp4">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <EmbeddedResource Include="credentials.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
     <Resource Include="Logo.ico">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
@@ -46,8 +50,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="credentials.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
 

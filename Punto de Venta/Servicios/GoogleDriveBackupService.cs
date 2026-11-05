@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,8 +22,9 @@ namespace Punto_de_Venta.Servicios
         /// <summary>
         /// Comprime la carpeta de datos local organizando los archivos en subcarpetas
         /// y sube el .zip mediante ResumableUpload a Google Drive.
+        /// En modo silencioso (segundo plano), nunca lanza ventanas interactivas de navegador.
         /// </summary>
-        public static async Task<bool> RespaldarEnDriveAsync(IProgress<int> progreso)
+        public static async Task<bool> RespaldarEnDriveAsync(IProgress<int>? progreso, bool modoSilencioso = false)
         {
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string sourceFolder = Path.Combine(appData, "POS_DataStorage");
@@ -32,19 +34,6 @@ namespace Punto_de_Venta.Servicios
                 throw new DirectoryNotFoundException($"No se encontro la carpeta de origen: {sourceFolder}");
             }
 
-            // Localizar archivo de credenciales de Google
-            string credentialsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "credentials.json");
-            if (!File.Exists(credentialsPath))
-            {
-                credentialsPath = Path.Combine(sourceFolder, "credentials.json");
-            }
-
-            if (!File.Exists(credentialsPath))
-            {
-                throw new FileNotFoundException("No se encontro el archivo 'credentials.json'. Colocalo junto al ejecutable o en POS_DataStorage.");
-            }
-
-            // Generar ruta de archivo comprimido temporal unico
             string tempZipPath = Path.Combine(Path.GetTempPath(), $"POS_Backup_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}.zip");
 
             try
@@ -59,9 +48,7 @@ namespace Punto_de_Venta.Servicios
                 }
                 catch { }
 
-                // 1. Compresion usando System.IO.Compression.ZipFile
-                // Se empaqueta en una tarea separada para no bloquear el hilo de interfaz
-                // organizando los tickets, base de datos y configuraciones en carpetas dedicadas.
+                // 1. Compresion usando System.IO.Compression.ZipArchive en tarea separada
                 await Task.Run(() =>
                 {
                     if (File.Exists(tempZipPath))
@@ -78,7 +65,7 @@ namespace Punto_de_Venta.Servicios
                             ? fileInfo.FullName.Substring(sourceFolder.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                             : fileInfo.Name;
 
-                        // Omitir respaldos previos, archivos temporales y token de sesion
+                        // Omitir respaldos previos, tokens de sesion y archivos temporales
                         if (relativePath.StartsWith("Backups", StringComparison.OrdinalIgnoreCase) ||
                             relativePath.StartsWith("GoogleDriveTokenStore", StringComparison.OrdinalIgnoreCase) ||
                             relativePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
@@ -110,22 +97,52 @@ namespace Punto_de_Venta.Servicios
 
                 progreso?.Report(5);
 
-                // 2. Autenticacion OAuth2 con almacenamiento de sesion en FileDataStore
-                string tokenStorePath = Path.Combine(sourceFolder, "GoogleDriveTokenStore");
-                UserCredential credential;
+                // 2. Autenticacion OAuth2 con almacenamiento de sesion protegido mediante DPAPI
+                string tokenStorePath = Path.Combine(sourceFolder, "GoogleDriveTokenStore_Secure");
+                var dpapiStore = new DpapiDataStore(tokenStorePath);
 
-                using (var stream = new FileStream(credentialsPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                if (modoSilencioso)
                 {
-                    credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                        GoogleClientSecrets.FromStream(stream).Secrets,
-                        Scopes,
-                        "user",
-                        CancellationToken.None,
-                        new FileDataStore(tokenStorePath, true)
-                    );
+                    // En ejecucion silenciosa en segundo plano, validar que exista un token previo descifrable.
+                    // Si no existe, abortar sin abrir ventanas de navegador en medio de la operacion del cajero.
+                    if (!dpapiStore.TieneTokenValido("user"))
+                    {
+                        System.Diagnostics.Debug.WriteLine("[GoogleDriveBackup] Modo silencioso: Sin token previo descifrable. Respaldo omitido.");
+                        return false;
+                    }
                 }
 
-                // 3. Inicializacion del cliente Drive v3
+                UserCredential credential;
+                var assembly = Assembly.GetExecutingAssembly();
+                using (Stream? stream = assembly.GetManifestResourceStream("Punto_de_Venta.credentials.json"))
+                {
+                    if (stream == null)
+                    {
+                        throw new FileNotFoundException("No se encontro 'credentials.json' incrustado en el proyecto.");
+                    }
+
+                    // En modo silencioso, usar timeout de 15 segundos para no colgar el hilo si requiere login
+                    using var authCts = modoSilencioso ? new CancellationTokenSource(TimeSpan.FromSeconds(15)) : null;
+                    var tokenCancel = authCts?.Token ?? CancellationToken.None;
+
+                    try
+                    {
+                        credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                            GoogleClientSecrets.FromStream(stream).Secrets,
+                            Scopes,
+                            "user",
+                            tokenCancel,
+                            dpapiStore
+                        );
+                    }
+                    catch (OperationCanceledException) when (modoSilencioso)
+                    {
+                        System.Diagnostics.Debug.WriteLine("[GoogleDriveBackup] Modo silencioso: La autorizacion requeria interaccion de usuario. Omitido de forma segura.");
+                        return false;
+                    }
+                }
+
+                // 3. Inicializacion del cliente de Google Drive v3
                 var driveService = new DriveService(new BaseClientService.Initializer
                 {
                     HttpClientInitializer = credential,
@@ -135,7 +152,7 @@ namespace Punto_de_Venta.Servicios
                 // 4. Localizar o crear carpeta dedicada en Google Drive
                 string? folderId = await ObtenerOCrearCarpetaDriveAsync(driveService, BackupFolderName);
 
-                // 5. Metadatos del archivo en Google Drive
+                // 5. Metadatos del archivo a subir
                 var fileMetadata = new Google.Apis.Drive.v3.Data.File
                 {
                     Name = $"Respaldo_POS_{DateTime.Now:yyyy-MM-dd_HHmmss}.zip",
@@ -148,7 +165,7 @@ namespace Punto_de_Venta.Servicios
                     fileMetadata.Parents = new List<string> { folderId };
                 }
 
-                // 6. Carga reanudable (ResumableUpload) con calculo de progreso en tiempo real
+                // 6. Carga reanudable con reporte de progreso
                 using var uploadStream = new FileStream(tempZipPath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 long totalBytes = uploadStream.Length;
 
@@ -166,7 +183,6 @@ namespace Punto_de_Venta.Servicios
                         case UploadStatus.Uploading:
                             if (totalBytes > 0)
                             {
-                                // Mapeamos de 5% a 99% durante la transferencia de bytes
                                 int porcentaje = (int)((progress.BytesSent * 100) / totalBytes);
                                 progreso?.Report(Math.Clamp(porcentaje, 5, 99));
                             }
@@ -182,13 +198,18 @@ namespace Punto_de_Venta.Servicios
                 };
 
                 var uploadResult = await uploadRequest.UploadAsync();
-
                 if (uploadResult.Status == UploadStatus.Failed)
                 {
                     throw uploadResult.Exception ?? new Exception("La subida a Google Drive no se completo.");
                 }
 
-                return uploadResult.Status == UploadStatus.Completed;
+                bool completado = uploadResult.Status == UploadStatus.Completed;
+                if (completado)
+                {
+                    RegistrarRespaldoExitoso();
+                }
+
+                return completado;
             }
             finally
             {
@@ -208,9 +229,88 @@ namespace Punto_de_Venta.Servicios
         }
 
         /// <summary>
-        /// Mapea la ruta interna de cada archivo dentro del archivo ZIP
-        /// asegurando separadores estandar '/' y organizacion por carpetas tematicas.
+        /// Comprueba si existe la sesion guardada y si DPAPI puede descifrar el token en esta PC.
         /// </summary>
+        public static bool UsuarioEstaAutenticado()
+        {
+            try
+            {
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string tokenStorePath = Path.Combine(appData, "POS_DataStorage", "GoogleDriveTokenStore_Secure");
+
+                if (!Directory.Exists(tokenStorePath))
+                {
+                    return false;
+                }
+
+                var store = new DpapiDataStore(tokenStorePath);
+                return store.TieneTokenValido("user");
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static void RegistrarRespaldoExitoso()
+        {
+            try
+            {
+                var config = AppConfig.Load();
+                config.UltimoRespaldoDriveFecha = DateTime.Now;
+                config.Save();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GoogleDriveBackup] Error guardando fecha de respaldo: {ex.Message}");
+            }
+        }
+
+        public static DateTime? ObtenerUltimaFechaRespaldo()
+        {
+            try
+            {
+                var config = AppConfig.Load();
+                return config.UltimoRespaldoDriveFecha;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static string ObtenerTextoUltimoRespaldo()
+        {
+            var fecha = ObtenerUltimaFechaRespaldo();
+            if (!fecha.HasValue)
+            {
+                return "Ultimo respaldo: Sin respaldos registrados";
+            }
+
+            var transcurrido = DateTime.Now - fecha.Value;
+            if (transcurrido.TotalSeconds < 0 || transcurrido.TotalMinutes < 1)
+            {
+                return "Ultimo respaldo hace un momento";
+            }
+            if (transcurrido.TotalMinutes < 60)
+            {
+                int minutos = Math.Max(1, (int)transcurrido.TotalMinutes);
+                return minutos == 1 ? "Ultimo respaldo hace 1 minuto" : $"Ultimo respaldo hace {minutos} minutos";
+            }
+            if (transcurrido.TotalHours < 24)
+            {
+                int horas = (int)transcurrido.TotalHours;
+                return horas == 1 ? "Ultimo respaldo hace 1 hora" : $"Ultimo respaldo hace {horas} horas";
+            }
+            if (transcurrido.TotalDays < 30)
+            {
+                int dias = (int)transcurrido.TotalDays;
+                return dias == 1 ? "Ultimo respaldo hace 1 dia" : $"Ultimo respaldo hace {dias} dias";
+            }
+
+            return $"Ultimo respaldo: {fecha.Value:dd/MM/yyyy HH:mm}";
+        }
+
         private static string ObtenerRutaEntradaZip(string sourceFolder, FileInfo fileInfo)
         {
             string relative = fileInfo.FullName.Length > sourceFolder.Length
@@ -218,8 +318,6 @@ namespace Punto_de_Venta.Servicios
                 : fileInfo.Name;
 
             string normalized = relative.Replace('\\', '/');
-
-            // Si el archivo ya esta dentro de la carpeta Tickets, conservar su jerarquia
             if (normalized.StartsWith("Tickets/", StringComparison.OrdinalIgnoreCase) ||
                 normalized.Equals("Tickets", StringComparison.OrdinalIgnoreCase))
             {
@@ -229,25 +327,21 @@ namespace Punto_de_Venta.Servicios
             string ext = fileInfo.Extension.ToLowerInvariant();
             string name = fileInfo.Name;
 
-            // Tickets individuales en raiz
             if (name.StartsWith("Ticket_", StringComparison.OrdinalIgnoreCase) && ext == ".txt")
             {
                 return $"Tickets/{name}";
             }
 
-            // Archivos de base de datos SQLite
             if (ext == ".db" || ext == ".db-wal" || ext == ".db-shm")
             {
                 return $"BaseDatos/{name}";
             }
 
-            // Configuracion y licencias
             if (ext == ".json" || ext == ".key")
             {
                 return $"Configuracion/{name}";
             }
 
-            // Archivos de registro y logs
             if (ext == ".log" || (ext == ".txt" && name.Contains("log", StringComparison.OrdinalIgnoreCase)))
             {
                 return $"Logs/{name}";
@@ -256,10 +350,6 @@ namespace Punto_de_Venta.Servicios
             return $"Otros/{name}";
         }
 
-        /// <summary>
-        /// Busca si ya existe la carpeta de respaldos en Google Drive.
-        /// Si no existe, la crea y retorna su identificador unico.
-        /// </summary>
         private static async Task<string?> ObtenerOCrearCarpetaDriveAsync(DriveService service, string nombreCarpeta)
         {
             try

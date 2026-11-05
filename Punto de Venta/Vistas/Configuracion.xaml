@@ -475,19 +475,59 @@
                        Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,4,0,0"/>
                                         </Grid>
 
-                                        <!-- Boton de Disparo -->
-                                        <Button x:Name="BtnRespaldoDrive" Content="☁️ Subir Respaldo a Google Drive" Height="38" Padding="18,0"
-                HorizontalAlignment="Left" Background="{DynamicResource ThemeAccent}" Foreground="White" 
-                BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontWeight="Bold" Cursor="Hand"
-                Click="BtnRespaldoDrive_Click">
-                                            <Button.Template>
-                                                <ControlTemplate TargetType="Button">
-                                                    <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
-                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    </Border>
-                                                </ControlTemplate>
-                                            </Button.Template>
-                                        </Button>
+                                        <!-- Boton de Disparo y Feedback de Ultimo Respaldo -->
+                                        <WrapPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                            <Button x:Name="BtnRespaldoDrive" Content="&#x2601;&#xFE0F; Subir Respaldo a Google Drive" Height="38" Padding="18,0"
+                                                    HorizontalAlignment="Left" Background="{DynamicResource ThemeAccent}" Foreground="White" 
+                                                    BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontWeight="Bold" Cursor="Hand"
+                                                    Click="BtnRespaldoDrive_Click">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+
+                                            <Border Background="{DynamicResource ThemeSurfaceBackground}" 
+                                                    BorderBrush="{DynamicResource ThemeBorder}" 
+                                                    BorderThickness="1" 
+                                                    CornerRadius="8" 
+                                                    Padding="12,8" 
+                                                    Margin="12,0,0,0" 
+                                                    VerticalAlignment="Center">
+                                                <TextBlock x:Name="TxtUltimoRespaldoDrive" 
+                                                           Text="Ultimo respaldo: Sin respaldos registrados" 
+                                                           FontSize="12" 
+                                                           FontFamily="Segoe UI Variable, Segoe UI"
+                                                           Foreground="{DynamicResource ThemeTextForeground}" 
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                        </WrapPanel>
+
+                                        <!-- Separador -->
+                                        <Border Height="1" Background="{DynamicResource ThemeBorder}" Margin="0,0,0,14"/>
+
+                                        <!-- Opcion de Respaldo Automatico -->
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                                <TextBlock Text="Respaldo automatico en segundo plano" FontSize="13" FontWeight="SemiBold" 
+                                                           Foreground="{DynamicResource ThemeTextForeground}"/>
+                                                <TextBlock Text="Genera y sube una copia cifrada a Google Drive cada 4 horas silenciosamente sin interrumpir la operacion." 
+                                                           FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                            <CheckBox x:Name="ChkRespaldoAuto" 
+                                                      Grid.Column="1" 
+                                                      VerticalAlignment="Center" 
+                                                      Cursor="Hand"
+                                                      Checked="ChkRespaldoAuto_Changed" 
+                                                      Unchecked="ChkRespaldoAuto_Changed"/>
+                                        </Grid>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

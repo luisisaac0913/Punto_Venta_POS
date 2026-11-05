@@ -1,4 +1,4 @@
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using Punto_de_Venta.Servicios;
 using Punto_de_Venta.Vistas;
 using System;
@@ -60,7 +60,8 @@ namespace Punto_de_Venta
         private async void Configuracion_Loaded(object sender, RoutedEventArgs e)
         {
             _isCargando = true;
-
+            ChkRespaldoAuto.IsChecked = Properties.Settings.Default.RespaldoAutoActivo;
+            ActualizarFeedbackUltimoRespaldo();
             CargarDatosFormulario();
             await CargarDispositivosAsync();
             CmbModoBascula.SelectedIndex = _config.BasculaModoPrecio ? 1 : 0;
@@ -491,6 +492,11 @@ namespace Punto_de_Venta
             }
         }
         #region Google Drive
+        private void ChkRespaldoAuto_Changed(object sender, RoutedEventArgs e)
+        {
+            Properties.Settings.Default.RespaldoAutoActivo = ChkRespaldoAuto.IsChecked ?? false;
+            Properties.Settings.Default.Save();
+        }
         private async void BtnRespaldoDrive_Click(object sender, RoutedEventArgs e)
         {
             BtnRespaldoDrive.IsEnabled = false;
@@ -509,6 +515,7 @@ namespace Punto_de_Venta
                 if (completado)
                 {
                     TxtProgresoDrive.Text = "¡Carga completada al 100%!";
+                    ActualizarFeedbackUltimoRespaldo();
                     ToastNotification.Show("Respaldo subido a Google Drive exitosamente", ToastType.Success);
                 }
                 else
@@ -535,6 +542,22 @@ namespace Punto_de_Venta
                 await Task.Delay(2000);
                 PanelProgresoDrive.Visibility = Visibility.Collapsed;
             }
+        }
+
+        private void ActualizarFeedbackUltimoRespaldo()
+        {
+            if (TxtUltimoRespaldoDrive == null) return;
+            TxtUltimoRespaldoDrive.Text = GoogleDriveBackupService.ObtenerTextoUltimoRespaldo();
+            var fecha = GoogleDriveBackupService.ObtenerUltimaFechaRespaldo();
+            if (fecha.HasValue)
+            {
+                TxtUltimoRespaldoDrive.ToolTip = $"Fecha exacta: {fecha.Value:dd/MM/yyyy HH:mm:ss}";
+            }
+            else
+            {
+                TxtUltimoRespaldoDrive.ToolTip = "Sin respaldos registrados todavia";
+            }
+            
         }
         #endregion
     }

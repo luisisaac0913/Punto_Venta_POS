@@ -29,13 +29,14 @@ namespace Punto_de_Venta
         private System.Windows.Threading.DispatcherTimer _inactivityTimer;
         private System.Windows.Threading.DispatcherTimer _standbyClockTimer;
         private readonly Dictionary<string, UserControl> _vistasCache = new Dictionary<string, UserControl>();
+        private readonly CancellationTokenSource _ctsAutoBackup = new CancellationTokenSource();
         #endregion
 
         #region Inicializacion
         public MainWindow()
         {
             InitializeComponent();
-
+            IniciarRespaldoAutomaticoSilencioso();
             _standbyClockTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _standbyClockTimer.Tick += (s, args) =>
             {
@@ -82,6 +83,7 @@ namespace Punto_de_Venta
                 if (!_isShuttingDown)
                 {
                     _isShuttingDown = true;
+                    try { _ctsAutoBackup.Cancel(); _ctsAutoBackup.Dispose(); } catch { }
 
                     try
                     {
@@ -971,6 +973,45 @@ namespace Punto_de_Venta
                     });
                 });
             }).GeneratePdf(filePath);
+        }
+        #endregion
+
+        #region Google Drive
+        private void IniciarRespaldoAutomaticoSilencioso()
+        {
+            Task.Run(async () =>
+            {
+                while (!_ctsAutoBackup.Token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromHours(4), _ctsAutoBackup.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+
+                    if (!Properties.Settings.Default.RespaldoAutoActivo || !GoogleDriveBackupService.UsuarioEstaAutenticado())
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        bool completado = await GoogleDriveBackupService.RespaldarEnDriveAsync(null, modoSilencioso: true).ConfigureAwait(false);
+
+                        if (completado)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[AutoBackup] Respaldo exitoso a las {DateTime.Now}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[AutoBackup] Error: {ex.Message}");
+                    }
+                }
+            }, _ctsAutoBackup.Token);
         }
         #endregion
     }
