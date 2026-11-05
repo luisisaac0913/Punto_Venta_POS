@@ -1,4 +1,4 @@
-using Punto_de_Venta.Datos;
+﻿using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using System;
@@ -124,8 +124,10 @@ namespace Punto_de_Venta.Vistas
             if ((bool)e.NewValue)
             {
                 try { _catalog = ProductoDB.Load(); } catch { _catalog = new(); }
+                CargarPromocionesDesdeDb();
                 CargarVentasEnEsperaDesdeDb();
                 ActualizarEstadoHardwareAsync();
+                RefreshSummary();
 
                 this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                 {
@@ -2010,7 +2012,7 @@ namespace Punto_de_Venta.Vistas
             var subtotalBruto = Cart.Sum(item => item.Subtotal);
             var resultadoPromo = PromocionEngine.Evaluar(Cart, _promocionesCargadas ?? new());
             var totalConDescuento = Math.Max(0m, subtotalBruto - resultadoPromo.DescuentoTotal);
-            return Math.Round(totalConDescuento, 0, MidpointRounding.AwayFromZero);
+            return Math.Round(totalConDescuento, 2, MidpointRounding.AwayFromZero);
         }
 
         private void Cart_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => RefreshSummary();
@@ -2029,6 +2031,18 @@ namespace Punto_de_Venta.Vistas
             if (FindName("PromotionsCountText") is TextBlock promoBlock)
             {
                 promoBlock.Text = resultadoPromo.PromocionesAplicadasCount.ToString(culture);
+            }
+            if (FindName("PanelDescuentoPromo") is Grid panelDesc && FindName("PromotionsDiscountText") is TextBlock descBlock)
+            {
+                if (resultadoPromo.DescuentoTotal > 0)
+                {
+                    panelDesc.Visibility = Visibility.Visible;
+                    descBlock.Text = $"-{resultadoPromo.DescuentoTotal.ToString("C2", culture)}";
+                }
+                else
+                {
+                    panelDesc.Visibility = Visibility.Collapsed;
+                }
             }
         }
         #endregion
