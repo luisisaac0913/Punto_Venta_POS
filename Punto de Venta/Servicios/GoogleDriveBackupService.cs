@@ -32,7 +32,6 @@ namespace Punto_de_Venta.Servicios
                 throw new DirectoryNotFoundException($"No se encontro la carpeta de origen: {sourceFolder}");
             }
 
-            // Localizar archivo de credenciales de Google
             string credentialsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "credentials.json");
             if (!File.Exists(credentialsPath))
             {
@@ -41,15 +40,13 @@ namespace Punto_de_Venta.Servicios
 
             if (!File.Exists(credentialsPath))
             {
-                throw new FileNotFoundException("No se encontro el archivo 'credentials.json'. Colocalo junto al ejecutable o en POS_DataStorage.");
+                throw new FileNotFoundException("Error.");
             }
 
-            // Generar ruta de archivo comprimido temporal unico
             string tempZipPath = Path.Combine(Path.GetTempPath(), $"POS_Backup_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}.zip");
 
             try
             {
-                // Sincronizar WAL de SQLite antes de empaquetar si existe conexion abierta
                 try
                 {
                     using var conn = Punto_de_Venta.Datos.DatabaseHelper.GetConnection();
@@ -58,10 +55,6 @@ namespace Punto_de_Venta.Servicios
                     walCmd.ExecuteNonQuery();
                 }
                 catch { }
-
-                // 1. Compresion usando System.IO.Compression.ZipFile
-                // Se empaqueta en una tarea separada para no bloquear el hilo de interfaz
-                // organizando los tickets, base de datos y configuraciones en carpetas dedicadas.
                 await Task.Run(() =>
                 {
                     if (File.Exists(tempZipPath))
@@ -78,7 +71,6 @@ namespace Punto_de_Venta.Servicios
                             ? fileInfo.FullName.Substring(sourceFolder.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                             : fileInfo.Name;
 
-                        // Omitir respaldos previos, archivos temporales y token de sesion
                         if (relativePath.StartsWith("Backups", StringComparison.OrdinalIgnoreCase) ||
                             relativePath.StartsWith("GoogleDriveTokenStore", StringComparison.OrdinalIgnoreCase) ||
                             relativePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
@@ -109,8 +101,6 @@ namespace Punto_de_Venta.Servicios
                 }
 
                 progreso?.Report(5);
-
-                // 2. Autenticacion OAuth2 con almacenamiento de sesion en FileDataStore
                 string tokenStorePath = Path.Combine(sourceFolder, "GoogleDriveTokenStore");
                 UserCredential credential;
 
@@ -124,18 +114,12 @@ namespace Punto_de_Venta.Servicios
                         new FileDataStore(tokenStorePath, true)
                     );
                 }
-
-                // 3. Inicializacion del cliente Drive v3
                 var driveService = new DriveService(new BaseClientService.Initializer
                 {
                     HttpClientInitializer = credential,
                     ApplicationName = ApplicationName
                 });
-
-                // 4. Localizar o crear carpeta dedicada en Google Drive
                 string? folderId = await ObtenerOCrearCarpetaDriveAsync(driveService, BackupFolderName);
-
-                // 5. Metadatos del archivo en Google Drive
                 var fileMetadata = new Google.Apis.Drive.v3.Data.File
                 {
                     Name = $"Respaldo_POS_{DateTime.Now:yyyy-MM-dd_HHmmss}.zip",
@@ -147,8 +131,6 @@ namespace Punto_de_Venta.Servicios
                 {
                     fileMetadata.Parents = new List<string> { folderId };
                 }
-
-                // 6. Carga reanudable (ResumableUpload) con calculo de progreso en tiempo real
                 using var uploadStream = new FileStream(tempZipPath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 long totalBytes = uploadStream.Length;
 
@@ -166,7 +148,6 @@ namespace Punto_de_Venta.Servicios
                         case UploadStatus.Uploading:
                             if (totalBytes > 0)
                             {
-                                // Mapeamos de 5% a 99% durante la transferencia de bytes
                                 int porcentaje = (int)((progress.BytesSent * 100) / totalBytes);
                                 progreso?.Report(Math.Clamp(porcentaje, 5, 99));
                             }
@@ -192,7 +173,6 @@ namespace Punto_de_Venta.Servicios
             }
             finally
             {
-                // Limpieza garantizada del archivo temporal
                 if (File.Exists(tempZipPath))
                 {
                     try
@@ -218,8 +198,6 @@ namespace Punto_de_Venta.Servicios
                 : fileInfo.Name;
 
             string normalized = relative.Replace('\\', '/');
-
-            // Si el archivo ya esta dentro de la carpeta Tickets, conservar su jerarquia
             if (normalized.StartsWith("Tickets/", StringComparison.OrdinalIgnoreCase) ||
                 normalized.Equals("Tickets", StringComparison.OrdinalIgnoreCase))
             {
@@ -228,26 +206,18 @@ namespace Punto_de_Venta.Servicios
 
             string ext = fileInfo.Extension.ToLowerInvariant();
             string name = fileInfo.Name;
-
-            // Tickets individuales en raiz
             if (name.StartsWith("Ticket_", StringComparison.OrdinalIgnoreCase) && ext == ".txt")
             {
                 return $"Tickets/{name}";
             }
-
-            // Archivos de base de datos SQLite
             if (ext == ".db" || ext == ".db-wal" || ext == ".db-shm")
             {
                 return $"BaseDatos/{name}";
             }
-
-            // Configuracion y licencias
             if (ext == ".json" || ext == ".key")
             {
                 return $"Configuracion/{name}";
             }
-
-            // Archivos de registro y logs
             if (ext == ".log" || (ext == ".txt" && name.Contains("log", StringComparison.OrdinalIgnoreCase)))
             {
                 return $"Logs/{name}";
