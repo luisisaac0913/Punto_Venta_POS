@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
@@ -39,7 +39,6 @@ namespace Punto_de_Venta.Datos
             }
             _tablaAsegurada = true;
         }
-
         public static List<Promocion> LoadAll()
         {
             var list = new List<Promocion>();
@@ -51,14 +50,11 @@ namespace Punto_de_Venta.Datos
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT pr.Id, pr.Nombre, pr.Tipo, pr.Activa, pr.FechaInicio, pr.FechaFin,
-                               pr.ProductoIdPrincipal, pr.CantidadMinima, pr.PrecioEspecial,
-                               pr.ProductoIdSecundario, pr.PrecioComboTotal, pr.PorcentajeDescuento,
-                               p1.Nombre, p2.Nombre
-                        FROM Promociones pr
-                        LEFT JOIN Productos p1 ON pr.ProductoIdPrincipal = p1.Id
-                        LEFT JOIN Productos p2 ON pr.ProductoIdSecundario = p2.Id
-                        ORDER BY pr.Id DESC;";
+                        SELECT Id, Nombre, Tipo, Activa, FechaInicio, FechaFin,
+                               ProductoIdPrincipal, CantidadMinima, PrecioEspecial,
+                               ProductoIdSecundario, PrecioComboTotal, PorcentajeDescuento
+                        FROM Promociones
+                        ORDER BY Id DESC;";
                     using var leer = cmd.ExecuteReader();
                     while (leer.Read())
                     {
@@ -69,9 +65,6 @@ namespace Punto_de_Venta.Datos
                         DateTime? fFin = null;
                         if (!leer.IsDBNull(5) && DateTime.TryParse(leer.GetString(5), CultureInfo.InvariantCulture, DateTimeStyles.None, out var ff))
                             fFin = ff.Date;
-
-                        string prod1Nom = leer.IsDBNull(12) ? string.Empty : leer.GetString(12);
-                        string prod2Nom = leer.IsDBNull(13) ? string.Empty : leer.GetString(13);
 
                         var promo = new Promocion
                         {
@@ -86,9 +79,7 @@ namespace Punto_de_Venta.Datos
                             PrecioEspecial = Convert.ToDecimal(leer.GetDouble(8)),
                             ProductoIdSecundario = leer.IsDBNull(9) ? 0 : leer.GetInt32(9),
                             PrecioComboTotal = Convert.ToDecimal(leer.GetDouble(10)),
-                            PorcentajeDescuento = Convert.ToDecimal(leer.GetDouble(11)),
-                            ProductoPrincipalNombre = prod1Nom,
-                            ProductoSecundarioNombre = prod2Nom
+                            PorcentajeDescuento = Convert.ToDecimal(leer.GetDouble(11))
                         };
 
                         if (promo.Activa && promo.EstaVencida)
@@ -186,12 +177,10 @@ namespace Punto_de_Venta.Datos
                 return false;
             }
         }
-
         public static bool Update(Promocion promo, out string mensajeError)
         {
             return Save(promo, out mensajeError);
         }
-
         public static bool Delete(int id)
         {
             try

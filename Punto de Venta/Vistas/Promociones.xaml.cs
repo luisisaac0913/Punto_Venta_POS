@@ -1,50 +1,30 @@
-using Punto_de_Venta.Datos;
+﻿using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Vistas;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace Punto_de_Venta
 {
     public partial class Promociones : UserControl, ILimpiarSeleccion
     {
         public ObservableCollection<Promocion> ListaPromociones { get; } = new ObservableCollection<Promocion>();
-        private Promocion? _promocionEnEdicion = null;
-        private List<Producto> _catalogoProductos = new();
-
+        private Promocion _promocionEnEdicion = null;
         public Promociones()
         {
             InitializeComponent();
             FechaInicioPicker.SelectedDate = DateTime.Today;
             FechaFinPicker.SelectedDate = DateTime.Today.AddDays(7);
-            CargarCatalogoProductos();
             CargarPromociones();
         }
-
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             FocusSearch();
         }
-
-        private void CargarCatalogoProductos()
-        {
-            try
-            {
-                _catalogoProductos = ProductoDB.Load();
-            }
-            catch
-            {
-                _catalogoProductos = new List<Producto>();
-            }
-        }
-
         private void CargarPromociones()
         {
             ListaPromociones.Clear();
@@ -54,21 +34,17 @@ namespace Punto_de_Venta
             }
             PromocionesGrid.ItemsSource = ListaPromociones;
         }
-
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if ((bool)e.NewValue)
             {
-                CargarCatalogoProductos();
                 CargarPromociones();
                 this.Focus();
                 FocusSearch();
                 Keyboard.Focus(this);
             }
         }
-
         private void UserControl_Loaded(object sender, RoutedEventArgs e) => FocusSearch();
-
         private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
@@ -81,7 +57,6 @@ namespace Punto_de_Venta
                 e.Handled = true;
             }
         }
-
         #region Comportamiento del Formulario
         private void ChkTiempoLimite_Changed(object sender, RoutedEventArgs e)
         {
@@ -94,7 +69,6 @@ namespace Punto_de_Venta
                 FechaFinPicker.SelectedDate = DateTime.Today.AddDays(7);
             }
         }
-
         private void TipoPromoCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (TipoPromoCombo.SelectedItem is not ComboBoxItem item) return;
@@ -105,7 +79,7 @@ namespace Punto_de_Venta
             switch (tipo)
             {
                 case "Volumen":
-                    LabelProd1.Text = "ID o Codigo de Barras del Producto";
+                    LabelProd1.Text = "ID Producto Principal";
                     PanelProducto2.Visibility = Visibility.Collapsed;
                     PanelVolumen.Visibility = Visibility.Visible;
                     PanelPrecioCombo.Visibility = Visibility.Collapsed;
@@ -113,7 +87,7 @@ namespace Punto_de_Venta
                     break;
 
                 case "Combo":
-                    LabelProd1.Text = "ID o Codigo Primer Producto (A)";
+                    LabelProd1.Text = "ID Primer Producto (A)";
                     PanelProducto2.Visibility = Visibility.Visible;
                     PanelVolumen.Visibility = Visibility.Collapsed;
                     PanelPrecioCombo.Visibility = Visibility.Visible;
@@ -121,78 +95,14 @@ namespace Punto_de_Venta
                     break;
 
                 case "PorcentajeSegundo":
-                    LabelProd1.Text = "ID o Codigo de Barras del Producto";
+                    LabelProd1.Text = "ID Producto";
                     PanelProducto2.Visibility = Visibility.Collapsed;
                     PanelVolumen.Visibility = Visibility.Collapsed;
                     PanelPrecioCombo.Visibility = Visibility.Collapsed;
-                    PanelPorcentaje.Visibility = Visibility.Visible;
+                    PanelPorcentaje.Visibility = Visibility.Collapsed;
                     break;
             }
         }
-
-        private Producto? BuscarProducto(string input)
-        {
-            if (string.IsNullOrWhiteSpace(input)) return null;
-            string limpia = input.Trim();
-
-            // 1. Busqueda exacta por Codigo de barras
-            var porCodigo = _catalogoProductos.FirstOrDefault(p => string.Equals(p.Codigo, limpia, StringComparison.OrdinalIgnoreCase));
-            if (porCodigo != null) return porCodigo;
-
-            // 2. Busqueda exacta por ID numerico
-            if (int.TryParse(limpia, out var id))
-            {
-                var porId = _catalogoProductos.FirstOrDefault(p => p.Id == id);
-                if (porId != null) return porId;
-            }
-
-            // 3. Busqueda exacta por Nombre
-            var porNombreExacto = _catalogoProductos.FirstOrDefault(p => string.Equals(p.Nombre, limpia, StringComparison.OrdinalIgnoreCase));
-            if (porNombreExacto != null) return porNombreExacto;
-
-            // 4. Busqueda parcial por Nombre o Codigo
-            return _catalogoProductos.FirstOrDefault(p =>
-                p.Nombre.IndexOf(limpia, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                p.Codigo.IndexOf(limpia, StringComparison.OrdinalIgnoreCase) >= 0);
-        }
-
-        private void ActualizarInfoProducto(TextBox? box, TextBlock? infoBlock)
-        {
-            if (box == null || infoBlock == null) return;
-
-            string texto = box.Text.Trim();
-            if (string.IsNullOrEmpty(texto))
-            {
-                infoBlock.Text = string.Empty;
-                infoBlock.Visibility = Visibility.Collapsed;
-                return;
-            }
-
-            var prod = BuscarProducto(texto);
-            if (prod != null)
-            {
-                infoBlock.Text = $"✔ {prod.Nombre} - {prod.Precio:C2} (ID: {prod.Id})";
-                infoBlock.Foreground = (Brush?)FindResource("SystemGreen") ?? Brushes.Green;
-                infoBlock.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                infoBlock.Text = "⚠ No se encontro producto con este ID o codigo";
-                infoBlock.Foreground = (Brush?)FindResource("SystemRed") ?? Brushes.IndianRed;
-                infoBlock.Visibility = Visibility.Visible;
-            }
-        }
-
-        private void ProdId1Box_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            ActualizarInfoProducto(ProdId1Box, TxtInfoProd1);
-        }
-
-        private void ProdId2Box_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            ActualizarInfoProducto(ProdId2Box, TxtInfoProd2);
-        }
-
         private static decimal ParseDecimalSeguro(string text)
         {
             const NumberStyles styles = NumberStyles.Number | NumberStyles.AllowDecimalPoint;
@@ -203,7 +113,6 @@ namespace Punto_de_Venta
             }
             return 0m;
         }
-
         private void FocusSearch()
         {
             Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
@@ -217,42 +126,35 @@ namespace Punto_de_Venta
             }));
         }
         #endregion
-
         #region Acciones del DataGrid (Activar, Editar, Eliminar)
         private void ToggleActiva_Click(object sender, RoutedEventArgs e)
         {
             if (sender is CheckBox cb && cb.DataContext is Promocion promo)
             {
-                bool nuevoEstado = cb.IsChecked == true;
-
-                if (nuevoEstado && promo.EstaVencida)
+                promo.Activa = cb.IsChecked == true;
+                if (promo.Activa && promo.EstaVencida)
                 {
                     promo.Activa = false;
                     cb.IsChecked = false;
                     ToastNotification.Show("Esta promocion ya vencio. Edita su fecha limite para reactivarla.", ToastType.Warning);
                     return;
                 }
-
-                promo.Activa = nuevoEstado;
                 if (PromocionDbStore.Update(promo, out string error))
                 {
                     ToastNotification.Show(promo.Activa ? "Promocion Activada" : "Promocion Desactivada", ToastType.Info);
                 }
                 else
                 {
-                    promo.Activa = !nuevoEstado;
-                    cb.IsChecked = !nuevoEstado;
                     ToastNotification.Show($"Error al cambiar estado: {error}", ToastType.Error);
                 }
             }
         }
-
         private void EliminarPromo_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.DataContext is Promocion promo)
             {
                 Window window = Window.GetWindow(this) ?? Application.Current.MainWindow;
-                if (CustomMessageBox.Show(window, $"¿Deseas eliminar la promocion '{promo.Nombre}'?", "Eliminar Promocion", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                if (CustomMessageBox.Show(window, $"¿Estas seguro de eliminar la promocion '{promo.Nombre}'?", "Eliminar Promocion", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
                     if (PromocionDbStore.Delete(promo.Id))
                     {
@@ -277,12 +179,7 @@ namespace Punto_de_Venta
                 BtnGuardarPromo.Content = "Actualizar Cambios";
                 BtnCancelarEdicion.Visibility = Visibility.Visible;
                 NombrePromoBox.Text = promo.Nombre;
-
-                var prod1 = _catalogoProductos.FirstOrDefault(p => p.Id == promo.ProductoIdPrincipal);
-                ProdId1Box.Text = prod1 != null && !string.IsNullOrEmpty(prod1.Codigo)
-                    ? prod1.Codigo
-                    : promo.ProductoIdPrincipal.ToString();
-
+                ProdId1Box.Text = promo.ProductoIdPrincipal.ToString();
                 foreach (ComboBoxItem item in TipoPromoCombo.Items)
                 {
                     if (item.Tag?.ToString() == promo.Tipo.ToString())
@@ -291,7 +188,6 @@ namespace Punto_de_Venta
                         break;
                     }
                 }
-
                 if (promo.Tipo == TipoPromocion.Volumen)
                 {
                     CantidadMinBox.Text = promo.CantidadMinima.ToString();
@@ -299,10 +195,7 @@ namespace Punto_de_Venta
                 }
                 else if (promo.Tipo == TipoPromocion.Combo)
                 {
-                    var prod2 = _catalogoProductos.FirstOrDefault(p => p.Id == promo.ProductoIdSecundario);
-                    ProdId2Box.Text = prod2 != null && !string.IsNullOrEmpty(prod2.Codigo)
-                        ? prod2.Codigo
-                        : promo.ProductoIdSecundario.ToString();
+                    ProdId2Box.Text = promo.ProductoIdSecundario.ToString();
                     PrecioComboTotalBox.Text = promo.PrecioComboTotal.ToString("F2");
                 }
                 else if (promo.Tipo == TipoPromocion.PorcentajeSegundo)
@@ -317,12 +210,10 @@ namespace Punto_de_Venta
                 FechaFinPicker.SelectedDate = promo.FechaFin;
             }
         }
-
         private void CancelarEdicion_Click(object sender, RoutedEventArgs e)
         {
             LimpiarFormulario();
         }
-
         public void LimpiarSeleccion()
         {
             PromocionesGrid.SelectedItem = null;
@@ -339,8 +230,6 @@ namespace Punto_de_Venta
             NombrePromoBox.Clear();
             ProdId1Box.Clear();
             if (ProdId2Box != null) ProdId2Box.Clear();
-            if (TxtInfoProd1 != null) { TxtInfoProd1.Text = string.Empty; TxtInfoProd1.Visibility = Visibility.Collapsed; }
-            if (TxtInfoProd2 != null) { TxtInfoProd2.Text = string.Empty; TxtInfoProd2.Visibility = Visibility.Collapsed; }
             PrecioEspecialBox.Text = "0.00";
             CantidadMinBox.Text = "3";
             if (PrecioComboTotalBox != null) PrecioComboTotalBox.Text = "0.00";
@@ -361,21 +250,18 @@ namespace Punto_de_Venta
                 NombrePromoBox.Focus();
                 return;
             }
-
-            var prod1 = BuscarProducto(ProdId1Box.Text.Trim());
-            if (prod1 == null)
+            if (!int.TryParse(ProdId1Box.Text.Trim(), out var pId1) || pId1 <= 0)
             {
-                ToastNotification.Show("No se encontro un producto valido para el primer campo (usa ID o codigo)", ToastType.Warning);
+                ToastNotification.Show("Ingresa un ID valido para el primer producto", ToastType.Warning);
                 ProdId1Box.Focus();
                 return;
             }
-
             var tipoStr = (TipoPromoCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Volumen";
             var tipo = Enum.Parse<TipoPromocion>(tipoStr);
             var promocion = _promocionEnEdicion ?? new Promocion { Activa = true };
             promocion.Nombre = NombrePromoBox.Text.Trim();
             promocion.Tipo = tipo;
-            promocion.ProductoIdPrincipal = prod1.Id;
+            promocion.ProductoIdPrincipal = pId1;
 
             if (tipo == TipoPromocion.Volumen)
             {
@@ -390,7 +276,7 @@ namespace Punto_de_Venta
                 }
                 if (precioEsp <= 0)
                 {
-                    ToastNotification.Show("El precio especial del paquete debe ser mayor a $0.00", ToastType.Warning);
+                    ToastNotification.Show("El precio especial debe ser mayor a $0.00", ToastType.Warning);
                     PrecioEspecialBox.Focus();
                     return;
                 }
@@ -403,10 +289,9 @@ namespace Punto_de_Venta
             }
             else if (tipo == TipoPromocion.Combo)
             {
-                var prod2 = BuscarProducto(ProdId2Box.Text.Trim());
-                if (prod2 == null)
+                if (!int.TryParse(ProdId2Box.Text.Trim(), out var pId2) || pId2 <= 0)
                 {
-                    ToastNotification.Show("No se encontro un producto valido para el segundo producto del combo", ToastType.Warning);
+                    ToastNotification.Show("Ingresa el ID valido para el segundo producto del combo", ToastType.Warning);
                     ProdId2Box.Focus();
                     return;
                 }
@@ -417,7 +302,7 @@ namespace Punto_de_Venta
                     PrecioComboTotalBox.Focus();
                     return;
                 }
-                promocion.ProductoIdSecundario = prod2.Id;
+                promocion.ProductoIdSecundario = pId2;
                 promocion.PrecioComboTotal = precioCombo;
                 promocion.CantidadMinima = 0;
                 promocion.PrecioEspecial = 0;
@@ -432,8 +317,7 @@ namespace Punto_de_Venta
                     PorcentajeDescuentoBox.Focus();
                     return;
                 }
-                decimal rawPct = pct > 1 ? pct / 100m : pct;
-                promocion.PorcentajeDescuento = Math.Clamp(rawPct, 0.01m, 1.0m);
+                promocion.PorcentajeDescuento = pct > 1 ? pct / 100m : pct;
                 promocion.CantidadMinima = 0;
                 promocion.PrecioEspecial = 0;
                 promocion.ProductoIdSecundario = 0;
@@ -463,11 +347,7 @@ namespace Punto_de_Venta
 
                 promocion.FechaInicio = fInicio;
                 promocion.FechaFin = fFin;
-
-                if (_promocionEnEdicion == null)
-                {
-                    promocion.Activa = true;
-                }
+                promocion.Activa = true;
             }
             else
             {
@@ -487,10 +367,9 @@ namespace Punto_de_Venta
             {
                 guardadoConExito = PromocionDbStore.Save(promocion, out error);
             }
-
             if (guardadoConExito)
             {
-                ToastNotification.Show(_promocionEnEdicion != null ? "Promocion actualizada con exito" : "Promocion guardada con exito", ToastType.Success);
+                ToastNotification.Show(_promocionEnEdicion != null ? "Promocion actualizada" : "Promocion guardada con exito", ToastType.Success);
                 LimpiarFormulario();
                 CargarPromociones();
                 FocusSearch();
