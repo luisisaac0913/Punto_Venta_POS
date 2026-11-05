@@ -38,7 +38,6 @@ namespace Punto_de_Venta.Servicios
 
             try
             {
-                // Sincronizar WAL de SQLite antes de empaquetar si existe conexion abierta
                 try
                 {
                     using var conn = Punto_de_Venta.Datos.DatabaseHelper.GetConnection();
@@ -148,8 +147,6 @@ namespace Punto_de_Venta.Servicios
                     HttpClientInitializer = credential,
                     ApplicationName = ApplicationName
                 });
-
-                // 4. Localizar o crear carpeta dedicada en Google Drive
                 string? folderId = await ObtenerOCrearCarpetaDriveAsync(driveService, BackupFolderName);
 
                 // 5. Metadatos del archivo a subir
@@ -213,7 +210,6 @@ namespace Punto_de_Venta.Servicios
             }
             finally
             {
-                // Limpieza garantizada del archivo temporal
                 if (File.Exists(tempZipPath))
                 {
                     try
