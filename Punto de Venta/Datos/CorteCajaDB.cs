@@ -72,7 +72,6 @@ namespace Punto_de_Venta.Datos
 
             try
             {
-                // Guardado atomico con UPSERT: no borra el historial de cortes anteriores
                 using var insertCmd = conn.CreateCommand();
                 insertCmd.Transaction = tr;
                 insertCmd.CommandText = @"

@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Effects;
 
@@ -13,31 +13,31 @@ namespace Punto_de_Venta
         {
             InitializeComponent();
             ProductTitleText.Text = nombreProducto;
-            Loaded += (_, _) =>
-            {
-                if (Owner != null)
-                {
-                    _blurEffect = new BlurEffect
-                    {
-                        Radius = 12,
-                        RenderingBias = RenderingBias.Performance
-                    };
-                    Owner.Effect = _blurEffect;
-                }
-            };
-            Closed += (_, _) =>
-            {
-                if (Owner != null)
-                {
-                    Owner.Effect = null;
-                }
-            };
         }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            if (Owner != null)
+            {
+                _blurEffect = new BlurEffect
+                {
+                    Radius = 12,
+                    RenderingBias = RenderingBias.Performance
+                };
+                Owner.Effect = _blurEffect;
+            }
             QuantityBox.Text = "1"; 
             QuantityBox.Focus();
             QuantityBox.SelectAll();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            if (Owner != null)
+            {
+                Owner.Effect = null;
+            }
         }
 
         private void QuantityBox_KeyDown(object sender, KeyEventArgs e)

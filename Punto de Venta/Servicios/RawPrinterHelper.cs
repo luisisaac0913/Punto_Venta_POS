@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -37,28 +37,55 @@ namespace Punto_de_Venta.Servicios
 
         public static bool SendBytesToPrinter(string szPrinterName, byte[] bytes)
         {
+            if (string.IsNullOrWhiteSpace(szPrinterName) || bytes == null || bytes.Length == 0)
+                return false;
+
             var pUnmanagedBytes = Marshal.AllocCoTaskMem(bytes.Length);
-            Marshal.Copy(bytes, 0, pUnmanagedBytes, bytes.Length);
-
-            var di = new DOCINFOA { pDocName = "Etiqueta Codigo de Barras", pDataType = "RAW" };
-            bool success = false;
-
-            if (OpenPrinter(szPrinterName.Normalize(), out var hPrinter, IntPtr.Zero))
+            try
             {
-                if (StartDocPrinter(hPrinter, 1, di))
-                {
-                    if (StartPagePrinter(hPrinter))
-                    {
-                        success = WritePrinter(hPrinter, pUnmanagedBytes, bytes.Length, out _);
-                        EndPagePrinter(hPrinter);
-                    }
-                    EndDocPrinter(hPrinter);
-                }
-                ClosePrinter(hPrinter);
-            }
+                Marshal.Copy(bytes, 0, pUnmanagedBytes, bytes.Length);
 
-            Marshal.FreeCoTaskMem(pUnmanagedBytes);
-            return success;
+                var di = new DOCINFOA { pDocName = "Etiqueta Codigo de Barras", pDataType = "RAW" };
+                bool success = false;
+
+                if (OpenPrinter(szPrinterName.Normalize(), out var hPrinter, IntPtr.Zero))
+                {
+                    try
+                    {
+                        if (StartDocPrinter(hPrinter, 1, di))
+                        {
+                            try
+                            {
+                                if (StartPagePrinter(hPrinter))
+                                {
+                                    try
+                                    {
+                                        success = WritePrinter(hPrinter, pUnmanagedBytes, bytes.Length, out _);
+                                    }
+                                    finally
+                                    {
+                                        EndPagePrinter(hPrinter);
+                                    }
+                                }
+                            }
+                            finally
+                            {
+                                EndDocPrinter(hPrinter);
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        ClosePrinter(hPrinter);
+                    }
+                }
+
+                return success;
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(pUnmanagedBytes);
+            }
         }
     }
 }

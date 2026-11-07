@@ -1,4 +1,4 @@
-﻿using Punto_de_Venta;
+using Punto_de_Venta;
 using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using System;
@@ -116,25 +116,30 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            var productoEnDb = _catalogo.FirstOrDefault(p => p.Id == _productoSeleccionado.Id);
-            if (productoEnDb != null)
+            try
             {
-                productoEnDb.Codigo = nuevoCodigo;
-                try
+                using (var conn = DatabaseHelper.GetConnection())
                 {
-                    ProductoDB.Save(_catalogo);
-                    ToastNotification.Show($"Codigo enlazado a '{productoEnDb.Nombre}'", ToastType.Success);
-                    _catalogo = ProductoDB.Load();
-                    _productoSeleccionado = null;
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "UPDATE Productos SET Codigo = @codigo WHERE Id = @id;";
+                        cmd.Parameters.AddWithValue("@codigo", nuevoCodigo);
+                        cmd.Parameters.AddWithValue("@id", _productoSeleccionado.Id);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
 
-                    TxtCodigo.Clear();
-                    TxtBusqueda.Clear();
-                    TxtCodigo.Focus();
-                }
-                catch (Exception ex)
-                {
-                    ToastNotification.Show($"Error al guardar: {ex.Message}", ToastType.Error);
-                }
+                ToastNotification.Show($"Codigo enlazado a '{_productoSeleccionado.Nombre}'", ToastType.Success);
+                _catalogo = ProductoDB.Load();
+                _productoSeleccionado = null;
+
+                TxtCodigo.Clear();
+                TxtBusqueda.Clear();
+                TxtCodigo.Focus();
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"Error al guardar: {ex.Message}", ToastType.Error);
             }
         }
     }

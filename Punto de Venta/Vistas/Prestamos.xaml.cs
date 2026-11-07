@@ -1,4 +1,4 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using System;
@@ -79,6 +79,13 @@ namespace Punto_de_Venta
         {
             if ((bool)e.NewValue)
             {
+                if (!LicenciaService.EsPremium())
+                {
+                    LicenciaService.MostrarMensajePremium("Cuentas por Cobrar (Fiado)");
+                    (Window.GetWindow(this) as MainWindow)?.RegresarAlMenu();
+                    return;
+                }
+
                 CargarDeudoresDesdeBaseDatos();
                 UpdateDashboardKPIs();
                 SetNextId();
@@ -94,6 +101,10 @@ namespace Punto_de_Venta
         }
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_clockTimer != null && !_clockTimer.IsEnabled)
+            {
+                _clockTimer.Start();
+            }
             FocusSearch();
         }
         private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)

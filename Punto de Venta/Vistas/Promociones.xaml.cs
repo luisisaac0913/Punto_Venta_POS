@@ -1,5 +1,6 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
+using Punto_de_Venta.Servicios;
 using Punto_de_Venta.Vistas;
 using System;
 using System.Collections.ObjectModel;
@@ -38,6 +39,13 @@ namespace Punto_de_Venta
         {
             if ((bool)e.NewValue)
             {
+                if (!LicenciaService.EsPremium())
+                {
+                    LicenciaService.MostrarMensajePremium("Promociones y Ofertas");
+                    (Window.GetWindow(this) as MainWindow)?.RegresarAlMenu();
+                    return;
+                }
+
                 CargarPromociones();
                 this.Focus();
                 FocusSearch();
@@ -188,7 +196,7 @@ namespace Punto_de_Venta
                         break;
                     }
                 }
-                if (promo.Tipo == TipoPromocion.Volumen)
+                if (promo.Tipo == TipoPromocion.Volumen || promo.Tipo == TipoPromocion.Mayoreo)
                 {
                     CantidadMinBox.Text = promo.CantidadMinima.ToString();
                     PrecioEspecialBox.Text = promo.PrecioEspecial.ToString("F2");
@@ -263,14 +271,14 @@ namespace Punto_de_Venta
             promocion.Tipo = tipo;
             promocion.ProductoIdPrincipal = pId1;
 
-            if (tipo == TipoPromocion.Volumen)
+            if (tipo == TipoPromocion.Volumen || tipo == TipoPromocion.Mayoreo)
             {
                 int.TryParse(CantidadMinBox.Text.Trim(), out var cant);
                 var precioEsp = ParseDecimalSeguro(PrecioEspecialBox.Text);
 
                 if (cant < 2)
                 {
-                    ToastNotification.Show("La cantidad minima para volumen debe ser al menos 2", ToastType.Warning);
+                    ToastNotification.Show("La cantidad minima debe ser al menos 2", ToastType.Warning);
                     CantidadMinBox.Focus();
                     return;
                 }

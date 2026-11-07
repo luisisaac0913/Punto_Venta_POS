@@ -55,6 +55,7 @@ namespace Punto_de_Venta
             ReturnButton.IsEnabled = false;
 
             ActualizarEstiloBotonesPeriodo();
+            ActualizarIndicadoresPremiumUI();
 
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => { ClockText.Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US")); };
@@ -65,10 +66,32 @@ namespace Punto_de_Venta
         {
             if ((bool)e.NewValue)
             {
+                ActualizarIndicadoresPremiumUI();
                 RecargarDatosDesdeBD();
                 FocusSearch();
                 this.Focus();
                 Keyboard.Focus(this);
+            }
+        }
+
+        public void ActualizarIndicadoresPremiumUI()
+        {
+            bool esPremium = LicenciaService.EsPremium();
+            if (BtnExportarExcel != null)
+            {
+                BtnExportarExcel.Content = esPremium ? "📥 Exportar Excel (F8)" : "🔒 Exportar Excel (F8)";
+            }
+            if (BtnPeriodoSemana != null)
+            {
+                BtnPeriodoSemana.Content = esPremium ? "Semana" : "🔒 Semana";
+            }
+            if (BtnPeriodoMes != null)
+            {
+                BtnPeriodoMes.Content = esPremium ? "Mes" : "🔒 Mes";
+            }
+            if (BtnPeriodoCustom != null)
+            {
+                BtnPeriodoCustom.Content = esPremium ? "Personalizado" : "🔒 Rango";
             }
         }
 
@@ -103,7 +126,6 @@ namespace Punto_de_Venta
                             PagoTransferencia = esTransf ? mov.Monto : 0m,
                             Productos = [new DetalleVenta { Id = 0, VentaId = nextId, Nombre = mov.Concepto, Cantidad = 1m, Costo = 0m, Ganancia = 0m, Precio = mov.Monto, Categoria = "Abono" }]
                         };
-                        // Visualizacion en memoria sin escritura innecesaria durante la carga
                         rawSales.Add(nueva);
                     }
                 }
@@ -133,6 +155,12 @@ namespace Punto_de_Venta
         {
             if (sender is Button btn && btn.Tag is string periodo)
             {
+                if (!LicenciaService.EsPremium() && periodo != "Dia")
+                {
+                    LicenciaService.MostrarMensajePremium("Filtro de Historial Avanzado");
+                    return;
+                }
+
                 _periodoSeleccionado = periodo;
                 ActualizarRangoPeriodo(periodo);
                 ActualizarEstiloBotonesPeriodo();
@@ -250,7 +278,7 @@ namespace Punto_de_Venta
                 balanceNeto = fondosIniciales + entradasExtras + ventasEfectivo - totalGastos;
             }
             TotalSalesTodayText.Text = totalVentas.ToString("C2", culture);
-            TotalProfitText.Text = totalProfit.ToString("C2", culture);
+            TotalProfitText.Text = LicenciaService.EsPremium() ? totalProfit.ToString("C2", culture) : "🔒 Premium";
             TotalProductsSoldText.Text = $"{totalPiezasFisicas} pzas";
             MetricGastosText.Text = totalGastos.ToString("C2", culture);
             MetricBalanceText.Text = balanceNeto.ToString("C2", culture);
@@ -332,7 +360,6 @@ namespace Punto_de_Venta
 
         public void LimpiarSeleccion()
         {
-            // SalesGrid_SelectionChanged actualiza _selectedSale y el boton de devolucion
             SalesGrid.SelectedItem = null;
             FocusSearch();
         }
@@ -376,6 +403,16 @@ namespace Punto_de_Venta
                 return;
             }
 
+            if (!LicenciaService.EsPremium())
+            {
+                var ultimaVenta = Sales.OrderByDescending(s => s.FechaHora).ThenByDescending(s => s.Id).FirstOrDefault();
+                if (ultimaVenta == null || _selectedSale.Id != ultimaVenta.Id)
+                {
+                    LicenciaService.MostrarMensajePremium("Reimpresion de Tickets Historicos");
+                    return;
+                }
+            }
+
             var config = AppConfig.Load();
             if (string.IsNullOrWhiteSpace(config.ImpresoraSeleccionada))
             {
@@ -410,6 +447,12 @@ namespace Punto_de_Venta
 
         private void ExportButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Exportacion de Historial");
+                return;
+            }
+
             if (SalesView.IsEmpty)
             {
                 ToastNotification.Show("No hay ventas en este periodo para exportar.", ToastType.Warning);

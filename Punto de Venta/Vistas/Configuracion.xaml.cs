@@ -1,8 +1,9 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using Punto_de_Venta.Servicios;
 using Punto_de_Venta.Vistas;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing.Printing;
 using System.IO;
 using System.Text;
@@ -26,13 +27,59 @@ namespace Punto_de_Venta
         public Configuracion()
         {
             InitializeComponent();
+            ActualizarIndicadoresPremiumUI();
             Loaded += Configuracion_Loaded;
+        }
+
+        public void ActualizarIndicadoresPremiumUI()
+        {
+            bool esPremium = LicenciaService.EsPremium();
+
+            if (NavSeguridadBtn != null)
+            {
+                NavSeguridadBtn.Content = esPremium ? "🛡️  Caja y Seguridad" : "🔒  Caja y Seguridad";
+            }
+
+            if (LblColorAcentoTitulo != null)
+            {
+                LblColorAcentoTitulo.Text = esPremium ? "Color de Acento" : "Color de Acento 🔒";
+            }
+
+            if (LblColorAcentoDesc != null)
+            {
+                LblColorAcentoDesc.Text = esPremium
+                    ? "Elige el color principal para los botones, selecciones y resaltados del sistema."
+                    : "Elige el color principal para los botones, selecciones y resaltados del sistema (Exclusivo Premium).";
+            }
+
+            if (LblPinAdminTitulo != null)
+            {
+                LblPinAdminTitulo.Text = esPremium ? "Solicitar PIN de administrador" : "Solicitar PIN de administrador 🔒";
+            }
+
+            if (LblPinAdminDesc != null)
+            {
+                LblPinAdminDesc.Text = esPremium
+                    ? "Se pedira contrasena al entrar a todos los apartados excepto Cobro."
+                    : "Se pedira contrasena al entrar a todos los apartados excepto Cobro. Requiere version Premium.";
+            }
+
+            if (BtnRespaldoDrive != null)
+            {
+                BtnRespaldoDrive.Content = esPremium ? "☁️ Subir Respaldo a Google Drive" : "☁️ Subir Respaldo a Google Drive 🔒";
+            }
+
+            if (LblRespaldoAutoTitulo != null)
+            {
+                LblRespaldoAutoTitulo.Text = esPremium ? "Respaldo automatico en segundo plano" : "Respaldo automatico en segundo plano 🔒";
+            }
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if ((bool)e.NewValue)
             {
+                ActualizarIndicadoresPremiumUI();
                 NavImpresion_Click(this, new RoutedEventArgs());
 
                 if (!_isCargando)
@@ -60,6 +107,7 @@ namespace Punto_de_Venta
         private async void Configuracion_Loaded(object sender, RoutedEventArgs e)
         {
             _isCargando = true;
+            ActualizarIndicadoresPremiumUI();
             ChkRespaldoAuto.IsChecked = Properties.Settings.Default.RespaldoAutoActivo;
             ActualizarFeedbackUltimoRespaldo();
             CargarDatosFormulario();
@@ -152,11 +200,17 @@ namespace Punto_de_Venta
                     break;
                 }
             }
-            if (CmbTiempoReposo.SelectedItem == null) CmbTiempoReposo.SelectedIndex = 2; // Default 5 mins
+            if (CmbTiempoReposo.SelectedItem == null) CmbTiempoReposo.SelectedIndex = 2;
         }
 
         private void ColorButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Color de Acento");
+                return;
+            }
+
             if (sender is Button btn && btn.Tag is string hexColor)
             {
                 _selectedColorHex = hexColor;
@@ -277,6 +331,7 @@ namespace Punto_de_Venta
         private void NavSeguridad_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelSeguridad, false);
         private void NavAtajos_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelAtajos, false);
         private void NavWhatsApp_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelWhatsApp, false);
+        private void NavAyuda_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelAyuda, false);
 
         private void MostrarPanel(StackPanel panel, bool verPreviewTicket)
         {
@@ -286,6 +341,7 @@ namespace Punto_de_Venta
             PanelSeguridad.Visibility = Visibility.Collapsed;
             PanelAtajos.Visibility = Visibility.Collapsed;
             PanelWhatsApp.Visibility = Visibility.Collapsed;
+            PanelAyuda.Visibility = Visibility.Collapsed;
 
             panel.Visibility = Visibility.Visible;
             PreviewColumn.Width = verPreviewTicket ? new GridLength(300) : new GridLength(0);
@@ -297,6 +353,94 @@ namespace Punto_de_Venta
             ActualizarBotonSidebar(NavWhatsAppBtn, panel == PanelWhatsApp);
             ActualizarBotonSidebar(NavSeguridadBtn, panel == PanelSeguridad);
             ActualizarBotonSidebar(NavAtajosBtn, panel == PanelAtajos);
+            ActualizarBotonSidebar(NavAyudaBtn, panel == PanelAyuda);
+        }
+
+        private void BtnCopiarTelefono_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Clipboard.SetText("526633629837");
+                ToastNotification.Show("Telefono copiado al portapapeles", ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"No se pudo copiar: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void BtnAbrirWhatsAppAyuda_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://wa.me/526633629837",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"No se pudo abrir WhatsApp: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void BtnCopiarCorreo_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Clipboard.SetText("chipandchapaoficial@gmail.com");
+                ToastNotification.Show("Correo copiado al portapapeles", ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"No se pudo copiar: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void BtnEnviarCorreo_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "mailto:chipandchapaoficial@gmail.com",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"No se pudo abrir el cliente de correo: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void BtnCopiarWeb_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Clipboard.SetText("chipandchapa.com");
+                ToastNotification.Show("Sitio web copiado al portapapeles", ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"No se pudo copiar: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void BtnAbrirWeb_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://chipandchapa.com",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"No se pudo abrir el navegador: {ex.Message}", ToastType.Error);
+            }
         }
 
         private static void ActualizarBotonSidebar(Button btn, bool activo)
@@ -411,8 +555,17 @@ namespace Punto_de_Venta
 
                 var modoOscuroSeleccionado = DarkModeCheckBox.IsChecked == true;
                 _config.ModoOscuro = modoOscuroSeleccionado;
-                _config.ColorAcentoHex = _selectedColorHex;
-                _config.SolicitarPinAdmin = RequirePinCheckBox.IsChecked == true;
+
+                if (!LicenciaService.EsPremium())
+                {
+                    _config.ColorAcentoHex = "#007AFF";
+                    _config.SolicitarPinAdmin = false;
+                }
+                else
+                {
+                    _config.ColorAcentoHex = _selectedColorHex;
+                    _config.SolicitarPinAdmin = RequirePinCheckBox.IsChecked == true;
+                }
 
                 _config.BasculaHabilitada = EnableScaleCheckBox.IsChecked == true;
                 _config.BasculaPuerto = ScalePortComboBox.SelectedItem?.ToString() ?? "COM1";
@@ -429,6 +582,13 @@ namespace Punto_de_Venta
 
                 if (!string.IsNullOrWhiteSpace(NewPinBox.Password))
                 {
+                    if (!LicenciaService.EsPremium())
+                    {
+                        LicenciaService.MostrarMensajePremium("PIN de Seguridad");
+                        NewPinBox.Clear();
+                        return;
+                    }
+
                     var nuevoPin = NewPinBox.Password.Trim();
                     if (nuevoPin.Length < 4)
                     {
@@ -457,15 +617,9 @@ namespace Punto_de_Venta
 
                 if (Application.Current.MainWindow is MainWindow mainWindow)
                 {
-                    if (mainWindow.FindName("TxtMiniLogo") is TextBlock miniLogo)
-                        miniLogo.Text = _config.NombreNegocio;
-
-                    if (mainWindow.FindName("TxtTituloDashboard") is TextBlock tituloDash)
-                        tituloDash.Text = _config.NombreNegocio;
-
+                    mainWindow.ActualizarNombreNegocioEnUI(_config);
                     mainWindow.ActualizarConfiguracionReposo(_config);
                 }
-
                 ToastNotification.Show("Configuracion guardada exitosamente", ToastType.Success);
             }
             catch (Exception ex)
@@ -491,14 +645,37 @@ namespace Punto_de_Venta
                 e.Handled = true;
             }
         }
+        private void RequirePinCheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenciaService.EsPremium())
+            {
+                RequirePinCheckBox.IsChecked = false;
+                LicenciaService.MostrarMensajePremium("PIN de Seguridad");
+            }
+        }
+
         #region Google Drive
         private void ChkRespaldoAuto_Changed(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium() && ChkRespaldoAuto.IsChecked == true)
+            {
+                ChkRespaldoAuto.IsChecked = false;
+                LicenciaService.MostrarMensajePremium("Respaldo Automatico en Drive");
+                return;
+            }
+
             Properties.Settings.Default.RespaldoAutoActivo = ChkRespaldoAuto.IsChecked ?? false;
             Properties.Settings.Default.Save();
         }
+
         private async void BtnRespaldoDrive_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Respaldo en Google Drive");
+                return;
+            }
+
             BtnRespaldoDrive.IsEnabled = false;
             BtnRespaldoDrive.Content = "Subiendo respaldo...";
             PanelProgresoDrive.Visibility = Visibility.Visible;
@@ -560,5 +737,10 @@ namespace Punto_de_Venta
             
         }
         #endregion
+
+        private void BtnGestionarLicencia_Click(object sender, RoutedEventArgs e)
+        {
+            (Window.GetWindow(this) as MainWindow)?.AbrirVista<Activacion>();
+        }
     }
 }

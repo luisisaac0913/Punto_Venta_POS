@@ -52,9 +52,7 @@ namespace Punto_de_Venta.Datos
             conn.Open();
             return conn;
         }
-        /// <summary>
-        /// 
-        /// </summary>
+
         public static void InicializarBaseDeDatos()
         {
             if (!Directory.Exists(DbFolder))

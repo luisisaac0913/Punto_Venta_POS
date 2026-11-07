@@ -63,7 +63,6 @@ namespace Punto_de_Venta.Servicios
                 {
                     return;
                 }
-                // Asegurar que las transacciones pendientes en WAL se sincronicen al archivo .db
                 try
                 {
                     using var conn = Punto_de_Venta.Datos.DatabaseHelper.GetConnection();

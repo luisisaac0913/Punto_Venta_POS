@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Punto_de_Venta.Ventas"
+<UserControl x:Class="Punto_de_Venta.Ventas"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         MinWidth="1000" MinHeight="640"
@@ -152,7 +152,7 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="📥 Exportar Excel (F8)" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,12,0" Height="36" Padding="12,0" Foreground="{DynamicResource ThemeAccent}" Click="ExportButton_Click" ToolTip="Descargar historial filtrado en archivo Excel/CSV" />
+                    <Button x:Name="BtnExportarExcel" Content="📥 Exportar Excel (F8)" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,12,0" Height="36" Padding="12,0" Foreground="{DynamicResource ThemeAccent}" Click="ExportButton_Click" ToolTip="Descargar historial filtrado en archivo Excel/CSV" />
                     <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Padding="3" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
                             <Button x:Name="BtnPeriodoDia" Content="Dia" Style="{StaticResource PeriodSegmentButtonStyle}" Click="BtnPeriodo_Click" Tag="Dia" />

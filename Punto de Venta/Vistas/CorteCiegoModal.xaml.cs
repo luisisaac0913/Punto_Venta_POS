@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -22,30 +22,29 @@ namespace Punto_de_Venta
         {
             InitializeComponent();
             _totalEsperado = totalEsperado;
-            Loaded += (_, _) =>
-            {
-                if (Owner != null)
-                {
-                    _blurEffect = new BlurEffect
-                    {
-                        Radius = 12,
-                        RenderingBias = RenderingBias.Performance
-                    };
-                    Owner.Effect = _blurEffect;
-                }
-            };
-            Closed += (_, _) =>
-            {
-                if (Owner != null)
-                {
-                    Owner.Effect = null;
-                }
-            };
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            if (Owner != null)
+            {
+                _blurEffect = new BlurEffect
+                {
+                    Radius = 12,
+                    RenderingBias = RenderingBias.Performance
+                };
+                Owner.Effect = _blurEffect;
+            }
             Box500.Focus();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            if (Owner != null)
+            {
+                Owner.Effect = null;
+            }
         }
 
         private void Denomination_TextChanged(object sender, TextChangedEventArgs e)

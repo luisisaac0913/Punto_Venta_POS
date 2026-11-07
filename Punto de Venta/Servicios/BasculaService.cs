@@ -20,9 +20,7 @@ namespace Punto_de_Venta.Servicios
                 return Array.Empty<string>();
             }
         }
-        /// <summary>
-        /// 
-        /// </summary>
+
         public static bool ProbarConexion(string puerto, int baudRate, out decimal pesoObtenido, out string mensajeError)
         {
             pesoObtenido = 0m;
@@ -73,9 +71,7 @@ namespace Punto_de_Venta.Servicios
                 }
             }
         }
-        /// <summary>
-        /// 
-        /// </summary>
+
         public static async Task<(bool Exito, decimal Peso, string Error)> ObtenerPesoAsync()
         {
             var config = AppConfig.Load();

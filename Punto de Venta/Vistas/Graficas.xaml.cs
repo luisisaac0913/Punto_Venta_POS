@@ -3,6 +3,7 @@ using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
+using Punto_de_Venta.Servicios;
 using Punto_de_Venta.Vistas;
 using SkiaSharp;
 using System;
@@ -122,7 +123,14 @@ namespace Punto_de_Venta
         #endregion
 
         #region Eventos de UI
-        private void UserControl_Loaded(object sender, RoutedEventArgs e) => DayButton.Focus();
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (_clockTimer != null && !_clockTimer.IsEnabled)
+            {
+                _clockTimer.Start();
+            }
+            DayButton.Focus();
+        }
 
         private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
         {
@@ -172,12 +180,25 @@ namespace Punto_de_Venta
         }
 
         private void DayButton_Click(object sender, RoutedEventArgs e) { _currentPeriod = Period.Day; RestoreNormalPeriods(); RefreshData(); }
-        private void WeekButton_Click(object sender, RoutedEventArgs e) { _currentPeriod = Period.Week; RestoreNormalPeriods(); RefreshData(); }
-        private void MonthButton_Click(object sender, RoutedEventArgs e) { _currentPeriod = Period.Month; RestoreNormalPeriods(); RefreshData(); }
-        private void YearButton_Click(object sender, RoutedEventArgs e) { _currentPeriod = Period.Year; RestoreNormalPeriods(); RefreshData(); }
+        private void WeekButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenciaService.EsPremium()) { LicenciaService.MostrarMensajePremium("Filtro Semanal de Graficas"); return; }
+            _currentPeriod = Period.Week; RestoreNormalPeriods(); RefreshData();
+        }
+        private void MonthButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenciaService.EsPremium()) { LicenciaService.MostrarMensajePremium("Filtro Mensual de Graficas"); return; }
+            _currentPeriod = Period.Month; RestoreNormalPeriods(); RefreshData();
+        }
+        private void YearButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenciaService.EsPremium()) { LicenciaService.MostrarMensajePremium("Filtro Anual de Graficas"); return; }
+            _currentPeriod = Period.Year; RestoreNormalPeriods(); RefreshData();
+        }
 
         private void CustomButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium()) { LicenciaService.MostrarMensajePremium("Rango Personalizado de Graficas"); return; }
             NormalPeriodContainer.Visibility = Visibility.Collapsed;
             CustomPeriodContainer.Visibility = Visibility.Visible;
             StartDatePicker.SelectedDate = _customStart;
@@ -204,18 +225,23 @@ namespace Punto_de_Venta
 
         private void CancelCustomDate_Click(object sender, RoutedEventArgs e) => RestoreNormalPeriods();
 
+        private void BtnDesbloquearPremium_Click(object sender, RoutedEventArgs e)
+        {
+            (Window.GetWindow(this) as MainWindow)?.AbrirVista<Activacion>();
+        }
+
         private void NavFinanzas_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.Finanzas; RefreshData(); }
-        private void NavMetodos_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.MetodosPago; RefreshData(); }
-        private void NavCategorias_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.Categorias; RefreshData(); }
-        private void NavHorasBtn_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.HorasPico; RefreshData(); }
-        private void NavRentabilidadBtn_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.Rentabilidad; RefreshData(); }
-        private void NavRotacionBtn_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.Rotacion; RefreshData(); }
-        private void NavParetoBtn_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.Pareto; RefreshData(); }
-        private void NavCortesBtn_Click(object sender, RoutedEventArgs e) { _currentView = ChartView.CortesCaja; RefreshData(); }
+        private void NavMetodos_Click(object sender, RoutedEventArgs e) { if (!LicenciaService.EsPremium()) { LicenciaService.MostrarMensajePremium("Grafica de Metodos de Pago"); return; } _currentView = ChartView.MetodosPago; RefreshData(); }
+        private void NavCategorias_Click(object sender, RoutedEventArgs e) { if (!LicenciaService.EsPremium()) { LicenciaService.MostrarMensajePremium("Grafica de Categorias"); return; } _currentView = ChartView.Categorias; RefreshData(); }
+        private void NavHorasBtn_Click(object sender, RoutedEventArgs e) { if (!LicenciaService.EsPremium()) { LicenciaService.MostrarMensajePremium("Grafica de Horas Pico"); return; } _currentView = ChartView.HorasPico; RefreshData(); }
+        private void NavRentabilidadBtn_Click(object sender, RoutedEventArgs e) { if (!LicenciaService.EsPremium()) { LicenciaService.MostrarMensajePremium("Analisis de Rentabilidad"); return; } _currentView = ChartView.Rentabilidad; RefreshData(); }
+        private void NavRotacionBtn_Click(object sender, RoutedEventArgs e) { if (!LicenciaService.EsPremium()) { LicenciaService.MostrarMensajePremium("Rotacion de Inventario"); return; } _currentView = ChartView.Rotacion; RefreshData(); }
+        private void NavParetoBtn_Click(object sender, RoutedEventArgs e) { if (!LicenciaService.EsPremium()) { LicenciaService.MostrarMensajePremium("Analisis de Pareto 80/20"); return; } _currentView = ChartView.Pareto; RefreshData(); }
+        private void NavCortesBtn_Click(object sender, RoutedEventArgs e) { if (!LicenciaService.EsPremium()) { LicenciaService.MostrarMensajePremium("Historial de Cortes de Caja"); return; } _currentView = ChartView.CortesCaja; RefreshData(); }
         #endregion
 
         #region Carga y Procesamiento Principal (RefreshData)
-        private void RefreshData()
+        public void RefreshData()
         {
             var today = DateTime.Today;
             DateTime start = today;
@@ -243,15 +269,29 @@ namespace Punto_de_Venta
                 .Where(s => !string.Equals(s.Estado, "Fiado", StringComparison.OrdinalIgnoreCase) && !string.Equals(s.MetodoPago, "Fiado", StringComparison.OrdinalIgnoreCase))
                 .Sum(s => s.Total);
             var balanceNeto = ventasCobradas + entradasExtras - totalGastos;
+            bool esPremium = LicenciaService.EsPremium();
             KpiVentaTotal.Text = totalVentas.ToString("C2", _mexicanCulture);
-            KpiCostoTotal.Text = totalCosto.ToString("C2", _mexicanCulture);
-            KpiGananciaNeta.Text = totalGanancia.ToString("C2", _mexicanCulture);
-            KpiGastosTotal.Text = totalGastos.ToString("C2", _mexicanCulture);
-            KpiBalanceNeto.Text = balanceNeto.ToString("C2", _mexicanCulture);
-            InversionTotal.Text = $"{gananciaEsperada.ToString("C", _mexicanCulture)}";
-            KpiTransacciones.Text = $"{transacciones} venta(s)";
             KpiTicketPromedio.Text = $"Ticket prom: {ticketPromedio.ToString("C2", _mexicanCulture)}";
-            KpiMargenPorcentaje.Text = $"Margen: {margenPct:F1}%";
+            KpiTransacciones.Text = $"{transacciones} venta(s)";
+
+            if (esPremium)
+            {
+                KpiCostoTotal.Text = totalCosto.ToString("C2", _mexicanCulture);
+                KpiGananciaNeta.Text = totalGanancia.ToString("C2", _mexicanCulture);
+                KpiGastosTotal.Text = totalGastos.ToString("C2", _mexicanCulture);
+                KpiBalanceNeto.Text = balanceNeto.ToString("C2", _mexicanCulture);
+                InversionTotal.Text = $"{gananciaEsperada.ToString("C", _mexicanCulture)}";
+                KpiMargenPorcentaje.Text = $"Margen: {margenPct:F1}%";
+            }
+            else
+            {
+                KpiCostoTotal.Text = "🔒 Premium";
+                KpiGananciaNeta.Text = "🔒 Premium";
+                KpiGastosTotal.Text = "🔒 Premium";
+                KpiBalanceNeto.Text = "🔒 Premium";
+                InversionTotal.Text = "🔒 Premium";
+                KpiMargenPorcentaje.Text = "Margen: 🔒";
+            }
 
             ActualizarEstiloBotonPeriodo(DayButton, _currentPeriod == Period.Day);
             ActualizarEstiloBotonPeriodo(WeekButton, _currentPeriod == Period.Week);
@@ -267,27 +307,40 @@ namespace Punto_de_Venta
             ActualizarEstiloBotonSidebar(NavRotacionBtn, _currentView == ChartView.Rotacion);
             ActualizarEstiloBotonSidebar(NavParetoBtn, _currentView == ChartView.Pareto);
             ActualizarEstiloBotonSidebar(NavCortesBtn, _currentView == ChartView.CortesCaja);
+
             MainChartView.Visibility = Visibility.Collapsed;
             PieChartView.Visibility = Visibility.Collapsed;
             CortesContainerView.Visibility = Visibility.Collapsed;
-            if (_currentView == ChartView.CortesCaja) { CortesContainerView.Visibility = Visibility.Visible; CargarTablaCortes(selectedCortes); }
-            else if (_currentView == ChartView.MetodosPago) { PieChartView.Visibility = Visibility.Visible; CargarGraficaMetodosPago(selectedSales, _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end).ToList()); }
-            else if (_currentView == ChartView.Pareto) { PieChartView.Visibility = Visibility.Visible; CargarGraficaPareto(selectedSales); }
+
+            if (!esPremium)
+            {
+                if (PremiumChartOverlay != null) PremiumChartOverlay.Visibility = Visibility.Visible;
+                ChartTitleText.Text = "Graficas y Analisis Financiero (Exclusivo Premium)";
+                TopListTitleText.Text = "Top Productos Vendidos";
+                CargarTopProductos(selectedSales);
+            }
             else
             {
-                MainChartView.Visibility = Visibility.Visible;
-                switch (_currentView)
+                if (PremiumChartOverlay != null) PremiumChartOverlay.Visibility = Visibility.Collapsed;
+                if (_currentView == ChartView.CortesCaja) { CortesContainerView.Visibility = Visibility.Visible; CargarTablaCortes(selectedCortes); }
+                else if (_currentView == ChartView.MetodosPago) { PieChartView.Visibility = Visibility.Visible; CargarGraficaMetodosPago(selectedSales, _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end).ToList()); }
+                else if (_currentView == ChartView.Pareto) { PieChartView.Visibility = Visibility.Visible; CargarGraficaPareto(selectedSales); }
+                else
                 {
-                    case ChartView.Finanzas: CargarGraficaFinanciera(totalVentas, totalCosto, totalGanancia, totalGastos); break;
-                    case ChartView.Categorias: CargarGraficaCategorias(selectedSales); break;
-                    case ChartView.HorasPico: CargarGraficaHorasPico(selectedSales); break;
-                    case ChartView.Rentabilidad: CargarGraficaRentabilidad(selectedSales); break;
-                    case ChartView.Rotacion: CargarGraficaRotacion(selectedSales, (end - start).Days + 1); break;
+                    MainChartView.Visibility = Visibility.Visible;
+                    switch (_currentView)
+                    {
+                        case ChartView.Finanzas: CargarGraficaFinanciera(totalVentas, totalCosto, totalGanancia, totalGastos); break;
+                        case ChartView.Categorias: CargarGraficaCategorias(selectedSales); break;
+                        case ChartView.HorasPico: CargarGraficaHorasPico(selectedSales); break;
+                        case ChartView.Rentabilidad: CargarGraficaRentabilidad(selectedSales); break;
+                        case ChartView.Rotacion: CargarGraficaRotacion(selectedSales, (end - start).Days + 1); break;
+                    }
                 }
+                if (_currentView == ChartView.Rentabilidad) { TopListTitleText.Text = "Top Rentables (Utilidad)"; CargarTopProductosPorUtilidad(selectedSales); }
+                else if (_currentView == ChartView.Rotacion) { TopListTitleText.Text = "Productos con Mayor Riesgo (Poco Stock)"; CargarTopRotacion(selectedSales); }
+                else { TopListTitleText.Text = "Top Productos Vendidos"; CargarTopProductos(selectedSales); }
             }
-            if (_currentView == ChartView.Rentabilidad) { TopListTitleText.Text = "Top Rentables (Utilidad)"; CargarTopProductosPorUtilidad(selectedSales); }
-            else if (_currentView == ChartView.Rotacion) { TopListTitleText.Text = "Productos con Mayor Riesgo (Poco Stock)"; CargarTopRotacion(selectedSales); }
-            else { TopListTitleText.Text = "Top Productos Vendidos"; CargarTopProductos(selectedSales); }
         }
         #endregion
 
@@ -476,6 +529,12 @@ namespace Punto_de_Venta
         }
         private void ExportarReporteDia_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Exportacion de Reportes");
+                return;
+            }
+
             var today = DateTime.Today;
             DateTime start = today;
             DateTime end = today;

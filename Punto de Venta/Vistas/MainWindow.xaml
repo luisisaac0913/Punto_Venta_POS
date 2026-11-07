@@ -232,17 +232,14 @@
             CornerRadius="16"
             ClipToBounds="True">
 
-        <!-- ESTE GRID RAIZ SEPARA EL CONTENIDO DEL OVERLAY -->
         <Grid>
 
-            <!-- EL MAINGRID AGRUPA TODO LO QUE SE DEBE DESENFOCAR -->
             <Grid x:Name="MainGrid">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="46" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!-- BARRA DE TITULO -->
                 <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="ModernTitleBar_MouseLeftButtonDown">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -270,7 +267,6 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- CONTENIDO DE VISTAS Y BOTONES -->
                 <Grid Grid.Row="1">
                     <Grid x:Name="GridDashboard" Margin="36,12,36,32" Visibility="Visible">
                         <Grid.RowDefinitions>
@@ -283,8 +279,17 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock x:Name="TxtTituloDashboard" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="40" FontWeight="ExtraBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                <Button x:Name="BtnEstadoLicencia" Margin="18,4,0,0" VerticalAlignment="Center" Height="32" Padding="14,0" Cursor="Hand" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Click="BtnEstadoLicencia_Click">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="BorderLicencia" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="16" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,2">
@@ -384,7 +389,7 @@
                                             </Viewbox>
                                         </Border>
                                         <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
-                                            <TextBlock Text="Promociones" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock x:Name="TxtTituloPromociones" Text="Promociones" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
                                             <TextBlock Text="Ofertas activas" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </Grid>
@@ -404,7 +409,7 @@
                                             </Viewbox>
                                         </Border>
                                         <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
-                                            <TextBlock Text="Prestamos" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock x:Name="TxtTituloPrestamos" Text="Prestamos" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
                                             <TextBlock Text="Cuentas por cobrar" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </Grid>
@@ -419,7 +424,7 @@
                                                 <Path Data="{StaticResource IconEtiquetas}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                             </Canvas>
                                         </Viewbox>
-                                        <TextBlock Text="Etiquetas" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock x:Name="TxtTituloEtiquetas" Text="Etiquetas" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Graficas" Click="Graficas_Click">
@@ -439,7 +444,7 @@
                                                 <Path Data="{StaticResource IconExportar}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                             </Canvas>
                                         </Viewbox>
-                                        <TextBlock Text="Exportar" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock x:Name="TxtTituloExportar" Text="Exportar" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
                                 </Button>
 
@@ -469,7 +474,6 @@
                     </Grid>
                     <ContentControl x:Name="ContenedorVistas" Margin="0" Visibility="Collapsed" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
 
-                    <!-- OVERLAYS INTERNOS (Estos si se pueden desenfocar junto con MainGrid) -->
                     <Grid x:Name="ExportarOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" Panel.ZIndex="10" MouseDown="ExportarOverlay_MouseDown" PreviewKeyDown="ExportarOverlay_PreviewKeyDown">
                         <Border Width="760" Height="410" MaxWidth="900" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="28" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
                             <Grid>

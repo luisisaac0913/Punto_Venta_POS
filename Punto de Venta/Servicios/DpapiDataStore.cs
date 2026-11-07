@@ -90,7 +90,6 @@ namespace Punto_de_Venta.Servicios
 
             var encryptedBytes = ProtectedData.Protect(plainBytes, null, DataProtectionScope.CurrentUser);
 
-            // Escritura atomica para proteger el archivo ante cortes de energia repentinos
             string tempPath = filePath + ".tmp";
             File.WriteAllBytes(tempPath, encryptedBytes);
             File.Move(tempPath, filePath, true);
@@ -98,10 +97,6 @@ namespace Punto_de_Venta.Servicios
             return Task.CompletedTask;
         }
 
-        /// <summary>
-        /// Comprueba si existe un token almacenado y si DPAPI puede descifrarlo exitosamente
-        /// sin lanzar excepciones al hilo principal.
-        /// </summary>
         public bool TieneTokenValido(string key)
         {
             try

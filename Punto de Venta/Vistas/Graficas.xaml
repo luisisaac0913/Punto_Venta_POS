@@ -277,6 +277,26 @@
                             <lvc:CartesianChart x:Name="MainChartView" Grid.Row="1" Series="{Binding SeriesPrincipal}" XAxes="{Binding EjesXPrincipal}" YAxes="{Binding EjesYPrincipal}" />
                             <lvc:PieChart x:Name="PieChartView" Grid.Row="1" Series="{Binding SeriesPie}" Visibility="Collapsed" LegendPosition="Right" />
 
+                            <Border x:Name="PremiumChartOverlay" Grid.Row="1" Visibility="Collapsed"
+                                    Background="{DynamicResource ThemeInputBackground}" 
+                                    BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" 
+                                    CornerRadius="16" Padding="24" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="🔒" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,10" />
+                                    <TextBlock Text="Grafica Exclusiva de Version Premium" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                                    <TextBlock Text="Desbloquea el analisis visual de utilidades, gastos, horas pico y rentabilidad por producto." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="380" Margin="0,0,0,16" />
+                                    <Button Content="Desbloquear con Premium" Height="38" Padding="20,0" Background="{DynamicResource ThemeAccent}" Foreground="White" FontWeight="Bold" FontSize="12" BorderThickness="0" Cursor="Hand" Click="BtnDesbloquearPremium_Click">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="12">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+
                             <Grid x:Name="CortesContainerView" Grid.Row="1" Visibility="Collapsed">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
