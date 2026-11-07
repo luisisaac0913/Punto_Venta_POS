@@ -19,11 +19,6 @@ namespace Punto_de_Venta.Servicios
         private const string BackupFolderName = "Respaldos Chip&Chapa POS";
         private static readonly string[] Scopes = { DriveService.Scope.DriveFile };
 
-        /// <summary>
-        /// Comprime la carpeta de datos local organizando los archivos en subcarpetas
-        /// y sube el .zip mediante ResumableUpload a Google Drive.
-        /// En modo silencioso (segundo plano), nunca lanza ventanas interactivas de navegador.
-        /// </summary>
         public static async Task<bool> RespaldarEnDriveAsync(IProgress<int>? progreso, bool modoSilencioso = false)
         {
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -47,7 +42,6 @@ namespace Punto_de_Venta.Servicios
                 }
                 catch { }
 
-                // 1. Compresion usando System.IO.Compression.ZipArchive en tarea separada
                 await Task.Run(() =>
                 {
                     if (File.Exists(tempZipPath))
@@ -64,7 +58,6 @@ namespace Punto_de_Venta.Servicios
                             ? fileInfo.FullName.Substring(sourceFolder.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                             : fileInfo.Name;
 
-                        // Omitir respaldos previos, tokens de sesion y archivos temporales
                         if (relativePath.StartsWith("Backups", StringComparison.OrdinalIgnoreCase) ||
                             relativePath.StartsWith("GoogleDriveTokenStore", StringComparison.OrdinalIgnoreCase) ||
                             relativePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
@@ -96,14 +89,11 @@ namespace Punto_de_Venta.Servicios
 
                 progreso?.Report(5);
 
-                // 2. Autenticacion OAuth2 con almacenamiento de sesion protegido mediante DPAPI
                 string tokenStorePath = Path.Combine(sourceFolder, "GoogleDriveTokenStore_Secure");
                 var dpapiStore = new DpapiDataStore(tokenStorePath);
 
                 if (modoSilencioso)
                 {
-                    // En ejecucion silenciosa en segundo plano, validar que exista un token previo descifrable.
-                    // Si no existe, abortar sin abrir ventanas de navegador en medio de la operacion del cajero.
                     if (!dpapiStore.TieneTokenValido("user"))
                     {
                         System.Diagnostics.Debug.WriteLine("[GoogleDriveBackup] Modo silencioso: Sin token previo descifrable. Respaldo omitido.");
@@ -120,7 +110,6 @@ namespace Punto_de_Venta.Servicios
                         throw new FileNotFoundException("No se encontro 'credentials.json' incrustado en el proyecto.");
                     }
 
-                    // En modo silencioso, usar timeout de 15 segundos para no colgar el hilo si requiere login
                     using var authCts = modoSilencioso ? new CancellationTokenSource(TimeSpan.FromSeconds(15)) : null;
                     var tokenCancel = authCts?.Token ?? CancellationToken.None;
 
@@ -141,7 +130,6 @@ namespace Punto_de_Venta.Servicios
                     }
                 }
 
-                // 3. Inicializacion del cliente de Google Drive v3
                 var driveService = new DriveService(new BaseClientService.Initializer
                 {
                     HttpClientInitializer = credential,
@@ -149,7 +137,6 @@ namespace Punto_de_Venta.Servicios
                 });
                 string? folderId = await ObtenerOCrearCarpetaDriveAsync(driveService, BackupFolderName);
 
-                // 5. Metadatos del archivo a subir
                 var fileMetadata = new Google.Apis.Drive.v3.Data.File
                 {
                     Name = $"Respaldo_POS_{DateTime.Now:yyyy-MM-dd_HHmmss}.zip",
@@ -162,7 +149,6 @@ namespace Punto_de_Venta.Servicios
                     fileMetadata.Parents = new List<string> { folderId };
                 }
 
-                // 6. Carga reanudable con reporte de progreso
                 using var uploadStream = new FileStream(tempZipPath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 long totalBytes = uploadStream.Length;
 
@@ -224,9 +210,6 @@ namespace Punto_de_Venta.Servicios
             }
         }
 
-        /// <summary>
-        /// Comprueba si existe la sesion guardada y si DPAPI puede descifrar el token en esta PC.
-        /// </summary>
         public static bool UsuarioEstaAutenticado()
         {
             try

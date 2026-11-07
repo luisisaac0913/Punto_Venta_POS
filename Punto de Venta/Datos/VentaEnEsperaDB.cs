@@ -15,7 +15,6 @@ namespace Punto_de_Venta.Datos
 
             using var conn = DatabaseHelper.GetConnection();
 
-            // 1. Limpieza automatica (Auto-Purge): eliminar carritos con mas de 48 horas de antiguedad
             try
             {
                 var limitePurga = DateTime.Now.AddHours(-48).ToString("o", CultureInfo.InvariantCulture);
@@ -28,7 +27,6 @@ namespace Punto_de_Venta.Datos
             {
             }
 
-            // 2. Cargar ventas en espera activas (ordenadas de mas reciente a mas antigua)
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = @"

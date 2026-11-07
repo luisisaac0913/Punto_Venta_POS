@@ -83,6 +83,21 @@ namespace Punto_de_Venta.Datos
                             }
                         }
                         break;
+
+                    case TipoPromocion.Mayoreo:
+                        var itemMayoreo = carrito.FirstOrDefault(c => c.ProductoId == promo.ProductoIdPrincipal);
+                        if (itemMayoreo != null && promo.CantidadMinima > 0 && itemMayoreo.Cantidad >= promo.CantidadMinima)
+                        {
+                            decimal ahorroPorUnidad = itemMayoreo.Precio - promo.PrecioEspecial;
+                            if (ahorroPorUnidad > 0)
+                            {
+                                decimal ahorroTotal = ahorroPorUnidad * itemMayoreo.Cantidad;
+                                resultado.DescuentoTotal += ahorroTotal;
+                                resultado.PromocionesAplicadasCount += (int)itemMayoreo.Cantidad;
+                                resultado.MensajesPromocion.Add($"{promo.Nombre} (-{ahorroTotal:C2})");
+                            }
+                        }
+                        break;
                 }
             }
             return resultado;

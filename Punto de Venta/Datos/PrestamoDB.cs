@@ -72,7 +72,6 @@ namespace Punto_de_Venta.Datos
 
             try
             {
-                // Guardado atomico con UPSERT: no borra la base de datos
                 using var insertDeudor = conn.CreateCommand();
                 insertDeudor.Transaction = tr;
                 insertDeudor.CommandText = @"

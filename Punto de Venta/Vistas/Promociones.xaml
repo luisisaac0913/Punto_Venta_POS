@@ -121,6 +121,7 @@
                                 <ComboBoxItem Content="Volumen (Ej: 3 por $45)" IsSelected="True" Tag="Volumen" />
                                 <ComboBoxItem Content="Combo (Producto A + B)" Tag="Combo" />
                                 <ComboBoxItem Content="Segunda pieza con Descuento" Tag="PorcentajeSegundo" />
+                                <ComboBoxItem Content="Mayoreo (A partir de N piezas, baja precio unitario)" Tag="Mayoreo" />
                             </ComboBox>
                         </Border>
                         <TextBlock x:Name="LabelProd1" Text="ID Producto Principal" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />

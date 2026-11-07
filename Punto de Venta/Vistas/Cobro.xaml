@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Punto_de_Venta.Vistas.Cobro"
+<UserControl x:Class="Punto_de_Venta.Vistas.Cobro"
 
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
 
@@ -878,7 +878,7 @@
                         </WrapPanel>
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Content="Pausar / Espera (F2)" Height="34" Padding="14,0" Margin="0,0,8,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnVentasEnEspera_Click">
+                            <Button x:Name="BtnPausarVenta" Content="Pausar / Espera (F2)" Height="34" Padding="14,0" Margin="0,0,8,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnVentasEnEspera_Click">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="{TemplateBinding Padding}">
@@ -1800,7 +1800,6 @@
 
 
 
-            <!-- MODAL DE VENTAS EN ESPERA (F2) -->
 
             <Grid x:Name="VentasEnEsperaOverlay" Panel.ZIndex="130" Background="#66000000" Visibility="Collapsed" MouseDown="VentasEnEsperaOverlay_MouseDown">
 
@@ -1820,7 +1819,6 @@
 
 
 
-                        <!-- Header -->
 
                         <Grid Grid.Row="0" Margin="0,0,0,16">
 
@@ -1836,7 +1834,6 @@
 
 
 
-                        <!-- List of Parked Sales -->
 
                         <Border Grid.Row="1" MinHeight="180" MaxHeight="300" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Padding="8" Margin="0,0,0,20">
 
@@ -1902,7 +1899,6 @@
 
 
 
-                        <!-- Actions -->
 
                         <Grid Grid.Row="2">
 

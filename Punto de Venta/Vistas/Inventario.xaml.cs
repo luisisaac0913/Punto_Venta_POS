@@ -1,4 +1,4 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using Punto_de_Venta.Vistas;
@@ -77,6 +77,8 @@ namespace Punto_de_Venta
             _clockTimer.Tick += (_, _) => ClockText.Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
             _clockTimer.Start();
 
+            Loaded += (_, _) => ActualizarIndicadoresPremiumUI();
+
             Unloaded += (_, _) =>
             {
                 _clockTimer.Stop();
@@ -95,6 +97,7 @@ namespace Punto_de_Venta
         {
             if ((bool)e.NewValue)
             {
+                ActualizarIndicadoresPremiumUI();
                 try
                 {
                     Products.Clear();
@@ -115,6 +118,10 @@ namespace Punto_de_Venta
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            if (_clockTimer != null && !_clockTimer.IsEnabled)
+            {
+                _clockTimer.Start();
+            }
             FocusSearch();
         }
         #endregion
@@ -185,12 +192,30 @@ namespace Punto_de_Venta
                 return;
             }
         }
+        public void ActualizarIndicadoresPremiumUI()
+        {
+            bool esPremium = LicenciaService.EsPremium();
+            if (BtnCargarLote != null)
+            {
+                BtnCargarLote.Content = esPremium ? "📦 Cargar Lote" : "🔒 Lotes";
+            }
+            if (BtnEnlaceRapidoInventario != null)
+            {
+                BtnEnlaceRapidoInventario.Content = esPremium ? "Enlace R" : "🔒 Enlace R";
+            }
+        }
         #endregion
 
         #region Modulos de Lotes (Uso y Creacion)
 
         private void OpenLotesModal_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Gestion de Lotes");
+                return;
+            }
+
             LotesListBox.SelectedItem = null;
             LoteItemsBox.ItemsSource = null;
             LotesOverlay.Visibility = Visibility.Visible;
@@ -252,6 +277,12 @@ namespace Punto_de_Venta
         }
         private void OpenGestorLotes_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Creacion de Lotes");
+                return;
+            }
+
             NuevoLoteNombreBox.Clear();
             NuevoLoteProveedorBox.Clear();
             GestorLoteCodigoBox.Clear();
@@ -388,6 +419,12 @@ namespace Punto_de_Venta
         #region Modulo Enlace Rapido e Impresion de Etiquetas
         private void BtnEnlaceRapido_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Enlace Rapido");
+                return;
+            }
+
             var modal = new Vistas.EnlaceRapidoModal();
             modal.Owner = Window.GetWindow(this);
             modal.ShowDialog();
@@ -406,6 +443,12 @@ namespace Punto_de_Venta
 
         private void ImprimirEtiquetaSeleccionada()
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Impresion de Etiquetas");
+                return;
+            }
+
             var producto = _selectedProduct ?? ProductGrid.SelectedItem as Producto;
 
             if (producto == null)

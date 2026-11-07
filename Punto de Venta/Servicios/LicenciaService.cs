@@ -14,8 +14,21 @@ namespace Punto_de_Venta.Servicios
             "licencia.key"
         );
         private const string SALT = "POS_DataStorage_SecureKey_2026";
+        private static string? _cachedHardwareId;
+        private static bool? _isPremiumCached;
+
+        public static void InvalidarCache()
+        {
+            _isPremiumCached = null;
+        }
+
         public static string ObtenerIdentificadorHardware()
         {
+            if (!string.IsNullOrEmpty(_cachedHardwareId))
+            {
+                return _cachedHardwareId;
+            }
+
             string motherboardId = string.Empty;
             string cpuId = string.Empty;
             try
@@ -38,9 +51,12 @@ namespace Punto_de_Venta.Servicios
                 }
             }
             catch { }
+
             string hardwareId = $"{motherboardId}-{cpuId}";
             if (hardwareId == "-") hardwareId = Environment.MachineName;
-            return hardwareId;
+
+            _cachedHardwareId = hardwareId;
+            return _cachedHardwareId;
         }
         private static string GenerarHash(string input)
         {
@@ -53,20 +69,60 @@ namespace Punto_de_Venta.Servicios
             }
         }
         public static bool LicenciaExiste() => File.Exists(LicenciaPath);
+        public static bool EsPremium()
+        {
+            if (_isPremiumCached.HasValue)
+            {
+                return _isPremiumCached.Value;
+            }
+            return ValidarLicencia();
+        }
+
+        public static void MostrarMensajePremium(string caracteristica = "")
+        {
+            string detalle = string.IsNullOrWhiteSpace(caracteristica) ? "Esta funcion" : $"La funcion '{caracteristica}'";
+            var resultado = Punto_de_Venta.Vistas.CustomMessageBox.Show(
+                $"{detalle} es exclusiva de la version Premium.\n\nDeseas ver las opciones de activacion de la licencia?",
+                "Funcion Premium",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Information
+            );
+
+            if (resultado == System.Windows.MessageBoxResult.Yes)
+            {
+                MainWindow.NavegarAActivacion();
+            }
+        }
+
         public static void ActivarLicencia()
         {
             string hwId = ObtenerIdentificadorHardware();
             string hash = GenerarHash(hwId);
             Directory.CreateDirectory(Path.GetDirectoryName(LicenciaPath)!);
             File.WriteAllText(LicenciaPath, hash);
+            _isPremiumCached = true;
         }
         public static bool ValidarLicencia()
         {
-            if (!LicenciaExiste()) return false;
-            string hashGuardado = File.ReadAllText(LicenciaPath).Trim();
-            string hwIdActual = ObtenerIdentificadorHardware();
-            string hashActual = GenerarHash(hwIdActual);
-            return hashGuardado == hashActual;
+            if (!LicenciaExiste())
+            {
+                _isPremiumCached = false;
+                return false;
+            }
+            try
+            {
+                string hashGuardado = File.ReadAllText(LicenciaPath).Trim();
+                string hwIdActual = ObtenerIdentificadorHardware();
+                string hashActual = GenerarHash(hwIdActual);
+                bool esValida = hashGuardado == hashActual;
+                _isPremiumCached = esValida;
+                return esValida;
+            }
+            catch
+            {
+                _isPremiumCached = false;
+                return false;
+            }
         }
     }
 }

@@ -49,22 +49,6 @@ namespace Punto_de_Venta
             QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
             QuestPDF.Settings.UseSystemFonts = true;
             QuestPDF.Settings.ThrowOnMissingFontFamilies = false;
-            if (!LicenciaService.LicenciaExiste())
-            {
-                var activacionWnd = new ActivacionWindow();
-                if (activacionWnd.ShowDialog() != true)
-                {
-                    Shutdown();
-                    return;
-                }
-            }
-            else if (!LicenciaService.ValidarLicencia())
-            {
-                MessageBox.Show("ERROR DE LICENCIA: El hardware de este equipo no coincide con el registro original de la instalacion. Contacte a soporte tecnico para reactivar el sistema.",
-                                "Violacion de Seguridad", MessageBoxButton.OK, MessageBoxImage.Error);
-                Shutdown();
-                return;
-            }
             DatabaseHelper.InicializarBaseDeDatos();
             DatabaseHelper.ActualizarEsquemaVentas();
             AppConfig config = new AppConfig();
@@ -79,7 +63,7 @@ namespace Punto_de_Venta
                 RegistrarErrorEnArchivo(ex, "Startup Init");
                 SetDarkMode(false);
             }
-            if (string.IsNullOrWhiteSpace(config.NombreNegocio))
+            if (!AppConfig.ExisteArchivoConfiguracion() && string.IsNullOrWhiteSpace(config.NombreNegocio))
             {
                 Punto_de_Venta.Vistas.Bienvenida setup = new Punto_de_Venta.Vistas.Bienvenida();
                 setup.Show();

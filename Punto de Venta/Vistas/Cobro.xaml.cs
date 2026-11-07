@@ -1,4 +1,4 @@
-﻿using Punto_de_Venta.Datos;
+using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using System;
@@ -44,7 +44,6 @@ namespace Punto_de_Venta.Vistas
             InitializeComponent();
             DataContext = this;
             Language = XmlLanguage.GetLanguage("es-MX");
-
             Cart.CollectionChanged += Cart_CollectionChanged;
             if (VentasEnEsperaListBox != null)
             {
@@ -75,17 +74,19 @@ namespace Punto_de_Venta.Vistas
                     }), DispatcherPriority.Input);
                 };
             }
+            Unloaded += UserControl_Unloaded;
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
+            ActualizarIndicadoresPremiumUI();
             try
             {
                 _catalog = ProductoDB.Load();
                 CargarPromocionesDesdeDb();
                 CargarVentasEnEsperaDesdeDb();
                 RefreshSuggestions();
-                ActualizarEstadoHardwareAsync(); // Ahora asincrono
+                ActualizarEstadoHardwareAsync();
             }
             catch (Exception exception)
             {
@@ -109,6 +110,16 @@ namespace Punto_de_Venta.Vistas
             {
                 cartGrid.SelectedIndex = -1;
             }
+            if (_clockTimer != null && !_clockTimer.IsEnabled)
+            {
+                _clockTimer.Start();
+            }
+        }
+
+        private void UserControl_Unloaded(object sender, RoutedEventArgs e)
+        {
+            _clockTimer?.Stop();
+            _typingTimer?.Stop();
         }
         #endregion
 
@@ -123,6 +134,7 @@ namespace Punto_de_Venta.Vistas
         {
             if ((bool)e.NewValue)
             {
+                ActualizarIndicadoresPremiumUI();
                 try { _catalog = ProductoDB.Load(); } catch { _catalog = new(); }
                 CargarPromocionesDesdeDb();
                 CargarVentasEnEsperaDesdeDb();
@@ -162,14 +174,12 @@ namespace Punto_de_Venta.Vistas
             TotalScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, animY);
         }
 
-        // METODO OPTIMIZADO PARA NO CONGELAR LA UI
         private async void ActualizarEstadoHardwareAsync()
         {
             try
             {
                 var config = AppConfig.Load();
 
-                // 1. Verificacion de Bascula (Verde solo si esta habilitada en ajustes y el puerto existe)
                 if (config.BasculaHabilitada && !string.IsNullOrWhiteSpace(config.BasculaPuerto))
                 {
                     var puertosActivos = BasculaService.ObtenerPuertosDisponibles();
@@ -195,7 +205,6 @@ namespace Punto_de_Venta.Vistas
                     StatusScaleBadge.ToolTip = "Bascula deshabilitada en ajustes";
                 }
 
-                // 2. Verificacion de Impresora (Verde solo si hay una impresora seleccionada en el POS, la impresion esta activa y existe en Windows)
                 string nombreImpresora = config.ImpresoraSeleccionada?.Trim() ?? string.Empty;
                 bool impresionHabilitada = !string.IsNullOrWhiteSpace(nombreImpresora)
                     && !nombreImpresora.StartsWith("(")
@@ -241,12 +250,34 @@ namespace Punto_de_Venta.Vistas
                 StatusPrinterBadge.Opacity = 0.5;
             }
         }
+        public void ActualizarIndicadoresPremiumUI()
+        {
+            bool esPremium = LicenciaService.EsPremium();
+            if (BtnPausarVenta != null)
+            {
+                BtnPausarVenta.Content = esPremium ? "Pausar / Espera (F2)" : "🔒 Espera (F2)";
+            }
+            if (RbMixto != null)
+            {
+                RbMixto.Content = esPremium ? "Mixto (F7)" : "🔒 Mixto (F7)";
+            }
+            if (CreditButton != null)
+            {
+                CreditButton.Content = esPremium ? "FIAR (F6)" : "🔒 FIAR (F6)";
+            }
+        }
         #endregion
 
         #region Modulo de Pesaje con Bascula (F8)
 
         private async void AbrirModalPesaje()
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Integracion con Bascula");
+                return;
+            }
+
             var cartGrid = (DataGrid)FindName("CartGrid");
             _itemEnPesaje = cartGrid.SelectedItem as ItemCarrito ?? Cart.LastOrDefault();
 
@@ -1180,8 +1211,30 @@ namespace Punto_de_Venta.Vistas
                 if (e.Key == Key.F1) { RbEfectivo.IsChecked = true; e.Handled = true; return; }
                 if (e.Key == Key.F2) { RbTarjeta.IsChecked = true; e.Handled = true; return; }
                 if (e.Key == Key.F3) { RbTransferencia.IsChecked = true; e.Handled = true; return; }
-                if (e.Key == Key.F7) { RbMixto.IsChecked = true; e.Handled = true; return; }
-                if (e.Key == Key.F6) { StartCreditProcess(); e.Handled = true; return; }
+                if (e.Key == Key.F7)
+                {
+                    if (!LicenciaService.EsPremium())
+                    {
+                        LicenciaService.MostrarMensajePremium("Pago Mixto");
+                        e.Handled = true;
+                        return;
+                    }
+                    RbMixto.IsChecked = true;
+                    e.Handled = true;
+                    return;
+                }
+                if (e.Key == Key.F6)
+                {
+                    if (!LicenciaService.EsPremium())
+                    {
+                        LicenciaService.MostrarMensajePremium("Fiar Venta");
+                        e.Handled = true;
+                        return;
+                    }
+                    StartCreditProcess();
+                    e.Handled = true;
+                    return;
+                }
 
                 if (e.Key == Key.Escape)
                 {
@@ -1239,11 +1292,38 @@ namespace Punto_de_Venta.Vistas
             }
 
             if (e.Key == Key.F10 || (e.Key == Key.System && e.SystemKey == Key.F10)) { OpenQuickRestockModal(); e.Handled = true; return; }
-            if (e.Key == Key.F8) { AbrirModalPesaje(); e.Handled = true; return; }
-            if (e.Key == Key.F5) { CajonService.AbrirCajon(); e.Handled = true; return; }
+            if (e.Key == Key.F8)
+            {
+                if (!LicenciaService.EsPremium())
+                {
+                    LicenciaService.MostrarMensajePremium("Integracion con Bascula");
+                    e.Handled = true;
+                    return;
+                }
+                AbrirModalPesaje();
+                e.Handled = true;
+                return;
+            }
+            if (e.Key == Key.F5)
+            {
+                if (!LicenciaService.EsPremium())
+                {
+                    LicenciaService.MostrarMensajePremium("Apertura de Cajon");
+                    e.Handled = true;
+                    return;
+                }
+                CajonService.AbrirCajon();
+                e.Handled = true;
+                return;
+            }
             if (e.Key == Key.F2)
             {
                 e.Handled = true;
+                if (!LicenciaService.EsPremium())
+                {
+                    LicenciaService.MostrarMensajePremium("Ventas en Espera");
+                    return;
+                }
                 if (Cart.Count > 0)
                 {
                     PausarVentaActual();
@@ -1285,7 +1365,7 @@ namespace Punto_de_Venta.Vistas
 
                 e.Handled = true;
             }
-            else if (e.Key == Key.Delete || e.Key == Key.Back)
+            else if (e.Key == Key.Delete)
             {
                 var searchBox = (TextBox)FindName("SearchBox");
                 if (searchBox != null && (!searchBox.IsKeyboardFocusWithin || string.IsNullOrEmpty(searchBox.Text)))
@@ -1315,6 +1395,12 @@ namespace Punto_de_Venta.Vistas
 
         private void StartCreditProcess()
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Fiar Venta");
+                return;
+            }
+
             CreditValidationMessage.Text = string.Empty;
             DebtorNameBox.Clear();
             CreditOverlay.Visibility = Visibility.Visible;
@@ -1432,7 +1518,7 @@ namespace Punto_de_Venta.Vistas
                 var config = AppConfig.Load();
                 TicketService.GuardarCopiaDigital(sale, sale.Productos, 0m, 0m, config);
 
-                LimpiarEventosCarrito(); // Fix de memoria
+                LimpiarEventosCarrito();
                 _saleNumber++;
                 RefreshSummary();
 
@@ -1548,6 +1634,13 @@ namespace Punto_de_Venta.Vistas
 
             if (RbMixto.IsChecked == true)
             {
+                if (!LicenciaService.EsPremium())
+                {
+                    RbEfectivo.IsChecked = true;
+                    LicenciaService.MostrarMensajePremium("Pago Mixto");
+                    return;
+                }
+
                 SinglePaymentLabel.Visibility = Visibility.Collapsed;
                 SinglePaymentContainer.Visibility = Visibility.Collapsed;
                 MixedPaymentContainer.Visibility = Visibility.Visible;
@@ -2009,7 +2102,8 @@ namespace Punto_de_Venta.Vistas
         {
             if (Cart == null || Cart.Count == 0) return 0m;
             var subtotalBruto = Cart.Sum(item => item.Subtotal);
-            var resultadoPromo = PromocionEngine.Evaluar(Cart, _promocionesCargadas ?? new());
+            var promociones = LicenciaService.EsPremium() ? (_promocionesCargadas ?? new()) : new List<Promocion>();
+            var resultadoPromo = PromocionEngine.Evaluar(Cart, promociones);
             var totalConDescuento = Math.Max(0m, subtotalBruto - resultadoPromo.DescuentoTotal);
             return Math.Round(totalConDescuento, 0, MidpointRounding.AwayFromZero);
         }
@@ -2022,7 +2116,8 @@ namespace Punto_de_Venta.Vistas
             var culture = CultureInfo.GetCultureInfo("es-MX");
             var itemCount = Cart.Count;
             var subtotalBruto = Cart.Sum(item => item.Subtotal);
-            var resultadoPromo = PromocionEngine.Evaluar(Cart, _promocionesCargadas ?? new());
+            var promociones = LicenciaService.EsPremium() ? (_promocionesCargadas ?? new()) : new List<Promocion>();
+            var resultadoPromo = PromocionEngine.Evaluar(Cart, promociones);
             var totalNetoRedondeado = ObtenerTotalNetoVenta();
             ((TextBlock)FindName("ProductCountText")).Text = itemCount.ToString(culture);
             ((TextBlock)FindName("TotalText")).Text = totalNetoRedondeado.ToString("C2", culture);
@@ -2094,6 +2189,12 @@ namespace Punto_de_Venta.Vistas
 
         private void PausarVentaActual(bool mostrarToast = true)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Ventas en Espera");
+                return;
+            }
+
             if (Cart == null || Cart.Count == 0)
             {
                 if (mostrarToast)
@@ -2154,6 +2255,12 @@ namespace Punto_de_Venta.Vistas
 
         private void AbrirModalVentasEnEspera()
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Ventas en Espera");
+                return;
+            }
+
             CargarVentasEnEsperaDesdeDb();
             if (VentasEnEsperaOverlay != null)
             {
@@ -2177,6 +2284,12 @@ namespace Punto_de_Venta.Vistas
 
         private void BtnVentasEnEspera_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Ventas en Espera");
+                return;
+            }
+
             if (sender != BtnVentasEnEsperaBadge && Cart.Count > 0)
             {
                 PausarVentaActual();

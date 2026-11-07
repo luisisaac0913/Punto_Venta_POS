@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -13,29 +13,29 @@ namespace Punto_de_Venta
         public AutorizacionModal()
         {
             InitializeComponent();
-            Loaded += (_, _) =>
-            {
-                if (Owner != null)
-                {
-                    _blurEffect = new BlurEffect
-                    {
-                        Radius = 12,
-                        RenderingBias = RenderingBias.Performance
-                    };
-                    Owner.Effect = _blurEffect;
-                }
-            };
-            Closed += (_, _) =>
-            {
-                if (Owner != null)
-                {
-                    Owner.Effect = null;
-                }
-            };
         }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            if (Owner != null)
+            {
+                _blurEffect = new BlurEffect
+                {
+                    Radius = 12,
+                    RenderingBias = RenderingBias.Performance
+                };
+                Owner.Effect = _blurEffect;
+            }
             PinBox.Focus();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            if (Owner != null)
+            {
+                Owner.Effect = null;
+            }
         }
 
         private void PinBox_KeyDown(object sender, KeyEventArgs e)

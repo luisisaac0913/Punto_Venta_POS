@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing.Printing;
 using System.Globalization;
 using System.Windows;
@@ -19,6 +19,18 @@ namespace Punto_de_Venta.Vistas
             ActualizarVistaPasos();
             var config = AppConfig.Load();
             BtnThemeToggle.Content = config.ModoOscuro ? "☀️" : "🌙";
+            if (!string.IsNullOrWhiteSpace(config.NombreNegocio))
+            {
+                TxtNombreNegocio.Text = config.NombreNegocio;
+            }
+            if (!string.IsNullOrWhiteSpace(config.DireccionNegocio))
+            {
+                TxtDireccion.Text = config.DireccionNegocio;
+            }
+            if (!string.IsNullOrWhiteSpace(config.MensajePie))
+            {
+                TxtMensajePie.Text = config.MensajePie;
+            }
         }
 
         private void BtnThemeToggle_Click(object sender, RoutedEventArgs e)
@@ -200,6 +212,7 @@ namespace Punto_de_Venta.Vistas
             _setupCompletado = true;
             MainWindow main = new MainWindow();
             Application.Current.MainWindow = main;
+            main.ActualizarNombreNegocioEnUI(config);
             main.Show();
             this.Close();
         }

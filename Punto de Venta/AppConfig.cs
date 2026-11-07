@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace Punto_de_Venta
@@ -46,19 +47,76 @@ namespace Punto_de_Venta
             }
         }
 
-        public static AppConfig Load()
+        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
         {
-            try
-            {
-                if (File.Exists(ConfigPath))
-                {
-                    var json = File.ReadAllText(ConfigPath);
-                    return JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
-                }
-            }
-            catch { }
+            PropertyNameCaseInsensitive = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            WriteIndented = true
+        };
 
-            return new AppConfig();
+        public static bool ExisteArchivoConfiguracion() => File.Exists(ConfigPath);
+
+        private static AppConfig? _cachedConfig;
+        private static readonly object _configLock = new();
+
+        public static void InvalidarCache()
+        {
+            lock (_configLock)
+            {
+                _cachedConfig = null;
+            }
+        }
+
+        public static AppConfig Load(bool forzarLectura = false)
+        {
+            lock (_configLock)
+            {
+                if (!forzarLectura && _cachedConfig != null)
+                {
+                    return _cachedConfig;
+                }
+
+                try
+                {
+                    if (File.Exists(ConfigPath))
+                    {
+                        var json = File.ReadAllText(ConfigPath);
+                        var config = JsonSerializer.Deserialize<AppConfig>(json, JsonOptions);
+                        if (config != null)
+                        {
+                            if (string.IsNullOrWhiteSpace(config.NombreNegocio))
+                            {
+                                try
+                                {
+                                    using var doc = JsonDocument.Parse(json);
+                                    foreach (var prop in doc.RootElement.EnumerateObject())
+                                    {
+                                        var propName = prop.Name.ToLowerInvariant();
+                                        if (propName == "nombre" || propName == "tienda" || propName == "negocio" || propName == "businessname")
+                                        {
+                                            var valor = prop.Value.GetString();
+                                            if (!string.IsNullOrWhiteSpace(valor))
+                                            {
+                                                config.NombreNegocio = valor;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                catch { }
+                            }
+                            _cachedConfig = config;
+                            return config;
+                        }
+                    }
+                }
+                catch { }
+
+                _cachedConfig = new AppConfig();
+                return _cachedConfig;
+            }
         }
 
         public void Save()
@@ -67,8 +125,12 @@ namespace Punto_de_Venta
             {
                 var dir = Path.GetDirectoryName(ConfigPath)!;
                 Directory.CreateDirectory(dir);
-                var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+                var json = JsonSerializer.Serialize(this, JsonOptions);
                 SafeFileStore.WriteAllLinesAtomic(ConfigPath, new[] { json });
+                lock (_configLock)
+                {
+                    _cachedConfig = this;
+                }
             }
             catch { }
         }

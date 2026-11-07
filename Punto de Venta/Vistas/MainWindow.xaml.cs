@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
@@ -22,6 +22,7 @@ namespace Punto_de_Venta
     public partial class MainWindow : Window
     {
         #region Campos Privados y Cache
+        public static MainWindow? InstanciaActual { get; private set; }
         private readonly DispatcherTimer _clockTimer;
         private bool _isShuttingDown;
         private Point _lastMousePosition;
@@ -35,6 +36,7 @@ namespace Punto_de_Venta
         #region Inicializacion
         public MainWindow()
         {
+            InstanciaActual = this;
             InitializeComponent();
             IniciarRespaldoAutomaticoSilencioso();
             _standbyClockTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -49,7 +51,6 @@ namespace Punto_de_Venta
                 MostrarPantallaReposo();
             };
 
-            // Cargamos la configuracion ANTES de usarla para evitar el error
             var config = AppConfig.Load();
 
             ActualizarConfiguracionReposo(config);
@@ -59,18 +60,7 @@ namespace Punto_de_Venta
             QuestPDF.Settings.License = LicenseType.Community;
             QuestPDF.Settings.UseSystemFonts = true;
 
-            try
-            {
-                if (!string.IsNullOrWhiteSpace(config.NombreNegocio))
-                {
-                    if (FindName("TxtMiniLogo") is TextBlock miniLogo)
-                        miniLogo.Text = config.NombreNegocio;
-
-                    if (FindName("TxtTituloDashboard") is TextBlock tituloDash)
-                        tituloDash.Text = config.NombreNegocio;
-                }
-            }
-            catch { }
+            ActualizarNombreNegocioEnUI(config);
 
             _clockTimer = new DispatcherTimer
             {
@@ -101,10 +91,43 @@ namespace Punto_de_Venta
 
             UpdateClock();
             _clockTimer.Start();
+            ActualizarEstadoLicenciaUI();
         }
         #endregion
 
         #region Gestion de Ventana y Reloj
+
+        public void ActualizarNombreNegocioEnUI(AppConfig? config = null)
+        {
+            config ??= AppConfig.Load();
+            string nombre = !string.IsNullOrWhiteSpace(config?.NombreNegocio)
+                ? config.NombreNegocio
+                : "Punto de Venta";
+
+            try
+            {
+                if (TxtMiniLogo != null)
+                {
+                    TxtMiniLogo.Text = nombre;
+                }
+                else if (FindName("TxtMiniLogo") is TextBlock miniLogo)
+                {
+                    miniLogo.Text = nombre;
+                }
+
+                if (TxtTituloDashboard != null)
+                {
+                    TxtTituloDashboard.Text = nombre;
+                }
+                else if (FindName("TxtTituloDashboard") is TextBlock tituloDash)
+                {
+                    tituloDash.Text = nombre;
+                }
+
+                Title = $"{nombre} - Punto de Venta";
+            }
+            catch { }
+        }
 
         public void ActualizarConfiguracionReposo(AppConfig config)
         {
@@ -124,7 +147,6 @@ namespace Punto_de_Venta
         {
             bool userInputDetected = false;
 
-            // Detectar si presionaron una tecla
             if (e.StagingItem.Input is System.Windows.Input.KeyboardEventArgs keyboardArgs)
             {
                 if (keyboardArgs.RoutedEvent == System.Windows.Input.Keyboard.PreviewKeyDownEvent ||
@@ -133,7 +155,6 @@ namespace Punto_de_Venta
                     userInputDetected = true;
                 }
             }
-            // Detectar raton (Clics o movimiento real)
             else if (e.StagingItem.Input is System.Windows.Input.MouseEventArgs mouseArgs)
             {
                 if (mouseArgs.RoutedEvent == System.Windows.Input.Mouse.PreviewMouseDownEvent ||
@@ -169,6 +190,37 @@ namespace Punto_de_Venta
         private void MostrarPantallaReposo()
         {
             _inactivityTimer.Stop();
+
+            try
+            {
+                var modalesAbiertos = Application.Current.Windows.OfType<Window>()
+                    .Where(w => w != this && w is not ToastNotification && w.IsVisible)
+                    .ToList();
+
+                foreach (var modal in modalesAbiertos)
+                {
+                    try
+                    {
+                        modal.DialogResult = false;
+                    }
+                    catch
+                    {
+                        try { modal.Close(); } catch { }
+                    }
+                }
+            }
+            catch { }
+
+            try
+            {
+                if (ContenedorVistas?.Content is Cobro cobroView)
+                {
+                    var popup = cobroView.FindName("SuggestionsPopup") as System.Windows.Controls.Primitives.Popup;
+                    if (popup != null) popup.IsOpen = false;
+                }
+            }
+            catch { }
+
             ActualizarRelojReposo();
             _standbyClockTimer.Start();
             try { _lastMousePosition = Mouse.GetPosition(this); } catch { }
@@ -237,7 +289,7 @@ namespace Punto_de_Venta
         #endregion
 
         #region Navegacion y Rutas (Vistas Modulares)
-        private void AbrirVista<T>() where T : UserControl, new()
+        public void AbrirVista<T>() where T : UserControl, new()
         {
             string nombreVista = typeof(T).Name;
 
@@ -275,9 +327,98 @@ namespace Punto_de_Venta
             }), DispatcherPriority.Input);
         }
 
+        public void ActualizarEstadoLicenciaUI()
+        {
+            bool esPremium = LicenciaService.EsPremium();
+
+            if (BtnEstadoLicencia != null)
+            {
+                if (esPremium)
+                {
+                    BtnEstadoLicencia.Content = "✨ Premium";
+                    BtnEstadoLicencia.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(35, 16, 185, 129));
+                    BtnEstadoLicencia.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(16, 185, 129));
+                    BtnEstadoLicencia.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(90, 16, 185, 129));
+                    BtnEstadoLicencia.ToolTip = "Licencia Premium activa";
+                }
+                else
+                {
+                    BtnEstadoLicencia.Content = "⭐ Activar Licencia";
+                    BtnEstadoLicencia.SetResourceReference(Button.BackgroundProperty, "ThemeAccent");
+                    BtnEstadoLicencia.Foreground = System.Windows.Media.Brushes.White;
+                    BtnEstadoLicencia.BorderBrush = System.Windows.Media.Brushes.Transparent;
+                    BtnEstadoLicencia.ToolTip = "Haz clic para activar la version Premium";
+                }
+            }
+
+            if (TxtTituloPromociones != null)
+                TxtTituloPromociones.Text = esPremium ? "Promociones" : "Promociones 🔒";
+
+            if (TxtTituloPrestamos != null)
+                TxtTituloPrestamos.Text = esPremium ? "Prestamos" : "Prestamos 🔒";
+
+            if (TxtTituloEtiquetas != null)
+                TxtTituloEtiquetas.Text = esPremium ? "Etiquetas" : "Etiquetas 🔒";
+
+            if (TxtTituloExportar != null)
+                TxtTituloExportar.Text = esPremium ? "Exportar" : "Exportar 🔒";
+
+            if (_vistasCache.TryGetValue("Configuracion", out var configView) && configView is Configuracion cfg)
+            {
+                cfg.ActualizarIndicadoresPremiumUI();
+            }
+            if (_vistasCache.TryGetValue("Cobro", out var cobroView) && cobroView is Cobro cbr)
+            {
+                cbr.ActualizarIndicadoresPremiumUI();
+            }
+            if (_vistasCache.TryGetValue("Inventario", out var invView) && invView is Inventario inv)
+            {
+                inv.ActualizarIndicadoresPremiumUI();
+            }
+            if (_vistasCache.TryGetValue("Ventas", out var vtaView) && vtaView is Ventas vta)
+            {
+                vta.ActualizarIndicadoresPremiumUI();
+            }
+            if (_vistasCache.TryGetValue("Graficas", out var grfView) && grfView is Graficas grf)
+            {
+                grf.RefreshData();
+            }
+        }
+
+        private void BtnEstadoLicencia_Click(object sender, RoutedEventArgs e)
+        {
+            AbrirVista<Activacion>();
+        }
+
+        public static void NavegarAActivacion()
+        {
+            InstanciaActual?.Dispatcher.Invoke(() =>
+            {
+                InstanciaActual.AbrirVista<Activacion>();
+            });
+        }
+
         private void Cobro_Click(object sender, RoutedEventArgs e) => AbrirVista<Cobro>();
-        private void Prestamos_Click(object sender, RoutedEventArgs e) => AbrirVista<Prestamos>();
-        private void CodigosDeBarras_Click(object sender, RoutedEventArgs e) => AbrirVista<CodigosBarrasWindow>();
+
+        private void Prestamos_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Cuentas por Cobrar (Fiado)");
+                return;
+            }
+            AbrirVista<Prestamos>();
+        }
+
+        private void CodigosDeBarras_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Generacion e Impresion de Etiquetas");
+                return;
+            }
+            AbrirVista<CodigosBarrasWindow>();
+        }
 
         private void Inventario_Click(object sender, RoutedEventArgs e)
         {
@@ -301,7 +442,15 @@ namespace Punto_de_Venta
 
         private void Promociones_Click(object sender, RoutedEventArgs e)
         {
-            if (SolicitarAutorizacion()) AbrirVista<Promociones>();
+            if (SolicitarAutorizacion())
+            {
+                if (!LicenciaService.EsPremium())
+                {
+                    LicenciaService.MostrarMensajePremium("Promociones y Ofertas");
+                    return;
+                }
+                AbrirVista<Promociones>();
+            }
         }
 
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -328,7 +477,6 @@ namespace Punto_de_Venta
                 return;
             }
 
-            // Atajo universal: Ctrl + L limpia la seleccion de la vista abierta
             if (ContenedorVistas.Visibility == Visibility.Visible
                 && e.Key == Key.L && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control
                 && ContenedorVistas.Content is ILimpiarSeleccion vistaConSeleccion)
@@ -383,7 +531,7 @@ namespace Punto_de_Venta
         private bool SolicitarAutorizacion()
         {
             var config = AppConfig.Load();
-            if (!config.SolicitarPinAdmin) return true;
+            if (!config.SolicitarPinAdmin || !LicenciaService.EsPremium()) return true;
 
             var modal = new AutorizacionModal { Owner = this };
             modal.ShowDialog();
@@ -612,6 +760,12 @@ namespace Punto_de_Venta
         #region Exportacion (Archivos PDF)
         private void Exportar_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Exportacion de Datos");
+                return;
+            }
+
             if (FindName("ExportarOverlay") is Grid overlay)
             {
                 overlay.Visibility = Visibility.Visible;
