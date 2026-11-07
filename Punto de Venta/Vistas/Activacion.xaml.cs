@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace Punto_de_Venta
 {
@@ -26,16 +27,31 @@ namespace Punto_de_Venta
         public Activacion()
         {
             InitializeComponent();
+            Focusable = true;
             _hwid = LicenciaService.ObtenerIdentificadorHardware();
             TxtHwidInactivo.Text = _hwid;
             TxtHwidActivo.Text = _hwid;
 
             Loaded += Activacion_Loaded;
             Unloaded += Activacion_Unloaded;
+            PreviewKeyDown += Activacion_PreviewKeyDown;
+        }
+
+        private void Activacion_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                DetenerPolling();
+                var mainWindow = Window.GetWindow(this) as MainWindow ?? Application.Current.MainWindow as MainWindow;
+                mainWindow?.RegresarAlMenu();
+                e.Handled = true;
+            }
         }
 
         private async void Activacion_Loaded(object sender, RoutedEventArgs e)
         {
+            Focus();
+            Keyboard.Focus(this);
             ActualizarEstadoVisual();
 
             try
@@ -67,19 +83,11 @@ namespace Punto_de_Venta
             {
                 PanelLicenciaActiva.Visibility = Visibility.Visible;
                 PanelLicenciaInactiva.Visibility = Visibility.Collapsed;
-                TxtEstadoHeader.Text = "Licencia Activa (Premium)";
-                TxtEstadoHeader.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(16, 185, 129));
-                BadgeEstadoHeader.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(25, 16, 185, 129));
-                BadgeEstadoHeader.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(50, 16, 185, 129));
             }
             else
             {
                 PanelLicenciaActiva.Visibility = Visibility.Collapsed;
                 PanelLicenciaInactiva.Visibility = Visibility.Visible;
-                TxtEstadoHeader.Text = "Version Gratuita";
-                TxtEstadoHeader.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(245, 158, 11));
-                BadgeEstadoHeader.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(25, 245, 158, 11));
-                BadgeEstadoHeader.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(50, 245, 158, 11));
             }
         }
 
