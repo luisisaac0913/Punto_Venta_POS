@@ -33,7 +33,9 @@
                        FontSize="13" 
                        FontWeight="SemiBold" 
                        Foreground="{DynamicResource ThemeTextForeground}" 
-                       VerticalAlignment="Center" />
+                       VerticalAlignment="Center"
+                       TextWrapping="Wrap"
+                       MaxWidth="520" />
         </StackPanel>
     </Border>
 </Window>

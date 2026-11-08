@@ -61,7 +61,8 @@ namespace Punto_de_Venta.Servicios
                         if (relativePath.StartsWith("Backups", StringComparison.OrdinalIgnoreCase) ||
                             relativePath.StartsWith("GoogleDriveTokenStore", StringComparison.OrdinalIgnoreCase) ||
                             relativePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
-                            relativePath.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase))
+                            relativePath.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase) ||
+                            relativePath.EndsWith(".key", StringComparison.OrdinalIgnoreCase))
                         {
                             continue;
                         }
@@ -316,7 +317,7 @@ namespace Punto_de_Venta.Servicios
                 return $"BaseDatos/{name}";
             }
 
-            if (ext == ".json" || ext == ".key")
+            if (ext == ".json")
             {
                 return $"Configuracion/{name}";
             }
