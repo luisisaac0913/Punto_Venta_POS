@@ -14,9 +14,6 @@
         TextOptions.TextRenderingMode="ClearType">
 
     <Window.Resources>
-        <DropShadowEffect x:Key="AppleAppIconShadow" BlurRadius="24" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.05" />
-        <DropShadowEffect x:Key="AppleHoverShadow" BlurRadius="32" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.10" />
-        <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="48" ShadowDepth="16" Direction="270" Color="#000000" Opacity="0.22" />
         <StreamGeometry x:Key="IconCobro">M 8,19 A 1,1 0 1 0 8,21 A 1,1 0 1 0 8,19 Z M 19,19 A 1,1 0 1 0 19,21 A 1,1 0 1 0 19,19 Z M 2.05,2.05 L 4.05,2.05 L 6.71,14.47 A 2,2 0 0 0 8.71,16.05 L 18.49,16.05 A 2,2 0 0 0 20.44,14.48 L 22.09,7.05 L 5.12,7.05</StreamGeometry>
         <StreamGeometry x:Key="IconVentas">M 4,2 L 4,22 L 6,21 L 8,22 L 10,21 L 12,22 L 14,21 L 16,22 L 18,21 L 20,22 L 20,2 L 18,3 L 16,2 L 14,3 L 12,2 L 10,3 L 8,2 L 6,3 Z M 16,8 L 10,8 A 2,2 0 1 0 10,12 L 14,12 A 2,2 0 1 1 14,16 L 8,16 M 12,17.5 L 12,6.5</StreamGeometry>
         <StreamGeometry x:Key="IconInventario">M 8,2 L 16,2 L 16,6 L 8,6 Z M 16,4 L 18,4 A 2,2 0 0 1 20,6 L 20,20 A 2,2 0 0 1 18,22 L 6,22 A 2,2 0 0 1 4,20 L 4,6 A 2,2 0 0 1 6,4 L 8,4 M 12,11 L 16,11 M 12,16 L 16,16 M 8,11 L 8.01,11 M 8,16 L 8.01,16</StreamGeometry>
@@ -27,6 +24,7 @@
         <StreamGeometry x:Key="IconExportar">M 21,15 L 21,19 A 2,2 0 0 1 19,21 L 5,21 A 2,2 0 0 1 3,19 L 3,15 M 17,8 L 12,3 L 7,8 M 12,3 L 12,15</StreamGeometry>
         <StreamGeometry x:Key="IconImportar">M 21,15 L 21,19 A 2,2 0 0 1 19,21 L 5,21 A 2,2 0 0 1 3,19 L 3,15 M 7,10 L 12,15 L 17,10 M 12,15 L 12,3</StreamGeometry>
         <StreamGeometry x:Key="IconConfiguracion">M 21,4 L 14,4 M 10,4 L 3,4 M 21,12 L 12,12 M 8,12 L 3,12 M 21,20 L 16,20 M 12,20 L 3,20 M 14,2 L 14,6 M 8,10 L 8,14 M 16,18 L 16,22</StreamGeometry>
+
         <Style x:Key="WinCaptionButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="42" />
             <Setter Property="Height" Value="32" />
@@ -38,7 +36,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="BorderBtn" Background="{TemplateBinding Background}" CornerRadius="8">
+                        <Border x:Name="BorderBtn" Background="{TemplateBinding Background}" CornerRadius="4">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -60,7 +58,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="BorderBtn" Background="{TemplateBinding Background}" CornerRadius="8">
+                        <Border x:Name="BorderBtn" Background="{TemplateBinding Background}" CornerRadius="4">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -77,6 +75,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style x:Key="HeroButtonStyle" TargetType="Button">
             <Setter Property="Margin" Value="10" />
             <Setter Property="Padding" Value="28" />
@@ -85,14 +84,10 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="HeroBorder" Background="{TemplateBinding Background}" CornerRadius="28" Padding="{TemplateBinding Padding}" Effect="{StaticResource AppleAppIconShadow}">
-                            <Border.RenderTransform>
-                                <ScaleTransform x:Name="BtnScale" ScaleX="1" ScaleY="1" />
-                            </Border.RenderTransform>
+                        <Border x:Name="HeroBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}" Effect="{StaticResource FluentCardShadow}">
                             <Grid>
                                 <Ellipse Width="240" Height="240" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-80,-80,0" Fill="#15FFFFFF" IsHitTestVisible="False"/>
                                 <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
@@ -100,31 +95,17 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="HeroBorder" Property="Effect" Value="{StaticResource AppleHoverShadow}" />
+                                <Setter TargetName="HeroBorder" Property="Opacity" Value="0.95" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="BtnScale" Storyboard.TargetProperty="ScaleX" To="0.98" Duration="0:0:0.08" />
-                                            <DoubleAnimation Storyboard.TargetName="BtnScale" Storyboard.TargetProperty="ScaleY" To="0.98" Duration="0:0:0.08" />
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="BtnScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.1" />
-                                            <DoubleAnimation Storyboard.TargetName="BtnScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.1" />
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
+                                <Setter TargetName="HeroBorder" Property="Opacity" Value="0.85" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style x:Key="BentoCardStyle" TargetType="Button">
             <Setter Property="Margin" Value="10" />
             <Setter Property="Padding" Value="22" />
@@ -137,35 +118,16 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="CardBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="24" Padding="{TemplateBinding Padding}" Effect="{StaticResource AppleAppIconShadow}">
-                            <Border.RenderTransform>
-                                <ScaleTransform x:Name="BtnScale" ScaleX="1" ScaleY="1" CenterX="100" CenterY="100" />
-                            </Border.RenderTransform>
+                        <Border x:Name="CardBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}" Effect="{StaticResource FluentCardShadow}">
                             <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}" />
                                 <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
-                                <Setter TargetName="CardBorder" Property="Effect" Value="{StaticResource AppleHoverShadow}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="BtnScale" Storyboard.TargetProperty="ScaleX" To="0.98" Duration="0:0:0.08" />
-                                            <DoubleAnimation Storyboard.TargetName="BtnScale" Storyboard.TargetProperty="ScaleY" To="0.98" Duration="0:0:0.08" />
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="BtnScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.1" />
-                                            <DoubleAnimation Storyboard.TargetName="BtnScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.1" />
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
+                                <Setter TargetName="CardBorder" Property="Opacity" Value="0.85" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -185,10 +147,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="PillBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="20" Padding="{TemplateBinding Padding}" Effect="{StaticResource AppleAppIconShadow}">
-                            <Border.RenderTransform>
-                                <ScaleTransform x:Name="BtnScale" ScaleX="1" ScaleY="1" CenterX="50" CenterY="25" />
-                            </Border.RenderTransform>
+                        <Border x:Name="PillBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -197,28 +156,14 @@
                                 <Setter TargetName="PillBorder" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="BtnScale" Storyboard.TargetProperty="ScaleX" To="0.97" Duration="0:0:0.08" />
-                                            <DoubleAnimation Storyboard.TargetName="BtnScale" Storyboard.TargetProperty="ScaleY" To="0.97" Duration="0:0:0.08" />
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="BtnScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.1" />
-                                            <DoubleAnimation Storyboard.TargetName="BtnScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.1" />
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
+                                <Setter TargetName="PillBorder" Property="Opacity" Value="0.85" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style x:Key="ExportModalCardStyle" TargetType="Button" BasedOn="{StaticResource BentoCardStyle}">
             <Setter Property="Margin" Value="10" />
             <Setter Property="Padding" Value="20" />
@@ -229,7 +174,7 @@
     <Border Background="{DynamicResource ThemeWindowBackground}"
             BorderBrush="{DynamicResource ThemeBorder}"
             BorderThickness="1"
-            CornerRadius="16"
+            CornerRadius="8"
             ClipToBounds="True">
 
         <Grid>
@@ -248,10 +193,10 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
-                        <Border Width="36" Height="26" CornerRadius="8" Background="{DynamicResource ThemeInputBackground}" Margin="0,0,10,0">
+                        <Border Width="36" Height="26" CornerRadius="4" Background="{DynamicResource ThemeInputBackground}" Margin="0,0,10,0">
                             <Image Source="{DynamicResource ThemeLogo}" Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
-                        <TextBlock x:Name="TxtMiniLogo" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" IsHitTestVisible="False" />
+                        <TextBlock x:Name="TxtMiniLogo" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" IsHitTestVisible="False" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
@@ -259,7 +204,7 @@
                             <Path Data="M 0,0 L 10,0" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" VerticalAlignment="Center" />
                         </Button>
                         <Button Style="{StaticResource WinCaptionButtonStyle}" Click="BtnMaximize_Click" ToolTip="Maximizar">
-                            <Border Width="10" Height="10" BorderBrush="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" BorderThickness="1.5" CornerRadius="2.5" />
+                            <Border Width="10" Height="10" BorderBrush="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" BorderThickness="1.5" CornerRadius="2" />
                         </Button>
                         <Button Style="{StaticResource WinCaptionCloseButtonStyle}" Click="BtnClose_Click" ToolTip="Cerrar">
                             <Path Data="M 0,0 L 9,9 M 9,0 L 0,9" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" VerticalAlignment="Center" />
@@ -273,30 +218,6 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <Grid Grid.Row="0" Margin="10,0,10,22">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock x:Name="TxtTituloDashboard" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="40" FontWeight="ExtraBold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                <Button x:Name="BtnEstadoLicencia" Margin="18,4,0,0" VerticalAlignment="Center" Height="32" Padding="14,0" Cursor="Hand" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Click="BtnEstadoLicencia_Click">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="BorderLicencia" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="16" Padding="{TemplateBinding Padding}">
-                                                <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
-                                            </Border>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,2">
-                                <TextBlock x:Name="ClockText" Text="00:00" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Right" />
-                                <TextBlock x:Name="DateText" Text="" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" FontWeight="Medium" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,2,0,0" />
-                            </StackPanel>
-                        </Grid>
                         <Grid Grid.Row="1">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*" />
@@ -321,7 +242,7 @@
                                             <RowDefinition Height="*" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
-                                        <Border Grid.Row="0" Width="68" Height="68" CornerRadius="20" Background="#22FFFFFF" HorizontalAlignment="Left">
+                                        <Border Grid.Row="0" Width="68" Height="68" CornerRadius="8" Background="#22FFFFFF" HorizontalAlignment="Left">
                                             <Viewbox Width="36" Height="36" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <Canvas Width="24" Height="24">
                                                     <Path Data="{StaticResource IconCobro}" Stroke="White" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
@@ -341,7 +262,7 @@
                                             <RowDefinition Height="*" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
-                                        <Border Grid.Row="0" Width="52" Height="52" CornerRadius="16" Background="{DynamicResource ThemeInputBackground}" HorizontalAlignment="Left">
+                                        <Border Grid.Row="0" Width="52" Height="52" CornerRadius="4" Background="{DynamicResource ThemeInputBackground}" HorizontalAlignment="Left">
                                             <Viewbox Width="26" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <Canvas Width="24" Height="24">
                                                     <Path Data="{StaticResource IconVentas}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
@@ -349,8 +270,8 @@
                                             </Viewbox>
                                         </Border>
                                         <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
-                                            <TextBlock Text="Ventas" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                            <TextBlock Text="Historial y tickets" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
+                                            <TextBlock Text="Ventas" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="Historial y tickets" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </Grid>
                                 </Button>
@@ -361,7 +282,7 @@
                                             <RowDefinition Height="*" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
-                                        <Border Grid.Row="0" Width="52" Height="52" CornerRadius="16" Background="{DynamicResource ThemeInputBackground}" HorizontalAlignment="Left">
+                                        <Border Grid.Row="0" Width="52" Height="52" CornerRadius="4" Background="{DynamicResource ThemeInputBackground}" HorizontalAlignment="Left">
                                             <Viewbox Width="26" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <Canvas Width="24" Height="24">
                                                     <Path Data="{StaticResource IconInventario}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
@@ -369,8 +290,8 @@
                                             </Viewbox>
                                         </Border>
                                         <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
-                                            <TextBlock Text="Inventario" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                            <TextBlock Text="Productos y stock" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
+                                            <TextBlock Text="Inventario" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="Productos y stock" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </Grid>
                                 </Button>
@@ -381,7 +302,7 @@
                                             <RowDefinition Height="*" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
-                                        <Border Grid.Row="0" Width="52" Height="52" CornerRadius="16" Background="{DynamicResource ThemeInputBackground}" HorizontalAlignment="Left">
+                                        <Border Grid.Row="0" Width="52" Height="52" CornerRadius="4" Background="{DynamicResource ThemeInputBackground}" HorizontalAlignment="Left">
                                             <Viewbox Width="26" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <Canvas Width="24" Height="24">
                                                     <Path Data="{StaticResource IconPromociones}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
@@ -389,8 +310,8 @@
                                             </Viewbox>
                                         </Border>
                                         <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
-                                            <TextBlock x:Name="TxtTituloPromociones" Text="Promociones" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                            <TextBlock Text="Ofertas activas" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
+                                            <TextBlock x:Name="TxtTituloPromociones" Text="Promociones" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="Ofertas activas" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </Grid>
                                 </Button>
@@ -401,7 +322,7 @@
                                             <RowDefinition Height="*" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
-                                        <Border Grid.Row="0" Width="52" Height="52" CornerRadius="16" Background="{DynamicResource ThemeInputBackground}" HorizontalAlignment="Left">
+                                        <Border Grid.Row="0" Width="52" Height="52" CornerRadius="4" Background="{DynamicResource ThemeInputBackground}" HorizontalAlignment="Left">
                                             <Viewbox Width="26" Height="26" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <Canvas Width="24" Height="24">
                                                     <Path Data="{StaticResource IconPrestamos}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
@@ -409,8 +330,8 @@
                                             </Viewbox>
                                         </Border>
                                         <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
-                                            <TextBlock x:Name="TxtTituloPrestamos" Text="Prestamos" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                            <TextBlock Text="Cuentas por cobrar" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
+                                            <TextBlock x:Name="TxtTituloPrestamos" Text="Prestamos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="Cuentas por cobrar" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </Grid>
                                 </Button>
@@ -424,7 +345,7 @@
                                                 <Path Data="{StaticResource IconEtiquetas}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                             </Canvas>
                                         </Viewbox>
-                                        <TextBlock x:Name="TxtTituloEtiquetas" Text="Etiquetas" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock x:Name="TxtTituloEtiquetas" Text="Etiquetas" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Graficas" Click="Graficas_Click">
@@ -434,7 +355,7 @@
                                                 <Path Data="{StaticResource IconGraficas}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                             </Canvas>
                                         </Viewbox>
-                                        <TextBlock Text="Graficas" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock Text="Graficas" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
                                 </Button>
                                 <Button x:Name="ExportButton" Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Exportar" Click="Exportar_Click">
@@ -444,7 +365,7 @@
                                                 <Path Data="{StaticResource IconExportar}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                             </Canvas>
                                         </Viewbox>
-                                        <TextBlock x:Name="TxtTituloExportar" Text="Exportar" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock x:Name="TxtTituloExportar" Text="Exportar" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
                                 </Button>
 
@@ -455,7 +376,7 @@
                                                 <Path Data="{StaticResource IconImportar}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                             </Canvas>
                                         </Viewbox>
-                                        <TextBlock Text="Importar" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock Text="Importar" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
                                 </Button>
 
@@ -466,7 +387,7 @@
                                                 <Path Data="{StaticResource IconConfiguracion}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                             </Canvas>
                                         </Viewbox>
-                                        <TextBlock Text="Configuracion" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock Text="Configuracion" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
                                 </Button>
                             </UniformGrid>
@@ -475,7 +396,7 @@
                     <ContentControl x:Name="ContenedorVistas" Margin="0" Visibility="Collapsed" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
 
                     <Grid x:Name="ExportarOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" Panel.ZIndex="10" MouseDown="ExportarOverlay_MouseDown" PreviewKeyDown="ExportarOverlay_PreviewKeyDown">
-                        <Border Width="760" Height="410" MaxWidth="900" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="28" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
+                        <Border Width="760" Height="410" MaxWidth="900" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -483,17 +404,17 @@
                                 </Grid.RowDefinitions>
                                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,20">
                                     <TextBlock Text="OPCIONES DE EXPORTACION" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" HorizontalAlignment="Center" Margin="0,0,0,4" />
-                                    <TextBlock Text="Exportar Datos" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="26" FontWeight="ExtraBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Exportar Datos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="26" FontWeight="ExtraBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
                                 </StackPanel>
                                 <UniformGrid Grid.Row="1" Columns="3">
                                     <Button Style="{StaticResource ExportModalCardStyle}" AutomationProperties.Name="Exportar ventas" Click="ExportarVentas_Click">
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="Ventas" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
-                                            <TextBlock Text="Exporta las ventas registradas en la ultima semana, organizadas por dia." TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Height="50" />
+                                            <TextBlock Text="Ventas" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                                            <TextBlock Text="Exporta las ventas registradas en la ultima semana, organizadas por dia." TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Height="50" />
                                             <Viewbox Width="56" Height="64" Margin="0,12,0,0">
                                                 <Canvas Width="70" Height="84">
                                                     <Path Data="M 14,5 L 43,5 L 57,19 L 57,77 L 14,77 Z M 43,5 L 43,19 L 57,19" Stroke="{DynamicResource ThemeTextForeground}" StrokeThickness="3.5" StrokeLineJoin="Round" />
-                                                    <TextBlock Canvas.Left="27" Canvas.Top="20" Text="$" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="34" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" />
+                                                    <TextBlock Canvas.Left="27" Canvas.Top="20" Text="$" FontFamily="Segoe UI Variable, Segoe UI" FontSize="34" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" />
                                                     <Path Data="M 24,58 L 47,58 M 24,66 L 47,66" Stroke="{DynamicResource ThemeTextForeground}" StrokeThickness="2.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                                                 </Canvas>
                                             </Viewbox>
@@ -501,8 +422,8 @@
                                     </Button>
                                     <Button Style="{StaticResource ExportModalCardStyle}" AutomationProperties.Name="Exportar productos" Click="ExportarProductos_Click">
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="Productos" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
-                                            <TextBlock Text="Exporta el catalogo completo de productos con stock y precios vigentes." TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Height="50" />
+                                            <TextBlock Text="Productos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                                            <TextBlock Text="Exporta el catalogo completo de productos con stock y precios vigentes." TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Height="50" />
                                             <Viewbox Width="60" Height="64" Margin="0,12,0,0">
                                                 <Canvas Width="80" Height="84">
                                                     <Path Data="M 16,15 L 30,15 C 30,7 49,7 49,15 L 63,15 L 63,76 L 16,76 Z" Stroke="{DynamicResource ThemeTextForeground}" StrokeThickness="3.5" StrokeLineJoin="Round" />
@@ -513,8 +434,8 @@
                                     </Button>
                                     <Button Style="{StaticResource ExportModalCardStyle}" AutomationProperties.Name="Exportar prestamos" Click="ExportarPrestamos_Click">
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="Prestamos" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
-                                            <TextBlock Text="Exporta el historial de clientes y cuentas fiadas pendientes en la libreta." TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Height="50" />
+                                            <TextBlock Text="Prestamos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                                            <TextBlock Text="Exporta el historial de clientes y cuentas fiadas pendientes en la libreta." TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Height="50" />
                                             <Viewbox Width="66" Height="64" Margin="0,12,0,0">
                                                 <Canvas Width="90" Height="84">
                                                     <Path Data="M 15,60 L 31,60 L 43,50 L 57,50 C 63,50 63,58 57,60 L 44,64 L 67,56 C 76,53 80,61 71,66 L 48,77 L 29,72 L 15,72 Z" Fill="{DynamicResource ThemeInputBackground}" Stroke="{DynamicResource ThemeTextForeground}" StrokeThickness="3.5" StrokeLineJoin="Round" />
@@ -529,7 +450,7 @@
                         </Border>
                     </Grid>
                     <Grid x:Name="ImportarOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" Panel.ZIndex="10" MouseDown="ImportarOverlay_MouseDown">
-                        <Border Width="650" Height="420" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="28" Padding="32" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
+                        <Border Width="650" Height="420" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="32" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -538,15 +459,15 @@
                                 </Grid.RowDefinitions>
                                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,16">
                                     <TextBlock Text="MIGRACION Y ACTUALIZACION" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" HorizontalAlignment="Center" Margin="0,0,0,4" />
-                                    <TextBlock Text="Importar Catalogo (CSV)" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="26" FontWeight="ExtraBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Importar Catalogo (CSV)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="26" FontWeight="ExtraBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
                                 </StackPanel>
 
-                                <Border Grid.Row="1" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Padding="20">
+                                <Border Grid.Row="1" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="20">
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="⚠️ Formato Requerido" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,8" />
+                                        <TextBlock Text="Formato Requerido" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,8" />
                                         <TextBlock Text="El sistema admite archivos .csv separados por comas (,) o punto y coma (;). El orden de las columnas que lee el sistema de izquierda a derecha debe ser estrictamente el siguiente:" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,12" />
 
-                                        <Border Background="{DynamicResource ThemeSurfaceBackground}" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                        <Border Background="{DynamicResource ThemeSurfaceBackground}" CornerRadius="4" Padding="12" Margin="0,0,0,12">
                                             <TextBlock FontFamily="Consolas, Courier New" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap">
                                             1. ID (Vacio o 0) | 2. Codigo | 3. Nombre<LineBreak/>
                                             4. Categoria      | 5. Costo  | 6. Ganancia<LineBreak/>
@@ -558,34 +479,34 @@
                                     </StackPanel>
                                 </Border>
 
-                                <Button Grid.Row="2" Content="SELECCIONAR ARCHIVO Y SUBIR" Height="46" Background="{DynamicResource ThemeAccent}" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="14" FontWeight="Bold" Cursor="Hand" Click="EjecutarImportacion_Click" Margin="0,20,0,0">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="UploadBorder" Background="{TemplateBinding Background}" CornerRadius="12">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="UploadBorder" Property="Opacity" Value="0.9" />
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                                <Button Grid.Row="2" Content="SELECCIONAR ARCHIVO Y SUBIR" Height="40" Background="{DynamicResource ThemeAccent}" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="EjecutarImportacion_Click" Margin="0,20,0,0" Style="{StaticResource FluentButtonPrimary}" />
                             </Grid>
                         </Border>
                     </Grid>
                 </Grid>
             </Grid>
 
-            <Grid x:Name="StandbyOverlay" Visibility="Collapsed" Panel.ZIndex="9999" Background="#DD111111" MouseLeftButtonDown="StandbyOverlay_MouseLeftButtonDown">
-                <Border Background="#DD111111" />
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock x:Name="StandbyClockText" Text="12:00 PM" FontSize="130" Foreground="White" FontWeight="Light" HorizontalAlignment="Center" FontFamily="Segoe UI" Margin="0,0,0,4"/>
-                    <TextBlock x:Name="StandbyDateText" Text="" FontSize="18" Foreground="#AAAAAA" HorizontalAlignment="Center" FontWeight="Normal" Margin="0,0,0,25"/>
-                    <TextBlock Text="Vuelve pronto..." FontSize="24" Foreground="#CCCCCC" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                    <TextBlock Text="Mueve el raton o presiona una tecla para continuar" FontSize="16" Foreground="#888888" HorizontalAlignment="Center" Margin="0,15,0,0"/>
+            <Grid x:Name="StandbyOverlay" Visibility="Collapsed" Panel.ZIndex="9999" Background="#EE000000" MouseLeftButtonDown="StandbyOverlay_MouseLeftButtonDown">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Viewbox Width="28" Height="28" Margin="0,0,0,16" HorizontalAlignment="Center">
+                        <Canvas Width="24" Height="24">
+                            <Path Data="M17,10 L17,7 C17,4.2 14.8,2 12,2 C9.2,2 7,4.2 7,7 L7,10 C5.9,10 5,10.9 5,12 L5,20 C5,21.1 5.9,22 7,22 L17,22 C18.1,22 19,21.1 19,20 L19,12 C19,10.9 18.1,10 17,10 Z M9,7 C9,5.3 10.3,4 12,4 C13.7,4 15,5.3 15,7 L15,10 L9,10 L9,7 Z" Fill="#AAAAAA" />
+                        </Canvas>
+                    </Viewbox>
+                    <TextBlock x:Name="StandbyClockText" Text="12:00 PM" FontSize="110" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" Margin="0,0,0,-10"/>
+
+                    <TextBlock x:Name="StandbyDateText" Text="lunes, 1 de enero" FontSize="22" Foreground="#EAEAEA" HorizontalAlignment="Center" FontWeight="Light" FontFamily="Segoe UI Variable, Segoe UI" Margin="0,0,0,24"/>
+
+                    <TextBlock Text="Sistema en reposo" FontSize="16" Foreground="#888888" HorizontalAlignment="Center" FontWeight="Medium" FontFamily="Segoe UI Variable, Segoe UI"/>
                 </StackPanel>
+
+                <TextBlock Grid.Row="2" Text="Haz clic o presiona cualquier tecla para desbloquear" FontSize="13" Foreground="#555555" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontWeight="SemiBold" FontFamily="Segoe UI Variable, Segoe UI" Margin="0,0,0,40"/>
             </Grid>
 
         </Grid>

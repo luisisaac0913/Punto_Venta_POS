@@ -819,8 +819,7 @@ namespace Punto_de_Venta
         #region Utilidades y Helpers
         private void ActualizarEstiloBotonPeriodo(Button btn, bool selected) { if (selected) { btn.SetResourceReference(Button.BackgroundProperty, "ThemeSurfaceBackground"); btn.SetResourceReference(Button.ForegroundProperty, "ThemeTextForeground"); } else { btn.Background = Brushes.Transparent; btn.SetResourceReference(Button.ForegroundProperty, "ThemeMutedForeground"); } }
         private void ActualizarEstiloBotonSidebar(Button btn, bool selected) { if (selected) { btn.SetResourceReference(Button.BackgroundProperty, "ThemeInputBackground"); btn.SetResourceReference(Button.ForegroundProperty, "ThemeAccent"); } else { btn.Background = Brushes.Transparent; btn.SetResourceReference(Button.ForegroundProperty, "ThemeTextForeground"); } }
-        private SKColor ObtenerColorTextoEje() => Application.Current is App app && app.IsDarkMode ? new SKColor(245, 245, 247) : new SKColor(28, 28, 30);
-
+        private SKColor ObtenerColorTextoEje() => new SKColor(28, 28, 30); // Gris muy oscuro / Negro suave
         private void NotifyChartProperties()
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SeriesPrincipal)));

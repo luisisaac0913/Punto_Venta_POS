@@ -11,21 +11,22 @@
         PreviewKeyDown="Window_PreviewKeyDown"
         Loaded="Window_Loaded">
 
+    <Window.Resources>
+        <DropShadowEffect x:Key="FluentModalShadow" BlurRadius="16" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.25" />
+    </Window.Resources>
+
     <Border x:Name="ModalRootBorder"
             Background="{DynamicResource ThemeSurfaceBackground}" 
-            CornerRadius="18" 
+            CornerRadius="8" 
             BorderBrush="{DynamicResource ThemeBorder}" 
             BorderThickness="1" 
             Margin="10"
             Opacity="0"
+            Effect="{StaticResource FluentModalShadow}"
             RenderTransformOrigin="0.5,0.5">
         <Border.RenderTransform>
-            <ScaleTransform x:Name="ModalScaleTransform" ScaleX="0.94" ScaleY="0.94" />
+            <ScaleTransform x:Name="ModalScaleTransform" ScaleX="1.0" ScaleY="1.0" />
         </Border.RenderTransform>
-
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="28" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.22" />
-        </Border.Effect>
 
         <Border.Triggers>
             <EventTrigger RoutedEvent="Border.Loaded">
@@ -34,23 +35,7 @@
                         <DoubleAnimation Storyboard.TargetName="ModalRootBorder"
                                          Storyboard.TargetProperty="Opacity"
                                          From="0.0" To="1.0"
-                                         Duration="0:0:0.16" />
-                        <DoubleAnimation Storyboard.TargetName="ModalScaleTransform"
-                                         Storyboard.TargetProperty="ScaleX"
-                                         From="0.94" To="1.0"
-                                         Duration="0:0:0.22">
-                            <DoubleAnimation.EasingFunction>
-                                <BackEase Amplitude="0.35" EasingMode="EaseOut" />
-                            </DoubleAnimation.EasingFunction>
-                        </DoubleAnimation>
-                        <DoubleAnimation Storyboard.TargetName="ModalScaleTransform"
-                                         Storyboard.TargetProperty="ScaleY"
-                                         From="0.94" To="1.0"
-                                         Duration="0:0:0.22">
-                            <DoubleAnimation.EasingFunction>
-                                <BackEase Amplitude="0.35" EasingMode="EaseOut" />
-                            </DoubleAnimation.EasingFunction>
-                        </DoubleAnimation>
+                                         Duration="0:0:0.12" />
                     </Storyboard>
                 </BeginStoryboard>
             </EventTrigger>
@@ -64,7 +49,7 @@
             </Grid.RowDefinitions>
             <StackPanel Grid.Row="0" Margin="0,0,0,14">
                 <TextBlock Text="Corte de Turno" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" TextAlignment="Center" />
-                <TextBlock Text="Ingresa los billetes de distinto valor" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Margin="0,3,0,0" />
+                <TextBlock x:Name="SubtituloCorte" Text="Ingresa los billetes de distinto valor" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Margin="0,3,0,0" />
             </StackPanel>
             <StackPanel Grid.Row="1" VerticalAlignment="Center">
                 <Grid Margin="0,0,0,8">
@@ -76,15 +61,15 @@
 
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Billetes de $500:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                        <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="8" Height="38">
-                            <TextBox x:Name="Box500" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" Background="Transparent" BorderThickness="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
+                        <Border Style="{StaticResource FluentInputContainerStyle}" Height="36">
+                            <TextBox x:Name="Box500" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
                         </Border>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Billetes de $200:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                        <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="8" Height="38">
-                            <TextBox x:Name="Box200" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" Background="Transparent" BorderThickness="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
+                        <Border Style="{StaticResource FluentInputContainerStyle}" Height="36">
+                            <TextBox x:Name="Box200" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
                         </Border>
                     </StackPanel>
                 </Grid>
@@ -98,20 +83,20 @@
 
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Billetes de $100:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                        <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="8" Height="38">
-                            <TextBox x:Name="Box100" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" Background="Transparent" BorderThickness="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
+                        <Border Style="{StaticResource FluentInputContainerStyle}" Height="36">
+                            <TextBox x:Name="Box100" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
                         </Border>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Billetes de $50:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                        <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="8" Height="38">
-                            <TextBox x:Name="Box50" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" Background="Transparent" BorderThickness="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
+                        <Border Style="{StaticResource FluentInputContainerStyle}" Height="36">
+                            <TextBox x:Name="Box50" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
                         </Border>
                     </StackPanel>
                 </Grid>
 
-                <Grid Margin="0,0,0,12">
+                <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="12" />
@@ -120,35 +105,87 @@
 
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Billetes de $20:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                        <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="8" Height="38">
-                            <TextBox x:Name="Box20" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" Background="Transparent" BorderThickness="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
+                        <Border Style="{StaticResource FluentInputContainerStyle}" Height="36">
+                            <TextBox x:Name="Box20" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
                         </Border>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="2">
+                    <StackPanel x:Name="PanelBoxCoins" Grid.Column="2">
                         <TextBlock Text="Monedas / Suelto ($):" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                        <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="8" Height="38">
-                            <TextBox x:Name="BoxCoins" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" Background="Transparent" BorderThickness="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
+                        <Border Style="{StaticResource FluentInputContainerStyle}" Height="36">
+                            <TextBox x:Name="BoxCoins" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel x:Name="PanelBox10" Grid.Column="2" Visibility="Collapsed">
+                        <TextBlock Text="Monedas de $10:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                        <Border Style="{StaticResource FluentInputContainerStyle}" Height="36">
+                            <TextBox x:Name="Box10" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
                         </Border>
                     </StackPanel>
                 </Grid>
 
+                <StackPanel x:Name="PanelMonedasIndividuales" Visibility="Collapsed">
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Monedas de $5:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                            <Border Style="{StaticResource FluentInputContainerStyle}" Height="36">
+                                <TextBox x:Name="Box5" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Monedas de $2:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                            <Border Style="{StaticResource FluentInputContainerStyle}" Height="36">
+                                <TextBox x:Name="Box2" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Monedas de $1:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                            <Border Style="{StaticResource FluentInputContainerStyle}" Height="36">
+                                <TextBox x:Name="Box1" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Centavos / Suelto ($):" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                            <Border Style="{StaticResource FluentInputContainerStyle}" Height="36">
+                                <TextBox x:Name="BoxCentavos" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" CaretBrush="{DynamicResource ThemeAccent}" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="Denomination_TextChanged" KeyDown="Denomination_KeyDown" />
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+
                 <TextBlock Text="Total en caja:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="10" BorderBrush="{DynamicResource ThemeAccent}" BorderThickness="1.5" Height="44">
+                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeAccent}" BorderThickness="1" CornerRadius="4" Height="42">
                     <TextBox x:Name="CountedAmountBox"
+                             Style="{StaticResource EmbeddedTextBoxStyle}"
                              Text="$0.00"
                              IsReadOnly="True"
                              Focusable="False"
-                             FontSize="20"
+                             FontSize="18"
                              FontWeight="Bold"
                              Foreground="{DynamicResource ThemeAccent}"
-                             Background="Transparent"
-                             BorderThickness="0"
                              VerticalContentAlignment="Center"
                              HorizontalContentAlignment="Center" />
                 </Border>
 
-                <Border x:Name="AuditPanel" Visibility="Collapsed" Background="{DynamicResource ThemeInputBackground}" CornerRadius="12" Margin="0,12,0,0" Padding="12">
+                <Border x:Name="AuditPanel" Visibility="Collapsed" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Margin="0,12,0,0" Padding="12">
                     <StackPanel>
                         <Grid Margin="0,2">
                             <TextBlock Text="Efectivo en Sistema:" Foreground="{DynamicResource ThemeMutedForeground}" FontSize="12" />
@@ -174,22 +211,38 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Button Content="Cancelar (Esc)" Height="38" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" FontWeight="SemiBold" Cursor="Hand" Click="Cancel_Click">
+                <Button Content="Cancelar (Esc)" Height="36" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" FontWeight="SemiBold" Cursor="Hand" Click="Cancel_Click">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                            <Border x:Name="CanBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CanBorder" Property="Opacity" Value="0.9" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="CanBorder" Property="Opacity" Value="0.8" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
 
-                <Button x:Name="ActionBtn" Grid.Column="2" Content="Revisar" Height="38" Background="{DynamicResource ThemeAccent}" Foreground="White" FontWeight="SemiBold" Cursor="Hand" Click="Action_Click">
+                <Button x:Name="ActionBtn" Grid.Column="2" Content="Revisar" Height="36" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontWeight="SemiBold" Cursor="Hand" Click="Action_Click">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border Background="{TemplateBinding Background}" CornerRadius="10">
+                            <Border x:Name="ActBorder" Background="{TemplateBinding Background}" CornerRadius="4">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="ActBorder" Property="Opacity" Value="0.9" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="ActBorder" Property="Opacity" Value="0.8" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>

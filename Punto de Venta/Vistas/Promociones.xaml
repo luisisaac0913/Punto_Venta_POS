@@ -1,55 +1,46 @@
 ﻿<UserControl x:Class="Punto_de_Venta.Promociones"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        MinWidth="900" MinHeight="540"
-        Background="Transparent"
-        Focusable="True"
-        IsVisibleChanged="UserControl_IsVisibleChanged"
-        PreviewKeyDown="UserControl_PreviewKeyDown"
-        UseLayoutRounding="True"
-        TextOptions.TextFormattingMode="Display">
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             MinWidth="900" MinHeight="540"
+             Background="Transparent"
+             Focusable="True"
+             IsVisibleChanged="UserControl_IsVisibleChanged"
+             PreviewKeyDown="UserControl_PreviewKeyDown"
+             UseLayoutRounding="True"
+             TextOptions.TextFormattingMode="Display">
+
     <UserControl.Resources>
-        <SolidColorBrush x:Key="SystemGreen" Color="#34C759" />
-        <SolidColorBrush x:Key="SystemRed" Color="#FF3B30" />
-        <Style x:Key="CardBorderStyle" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="18" />
-        </Style>
-        <Style TargetType="DatePickerTextBox">
-            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-        </Style>
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="RowBackground" Value="Transparent"/>
-            <Setter Property="AlternatingRowBackground" Value="#0A000000"/>
+            <Setter Property="AlternatingRowBackground" Value="#08000000"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="GridLinesVisibility" Value="None"/>
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="CanUserAddRows" Value="False"/>
             <Setter Property="IsReadOnly" Value="True"/>
-            <Setter Property="RowHeight" Value="54"/>
+            <Setter Property="RowHeight" Value="48"/>
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI"/>
         </Style>
+
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource ThemeMutedForeground}"/>
-            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="Padding" Value="12,8"/>
             <Setter Property="BorderThickness" Value="0,0,0,1"/>
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI"/>
         </Style>
+
         <Style TargetType="DataGridCell">
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="12,0"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridCell">
@@ -61,24 +52,26 @@
             </Setter>
         </Style>
     </UserControl.Resources>
+
     <Border Background="Transparent" ClipToBounds="True">
         <Grid MouseLeftButtonDown="Grid_MouseLeftButtonDown">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <Grid Grid.Row="0" Margin="32,20,32,0">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Promociones" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                </StackPanel>
+
+            <Grid Grid.Row="0" Visibility="Collapsed">
+                <TextBlock Text="Promociones" Visibility="Collapsed" />
             </Grid>
-            <Grid Grid.Row="1" Margin="32,16,32,20">
+
+            <Grid Grid.Row="1" Margin="32,20,32,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="18" />
                     <ColumnDefinition Width="360" />
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Style="{StaticResource CardBorderStyle}" Padding="10">
+
+                <Border Grid.Column="0" Style="{StaticResource FluentCardStyle}" Padding="10">
                     <DataGrid x:Name="PromocionesGrid" SelectionMode="Single">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="NOMBRE" Binding="{Binding Nombre}" Width="2*" />
@@ -99,8 +92,8 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Button Content="✏️" FontSize="16" ToolTip="Editar" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,12,0" Click="EditarPromo_Click"/>
-                                            <Button Content="🗑️" FontSize="16" ToolTip="Eliminar" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="EliminarPromo_Click"/>
+                                            <Button Content="✏️" FontSize="14" ToolTip="Editar" Style="{StaticResource FluentButtonSubtle}" Width="32" Height="32" Padding="0" Cursor="Hand" Margin="0,0,6,0" Click="EditarPromo_Click"/>
+                                            <Button Content="🗑️" FontSize="14" ToolTip="Eliminar" Style="{StaticResource FluentButtonSubtle}" Width="32" Height="32" Padding="0" Cursor="Hand" Click="EliminarPromo_Click"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -108,32 +101,30 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </Border>
-                <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}" Padding="20">
+
+                <Border Grid.Column="2" Style="{StaticResource FluentCardStyle}" Padding="20">
                     <StackPanel>
                         <TextBlock x:Name="TituloFormularioText" Text="Nueva Promocion" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
+
                         <TextBlock Text="Nombre descriptivo" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                        <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,12" Height="38">
-                            <TextBox x:Name="NombrePromoBox" Background="Transparent" BorderThickness="0" Padding="10,0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
-                        </Border>
+                        <TextBox x:Name="NombrePromoBox" Margin="0,0,0,12" />
+
                         <TextBlock Text="Tipo de Promocion" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                        <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,12" Height="38">
-                            <ComboBox x:Name="TipoPromoCombo" Background="Transparent" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" VerticalContentAlignment="Center" SelectionChanged="TipoPromoCombo_SelectionChanged">
-                                <ComboBoxItem Content="Volumen (Ej: 3 por $45)" IsSelected="True" Tag="Volumen" />
-                                <ComboBoxItem Content="Combo (Producto A + B)" Tag="Combo" />
-                                <ComboBoxItem Content="Segunda pieza con Descuento" Tag="PorcentajeSegundo" />
-                                <ComboBoxItem Content="Mayoreo (A partir de N piezas, baja precio unitario)" Tag="Mayoreo" />
-                            </ComboBox>
-                        </Border>
+                        <ComboBox x:Name="TipoPromoCombo" Margin="0,0,0,12" SelectionChanged="TipoPromoCombo_SelectionChanged">
+                            <ComboBoxItem Content="Volumen (Ej: 3 por $45)" IsSelected="True" Tag="Volumen" />
+                            <ComboBoxItem Content="Combo (Producto A + B)" Tag="Combo" />
+                            <ComboBoxItem Content="Segunda pieza con Descuento" Tag="PorcentajeSegundo" />
+                            <ComboBoxItem Content="Mayoreo (A partir de N piezas, baja precio unitario)" Tag="Mayoreo" />
+                        </ComboBox>
+
                         <TextBlock x:Name="LabelProd1" Text="ID Producto Principal" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                        <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,12" Height="38">
-                            <TextBox x:Name="ProdId1Box" Background="Transparent" BorderThickness="0" Padding="10,0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
-                        </Border>
+                        <TextBox x:Name="ProdId1Box" Margin="0,0,0,12" />
+
                         <StackPanel x:Name="PanelProducto2" Visibility="Collapsed" Margin="0,0,0,12">
                             <TextBlock Text="ID Segundo Producto (B)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                            <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Height="38">
-                                <TextBox x:Name="ProdId2Box" Background="Transparent" BorderThickness="0" Padding="10,0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
-                            </Border>
+                            <TextBox x:Name="ProdId2Box" />
                         </StackPanel>
+
                         <Grid x:Name="PanelVolumen" Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -142,30 +133,26 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="Cantidad Minima" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Height="38">
-                                    <TextBox x:Name="CantidadMinBox" Text="3" Background="Transparent" BorderThickness="0" Padding="10,0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
-                                </Border>
+                                <TextBox x:Name="CantidadMinBox" Text="3" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Precio Especial ($)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Height="38">
-                                    <TextBox x:Name="PrecioEspecialBox" Text="0.00" Background="Transparent" BorderThickness="0" Padding="10,0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
-                                </Border>
+                                <TextBox x:Name="PrecioEspecialBox" Text="0.00" />
                             </StackPanel>
                         </Grid>
+
                         <StackPanel x:Name="PanelPrecioCombo" Visibility="Collapsed" Margin="0,0,0,12">
                             <TextBlock Text="Precio Total del Combo ($)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                            <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Height="38">
-                                <TextBox x:Name="PrecioComboTotalBox" Text="0.00" Background="Transparent" BorderThickness="0" Padding="10,0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
-                            </Border>
+                            <TextBox x:Name="PrecioComboTotalBox" Text="0.00" />
                         </StackPanel>
+
                         <StackPanel x:Name="PanelPorcentaje" Visibility="Collapsed" Margin="0,0,0,12">
                             <TextBlock Text="% Descuento en 2da pieza (ej: 50)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                            <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Height="38">
-                                <TextBox x:Name="PorcentajeDescuentoBox" Text="50" Background="Transparent" BorderThickness="0" Padding="10,0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
-                            </Border>
+                            <TextBox x:Name="PorcentajeDescuentoBox" Text="50" />
                         </StackPanel>
-                        <CheckBox x:Name="ChkTiempoLimite" Content="Definir tiempo limite (fechas)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" Margin="2,2,0,10" Cursor="Hand" Checked="ChkTiempoLimite_Changed" Unchecked="ChkTiempoLimite_Changed" />
+
+                        <CheckBox x:Name="ChkTiempoLimite" Content="Definir tiempo limite (fechas)" Margin="2,2,0,10" Checked="ChkTiempoLimite_Changed" Unchecked="ChkTiempoLimite_Changed" />
+
                         <Grid x:Name="PanelFechas" Visibility="Collapsed" Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -174,40 +161,21 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="Fecha Inicio" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Height="38" Padding="4,0">
-                                    <DatePicker x:Name="FechaInicioPicker" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
-                                </Border>
+                                <DatePicker x:Name="FechaInicioPicker" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Fecha Fin (Limite)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Height="38" Padding="4,0">
-                                    <DatePicker x:Name="FechaFinPicker" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" />
-                                </Border>
+                                <DatePicker x:Name="FechaFinPicker" />
                             </StackPanel>
                         </Grid>
+
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Button x:Name="BtnCancelarEdicion" Grid.Column="0" Content="Cancelar" Visibility="Collapsed" Height="44" Padding="16,0" Foreground="{DynamicResource ThemeTextForeground}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,10,0" Click="CancelarEdicion_Click">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                            <Button x:Name="BtnGuardarPromo" Grid.Column="1" Content="Guardar Promocion" Height="44" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="Bold" Cursor="Hand" Click="GuardarPromo_Click">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{DynamicResource ThemeAccent}" CornerRadius="12">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                            <Button x:Name="BtnCancelarEdicion" Grid.Column="0" Content="Cancelar" Visibility="Collapsed" Style="{StaticResource FluentButtonSecondary}" Margin="0,0,10,0" Click="CancelarEdicion_Click" />
+                            <Button x:Name="BtnGuardarPromo" Grid.Column="1" Content="Guardar Promocion" Style="{StaticResource FluentButtonPrimary}" Click="GuardarPromo_Click" />
                         </Grid>
                     </StackPanel>
                 </Border>

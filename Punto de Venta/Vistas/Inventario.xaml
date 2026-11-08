@@ -12,71 +12,25 @@
              TextOptions.TextRenderingMode="ClearType">
 
     <UserControl.Resources>
-        <SolidColorBrush x:Key="SystemGreen" Color="#34C759" />
-        <SolidColorBrush x:Key="SystemOrange" Color="#FF9500" />
-        <SolidColorBrush x:Key="SystemRed" Color="#FF3B30" />
+        <Style x:Key="ProductCardStyle" TargetType="Border" BasedOn="{StaticResource FluentCardStyle}" />
 
-        <DropShadowEffect x:Key="AppleCardShadow" BlurRadius="20" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.08" />
-        <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="36" ShadowDepth="8" Direction="270" Color="#000000" Opacity="0.25" />
-        <DropShadowEffect x:Key="AppleButtonShadow" BlurRadius="10" ShadowDepth="2" Direction="270" Color="#007AFF" Opacity="0.25" />
-
-        <Style x:Key="ProductCardStyle" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="20" />
-            <Setter Property="Effect" Value="{StaticResource AppleCardShadow}" />
-        </Style>
-
-        <Style x:Key="FormTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Height" Value="42" />
-            <Setter Property="Padding" Value="12,0" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
-            <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}" />
-            <Setter Property="Validation.ErrorTemplate" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="InputBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12">
-                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="InputBorder" Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
-                                <Setter TargetName="InputBorder" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
-                                <Setter TargetName="InputBorder" Property="BorderThickness" Value="1.5" />
-                            </Trigger>
-                            <Trigger Property="IsReadOnly" Value="True">
-                                <Setter TargetName="InputBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}" />
-                                <Setter Property="Foreground" Value="{DynamicResource ThemeMutedForeground}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <Style x:Key="FormTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource FluentTextBoxStyle}" />
 
         <Style x:Key="PillButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="42" />
+            <Setter Property="Height" Value="36" />
             <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Padding" Value="12,0" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -95,42 +49,22 @@
             </Setter>
         </Style>
 
-        <Style x:Key="PrimaryAddButtonStyle" TargetType="Button" BasedOn="{StaticResource PillButtonStyle}">
-            <Setter Property="Background" Value="{DynamicResource ThemeAccent}" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Effect" Value="{StaticResource AppleButtonShadow}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" CornerRadius="12" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.85" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.65" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#AEAEB2" />
-                                <Setter Property="Effect" Value="{x:Null}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <Style x:Key="PrimaryAddButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentButtonPrimary}" />
 
-        <Style x:Key="DangerDeleteButtonStyle" TargetType="Button" BasedOn="{StaticResource PillButtonStyle}">
+        <Style x:Key="DangerDeleteButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="36" />
             <Setter Property="Background" Value="#FEE2E2" />
             <Setter Property="Foreground" Value="{StaticResource SystemRed}" />
             <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="12,0" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" CornerRadius="12" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -151,8 +85,8 @@
         </Style>
 
         <Style x:Key="SegmentTabStyle" TargetType="RadioButton">
-            <Setter Property="Height" Value="38" />
-            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="12,0" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
@@ -160,18 +94,14 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="TabBorder" Background="Transparent" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="TabBorder" Background="Transparent" CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="TabBorder" Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
                                 <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
-                                <Setter TargetName="TabBorder" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#000000" Opacity="0.12" />
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="TabBorder" Property="Effect" Value="{StaticResource FluentShadow}" />
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
@@ -183,17 +113,17 @@
         </Style>
 
         <Style x:Key="QuickRestockButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="34" />
+            <Setter Property="Height" Value="32" />
             <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border" Background="{TemplateBinding Background}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="10">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -217,12 +147,12 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Grid Grid.Row="0" Margin="0,0,0,18">
-                    <TextBlock Text="Inventario" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
+                <Grid Grid.Row="0" Margin="0,0,0,14">
+                    <TextBlock Text="Inventario" Visibility="Collapsed" />
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <TextBlock x:Name="CantProd" Text="Presiona ESC para volver" Foreground="{DynamicResource ThemeMutedForeground}" FontSize="13" VerticalAlignment="Center" Margin="0,0,16,0" />
-                        <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Padding="14,8" VerticalAlignment="Center">
+                        <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14,6" VerticalAlignment="Center">
                             <TextBlock x:Name="ClockText" Text="6:08 PM" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
                         </Border>
                     </StackPanel>
@@ -251,7 +181,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0" Height="48" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="14" Padding="14,0">
+                            <Border Grid.Column="0" Height="40" Style="{StaticResource FluentInputContainerStyle}" Padding="12,0">
                                 <Grid VerticalAlignment="Center">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
@@ -259,17 +189,17 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" Margin="0,0,10,0" />
                                     <Grid Grid.Column="1">
-                                        <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" CaretBrush="{DynamicResource ThemeAccent}" TextChanged="SearchBox_TextChanged" />
-                                        <TextBlock x:Name="SearchPlaceholder" Text="id, codigo o nombre..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
+                                        <TextBox x:Name="SearchBox" Style="{StaticResource EmbeddedTextBoxStyle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" CaretBrush="{DynamicResource ThemeAccent}" TextChanged="SearchBox_TextChanged" />
+                                        <TextBlock x:Name="SearchPlaceholder" Text="id, codigo o nombre..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
                                     </Grid>
                                 </Grid>
                             </Border>
 
-                            <Button x:Name="BtnCargarLote" Grid.Column="2" Content="📦 Cargar Lote" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Height="48" Padding="16,0" Click="OpenLotesModal_Click" ToolTip="Ingresar mercancia masiva por proveedor" />
+                            <Button x:Name="BtnCargarLote" Grid.Column="2" Content="📦 Cargar Lote" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Height="40" Padding="14,0" Click="OpenLotesModal_Click" ToolTip="Ingresar mercancia masiva por proveedor" />
 
-                            <Button Grid.Column="4" Content="ReStock rapido" Style="{StaticResource PrimaryAddButtonStyle}" Height="48" Padding="16,0" Click="OpenQuickRestockModal_Click" ToolTip="Escanear y reabastecer a gran velocidad" />
+                            <Button Grid.Column="4" Content="ReStock rapido" Style="{StaticResource PrimaryAddButtonStyle}" Height="40" Padding="14,0" Click="OpenQuickRestockModal_Click" ToolTip="Escanear y reabastecer a gran velocidad" />
 
-                            <Border Grid.Column="6" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="13" Padding="4" Height="48">
+                            <Border Grid.Column="6" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="3" Height="40">
                                 <StackPanel Orientation="Horizontal">
                                     <RadioButton x:Name="FilterAllRadio" Content="Todos" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="All" />
                                     <RadioButton x:Name="FilterLowRadio" Content="Stock Bajo" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="Low" />
@@ -279,15 +209,15 @@
                         </Grid>
 
                         <Border Grid.Row="2" Style="{StaticResource ProductCardStyle}" Padding="0" ClipToBounds="True">
-                            <DataGrid x:Name="ProductGrid" ItemsSource="{Binding ProductsView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="52" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="ProductGrid_SelectionChanged" EnableRowVirtualization="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                            <DataGrid x:Name="ProductGrid" ItemsSource="{Binding ProductsView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="48" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="ProductGrid_SelectionChanged" EnableRowVirtualization="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
                                 <DataGrid.ColumnHeaderStyle>
                                     <Style TargetType="DataGridColumnHeader">
                                         <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
                                         <Setter Property="Foreground" Value="{DynamicResource ThemeMutedForeground}" />
                                         <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
                                         <Setter Property="FontSize" Value="12" />
-                                        <Setter Property="FontWeight" Value="Bold" />
-                                        <Setter Property="Padding" Value="12,12" />
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                        <Setter Property="Padding" Value="12,10" />
                                         <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
                                         <Setter Property="BorderThickness" Value="0,0,0,1" />
                                     </Style>
@@ -333,7 +263,7 @@
                                     <DataGridTemplateColumn Header="STOCK" Width="100">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <Border CornerRadius="8" Padding="10,4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Border CornerRadius="4" Padding="8,3" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                     <Border.Style>
                                                         <Style TargetType="Border">
                                                             <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
@@ -348,7 +278,7 @@
                                                         </Style>
                                                     </Border.Style>
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                        <TextBlock FontSize="13" FontWeight="Bold">
+                                                        <TextBlock FontSize="12" FontWeight="Bold">
                                                             <TextBlock.Style>
                                                                 <Style TargetType="TextBlock">
                                                                     <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
@@ -386,41 +316,41 @@
                     </Grid>
                     <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel>
-                            <Border Style="{StaticResource ProductCardStyle}" Padding="22,20">
+                            <Border Style="{StaticResource ProductCardStyle}" Padding="20">
                                 <StackPanel>
-                                    <TextBlock Text="Detalles del Producto" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,16" />
+                                    <TextBlock Text="Detalles del Producto" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
 
-                                    <Grid Margin="0,0,0,12">
+                                    <Grid Margin="0,0,0,10">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="1*" />
-                                            <ColumnDefinition Width="12" />
+                                            <ColumnDefinition Width="10" />
                                             <ColumnDefinition Width="1.6*" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0">
-                                            <TextBlock Text="ID" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,5" />
+                                            <TextBlock Text="ID" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                             <TextBox x:Name="ProductIdBox" Style="{StaticResource FormTextBoxStyle}" IsReadOnly="True" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Codigo" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,5" />
+                                            <TextBlock Text="Codigo" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                             <TextBox x:Name="ProductCodeBox" Style="{StaticResource FormTextBoxStyle}" KeyDown="ProductCodeBox_KeyDown" />
                                         </StackPanel>
                                     </Grid>
 
-                                    <TextBlock Text="Nombre" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,5" />
-                                    <TextBox x:Name="ProductNameBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,12" KeyDown="ProductNameBox_KeyDown" />
+                                    <TextBlock Text="Nombre" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                    <TextBox x:Name="ProductNameBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,10" KeyDown="ProductNameBox_KeyDown" />
 
-                                    <Grid Margin="0,0,0,12">
+                                    <Grid Margin="0,0,0,10">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="1.6*" />
-                                            <ColumnDefinition Width="12" />
+                                            <ColumnDefinition Width="10" />
                                             <ColumnDefinition Width="1*" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0">
-                                            <TextBlock Text="Categoria" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,5" />
+                                            <TextBlock Text="Categoria" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                             <TextBox x:Name="ProductCategoryBox" Style="{StaticResource FormTextBoxStyle}" KeyDown="ProductCategoryBox_KeyDown" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Cantidad" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="2,0,0,5" />
+                                            <TextBlock Text="Cantidad" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="2,0,0,4" />
                                             <TextBox x:Name="StockBox" Style="{StaticResource FormTextBoxStyle}" Text="0" HorizontalContentAlignment="Center" KeyDown="StockBox_KeyDown" />
                                         </StackPanel>
                                     </Grid>
@@ -442,22 +372,22 @@
                                         <Button Grid.Column="6" Content="+24" Style="{StaticResource QuickRestockButtonStyle}" Click="QuickRestock_Click" Tag="24" />
                                     </Grid>
 
-                                    <Grid Margin="0,0,0,14">
+                                    <Grid Margin="0,0,0,12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="12" />
+                                            <ColumnDefinition Width="10" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0">
-                                            <TextBlock Text="Costo" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,5" />
+                                            <TextBlock Text="Costo" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                             <TextBox x:Name="ProductCostBox" Style="{StaticResource FormTextBoxStyle}" TextChanged="CostOrMargin_TextChanged" KeyDown="ProductCostBox_KeyDown" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Ganancia" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,5" />
+                                            <TextBlock Text="Ganancia" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                             <TextBox x:Name="ProductMarginBox" Style="{StaticResource FormTextBoxStyle}" TextChanged="CostOrMargin_TextChanged" KeyDown="ProductMarginBox_KeyDown" />
                                         </StackPanel>
                                     </Grid>
-                                    <StackPanel Margin="2,0,0,16">
+                                    <StackPanel Margin="2,0,0,14">
                                         <CheckBox x:Name="AskQuantityCheckBox" Content="Pedir piezas manual al cobrar" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,8" />
                                         <CheckBox x:Name="ScaleWeighCheckBox" Content="Pesable en Bascula" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
@@ -465,43 +395,39 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="6" />
                                             <ColumnDefinition Width="1.1*" />
-                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="6" />
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="6" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
 
-                                        <Button x:Name="BtnEnlaceRapidoInventario" Grid.Column="6" Content="Enlace R" Background="{DynamicResource ThemeAccent}" Foreground="White" Style="{StaticResource PillButtonStyle}" Click="BtnEnlaceRapido_Click" />
+                                        <Button x:Name="BtnEnlaceRapidoInventario" Grid.Column="6" Content="Enlace R" Style="{StaticResource PillButtonStyle}" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" Click="BtnEnlaceRapido_Click" />
                                         <Button Grid.Column="0" Content="AÑADIR" Style="{StaticResource PrimaryAddButtonStyle}" Click="AddButton_Click" />
                                         <Button x:Name="DeleteButton" Grid.Column="2" Content="BORRAR" Style="{StaticResource DangerDeleteButtonStyle}" IsEnabled="False" Click="DeleteButton_Click" />
                                         <Button x:Name="ModifyButton" Grid.Column="4" Content="MODIF." Style="{StaticResource PillButtonStyle}" IsEnabled="False" Click="ModifyButton_Click" />
                                     </Grid>
                                 </StackPanel>
                             </Border>
-                            <Button Content="Limpiar Seleccion" Style="{StaticResource PillButtonStyle}" Margin="0,12,0,0" Click="ClearSelectionButton_Click" />
+                            <Button Content="Limpiar Seleccion" Style="{StaticResource PillButtonStyle}" Margin="0,10,0,0" Click="ClearSelectionButton_Click" />
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
             </Grid>
             <Grid x:Name="QuickRestockOverlay" Background="#66000000" Visibility="Collapsed" Panel.ZIndex="100">
-                <Border Width="460" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="24" Padding="28,24" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
+                <Border Width="460" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                     <StackPanel>
                         <TextBlock Text="⚡ ReStock Rapido" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
                         <TextBlock Text="Escanea el codigo de barras y añade la cantidad surtida:" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,16" />
 
                         <TextBlock Text="Codigo del Producto (Escanea aqui)" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                        <Border Height="44" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Margin="0,0,0,12" Padding="10,0">
-                            <TextBox x:Name="QrScanCodeBox" Background="Transparent" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" KeyDown="QrScanCodeBox_KeyDown" />
-                        </Border>
+                        <TextBox x:Name="QrScanCodeBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,12" KeyDown="QrScanCodeBox_KeyDown" />
 
                         <TextBlock x:Name="QrFoundProductLabel" Text="" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" Margin="2,-6,0,10" MinHeight="16" />
 
                         <TextBlock Text="Cantidad a Añadir (+)" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                        <Border Height="44" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Margin="0,0,0,14" Padding="10,0">
-                            <TextBox x:Name="QrAddAmountBox" Background="Transparent" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" KeyDown="QrAddAmountBox_KeyDown" />
-                        </Border>
+                        <TextBox x:Name="QrAddAmountBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,14" KeyDown="QrAddAmountBox_KeyDown" />
 
                         <TextBlock x:Name="QrStatusMessage" Text="" FontSize="12" Foreground="{StaticResource SystemRed}" MinHeight="16" Margin="0,0,0,12" />
 
@@ -511,31 +437,14 @@
                                 <ColumnDefinition Width="10" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Button Content="CERRAR (Esc)" Height="42" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeMutedForeground}" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="CloseQuickRestock_Click">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
-                                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-
-                            <Button Grid.Column="2" Content="AÑADIR STOCK" Height="42" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="ConfirmQuickRestock_Click" Effect="{StaticResource AppleButtonShadow}">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
-                                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                            <Button Content="CERRAR (Esc)" Style="{StaticResource PillButtonStyle}" Click="CloseQuickRestock_Click" />
+                            <Button Grid.Column="2" Content="AÑADIR STOCK" Style="{StaticResource PrimaryAddButtonStyle}" Click="ConfirmQuickRestock_Click" />
                         </Grid>
                     </StackPanel>
                 </Border>
             </Grid>
             <Grid x:Name="LotesOverlay" Background="#66000000" Visibility="Collapsed" Panel.ZIndex="110">
-                <Border Width="680" Height="460" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="24" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
+                <Border Width="680" Height="460" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -544,27 +453,27 @@
                         </Grid.RowDefinitions>
                         <Grid Grid.Row="0" Margin="0,0,0,16">
                             <StackPanel>
-                                <TextBlock Text="📦 Carga de Lotes Frecuentes" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                                <TextBlock Text="📦 Carga de Lotes Frecuentes" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
                                 <TextBlock Text="Selecciona un pedido pre-configurado para abastecer el stock automaticamente." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" />
                             </StackPanel>
                         </Grid>
-                        <Grid Grid.Row="1" Margin="0,0,0,20">
+                        <Grid Grid.Row="1" Margin="0,0,0,18">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="1*" />
-                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="16" />
                                 <ColumnDefinition Width="1.2*" />
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0" Background="{DynamicResource ThemeInputBackground}" CornerRadius="16" Padding="6">
+                            <Border Grid.Column="0" Background="{DynamicResource ThemeInputBackground}" CornerRadius="4" Padding="6">
                                 <ListBox x:Name="LotesListBox" ItemsSource="{Binding Lotes}" Background="Transparent" BorderThickness="0" SelectionChanged="LotesListBox_SelectionChanged" ScrollViewer.VerticalScrollBarVisibility="Auto">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="ListBoxItem">
-                                            <Setter Property="Padding" Value="12,14" />
-                                            <Setter Property="Margin" Value="0,0,0,4" />
+                                            <Setter Property="Padding" Value="10,12" />
+                                            <Setter Property="Margin" Value="0,0,0,3" />
                                             <Setter Property="Template">
                                                 <Setter.Value>
                                                     <ControlTemplate TargetType="ListBoxItem">
-                                                        <Border x:Name="ItemBorder" Background="Transparent" CornerRadius="12" Padding="{TemplateBinding Padding}">
+                                                        <Border x:Name="ItemBorder" Background="Transparent" CornerRadius="4" Padding="{TemplateBinding Padding}">
                                                             <ContentPresenter />
                                                         </Border>
                                                         <ControlTemplate.Triggers>
@@ -573,7 +482,7 @@
                                                             </Trigger>
                                                             <Trigger Property="IsSelected" Value="True">
                                                                 <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
-                                                                <Setter TargetName="ItemBorder" Property="Effect" Value="{StaticResource AppleCardShadow}" />
+                                                                <Setter TargetName="ItemBorder" Property="Effect" Value="{StaticResource FluentShadow}" />
                                                             </Trigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
@@ -584,7 +493,7 @@
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel>
-                                                <TextBlock Text="{Binding Nombre}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                                <TextBlock Text="{Binding Nombre}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
                                                 <TextBlock Text="{Binding Proveedor}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
                                             </StackPanel>
                                         </DataTemplate>
@@ -592,13 +501,13 @@
                                 </ListBox>
                             </Border>
 
-                            <Border Grid.Column="2" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Padding="16">
+                            <Border Grid.Column="2" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
-                                    <TextBlock Text="Contenido del Lote:" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,12" />
+                                    <TextBlock Text="Contenido del Lote:" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,10" />
 
                                     <ListBox x:Name="LoteItemsBox" Grid.Row="1" Background="Transparent" BorderThickness="0" IsHitTestVisible="False">
                                         <ListBox.ItemTemplate>
@@ -608,9 +517,9 @@
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock Text="{Binding Nombre}" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
-                                                    <Border Grid.Column="1" Background="{DynamicResource ThemeInputBackground}" CornerRadius="6" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding Cantidad, StringFormat=+{0}}" FontSize="13" FontWeight="Bold" Foreground="{StaticResource SystemGreen}" />
+                                                    <TextBlock Text="{Binding Nombre}" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
+                                                    <Border Grid.Column="1" Background="{DynamicResource ThemeInputBackground}" CornerRadius="4" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Cantidad, StringFormat=+{0}}" FontSize="12" FontWeight="Bold" Foreground="{StaticResource SystemGreen}" />
                                                     </Border>
                                                 </Grid>
                                             </DataTemplate>
@@ -629,41 +538,15 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <Button Grid.Column="0" Content="CERRAR (Esc)" Height="42" Padding="20,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeMutedForeground}" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="CloseLotesModal_Click">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
-                                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" Margin="{TemplateBinding Padding}"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-
-                            <Button Grid.Column="2" Content="⚙️ CREAR NUEVO LOTE" Height="42" Padding="20,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeAccent}" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="OpenGestorLotes_Click">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
-                                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" Margin="{TemplateBinding Padding}"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-
-                            <Button Grid.Column="4" Content="CONFIRMAR INGRESO" Height="42" Padding="30,0" Background="{StaticResource SystemOrange}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="ApplyLote_Click" Effect="{StaticResource AppleButtonShadow}">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
-                                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" Margin="{TemplateBinding Padding}"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                            <Button Grid.Column="0" Content="CERRAR (Esc)" Style="{StaticResource PillButtonStyle}" Click="CloseLotesModal_Click" />
+                            <Button Grid.Column="2" Content="⚙️ CREAR NUEVO LOTE" Style="{StaticResource PillButtonStyle}" Foreground="{DynamicResource ThemeAccent}" Click="OpenGestorLotes_Click" />
+                            <Button Grid.Column="4" Content="CONFIRMAR INGRESO" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Padding="20,0" Click="ApplyLote_Click" />
                         </Grid>
                     </Grid>
                 </Border>
             </Grid>
             <Grid x:Name="GestorLotesOverlay" Background="#66000000" Visibility="Collapsed" Panel.ZIndex="120">
-                <Border Width="820" Height="580" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="24" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
+                <Border Width="820" Height="580" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="26" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -672,13 +555,13 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Margin="0,0,0,16">
-                            <TextBlock Text="⚙️ Diseñador de Lotes" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                            <TextBlock Text="⚙️ Diseñador de Lotes" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
                             <TextBlock Text="Crea un paquete de abastecimiento asignandole un nombre, proveedor y los productos que incluye." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" />
 
-                            <Grid Margin="0,16,0,0">
+                            <Grid Margin="0,14,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="14" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
@@ -692,36 +575,36 @@
                             </Grid>
                         </StackPanel>
 
-                        <Grid Grid.Row="1" Margin="0,0,0,20">
+                        <Grid Grid.Row="1" Margin="0,0,0,18">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="1*" />
-                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="16" />
                                 <ColumnDefinition Width="1.2*" />
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0" Background="{DynamicResource ThemeInputBackground}" CornerRadius="16" Padding="16">
+                            <Border Grid.Column="0" Background="{DynamicResource ThemeInputBackground}" CornerRadius="4" Padding="14">
                                 <StackPanel>
-                                    <TextBlock Text="Agregar Producto" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,12" />
+                                    <TextBlock Text="Agregar Producto" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
 
                                     <TextBlock Text="Codigo (Escanea o escribe + Enter)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                                    <TextBox x:Name="GestorLoteCodigoBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,12" KeyDown="GestorLoteCodigoBox_KeyDown" />
+                                    <TextBox x:Name="GestorLoteCodigoBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,10" KeyDown="GestorLoteCodigoBox_KeyDown" />
 
-                                    <TextBlock x:Name="GestorLoteProductoEncontrado" Text="Esperando codigo..." FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="2,-4,0,12" MinHeight="18" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="GestorLoteProductoEncontrado" Text="Esperando codigo..." FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="2,-4,0,10" MinHeight="18" TextWrapping="Wrap" />
 
                                     <TextBlock Text="Cantidad predeterminada a sumar" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                                    <TextBox x:Name="GestorLoteCantidadBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,16" Text="1" KeyDown="GestorLoteCantidadBox_KeyDown" />
+                                    <TextBox x:Name="GestorLoteCantidadBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,14" Text="1" KeyDown="GestorLoteCantidadBox_KeyDown" />
 
                                     <Button Content="AÑADIR AL LOTE" Style="{StaticResource PrimaryAddButtonStyle}" Click="AddProductToNewLote_Click" />
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Column="2" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Padding="16">
+                            <Border Grid.Column="2" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
-                                    <TextBlock Text="Contenido del Lote:" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,12" />
+                                    <TextBlock Text="Contenido del Lote:" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,10" />
 
                                     <ListBox x:Name="NuevoLoteItemsBox" Grid.Row="1" ItemsSource="{Binding NuevoLoteItems}" Background="Transparent" BorderThickness="0">
                                         <ListBox.ItemTemplate>
@@ -731,9 +614,9 @@
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock Text="{Binding Nombre}" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
-                                                    <Border Grid.Column="1" Background="{DynamicResource ThemeInputBackground}" CornerRadius="6" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding Cantidad, StringFormat=+{0}}" FontSize="13" FontWeight="Bold" Foreground="{StaticResource SystemGreen}" />
+                                                    <TextBlock Text="{Binding Nombre}" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
+                                                    <Border Grid.Column="1" Background="{DynamicResource ThemeInputBackground}" CornerRadius="4" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Cantidad, StringFormat=+{0}}" FontSize="12" FontWeight="Bold" Foreground="{StaticResource SystemGreen}" />
                                                     </Border>
                                                 </Grid>
                                             </DataTemplate>
@@ -748,24 +631,8 @@
                                 <ColumnDefinition Width="10" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Button Content="CANCELAR (Esc)" Height="42" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeMutedForeground}" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="CloseGestorLotes_Click">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
-                                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                            <Button Grid.Column="2" Content="GUARDAR LOTE" Height="42" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="SaveNewLote_Click" Effect="{StaticResource AppleButtonShadow}">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" CornerRadius="12">
-                                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                            <Button Content="CANCELAR (Esc)" Style="{StaticResource PillButtonStyle}" Click="CloseGestorLotes_Click" />
+                            <Button Grid.Column="2" Content="GUARDAR LOTE" Style="{StaticResource PrimaryAddButtonStyle}" Click="SaveNewLote_Click" />
                         </Grid>
                     </Grid>
                 </Border>

@@ -191,6 +191,7 @@ namespace Punto_de_Venta.Servicios
                 if (completado)
                 {
                     RegistrarRespaldoExitoso();
+                    await LimpiarRespaldosAntiguosDriveAsync(driveService, folderId);
                 }
 
                 return completado;
@@ -361,6 +362,59 @@ namespace Punto_de_Venta.Servicios
             {
                 System.Diagnostics.Debug.WriteLine($"[GoogleDriveBackup] No se pudo crear o localizar la carpeta '{nombreCarpeta}': {ex.Message}");
                 return null;
+            }
+        }
+
+        private static async Task LimpiarRespaldosAntiguosDriveAsync(DriveService service, string? folderId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(folderId))
+                {
+                    return;
+                }
+
+                int maxRespaldos = 5;
+                try
+                {
+                    var config = AppConfig.Load();
+                    if (config.MaxRespaldosDrive > 0)
+                    {
+                        maxRespaldos = config.MaxRespaldosDrive;
+                    }
+                }
+                catch
+                {
+                }
+
+                var listRequest = service.Files.List();
+                listRequest.Q = $"'{folderId}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false";
+                listRequest.Spaces = "drive";
+                listRequest.Fields = "files(id, name, createdTime)";
+                listRequest.OrderBy = "createdTime desc";
+                listRequest.PageSize = 100;
+
+                var result = await listRequest.ExecuteAsync();
+                if (result.Files != null && result.Files.Count > maxRespaldos)
+                {
+                    var aEliminar = result.Files.Skip(maxRespaldos);
+                    foreach (var file in aEliminar)
+                    {
+                        try
+                        {
+                            var deleteReq = service.Files.Delete(file.Id);
+                            await deleteReq.ExecuteAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[GoogleDriveBackup] Error eliminando archivo en Drive {file.Name}: {ex.Message}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GoogleDriveBackup] Error limpiando respaldos en Drive: {ex.Message}");
             }
         }
     }

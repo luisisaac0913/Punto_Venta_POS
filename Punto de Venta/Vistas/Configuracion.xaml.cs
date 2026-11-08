@@ -152,6 +152,8 @@ namespace Punto_de_Venta
 
             BackupFolderBox.Text = _config.RutaRespaldos ?? string.Empty;
             RequirePinCheckBox.IsChecked = _config.SolicitarPinAdmin;
+            if (CountCoinsIndividuallyCheckBox != null)
+                CountCoinsIndividuallyCheckBox.IsChecked = _config.ContarMonedasIndividualmente;
             EnableScaleCheckBox.IsChecked = _config.BasculaHabilitada;
             if (PrintersComboBox.Items.Count > 1)
             {
@@ -201,6 +203,27 @@ namespace Punto_de_Venta
                 }
             }
             if (CmbTiempoReposo.SelectedItem == null) CmbTiempoReposo.SelectedIndex = 2;
+
+            SeleccionarPorTag(CmbMaxRespaldosLocales, _config.MaxRespaldosLocales.ToString(), 3);
+            SeleccionarPorTag(CmbMaxRespaldosDrive, _config.MaxRespaldosDrive.ToString(), 3);
+            SeleccionarPorTag(CmbIntervaloRespaldo, _config.IntervaloRespaldoMinutos.ToString(), 1);
+        }
+
+        private static void SeleccionarPorTag(ComboBox? combo, string tagBuscado, int indiceDefault = 0)
+        {
+            if (combo == null) return;
+            foreach (ComboBoxItem item in combo.Items)
+            {
+                if (item.Tag?.ToString() == tagBuscado)
+                {
+                    combo.SelectedItem = item;
+                    return;
+                }
+            }
+            if (combo.Items.Count > indiceDefault)
+            {
+                combo.SelectedIndex = indiceDefault;
+            }
         }
 
         private void ColorButton_Click(object sender, RoutedEventArgs e)
@@ -573,6 +596,9 @@ namespace Punto_de_Venta
                     _config.BasculaBaudRate = baud;
                 _config.BasculaProtocolo = (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Torrey / Rhino (Peticion P)";
 
+                if (CountCoinsIndividuallyCheckBox != null)
+                    _config.ContarMonedasIndividualmente = CountCoinsIndividuallyCheckBox.IsChecked == true;
+
 
                 bool noPrintSave = NoPrintOrSaveCheckBox?.IsChecked == true;
                 _config.PreguntarAntesDeImprimir = !noPrintSave && (AskBeforePrintCheckBox.IsChecked == true);
@@ -606,8 +632,31 @@ namespace Punto_de_Venta
                     _config.PantallaReposoMinutos = minutos;
                 }
 
+                if (CmbMaxRespaldosLocales?.SelectedItem is ComboBoxItem itemMaxLocales && int.TryParse(itemMaxLocales.Tag?.ToString(), out var maxLocales))
+                {
+                    _config.MaxRespaldosLocales = maxLocales;
+                }
+                if (CmbMaxRespaldosDrive?.SelectedItem is ComboBoxItem itemMaxDrive && int.TryParse(itemMaxDrive.Tag?.ToString(), out var maxDrive))
+                {
+                    _config.MaxRespaldosDrive = maxDrive;
+                }
+                if (CmbIntervaloRespaldo?.SelectedItem is ComboBoxItem itemIntervalo && int.TryParse(itemIntervalo.Tag?.ToString(), out var intervaloMin))
+                {
+                    _config.IntervaloRespaldoMinutos = intervaloMin;
+                }
+
                 _config.MensajeWhatsAppRecordatorio = WhatsAppTemplateBox.Text.Trim();
                 _config.Save();
+
+                MainWindow.ReiniciarTemporizadorRespaldo();
+                try
+                {
+                    var carpetaRespaldos = BackupService.ObtenerCarpetaRespaldos(_config.RutaRespaldos);
+                    BackupService.LimpiarRespaldosAntiguos(carpetaRespaldos);
+                }
+                catch
+                {
+                }
 
                 if (Application.Current is App app)
                 {

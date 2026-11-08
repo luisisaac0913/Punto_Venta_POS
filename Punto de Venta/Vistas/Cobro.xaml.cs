@@ -1404,7 +1404,11 @@ namespace Punto_de_Venta.Vistas
             CreditValidationMessage.Text = string.Empty;
             DebtorNameBox.Clear();
             CreditOverlay.Visibility = Visibility.Visible;
-            DebtorNameBox.Focus();
+            Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+            {
+                DebtorNameBox.Focus();
+                Keyboard.Focus(DebtorNameBox);
+            }));
         }
 
         private void CloseCreditOverlay()
@@ -1546,7 +1550,11 @@ namespace Punto_de_Venta.Vistas
             RbSalida.IsChecked = true;
 
             CashMovementOverlay.Visibility = Visibility.Visible;
-            MovementAmountBox.Focus();
+            Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+            {
+                MovementAmountBox.Focus();
+                Keyboard.Focus(MovementAmountBox);
+            }));
         }
 
         private void CloseCashMovement()
@@ -1979,7 +1987,9 @@ namespace Punto_de_Venta.Vistas
                     CreditOverlay.IsVisible ||
                     PaymentOverlay.IsVisible ||
                     QuickAddOverlay.IsVisible ||
-                    QuickRestockOverlay.IsVisible)
+                    QuickRestockOverlay.IsVisible ||
+                    VentasEnEsperaOverlay.IsVisible ||
+                    ScaleOverlay.IsVisible)
                 {
                     return;
                 }
@@ -2006,6 +2016,16 @@ namespace Punto_de_Venta.Vistas
 
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            if (CashMovementOverlay.IsVisible ||
+                CreditOverlay.IsVisible ||
+                PaymentOverlay.IsVisible ||
+                QuickAddOverlay.IsVisible ||
+                QuickRestockOverlay.IsVisible ||
+                VentasEnEsperaOverlay.IsVisible ||
+                ScaleOverlay.IsVisible)
+            {
+                return;
+            }
             FocusSearch();
         }
 

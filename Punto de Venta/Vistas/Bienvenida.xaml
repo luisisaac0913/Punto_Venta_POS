@@ -10,27 +10,31 @@
         KeyDown="Window_KeyDown">
 
     <Window.Resources>
-        <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="48" ShadowDepth="16" Direction="270" Color="#000000" Opacity="0.22" />
+        <DropShadowEffect x:Key="FluentModalShadow" BlurRadius="16" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.25" />
 
         <Style x:Key="StepButtonStyle" TargetType="Button">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Background" Value="{DynamicResource ThemeAccent}" />
             <Setter Property="Foreground" Value="White" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Height" Value="48" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="16">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="4">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="BtnBorder" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.8" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -39,27 +43,26 @@
         </Style>
 
         <Style x:Key="FormInputStyle" TargetType="TextBox">
-            <Setter Property="Height" Value="44" />
-            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Padding" Value="10,0" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
             <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
                             <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Margin="{TemplateBinding Padding}" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
-                                <Setter TargetName="border" Property="BorderThickness" Value="2" />
-                                <Setter TargetName="PART_ContentHost" Property="Margin" Value="11,0" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -68,27 +71,26 @@
         </Style>
 
         <Style x:Key="FormPasswordStyle" TargetType="PasswordBox">
-            <Setter Property="Height" Value="44" />
-            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Padding" Value="10,0" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
             <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="PasswordBox">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
                             <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Margin="{TemplateBinding Padding}" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
-                                <Setter TargetName="border" Property="BorderThickness" Value="2" />
-                                <Setter TargetName="PART_ContentHost" Property="Margin" Value="11,0" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -100,7 +102,7 @@
     <Grid>
         <Border Background="{DynamicResource ThemeSurfaceBackground}" 
                 BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" 
-                CornerRadius="24" Margin="48" Effect="{StaticResource AppleModalShadow}">
+                CornerRadius="8" Margin="48" Effect="{StaticResource FluentModalShadow}">
 
             <Grid Margin="32,24,32,24">
                 <Grid.RowDefinitions>
@@ -115,76 +117,77 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="0" Height="6" CornerRadius="3" Background="{DynamicResource ThemeBorder}" Margin="0,0,32,0" VerticalAlignment="Center">
+                    <Border Grid.Column="0" Height="4" CornerRadius="2" Background="{DynamicResource ThemeBorder}" Margin="0,0,32,0" VerticalAlignment="Center">
                         <ProgressBar x:Name="BarraProgreso" Minimum="0" Maximum="3" Value="1" Background="Transparent" Foreground="{DynamicResource ThemeAccent}" BorderThickness="0" Visibility="Collapsed" />
                     </Border>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-                        <Button x:Name="BtnThemeToggle" Content="🌙" FontSize="18" Foreground="{DynamicResource ThemeMutedForeground}" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,16,0" Click="BtnThemeToggle_Click" ToolTip="Alternar tema oscuro/claro" />
-                        <Button x:Name="BtnCerrar" Content="✕" FontSize="18" Foreground="{DynamicResource ThemeMutedForeground}" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnCerrar_Click" />
+                        <Button x:Name="BtnThemeToggle" Content="🌙" FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,16,0" Click="BtnThemeToggle_Click" ToolTip="Alternar tema oscuro/claro" />
+                        <Button x:Name="BtnCerrar" Content="✕" FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnCerrar_Click" />
                     </StackPanel>
                 </Grid>
 
                 <Grid Grid.Row="1">
                     <StackPanel x:Name="PanelPaso0" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Visible">
-                        <Border Width="380" Height="220" CornerRadius="24" Background="{DynamicResource ThemeInputBackground}" Margin="0,0,0,24" ClipToBounds="True">
+                        <Border Width="380" Height="220" CornerRadius="8" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Margin="0,0,0,24" ClipToBounds="True">
                             <Grid>
                                 <MediaElement x:Name="VideoIntro" MediaEnded="VideoIntro_MediaEnded" IsMuted="True" Source="Imagenes/Intro.mp4" LoadedBehavior="Manual" UnloadedBehavior="Stop" Stretch="UniformToFill" Loaded="VideoIntro_Loaded" />
-                                <TextBlock Text="⚠️ Inserte Video" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedForeground}" FontSize="18" FontWeight="SemiBold" Panel.ZIndex="-1" />
+                                <TextBlock Text="⚠️ Inserte Video" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedForeground}" FontSize="16" FontWeight="SemiBold" Panel.ZIndex="-1" />
                             </Grid>
                         </Border>
 
-                        <TextBlock Text="¡Bienvenido/a!" FontSize="28" FontWeight="ExtraBold" HorizontalAlignment="Center" Margin="0,0,0,8" />
-                        <TextBlock Text="Configura tu sistema en menos de 2 minutos." FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,0,0,32" />
+                        <TextBlock Text="Bienvenido/a" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                        <TextBlock Text="Configura tu sistema en menos de 2 minutos." FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,0,0,28" />
 
-                        <Button x:Name="BtnIniciarIntro" Content="INICIAR" Width="200" Height="48" FontSize="16" Style="{StaticResource StepButtonStyle}" Click="BtnIniciarIntro_Click" />
+                        <Button x:Name="BtnIniciarIntro" Content="INICIAR" Width="180" Height="40" FontSize="14" Style="{StaticResource StepButtonStyle}" Click="BtnIniciarIntro_Click" />
                     </StackPanel>
 
                     <StackPanel x:Name="PanelPaso1" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
-                        <TextBlock Text="Informacion de tu tienda" FontSize="26" FontWeight="Bold" Margin="0,0,0,8" />
-                        <TextBlock Text="Paso 1 de 3" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,32" />
+                        <TextBlock Text="Informacion de tu tienda" FontSize="22" FontWeight="Bold" Margin="0,0,0,6" />
+                        <TextBlock Text="Paso 1 de 3" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,24" />
 
-                        <TextBlock Text="Nombre de la Tienda *" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <TextBox x:Name="TxtNombreNegocio" Style="{StaticResource FormInputStyle}" Margin="0,0,0,20" />
+                        <TextBlock Text="Nombre de la Tienda *" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <TextBox x:Name="TxtNombreNegocio" Style="{StaticResource FormInputStyle}" Margin="0,0,0,16" />
 
-                        <TextBlock Text="Direccion (Opcional)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <TextBox x:Name="TxtDireccion" Style="{StaticResource FormInputStyle}" Margin="0,0,0,20" />
+                        <TextBlock Text="Direccion (Opcional)" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <TextBox x:Name="TxtDireccion" Style="{StaticResource FormInputStyle}" Margin="0,0,0,16" />
 
-                        <TextBlock Text="Mensaje del Ticket" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <TextBox x:Name="TxtMensajePie" Text="¡Gracias por su preferencia!" Style="{StaticResource FormInputStyle}" />
+                        <TextBlock Text="Mensaje del Ticket" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <TextBox x:Name="TxtMensajePie" Text="Gracias por su preferencia!" Style="{StaticResource FormInputStyle}" />
                     </StackPanel>
 
                     <StackPanel x:Name="PanelPaso2" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
-                        <TextBlock Text="Dispositivos conectados" FontSize="26" FontWeight="Bold" Margin="0,0,0,8" />
-                        <TextBlock Text="Paso 2 de 3" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,32" />
-                        <TextBlock Text="Impresora Termica" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <ComboBox x:Name="CmbImpresoras" Margin="0,0,0,32" />
-                        <CheckBox x:Name="ChkUsarBascula" Content="Conectar bascula digital al sistema" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,20" />
-                        <TextBlock Text="Puerto de la Bascula" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <ComboBox x:Name="CmbPuertosCOM" />
+                        <TextBlock Text="Dispositivos conectados" FontSize="22" FontWeight="Bold" Margin="0,0,0,6" />
+                        <TextBlock Text="Paso 2 de 3" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,24" />
+                        <TextBlock Text="Impresora Termica" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <ComboBox x:Name="CmbImpresoras" Height="36" Margin="0,0,0,24" />
+                        <CheckBox x:Name="ChkUsarBascula" Content="Conectar bascula digital al sistema" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,16" />
+                        <TextBlock Text="Puerto de la Bascula" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <ComboBox x:Name="CmbPuertosCOM" Height="36" />
                     </StackPanel>
+
                     <StackPanel x:Name="PanelPaso3" VerticalAlignment="Center" Visibility="Collapsed" MaxWidth="500">
-                        <TextBlock Text="Seguridad y Control" FontSize="26" FontWeight="Bold" Margin="0,0,0,8" />
-                        <TextBlock Text="Paso 3 de 3" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,32" />
+                        <TextBlock Text="Seguridad y Control" FontSize="22" FontWeight="Bold" Margin="0,0,0,6" />
+                        <TextBlock Text="Paso 3 de 3" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,24" />
 
-                        <TextBlock Text="Fondo de caja inicial ($)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <TextBox x:Name="TxtFondoCaja" Text="500.00" Style="{StaticResource FormInputStyle}" Margin="0,0,0,32" />
+                        <TextBlock Text="Fondo de caja inicial ($)" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <TextBox x:Name="TxtFondoCaja" Text="500.00" Style="{StaticResource FormInputStyle}" Margin="0,0,0,24" />
 
-                        <TextBlock Text="PIN de Administrador (4 digitos)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBlock Text="PIN de Administrador (4 digitos)" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
                         <PasswordBox x:Name="TxtPinAdmin" MaxLength="4" Style="{StaticResource FormPasswordStyle}" Margin="0,0,0,8" />
-                        <TextBlock Text="Este codigo es para autorizar cancelaciones. Dejalo vacio si no deseas usar PIN por ahora." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" />
+                        <TextBlock Text="Este codigo es para autorizar cancelaciones. Dejalo vacio si no deseas usar PIN por ahora." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" />
                     </StackPanel>
                 </Grid>
 
-                <Grid x:Name="GridNavegacion" Grid.Row="2" Margin="0,24,0,0" Visibility="Collapsed" MaxWidth="500">
+                <Grid x:Name="GridNavegacion" Grid.Row="2" Margin="0,20,0,0" Visibility="Collapsed" MaxWidth="500">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <Button x:Name="BtnAnterior" Grid.Column="0" HorizontalAlignment="Left" Content="Atras" Width="100" Style="{StaticResource StepButtonStyle}" Background="Transparent" Foreground="{DynamicResource ThemeTextForeground}" Visibility="Hidden" Click="BtnAnterior_Click" />
-                    <Button x:Name="BtnSiguiente" Grid.Column="1" Content="Siguiente" Width="140" Style="{StaticResource StepButtonStyle}" Click="BtnSiguiente_Click" />
-                    <Button x:Name="BtnFinalizar" Grid.Column="1" Content="Comenzar a Vender" Width="180" Style="{StaticResource StepButtonStyle}" Background="#34C759" Visibility="Hidden" Click="BtnFinalizar_Click" />
+                    <Button x:Name="BtnAnterior" Grid.Column="0" HorizontalAlignment="Left" Content="Atras" Width="90" Style="{StaticResource StepButtonStyle}" Background="Transparent" Foreground="{DynamicResource ThemeTextForeground}" Visibility="Hidden" Click="BtnAnterior_Click" />
+                    <Button x:Name="BtnSiguiente" Grid.Column="1" Content="Siguiente" Width="130" Style="{StaticResource StepButtonStyle}" Click="BtnSiguiente_Click" />
+                    <Button x:Name="BtnFinalizar" Grid.Column="1" Content="Comenzar a Vender" Width="170" Style="{StaticResource StepButtonStyle}" Background="#34C759" Visibility="Hidden" Click="BtnFinalizar_Click" />
                 </Grid>
             </Grid>
         </Border>

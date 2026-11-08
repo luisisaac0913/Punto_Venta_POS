@@ -1,29 +1,23 @@
 <UserControl x:Class="Punto_de_Venta.Ventas"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        MinWidth="1000" MinHeight="640"
-        Background="Transparent"
-        Focusable="True"
-        IsVisibleChanged="UserControl_IsVisibleChanged"
-        PreviewKeyDown="UserControl_PreviewKeyDown"
-        Loaded="UserControl_Loaded"
-        UseLayoutRounding="True"
-        TextOptions.TextFormattingMode="Display"
-        TextOptions.TextRenderingMode="ClearType">
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             MinWidth="1000" MinHeight="640"
+             Background="Transparent"
+             Focusable="True"
+             IsVisibleChanged="UserControl_IsVisibleChanged"
+             PreviewKeyDown="UserControl_PreviewKeyDown"
+             Loaded="UserControl_Loaded"
+             UseLayoutRounding="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
+
     <UserControl.Resources>
-        <DropShadowEffect x:Key="AppleCardShadow" BlurRadius="24" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.04" />
-        <DropShadowEffect x:Key="AppleButtonShadow" BlurRadius="12" ShadowDepth="3" Direction="270" Color="#007AFF" Opacity="0.22" />
-        <Style x:Key="AppleCardStyle" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="20" />
-            <Setter Property="Effect" Value="{StaticResource AppleCardShadow}" />
-        </Style>
+        <Style x:Key="AppleCardStyle" TargetType="Border" BasedOn="{StaticResource FluentCardStyle}" />
+
         <Style x:Key="PeriodSegmentButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="34" />
-            <Setter Property="Padding" Value="14,0" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
@@ -33,28 +27,29 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="PillBorder" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="PillBorder" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style x:Key="ApplePillButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="46" />
+            <Setter Property="Height" Value="36" />
             <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="18,0" />
+            <Setter Property="Padding" Value="14,0" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="PillBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="14">
+                        <Border x:Name="PillBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -69,20 +64,21 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style x:Key="AppleDangerButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="52" />
+            <Setter Property="Height" Value="36" />
             <Setter Property="Background" Value="#FEE2E2" />
             <Setter Property="Foreground" Value="#DC2626" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="20,0" />
+            <Setter Property="Padding" Value="16,0" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="DangerBorder" Background="{TemplateBinding Background}" CornerRadius="16">
+                        <Border x:Name="DangerBorder" Background="{TemplateBinding Background}" CornerRadius="4">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -101,37 +97,10 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="ApplePrimaryActionButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="52" />
-            <Setter Property="Background" Value="{DynamicResource ThemeAccent}" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="24,0" />
-            <Setter Property="Effect" Value="{StaticResource AppleButtonShadow}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="PrimaryBorder" Background="{TemplateBinding Background}" CornerRadius="16">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="PrimaryBorder" Property="Opacity" Value="0.9" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="PrimaryBorder" Property="Background" Value="{DynamicResource ThemeBorder}" />
-                                <Setter Property="Effect" Value="{x:Null}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+
+        <Style x:Key="ApplePrimaryActionButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentButtonPrimary}" />
     </UserControl.Resources>
+
     <Border Background="Transparent" ClipToBounds="True">
         <Grid Margin="32,20,32,24" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
             <Grid.RowDefinitions>
@@ -140,7 +109,9 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
+
             <Image Source="/Imagenes/Logo.png" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform" Width="450" Opacity="0.12" IsHitTestVisible="False" Panel.ZIndex="0" Grid.RowSpan="4" />
+
             <Grid Grid.Row="0" Margin="0,0,0,16">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -148,12 +119,13 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                    <TextBlock Text="Ventas" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                    <TextBlock Text="Ventas" Visibility="Collapsed" />
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button x:Name="BtnExportarExcel" Content="📥 Exportar Excel (F8)" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,12,0" Height="36" Padding="12,0" Foreground="{DynamicResource ThemeAccent}" Click="ExportButton_Click" ToolTip="Descargar historial filtrado en archivo Excel/CSV" />
-                    <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Padding="3" Margin="0,0,12,0">
+
+                    <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="3" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
                             <Button x:Name="BtnPeriodoDia" Content="Dia" Style="{StaticResource PeriodSegmentButtonStyle}" Click="BtnPeriodo_Click" Tag="Dia" />
                             <Button x:Name="BtnPeriodoSemana" Content="Semana" Style="{StaticResource PeriodSegmentButtonStyle}" Click="BtnPeriodo_Click" Tag="Semana" />
@@ -161,17 +133,20 @@
                             <Button x:Name="BtnPeriodoCustom" Content="Personalizado" Style="{StaticResource PeriodSegmentButtonStyle}" Click="BtnPeriodo_Click" Tag="Custom" />
                         </StackPanel>
                     </Border>
+
                     <StackPanel x:Name="CustomDatePanel" Orientation="Horizontal" Margin="0,0,12,0" Visibility="Collapsed" VerticalAlignment="Center">
                         <DatePicker x:Name="DatePickerDesde" Height="36" Width="120" VerticalContentAlignment="Center" SelectedDateChanged="DatePicker_SelectedDateChanged" />
                         <TextBlock Text="al" VerticalAlignment="Center" Margin="6,0" Foreground="{DynamicResource ThemeMutedForeground}" FontSize="12" />
                         <DatePicker x:Name="DatePickerHasta" Height="36" Width="120" VerticalContentAlignment="Center" SelectedDateChanged="DatePicker_SelectedDateChanged" />
                     </StackPanel>
-                    <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Padding="14,6" VerticalAlignment="Center">
+
+                    <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14,6" VerticalAlignment="Center">
                         <TextBlock x:Name="ClockText" Text="6:08 PM" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
                     </Border>
                 </StackPanel>
             </Grid>
-            <Border Grid.Row="1" Height="44" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Margin="0,0,0,16" Padding="14,0">
+
+            <Border Grid.Row="1" Height="40" Style="{StaticResource FluentInputContainerStyle}" Margin="0,0,0,16" Padding="12,0">
                 <Grid VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -179,21 +154,22 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" Margin="0,0,10,0" />
                     <Grid Grid.Column="1">
-                        <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" TextChanged="SearchBox_TextChanged" AutomationProperties.Name="Buscar venta por ID, fecha o productos" />
-                        <TextBlock x:Name="SearchPlaceholder" Text="Buscar venta por ID, producto o fecha (ej. 24/10/2026)..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
+                        <TextBox x:Name="SearchBox" Style="{StaticResource EmbeddedTextBoxStyle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" TextChanged="SearchBox_TextChanged" AutomationProperties.Name="Buscar venta por ID, fecha o productos" />
+                        <TextBlock x:Name="SearchPlaceholder" Text="Buscar venta por ID, producto o fecha (ej. 24/10/2026)..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
                     </Grid>
                 </Grid>
             </Border>
+
             <Border Grid.Row="2" Style="{StaticResource AppleCardStyle}" Padding="0" ClipToBounds="True">
-                <DataGrid x:Name="SalesGrid" ItemsSource="{Binding SalesView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="SalesGrid_SelectionChanged" MouseDoubleClick="SalesGrid_MouseDoubleClick" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="54" EnableRowVirtualization="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                <DataGrid x:Name="SalesGrid" ItemsSource="{Binding SalesView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="SalesGrid_SelectionChanged" MouseDoubleClick="SalesGrid_MouseDoubleClick" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="48" EnableRowVirtualization="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
                             <Setter Property="Foreground" Value="{DynamicResource ThemeMutedForeground}" />
                             <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
                             <Setter Property="FontSize" Value="12" />
-                            <Setter Property="FontWeight" Value="Bold" />
-                            <Setter Property="Padding" Value="12,12" />
+                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter Property="Padding" Value="12,10" />
                             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
                             <Setter Property="BorderThickness" Value="0,0,0,1" />
                         </Style>
@@ -248,7 +224,7 @@
                         <DataGridTemplateColumn Header="ESTADO" Width="120">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Border x:Name="StatusBadge" CornerRadius="8" Padding="10,4" HorizontalAlignment="Center" BorderThickness="1" Background="#15007AFF" BorderBrush="#30007AFF">
+                                    <Border x:Name="StatusBadge" CornerRadius="4" Padding="8,3" HorizontalAlignment="Center" BorderThickness="1" Background="#15007AFF" BorderBrush="#30007AFF">
                                         <TextBlock x:Name="StatusText" Text="{Binding Estado}" FontSize="11" FontWeight="Bold" Foreground="#007AFF" HorizontalAlignment="Center" />
                                     </Border>
                                     <DataTemplate.Triggers>
@@ -302,13 +278,14 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
-            <Grid Grid.Row="3" Margin="0,18,0,0">
+
+            <Grid Grid.Row="3" Margin="0,16,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="10" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Padding="16,10" Effect="{StaticResource AppleCardShadow}">
+                <Border Grid.Column="0" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="16,10" Effect="{StaticResource FluentShadow}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -348,10 +325,10 @@
                     </Grid>
                 </Border>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="🖨️ REIMPRIMIR (F7)" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,10,0" Height="52" Padding="14,0" IsEnabled="{Binding ElementName=ReturnButton, Path=IsEnabled}" Click="ReprintTicketButton_Click" ToolTip="Imprimir copia del ticket de la venta seleccionada" />
-                    <Button Content="📄 DETALLES" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,10,0" Height="52" Padding="14,0" IsEnabled="{Binding ElementName=ReturnButton, Path=IsEnabled}" Click="ViewDetailsButton_Click" ToolTip="Ver que se vendio (Doble clic en la tabla)" />
-                    <Button x:Name="ReturnButton" Content="DEVOLUCION" Style="{StaticResource AppleDangerButtonStyle}" MinWidth="130" Margin="0,0,10,0" IsEnabled="False" Click="ReturnButton_Click" ToolTip="Cancelar venta y retornar mercancia" />
-                    <Button Content="CERRAR CAJA" Style="{StaticResource ApplePrimaryActionButtonStyle}" MinWidth="150" Click="CashCloseButton_Click" ToolTip="Hacer corte ciego de caja" />
+                    <Button Content="🖨️ REIMPRIMIR (F7)" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,8,0" IsEnabled="{Binding ElementName=ReturnButton, Path=IsEnabled}" Click="ReprintTicketButton_Click" ToolTip="Imprimir copia del ticket de la venta seleccionada" />
+                    <Button Content="📄 DETALLES" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,8,0" IsEnabled="{Binding ElementName=ReturnButton, Path=IsEnabled}" Click="ViewDetailsButton_Click" ToolTip="Ver que se vendio (Doble clic en la tabla)" />
+                    <Button x:Name="ReturnButton" Content="DEVOLUCION" Style="{StaticResource AppleDangerButtonStyle}" MinWidth="120" Margin="0,0,8,0" IsEnabled="False" Click="ReturnButton_Click" ToolTip="Cancelar venta y retornar mercancia" />
+                    <Button Content="CERRAR CAJA" Style="{StaticResource ApplePrimaryActionButtonStyle}" MinWidth="130" Click="CashCloseButton_Click" ToolTip="Hacer corte ciego de caja" />
                 </StackPanel>
             </Grid>
         </Grid>
