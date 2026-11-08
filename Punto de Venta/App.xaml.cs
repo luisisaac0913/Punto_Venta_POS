@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
+using Velopack;
 
 namespace Punto_de_Venta
 {
@@ -34,6 +35,8 @@ namespace Punto_de_Venta
         }
         protected override void OnStartup(StartupEventArgs e)
         {
+            VelopackApp.Build().Run();
+
             _singleInstanceMutex = new Mutex(true, @"Global\POS_PuntoDeVenta_SingleInstance_Mutex", out bool createdNew);
             if (!createdNew)
             {
@@ -73,6 +76,8 @@ namespace Punto_de_Venta
                 MainWindow mainWindow = new MainWindow();
                 mainWindow.Show();
             }
+
+            _ = Task.Run(async () => await ActualizadorServicio.EjecutarActualizacionSilenciosaAsync());
         }
 
         public void SetDarkMode(bool isDark)
