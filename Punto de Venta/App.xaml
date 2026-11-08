@@ -2,8 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Punto_de_Venta"
-             ShutdownMode="OnExplicitShutdown"
-             >
+             ShutdownMode="OnExplicitShutdown">
 
     <Application.Resources>
 
@@ -18,12 +17,298 @@
         <SolidColorBrush x:Key="ThemeBorder" Color="#E5E5EA" />
         <SolidColorBrush x:Key="ThemePlaceholder" Color="#8E8E93" />
 
-        <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="40" ShadowDepth="12" Direction="270" Color="#000000" Opacity="0.2" />
-        <DropShadowEffect x:Key="AppleButtonShadow" BlurRadius="10" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.15" />
+        <SolidColorBrush x:Key="SystemGreen" Color="#34C759" />
+        <SolidColorBrush x:Key="SystemOrange" Color="#FF9500" />
+        <SolidColorBrush x:Key="SystemRed" Color="#E81123" />
+
+        <DropShadowEffect x:Key="FluentShadow" BlurRadius="8" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.15" />
+        <DropShadowEffect x:Key="FluentCardShadow" BlurRadius="8" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.15" />
+        <DropShadowEffect x:Key="FluentModalShadow" BlurRadius="16" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.25" />
+
+        <DropShadowEffect x:Key="AppleCardShadow" BlurRadius="8" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.15" />
+        <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="16" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.25" />
+        <DropShadowEffect x:Key="AppleButtonShadow" BlurRadius="4" ShadowDepth="1" Direction="270" Color="#000000" Opacity="0.08" />
+
+        <Style x:Key="FluentCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Effect" Value="{StaticResource FluentShadow}" />
+        </Style>
+
+        <Style x:Key="FluentCard" TargetType="Border" BasedOn="{StaticResource FluentCardStyle}" />
+        <Style x:Key="FluentPanelStyle" TargetType="Border" BasedOn="{StaticResource FluentCardStyle}" />
+        <Style x:Key="CardBorderStyle" TargetType="Border" BasedOn="{StaticResource FluentCardStyle}" />
+        <Style x:Key="ProductCardStyle" TargetType="Border" BasedOn="{StaticResource FluentCardStyle}" />
+
+        <Style x:Key="FluentModalStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Effect" Value="{StaticResource FluentModalShadow}" />
+        </Style>
+
+        <Style x:Key="FluentButtonPrimary" TargetType="Button">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="Background" Value="{DynamicResource ThemeAccent}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.8" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FluentButtonSecondary" TargetType="Button">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource ThemeBorder}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FluentButtonDanger" TargetType="Button">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="Background" Value="{StaticResource SystemRed}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.8" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FluentButtonSubtle" TargetType="Button">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.8" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="Button" BasedOn="{StaticResource FluentButtonSecondary}" />
+
+        <Style x:Key="ActionButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentButtonPrimary}" />
+        <Style x:Key="PillButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentButtonSecondary}" />
+        <Style x:Key="PrimaryAddButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentButtonPrimary}" />
+        <Style x:Key="DangerDeleteButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentButtonDanger}" />
+
+        <Style x:Key="FluentInputContainerStyle" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="EmbeddedTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Validation.ErrorTemplate" Value="{x:Null}" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4" SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" Margin="{TemplateBinding Padding}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FluentTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}" />
+            <Setter Property="Validation.ErrorTemplate" Value="{x:Null}" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="InputBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="InputBorder" Property="BorderBrush" Value="{DynamicResource ThemeMutedForeground}" />
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="InputBorder" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
+                            </Trigger>
+                            <Trigger Property="IsReadOnly" Value="True">
+                                <Setter TargetName="InputBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+                                <Setter Property="Foreground" Value="{DynamicResource ThemeMutedForeground}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="InputBorder" Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TextBox" BasedOn="{StaticResource FluentTextBoxStyle}" />
+        <Style x:Key="FormTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource FluentTextBoxStyle}" />
+
         <ControlTemplate x:Key="ComboBoxToggleButton" TargetType="{x:Type ToggleButton}">
-            <Border x:Name="templateRoot" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12">
-                <Border x:Name="splitBorder" Width="32" HorizontalAlignment="Right" BorderThickness="0" Background="Transparent">
-                    <Path x:Name="arrow" Data="M 0,0 L 5,5 L 10,0" Stroke="{DynamicResource ThemeMutedForeground}" StrokeThickness="2" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,2,0,0"/>
+            <Border x:Name="templateRoot"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="4">
+                <Border x:Name="splitBorder" Width="28" HorizontalAlignment="Right" BorderThickness="0" Background="Transparent">
+                    <Path x:Name="arrow"
+                          Data="M 0,0 L 4,4 L 8,0"
+                          Stroke="{DynamicResource ThemeMutedForeground}"
+                          StrokeThickness="1.5"
+                          StrokeLineJoin="Round"
+                          StrokeStartLineCap="Round"
+                          StrokeEndLineCap="Round"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          Margin="0,2,0,0" />
                 </Border>
             </Border>
             <ControlTemplate.Triggers>
@@ -32,59 +317,157 @@
                 </Trigger>
                 <Trigger Property="IsChecked" Value="True">
                     <Setter TargetName="arrow" Property="Stroke" Value="{DynamicResource ThemeAccent}" />
-                    <Setter TargetName="arrow" Property="Data" Value="M 0,5 L 5,0 L 10,5" />
+                    <Setter TargetName="arrow" Property="Data" Value="M 0,4 L 4,0 L 8,4" />
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>
+
+        <Style TargetType="{x:Type ComboBox}">
+            <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="10,0,28,0" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBox}">
+                        <Grid x:Name="templateRoot" SnapsToDevicePixels="True">
+                            <ToggleButton x:Name="toggleButton"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          BorderThickness="{TemplateBinding BorderThickness}"
+                                          Template="{StaticResource ComboBoxToggleButton}"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" />
+                            <ContentPresenter x:Name="contentPresenter"
+                                              IsHitTestVisible="False"
+                                              Margin="{TemplateBinding Padding}"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                            <Popup x:Name="PART_Popup"
+                                   AllowsTransparency="True"
+                                   IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}"
+                                   Placement="Bottom"
+                                   PopupAnimation="Fade"
+                                   Margin="0,2,0,0">
+                                <Border x:Name="dropDownBorder"
+                                        Background="{DynamicResource ThemeSurfaceBackground}"
+                                        BorderBrush="{DynamicResource ThemeBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Margin="4,4,4,12"
+                                        MinWidth="{Binding ActualWidth, ElementName=templateRoot}"
+                                        MaxHeight="260"
+                                        Effect="{StaticResource FluentCardShadow}">
+                                    <ScrollViewer x:Name="DropDownScrollViewer" Padding="4">
+                                        <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" />
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource ThemeMutedForeground}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
+                                <Setter Property="BorderThickness" Value="1.5" />
+                                <Setter Property="Padding" Value="9.5,0,27.5,0" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="{x:Type ComboBoxItem}">
+            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                        <Border x:Name="ItemBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}"
+                                Margin="0,0,0,1">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ThemeAccent}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style TargetType="ToolTip">
             <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="12,8" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
             <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontWeight" Value="Normal" />
             <Setter Property="HasDropShadow" Value="False" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ToolTip">
-                        <Border Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
-                                CornerRadius="8" 
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
                                 Padding="{TemplateBinding Padding}"
-                                Margin="0,0,8,8">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="12" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.15" />
-                            </Border.Effect>
+                                Margin="0,0,6,6"
+                                Effect="{StaticResource FluentCardShadow}">
                             <ContentPresenter />
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style TargetType="ContextMenu">
             <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="6" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="HasDropShadow" Value="False" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ContextMenu">
-                        <Border Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
-                                CornerRadius="12" 
-                                Padding="{TemplateBinding Padding}" 
-                                Margin="0,0,12,12">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.18" />
-                            </Border.Effect>
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}"
+                                Margin="0,0,8,8"
+                                Effect="{StaticResource FluentCardShadow}">
                             <ScrollViewer>
                                 <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
                             </ScrollViewer>
@@ -95,13 +478,19 @@
         </Style>
 
         <Style TargetType="MenuItem">
-            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="Padding" Value="10,6" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
-                        <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}" Margin="0,2">
+                        <Border x:Name="ItemBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}"
+                                Margin="0,1">
                             <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" HorizontalAlignment="Left" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -111,34 +500,34 @@
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Foreground" Value="{DynamicResource ThemeMutedForeground}" />
-                                <Setter Property="Opacity" Value="0.6" />
+                                <Setter Property="Opacity" Value="0.5" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style TargetType="CheckBox">
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
                         <StackPanel Orientation="Horizontal" Background="Transparent">
-                            <Grid VerticalAlignment="Center" Margin="0,0,10,0">
-                                <Border x:Name="CheckBoxBorder" 
-                                        Width="22" Height="22" 
-                                        CornerRadius="6" 
-                                        Background="{DynamicResource ThemeInputBackground}" 
-                                        BorderBrush="{DynamicResource ThemeBorder}" 
+                            <Grid VerticalAlignment="Center" Margin="0,0,8,0">
+                                <Border x:Name="CheckBoxBorder"
+                                        Width="18" Height="18"
+                                        CornerRadius="4"
+                                        Background="{DynamicResource ThemeInputBackground}"
+                                        BorderBrush="{DynamicResource ThemeBorder}"
                                         BorderThickness="1.5" />
                             </Grid>
                             <ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                         </StackPanel>
-
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
@@ -147,77 +536,15 @@
                                 <Setter TargetName="CheckBoxBorder" Property="Background" Value="{DynamicResource ThemeAccent}" />
                                 <Setter TargetName="CheckBoxBorder" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
                             </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style TargetType="{x:Type ComboBox}">
-            <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}"/>
-            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Height" Value="44"/>
-            <Setter Property="Padding" Value="14,0,32,0"/>
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ComboBox}">
-                        <Grid x:Name="templateRoot" SnapsToDevicePixels="true">
-                            <ToggleButton x:Name="toggleButton" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Template="{StaticResource ComboBoxToggleButton}" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
-                            <ContentPresenter x:Name="contentPresenter" IsHitTestVisible="false" Margin="{TemplateBinding Padding}" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
-                            <Popup x:Name="PART_Popup" AllowsTransparency="true" IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}" Placement="Bottom" PopupAnimation="Fade" Margin="0,4,0,0">
-                                <Border x:Name="dropDownBorder" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Margin="10,6,10,20" MinWidth="{Binding ActualWidth, ElementName=templateRoot}" MaxHeight="280">
-                                    <Border.Effect>
-                                        <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.18" />
-                                    </Border.Effect>
-                                    <ScrollViewer x:Name="DropDownScrollViewer" Padding="6">
-                                        <ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" />
-                                    </ScrollViewer>
 
-                                </Border>
-                            </Popup>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                <Setter Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
-                                <Setter Property="BorderThickness" Value="2" />
-                                <Setter Property="Padding" Value="13,0,31,0" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style TargetType="{x:Type ComboBoxItem}">
-            <Setter Property="Padding" Value="12,12"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}"/>
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system"/>
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ComboBoxItem}">
-                        <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}" Margin="0,0,0,2">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource ThemeAccent}"/>
-                                <Setter Property="Foreground" Value="White"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
         <Style x:Key="ScrollThumbs" TargetType="{x:Type Thumb}">
             <Setter Property="Template">
                 <Setter.Value>
@@ -243,8 +570,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ScrollBar}">
-                        <Grid x:Name="Bg" SnapsToDevicePixels="true" Background="Transparent">
-                            <Track x:Name="PART_Track" IsDirectionReversed="true" Margin="1,0">
+                        <Grid x:Name="Bg" SnapsToDevicePixels="True" Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True" Margin="1,0">
                                 <Track.Thumb>
                                     <Thumb Style="{StaticResource ScrollThumbs}" />
                                 </Track.Thumb>
@@ -260,8 +587,8 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="{x:Type ScrollBar}">
-                                <Grid x:Name="Bg" SnapsToDevicePixels="true" Background="Transparent">
-                                    <Track x:Name="PART_Track" IsDirectionReversed="false" Margin="0,1">
+                                <Grid x:Name="Bg" SnapsToDevicePixels="True" Background="Transparent">
+                                    <Track x:Name="PART_Track" IsDirectionReversed="False" Margin="0,1">
                                         <Track.Thumb>
                                             <Thumb Style="{StaticResource ScrollThumbs}" />
                                         </Track.Thumb>
@@ -284,7 +611,13 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="DatePickerTextBox">
                         <Grid>
-                            <TextBlock x:Name="PART_Watermark" Text="Seleccione fecha" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" Margin="8,0,0,0" Visibility="Collapsed" FontFamily="Segoe UI Variable, Segoe UI" />
+                            <TextBlock x:Name="PART_Watermark"
+                                       Text="Seleccione fecha"
+                                       Foreground="{DynamicResource ThemeMutedForeground}"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,0,0"
+                                       Visibility="Collapsed"
+                                       FontFamily="Segoe UI Variable, Segoe UI" />
                             <ScrollViewer x:Name="PART_ContentHost" Margin="0" VerticalAlignment="Center" />
                         </Grid>
                         <ControlTemplate.Triggers>
@@ -302,31 +635,51 @@
             <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Height" Value="42" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Margin" Value="4,0" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DatePicker">
-                        <Border x:Name="Border" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" CornerRadius="12" Padding="6,0">
+                        <Border x:Name="Border"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                Padding="6,0">
                             <Grid x:Name="PART_Root" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
-                                <DatePickerTextBox x:Name="PART_TextBox" Grid.Column="0" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Center" Background="Transparent" BorderThickness="0" FontFamily="{TemplateBinding FontFamily}" FontSize="{TemplateBinding FontSize}" Foreground="{TemplateBinding Foreground}" />
+                                <DatePickerTextBox x:Name="PART_TextBox"
+                                                   Grid.Column="0"
+                                                   HorizontalContentAlignment="Stretch"
+                                                   VerticalContentAlignment="Center"
+                                                   Background="Transparent"
+                                                   BorderThickness="0"
+                                                   FontFamily="{TemplateBinding FontFamily}"
+                                                   FontSize="{TemplateBinding FontSize}"
+                                                   Foreground="{TemplateBinding Foreground}" />
 
-                                <Button x:Name="PART_Button" Grid.Column="1" Margin="4,0,0,0" Width="30" Height="30" Focusable="False" Background="Transparent" Foreground="{DynamicResource ThemeMutedForeground}">
+                                <Button x:Name="PART_Button"
+                                        Grid.Column="1"
+                                        Margin="4,0,0,0"
+                                        Width="26"
+                                        Height="26"
+                                        Focusable="False"
+                                        Background="Transparent"
+                                        Foreground="{DynamicResource ThemeMutedForeground}">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
-                                            <Border x:Name="BtnBorder" Background="Transparent" CornerRadius="10">
-                                                <Path Width="16" Height="16" Stretch="Uniform" Fill="{TemplateBinding Foreground}" Data="M19,4H18V2H16V4H8V2H6V4H5C3.89,4 3.01,4.9 3.01,6L3,20C3,21.1 3.89,22 5,22H19C20.1,22 21,21.1 21,20V6C21,4.9 20.1,4 19,4ZM19,20H5V10H19V20ZM19,8H5V6H19V8ZM9,14H7V12H9V14ZM13,14H11V12H13V14ZM17,14H15V12H17V14ZM9,18H7V16H9V18ZM13,18H11V16H13V18ZM17,18H15V16H17V18Z"/>
+                                            <Border x:Name="BtnBorder" Background="Transparent" CornerRadius="4">
+                                                <Path Width="14" Height="14" Stretch="Uniform" Fill="{TemplateBinding Foreground}" Data="M19,4H18V2H16V4H8V2H6V4H5C3.89,4 3.01,4.9 3.01,6L3,20C3,21.1 3.89,22 5,22H19C20.1,22 21,21.1 21,20V6C21,4.9 20.1,4 19,4ZM19,20H5V10H19V20ZM19,8H5V6H19V8ZM9,14H7V12H9V14ZM13,14H11V12H13V14ZM17,14H15V12H17V14ZM9,18H7V16H9V18ZM13,18H11V16H13V18ZM17,18H15V16H17V18Z"/>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="BtnBorder" Property="Background" Value="#1A8E8E93" />
+                                                    <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}" />
                                                     <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}" />
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
@@ -338,31 +691,35 @@
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource ThemeMutedForeground}" />
+                            </Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                 <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
-                                <Setter TargetName="Border" Property="BorderThickness" Value="2" />
+                                <Setter TargetName="Border" Property="BorderThickness" Value="1.5" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
         <DataTemplate x:Key="{x:Static CalendarItem.DayTitleTemplateResourceKey}">
-            <TextBlock Text="{Binding}" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,6,0,10" />
+            <TextBlock Text="{Binding}" FontFamily="Segoe UI Variable, Segoe UI" FontWeight="SemiBold" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,4,0,8" />
         </DataTemplate>
 
         <Style TargetType="CalendarDayButton">
-            <Setter Property="MinWidth" Value="34" />
-            <Setter Property="MinHeight" Value="34" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="MinWidth" Value="32" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
             <Setter Property="Margin" Value="1" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CalendarDayButton">
-                        <Border x:Name="Bg" CornerRadius="17" Background="Transparent" BorderThickness="2" BorderBrush="Transparent">
+                        <Border x:Name="Bg" CornerRadius="4" Background="Transparent" BorderThickness="1" BorderBrush="Transparent">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -372,20 +729,20 @@
                             <Trigger Property="IsToday" Value="True">
                                 <Setter TargetName="Bg" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
                                 <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}" />
-                                <Setter Property="FontWeight" Value="Bold" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Bg" Property="Background" Value="{DynamicResource ThemeAccent}" />
                                 <Setter TargetName="Bg" Property="BorderBrush" Value="Transparent" />
                                 <Setter Property="Foreground" Value="White" />
-                                <Setter Property="FontWeight" Value="Bold" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
                             </Trigger>
                             <Trigger Property="IsInactive" Value="True">
                                 <Setter Property="Foreground" Value="{DynamicResource ThemeMutedForeground}" />
                                 <Setter Property="Opacity" Value="0.4" />
                             </Trigger>
                             <Trigger Property="IsBlackedOut" Value="True">
-                                <Setter Property="Foreground" Value="#FF3B30" />
+                                <Setter Property="Foreground" Value="{StaticResource SystemRed}" />
                                 <Setter Property="Opacity" Value="0.3" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -395,17 +752,17 @@
         </Style>
 
         <Style TargetType="CalendarButton">
-            <Setter Property="MinWidth" Value="48" />
-            <Setter Property="MinHeight" Value="48" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="14" />
+            <Setter Property="MinWidth" Value="44" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
             <Setter Property="Margin" Value="2" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CalendarButton">
-                        <Border x:Name="Bg" CornerRadius="14" Background="Transparent">
+                        <Border x:Name="Bg" CornerRadius="4" Background="Transparent">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -415,7 +772,7 @@
                             <Trigger Property="HasSelectedDays" Value="True">
                                 <Setter TargetName="Bg" Property="Background" Value="{DynamicResource ThemeAccent}" />
                                 <Setter Property="Foreground" Value="White" />
-                                <Setter Property="FontWeight" Value="Bold" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -428,43 +785,48 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CalendarItem">
-                        <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="20" Padding="14,14,14,16" Effect="{StaticResource AppleModalShadow}">
+                        <Border Background="{DynamicResource ThemeSurfaceBackground}"
+                                BorderBrush="{DynamicResource ThemeBorder}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="12"
+                                Effect="{StaticResource FluentModalShadow}">
                             <Grid x:Name="PART_Root">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
 
-                                <Grid Margin="0,0,0,12">
+                                <Grid Margin="0,0,0,10">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
-                                    <Button x:Name="PART_PreviousButton" Width="30" Height="30" Background="{DynamicResource ThemeInputBackground}" BorderThickness="0" Foreground="{DynamicResource ThemeTextForeground}" Cursor="Hand" Padding="0">
+                                    <Button x:Name="PART_PreviousButton" Width="28" Height="28" Background="{DynamicResource ThemeInputBackground}" BorderThickness="0" Foreground="{DynamicResource ThemeTextForeground}" Cursor="Hand" Padding="0">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}" CornerRadius="15">
-                                                    <Path Data="M 16,8 L 8,15 L 16,22" Stroke="{TemplateBinding Foreground}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                                                    <Path Data="M 16,8 L 8,15 L 16,22" Stroke="{TemplateBinding Foreground}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0,0,0" />
                                                 </Border>
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
 
-                                    <Button x:Name="PART_HeaderButton" Grid.Column="1" Background="Transparent" BorderThickness="0" FontWeight="Bold" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="15" Foreground="{DynamicResource ThemeTextForeground}" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Button x:Name="PART_HeaderButton" Grid.Column="1" Background="Transparent" BorderThickness="0" FontWeight="SemiBold" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" Cursor="Hand" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
-                                                <TextBlock Text="{TemplateBinding Content}" FontWeight="Bold" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
 
-                                    <Button x:Name="PART_NextButton" Grid.Column="2" Width="30" Height="30" Background="{DynamicResource ThemeInputBackground}" BorderThickness="0" Foreground="{DynamicResource ThemeTextForeground}" Cursor="Hand" Padding="0">
+                                    <Button x:Name="PART_NextButton" Grid.Column="2" Width="28" Height="28" Background="{DynamicResource ThemeInputBackground}" BorderThickness="0" Foreground="{DynamicResource ThemeTextForeground}" Cursor="Hand" Padding="0">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}" CornerRadius="15">
-                                                    <Path Data="M 8,8 L 16,15 L 8,22" Stroke="{TemplateBinding Foreground}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-2,0,0,0"/>
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                                                    <Path Data="M 8,8 L 16,15 L 8,22" Stroke="{TemplateBinding Foreground}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-2,0,0,0" />
                                                 </Border>
                                             </ControlTemplate>
                                         </Button.Template>

@@ -10,68 +10,27 @@
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Display"
              TextOptions.TextRenderingMode="ClearType">
+
     <UserControl.Resources>
-        <SolidColorBrush x:Key="SystemGreen" Color="#34C759" />
-        <SolidColorBrush x:Key="SystemOrange" Color="#FF9500" />
-        <SolidColorBrush x:Key="SystemRed" Color="#FF3B30" />
-        <DropShadowEffect x:Key="AppleCardShadow" BlurRadius="20" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.08" />
-        <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="36" ShadowDepth="8" Direction="270" Color="#000000" Opacity="0.25" />
-        <DropShadowEffect x:Key="AppleButtonShadow" BlurRadius="10" ShadowDepth="2" Direction="270" Color="#007AFF" Opacity="0.25" />
-        <Style x:Key="LoanCardStyle" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="20" />
-            <Setter Property="Effect" Value="{StaticResource AppleCardShadow}" />
-        </Style>
-        <Style x:Key="LoanTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Height" Value="40" />
-            <Setter Property="Padding" Value="12,0" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
-            <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="CaretBrush" Value="{DynamicResource ThemeAccent}" />
-            <Setter Property="Validation.ErrorTemplate" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="BoxBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12">
-                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="{DynamicResource ThemeAccent}" />
-                                <Setter TargetName="BoxBorder" Property="BorderThickness" Value="1.5" />
-                            </Trigger>
-                            <Trigger Property="IsReadOnly" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}" />
-                                <Setter Property="Foreground" Value="{DynamicResource ThemeMutedForeground}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <Style x:Key="LoanCardStyle" TargetType="Border" BasedOn="{StaticResource FluentCardStyle}" />
+
+        <Style x:Key="LoanTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource FluentTextBoxStyle}" />
+
         <Style x:Key="LoanButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="42" />
+            <Setter Property="Height" Value="36" />
             <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
             <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Padding" Value="12,0" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -89,52 +48,23 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="PrimaryAddButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="42" />
-            <Setter Property="Background" Value="{DynamicResource ThemeAccent}" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="8,0" />
-            <Setter Property="Effect" Value="{StaticResource AppleButtonShadow}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="12" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#0062CC" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#004FB3" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#AEAEB2" />
-                                <Setter Property="Effect" Value="{x:Null}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+
+        <Style x:Key="PrimaryAddButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentButtonPrimary}" />
+
         <Style x:Key="DangerDeleteButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="42" />
+            <Setter Property="Height" Value="36" />
             <Setter Property="Background" Value="#FEE2E2" />
             <Setter Property="Foreground" Value="{StaticResource SystemRed}" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="12,0" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="12" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -153,20 +83,21 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style x:Key="SuccessPayButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="40" />
+            <Setter Property="Height" Value="36" />
             <Setter Property="Background" Value="#DCFCE7" />
             <Setter Property="Foreground" Value="#15803D" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="Padding" Value="12,0" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="12" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -182,24 +113,25 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style x:Key="WhatsAppButtonStyle" TargetType="Button">
-            <Setter Property="Height" Value="42" />
+            <Setter Property="Height" Value="36" />
             <Setter Property="Background" Value="#25D366" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="12" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#1EBE5D" />
+                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.9" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}" />
@@ -210,9 +142,10 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
         <Style x:Key="SegmentTabStyle" TargetType="RadioButton">
-            <Setter Property="Height" Value="38" />
-            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="12,0" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
@@ -220,18 +153,14 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="TabBorder" Background="Transparent" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="TabBorder" Background="Transparent" CornerRadius="4" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="TabBorder" Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
                                 <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
-                                <Setter TargetName="TabBorder" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Direction="270" Color="#000000" Opacity="0.12" />
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="TabBorder" Property="Effect" Value="{StaticResource FluentShadow}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -239,6 +168,7 @@
             </Setter>
         </Style>
     </UserControl.Resources>
+
     <Border Background="Transparent" ClipToBounds="True">
         <Grid Margin="24,10,24,24" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
             <Grid.RowDefinitions>
@@ -246,15 +176,17 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
+
             <Grid Grid.Row="0" Margin="0,0,0,16">
-                <TextBlock Text="Prestamos" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
+                <TextBlock Text="Prestamos" Visibility="Collapsed" />
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Padding="14,8">
+                    <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14,6">
                         <TextBlock x:Name="ClockText" Text="6:08 PM" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                     </Border>
                 </StackPanel>
             </Grid>
+
             <Grid Grid.Row="1" Margin="0,0,0,16">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -282,12 +214,14 @@
                     </StackPanel>
                 </Border>
             </Grid>
+
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*" />
                     <ColumnDefinition Width="20" />
                     <ColumnDefinition Width="1.9*" />
                 </Grid.ColumnDefinitions>
+
                 <Grid Grid.Column="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
@@ -297,12 +231,12 @@
                     <Border Grid.Row="0" Style="{StaticResource LoanCardStyle}" Padding="20,18">
                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <StackPanel>
-                                <TextBlock Text="Ficha del Cliente" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
+                                <TextBlock Text="Ficha del Cliente" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
 
                                 <Grid Margin="0,0,0,10">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="60" />
-                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="10" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
@@ -319,8 +253,9 @@
                                 <TextBlock Text="Concepto" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <TextBox x:Name="ConceptBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,10" KeyDown="DebtorField_KeyDown" />
                                 <TextBlock Text="Deuda / Monto Total" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                                <TextBox x:Name="AmountBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,16" KeyDown="DebtorField_KeyDown" />
-                                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,0,0,12">
+                                <TextBox x:Name="AmountBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,14" KeyDown="DebtorField_KeyDown" />
+
+                                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,12">
                                     <StackPanel>
                                         <TextBlock Text="Registrar Pago" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="2,0,0,8" />
                                         <Grid Margin="0,0,0,8">
@@ -331,9 +266,9 @@
                                                 <ColumnDefinition Width="6" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
-                                            <RadioButton x:Name="RbAbonoEfectivo" Grid.Column="0" GroupName="MetodoAbono" Content="💵 Efectivo" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Height="32" Padding="6,0" FontSize="12" />
-                                            <RadioButton x:Name="RbAbonoTarjeta" Grid.Column="2" GroupName="MetodoAbono" Content="💳 Tarjeta" Style="{StaticResource SegmentTabStyle}" Height="32" Padding="6,0" FontSize="12" />
-                                            <RadioButton x:Name="RbAbonoTransferencia" Grid.Column="4" GroupName="MetodoAbono" Content="🏦 Transf." Style="{StaticResource SegmentTabStyle}" Height="32" Padding="6,0" FontSize="12" />
+                                            <RadioButton x:Name="RbAbonoEfectivo" Grid.Column="0" GroupName="MetodoAbono" Content="💵 Efectivo" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Height="30" Padding="4,0" FontSize="11" />
+                                            <RadioButton x:Name="RbAbonoTarjeta" Grid.Column="2" GroupName="MetodoAbono" Content="💳 Tarjeta" Style="{StaticResource SegmentTabStyle}" Height="30" Padding="4,0" FontSize="11" />
+                                            <RadioButton x:Name="RbAbonoTransferencia" Grid.Column="4" GroupName="MetodoAbono" Content="🏦 Transf." Style="{StaticResource SegmentTabStyle}" Height="30" Padding="4,0" FontSize="11" />
                                         </Grid>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -367,13 +302,14 @@
                                     <Button x:Name="ModifyButton" Grid.Row="0" Grid.Column="2" Content="MODIFICAR" Style="{StaticResource LoanButtonStyle}" IsEnabled="False" Click="ModifyButton_Click" />
                                     <Button x:Name="ViewHistoryButton" Grid.Row="2" Grid.Column="0" Content="📜 HISTORIAL" Style="{StaticResource LoanButtonStyle}" IsEnabled="False" Click="ViewHistoryButton_Click" />
                                     <Button x:Name="DeleteButton" Grid.Row="2" Grid.Column="2" Content="BORRAR" Style="{StaticResource DangerDeleteButtonStyle}" IsEnabled="False" Click="DeleteButton_Click" />
-                                    <Button x:Name="WhatsAppButton" Grid.Row="4" Grid.ColumnSpan="3" Content="📨Enviar recordatorio" Style="{StaticResource WhatsAppButtonStyle}" IsEnabled="False" Click="WhatsAppButton_Click" />
+                                    <Button x:Name="WhatsAppButton" Grid.Row="4" Grid.ColumnSpan="3" Content="📨 Enviar recordatorio" Style="{StaticResource WhatsAppButtonStyle}" IsEnabled="False" Click="WhatsAppButton_Click" />
                                 </Grid>
                             </StackPanel>
                         </ScrollViewer>
                     </Border>
                     <Button Grid.Row="2" Content="Limpiar Seleccion" Style="{StaticResource LoanButtonStyle}" Click="ClearSelectionButton_Click" />
                 </Grid>
+
                 <Grid Grid.Column="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -386,7 +322,7 @@
                             <ColumnDefinition Width="12" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Height="48" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="14" Padding="14,0">
+                        <Border Grid.Column="0" Height="40" Style="{StaticResource FluentInputContainerStyle}" Padding="12,0">
                             <Grid VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -394,12 +330,12 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" Margin="0,0,10,0" />
                                 <Grid Grid.Column="1">
-                                    <TextBox x:Name="SearchBox" Background="Transparent" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" CaretBrush="{DynamicResource ThemeAccent}" TextChanged="SearchBox_TextChanged" AutomationProperties.Name="Buscar deudor por ID o nombre" />
-                                    <TextBlock x:Name="SearchPlaceholder" Text="Buscar por cliente o concepto..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
+                                    <TextBox x:Name="SearchBox" Style="{StaticResource EmbeddedTextBoxStyle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" CaretBrush="{DynamicResource ThemeAccent}" TextChanged="SearchBox_TextChanged" AutomationProperties.Name="Buscar deudor por ID o nombre" />
+                                    <TextBlock x:Name="SearchPlaceholder" Text="Buscar por cliente o concepto..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
                                 </Grid>
                             </Grid>
                         </Border>
-                        <Border Grid.Column="2" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="13" Padding="4" Height="48">
+                        <Border Grid.Column="2" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="3" Height="40">
                             <StackPanel Orientation="Horizontal">
                                 <RadioButton Content="Todos" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Click="FilterDebtors_Click" Tag="All" />
                                 <RadioButton Content="Con Deuda" Style="{StaticResource SegmentTabStyle}" Click="FilterDebtors_Click" Tag="Pending" />
@@ -408,15 +344,15 @@
                         </Border>
                     </Grid>
                     <Border Grid.Row="2" Style="{StaticResource LoanCardStyle}" Padding="0" ClipToBounds="True">
-                        <DataGrid x:Name="DebtorGrid" ItemsSource="{Binding DebtorsView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" RowHeight="52" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="DebtorGrid_SelectionChanged" MouseDoubleClick="DebtorGrid_MouseDoubleClick" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" EnableRowVirtualization="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <DataGrid x:Name="DebtorGrid" ItemsSource="{Binding DebtorsView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" RowHeight="48" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="DebtorGrid_SelectionChanged" MouseDoubleClick="DebtorGrid_MouseDoubleClick" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" EnableRowVirtualization="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <DataGrid.ColumnHeaderStyle>
                                 <Style TargetType="DataGridColumnHeader">
                                     <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
                                     <Setter Property="Foreground" Value="{DynamicResource ThemeMutedForeground}" />
                                     <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
                                     <Setter Property="FontSize" Value="12" />
-                                    <Setter Property="FontWeight" Value="Bold" />
-                                    <Setter Property="Padding" Value="14,12" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                    <Setter Property="Padding" Value="14,10" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
                                     <Setter Property="BorderThickness" Value="0,0,0,1" />
                                 </Style>
@@ -475,8 +411,8 @@
                                         <DataTemplate>
                                             <Grid HorizontalAlignment="Stretch" Margin="6,0">
                                                 <Border x:Name="LiquidadoBadge" 
-                                                        CornerRadius="8" 
-                                                        Padding="10,4" 
+                                                        CornerRadius="4" 
+                                                        Padding="8,3" 
                                                         HorizontalAlignment="Center" 
                                                         Background="#152ECC71" 
                                                         BorderBrush="#402ECC71" 
@@ -530,7 +466,7 @@
                 </Grid>
             </Grid>
             <Grid x:Name="HistorialOverlay" Grid.RowSpan="3" Panel.ZIndex="100" Background="#66000000" Visibility="Collapsed" MouseDown="HistorialOverlay_MouseDown">
-                <Border Width="600" MaxHeight="580" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="24" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource AppleModalShadow}">
+                <Border Width="600" MaxHeight="580" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="26" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -542,35 +478,19 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <StackPanel Grid.Row="0">
-                            <TextBlock x:Name="HistoryClientName" Text="Historial de Pagos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                            <TextBlock x:Name="HistoryClientName" Text="Historial de Pagos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
                             <TextBlock x:Name="HistorySummaryText" Text="Original: $0.00 | Total Abonado: $0.00 | Pendiente: $0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
                         </StackPanel>
                         <Grid Grid.Row="2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="10" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Button x:Name="TabDeudasBtn" Grid.Column="0" Content="Productos/Deuda" Height="38" Background="{DynamicResource ThemeAccent}" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="TabDeudas_Click">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
-                            <Button x:Name="TabAbonosBtn" Grid.Column="2" Content="Abonos Recibidos" Height="38" Background="{DynamicResource ThemeSurfaceBackground}" Foreground="{DynamicResource ThemeTextForeground}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="TabAbonos_Click">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                            <Button x:Name="TabDeudasBtn" Grid.Column="0" Content="Productos/Deuda" Height="36" Style="{StaticResource PrimaryAddButtonStyle}" Click="TabDeudas_Click" />
+                            <Button x:Name="TabAbonosBtn" Grid.Column="2" Content="Abonos Recibidos" Height="36" Style="{StaticResource LoanButtonStyle}" Click="TabAbonos_Click" />
                         </Grid>
-                        <Border Grid.Row="4" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="14" Padding="10">
+                        <Border Grid.Row="4" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="10">
                             <Grid>
                                 <ScrollViewer x:Name="PanelDeudasView" VerticalScrollBarVisibility="Auto" Visibility="Visible">
                                     <StackPanel x:Name="DeudasContainerPanel" />
@@ -581,7 +501,7 @@
                                         <ItemsControl x:Name="AbonosListControl">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,6">
+                                                    <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="12,8" Margin="0,0,0,6">
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="*" />
@@ -591,7 +511,7 @@
                                                                 <TextBlock Text="{Binding Fecha, StringFormat={}{0:dd/MM/yyyy hh:mm tt}}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                                                 <TextBlock Text="Abono a cuenta" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
                                                             </StackPanel>
-                                                            <TextBlock Grid.Column="1" Text="{Binding Monto, StringFormat={}{0:C2}}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SystemGreen}" VerticalAlignment="Center" />
+                                                            <TextBlock Grid.Column="1" Text="{Binding Monto, StringFormat={}{0:C2}}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource SystemGreen}" VerticalAlignment="Center" />
                                                         </Grid>
                                                     </Border>
                                                 </DataTemplate>
@@ -604,24 +524,16 @@
                         <Grid Grid.Row="6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="10" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="140" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="Monto:" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
-                            <Border Grid.Column="2" Height="42" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="12" Padding="16,0">
-                                <TextBlock x:Name="HistoryMontoTotalText" Text="$0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="0" Text="Monto:" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
+                            <Border Grid.Column="2" Height="36" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14,0">
+                                <TextBlock x:Name="HistoryMontoTotalText" Text="$0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
-                            <Button Grid.Column="4" Content="🖨️ IMPRIMIR RECIBO" Height="42" Background="{DynamicResource ThemeAccent}" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="PrintStatementButton_Click" ToolTip="Imprimir el estado de cuenta actual del cliente" Margin="0,0,10,0">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}" BorderThickness="0" CornerRadius="12">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                            <Button Grid.Column="4" Content="🖨️ IMPRIMIR RECIBO" Height="36" Style="{StaticResource PrimaryAddButtonStyle}" Click="PrintStatementButton_Click" ToolTip="Imprimir el estado de cuenta actual del cliente" Margin="0,0,10,0" />
                         </Grid>
                     </Grid>
                 </Border>

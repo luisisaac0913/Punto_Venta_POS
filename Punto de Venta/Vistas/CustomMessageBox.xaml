@@ -9,32 +9,33 @@
         WindowStyle="None" AllowsTransparency="True" Background="#66000000"
         WindowStartupLocation="CenterScreen" Topmost="True" ShowInTaskbar="False"
         TextElement.Foreground="{DynamicResource ThemeTextForeground}">
-    
 
     <Window.Resources>
-        <DropShadowEffect x:Key="AppleModalShadow" BlurRadius="40" ShadowDepth="12" Direction="270" Color="#000000" Opacity="0.2" />
+        <DropShadowEffect x:Key="FluentModalShadow" BlurRadius="16" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.25" />
 
         <Style x:Key="AlertButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
-            <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Height" Value="44" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="12" Margin="4">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Margin="4">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource ThemeBorder}" />
+                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.9" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource ThemeMutedForeground}" />
+                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.8" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -42,18 +43,28 @@
             </Setter>
         </Style>
 
-        <Style x:Key="AlertPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource AlertButtonStyle}">
+        <Style x:Key="AlertPrimaryButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource ThemeAccent}" />
             <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="12" Margin="4">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" CornerRadius="4" Margin="4">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.85" />
+                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.8" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -66,9 +77,9 @@
         <Border MinWidth="340" MaxWidth="540" MinHeight="160" MaxHeight="600" 
                 Background="{DynamicResource ThemeSurfaceBackground}" 
                 BorderBrush="{DynamicResource ThemeBorder}" 
-                BorderThickness="1" CornerRadius="24" Padding="24" 
+                BorderThickness="1" CornerRadius="8" Padding="24" 
                 HorizontalAlignment="Center" VerticalAlignment="Center" 
-                Effect="{StaticResource AppleModalShadow}">
+                Effect="{StaticResource FluentModalShadow}">
 
             <Grid>
                 <Grid.RowDefinitions>
@@ -76,9 +87,9 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" x:Name="TxtTitle" Text="Aviso" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,12" TextAlignment="Center" TextWrapping="Wrap" />
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,24">
-                    <TextBlock x:Name="TxtMessage" Text="Cuerpo del mensaje" FontFamily="Segoe UI Variable, Segoe UI, -apple-system" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="0" x:Name="TxtTitle" Text="Aviso" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,12" TextAlignment="Center" TextWrapping="Wrap" />
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,20">
+                    <TextBlock x:Name="TxtMessage" Text="Cuerpo del mensaje" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
                 </ScrollViewer>
                 <UniformGrid Grid.Row="2" x:Name="BotonesGrid" Rows="1" Columns="2">
                 </UniformGrid>

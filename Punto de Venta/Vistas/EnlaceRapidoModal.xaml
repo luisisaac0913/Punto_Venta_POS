@@ -9,7 +9,17 @@
         Loaded="Window_Loaded"
         PreviewKeyDown="Window_PreviewKeyDown">
 
-    <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="16" Padding="20">
+    <Window.Resources>
+        <DropShadowEffect x:Key="FluentModalShadow" BlurRadius="16" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.25" />
+    </Window.Resources>
+
+    <Border Background="{DynamicResource ThemeSurfaceBackground}" 
+            BorderBrush="{DynamicResource ThemeBorder}" 
+            BorderThickness="1" 
+            CornerRadius="8" 
+            Padding="20"
+            Margin="10"
+            Effect="{StaticResource FluentModalShadow}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -17,23 +27,60 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <TextBlock Text="🔗 Enlace Rapido de Codigos" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,15" />
+            <TextBlock Text="🔗 Enlace Rapido de Codigos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
 
             <StackPanel Grid.Row="1">
                 <TextBlock Text="1. Escanea el codigo fisico" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
-                <TextBox x:Name="TxtCodigo" Height="38" FontSize="14" Padding="10,0" VerticalContentAlignment="Center" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" KeyDown="TxtCodigo_KeyDown" />
+                <Border Style="{StaticResource FluentInputContainerStyle}" Height="36" Padding="10,0">
+                    <TextBox x:Name="TxtCodigo" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="13" VerticalContentAlignment="Center" KeyDown="TxtCodigo_KeyDown" />
+                </Border>
 
-                <TextBlock Text="2. Busca y selecciona el producto" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,15,0,4" />
-                <TextBox x:Name="TxtBusqueda" Height="38" FontSize="14" Padding="10,0" VerticalContentAlignment="Center" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" TextChanged="TxtBusqueda_TextChanged" KeyDown="TxtBusqueda_KeyDown" />
+                <TextBlock Text="2. Busca y selecciona el producto" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,14,0,4" />
+                <Border Style="{StaticResource FluentInputContainerStyle}" Height="36" Padding="10,0">
+                    <TextBox x:Name="TxtBusqueda" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="13" VerticalContentAlignment="Center" TextChanged="TxtBusqueda_TextChanged" KeyDown="TxtBusqueda_KeyDown" />
+                </Border>
 
-                <Border x:Name="PopupSugerencias" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Margin="0,4,0,0" Visibility="Collapsed" MaxHeight="120">
+                <Border x:Name="PopupSugerencias" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Margin="0,4,0,0" Visibility="Collapsed" MaxHeight="120">
                     <ListBox x:Name="ListaSugerencias" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource ThemeTextForeground}" ScrollViewer.VerticalScrollBarVisibility="Auto" SelectionChanged="ListaSugerencias_SelectionChanged" />
                 </Border>
             </StackPanel>
 
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-                <Button Content="Cancelar" Width="90" Height="36" Margin="0,0,10,0" Background="Transparent" Foreground="{DynamicResource ThemeTextForeground}" BorderThickness="0" Cursor="Hand" Click="BtnCancelar_Click" />
-                <Button Content="Enlazar" Width="100" Height="36" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnEnlazar_Click" />
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+                <Button Content="Cancelar" Width="90" Height="36" Margin="0,0,10,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="BtnCancelar_Click">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="CanBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CanBorder" Property="Opacity" Value="0.9" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="CanBorder" Property="Opacity" Value="0.8" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <Button Content="Enlazar" Width="100" Height="36" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="BtnEnlazar_Click">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="EnlBorder" Background="{TemplateBinding Background}" CornerRadius="4">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="EnlBorder" Property="Opacity" Value="0.9" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="EnlBorder" Property="Opacity" Value="0.8" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
             </StackPanel>
         </Grid>
     </Border>

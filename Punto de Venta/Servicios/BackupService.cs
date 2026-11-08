@@ -7,8 +7,6 @@ namespace Punto_de_Venta.Servicios
 {
     public static class BackupService
     {
-        private const int DiasRetencion = 15;
-
         public static string AppDataFolder => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "POS_DataStorage"
@@ -104,18 +102,45 @@ namespace Punto_de_Venta.Servicios
                 System.Diagnostics.Debug.WriteLine($"[BackupService] Error al generar respaldo: {ex.Message}");
             }
         }
-        private static void LimpiarRespaldosAntiguos(string carpeta)
+        public static void LimpiarRespaldosAntiguos(string carpeta)
         {
             try
             {
-                var limiteFecha = DateTime.Now.AddDays(-DiasRetencion);
-                var archivosZip = Directory.GetFiles(carpeta, "Backup_*.zip");
-                foreach (var zip in archivosZip)
+                if (!Directory.Exists(carpeta))
                 {
-                    var fileInfo = new FileInfo(zip);
-                    if (fileInfo.CreationTime < limiteFecha)
+                    return;
+                }
+
+                int maxRespaldos = 5;
+                try
+                {
+                    var config = AppConfig.Load();
+                    if (config.MaxRespaldosLocales > 0)
                     {
-                        fileInfo.Delete();
+                        maxRespaldos = config.MaxRespaldosLocales;
+                    }
+                }
+                catch
+                {
+                }
+
+                var archivosZip = Directory.GetFiles(carpeta, "Backup_*.zip")
+                    .Select(f => new FileInfo(f))
+                    .OrderByDescending(f => f.LastWriteTime)
+                    .ToList();
+
+                if (archivosZip.Count > maxRespaldos)
+                {
+                    var aEliminar = archivosZip.Skip(maxRespaldos);
+                    foreach (var archivo in aEliminar)
+                    {
+                        try
+                        {
+                            archivo.Delete();
+                        }
+                        catch
+                        {
+                        }
                     }
                 }
             }

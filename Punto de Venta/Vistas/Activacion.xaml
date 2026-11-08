@@ -8,28 +8,28 @@
              Background="Transparent">
 
     <UserControl.Resources>
-        <Style x:Key="PrimaryActionButtonStyle" TargetType="Button">
+        <Style x:Key="MercadoPagoButtonStyle" TargetType="Button">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Background" Value="#009EE3" />
             <Setter Property="Foreground" Value="White" />
-            <Setter Property="Height" Value="44" />
+            <Setter Property="Height" Value="38" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, -apple-system" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="10">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="4">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.92" />
+                                <Setter TargetName="border" Property="Opacity" Value="0.9" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Opacity" Value="0.85" />
+                                <Setter TargetName="border" Property="Opacity" Value="0.8" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -44,13 +44,14 @@
             <Border x:Name="PanelLicenciaActiva" Visibility="Collapsed"
                     Background="{DynamicResource ThemeSurfaceBackground}" 
                     BorderBrush="{DynamicResource ThemeBorder}" 
-                    BorderThickness="1" CornerRadius="16" Padding="36"
+                    BorderThickness="1" CornerRadius="8" Padding="36"
+                    Effect="{StaticResource FluentCardShadow}"
                     HorizontalAlignment="Center" MaxWidth="580">
                 <StackPanel HorizontalAlignment="Center">
-                    <Border Width="64" Height="64" CornerRadius="32" 
+                    <Border Width="56" Height="56" CornerRadius="4" 
                             Background="#1510B981" BorderBrush="#3510B981" BorderThickness="1" 
                             HorizontalAlignment="Center" Margin="0,0,0,16">
-                        <TextBlock Text="&#x2713;" FontSize="32" Foreground="#10B981" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <TextBlock Text="&#x2713;" FontSize="28" Foreground="#10B981" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
 
                     <TextBlock Text="Licencia Premium Activa" FontSize="22" FontWeight="Bold" 
@@ -65,7 +66,7 @@
 
                     <Border Background="{DynamicResource ThemeInputBackground}" 
                             BorderBrush="{DynamicResource ThemeBorder}" 
-                            BorderThickness="1" CornerRadius="12" Padding="18,14" Margin="0,0,0,24">
+                            BorderThickness="1" CornerRadius="4" Padding="18,14" Margin="0,0,0,24">
                         <StackPanel>
                             <Grid Margin="0,0,0,10">
                                 <TextBlock Text="Estatus:" Foreground="{DynamicResource ThemeMutedForeground}" FontSize="12" />
@@ -82,26 +83,17 @@
                         </StackPanel>
                     </Border>
 
-                    <Button Content="Continuar al sistema" Height="40" Width="200"
-                            Background="{DynamicResource ThemeAccent}" Foreground="White" 
-                            FontFamily="Segoe UI Variable, Segoe UI"
-                            FontWeight="Bold" FontSize="13" BorderThickness="0" 
-                            Cursor="Hand" Click="BtnVolver_Click">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" CornerRadius="10">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                    <Button Content="Continuar al sistema" Height="36" Width="200"
+                            Style="{StaticResource FluentButtonPrimary}"
+                            Click="BtnVolver_Click" />
                 </StackPanel>
             </Border>
 
             <Border x:Name="PanelLicenciaInactiva" Visibility="Visible"
                     Background="{DynamicResource ThemeSurfaceBackground}" 
                     BorderBrush="{DynamicResource ThemeBorder}" 
-                    BorderThickness="1" CornerRadius="16" Padding="28,24">
+                    BorderThickness="1" CornerRadius="8" Padding="28,24"
+                    Effect="{StaticResource FluentCardShadow}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1.15*" />
@@ -183,7 +175,7 @@
 
                     <Border Grid.Column="2" Background="{DynamicResource ThemeInputBackground}" 
                             BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1"
-                            CornerRadius="14" Padding="22,20" VerticalAlignment="Center">
+                            CornerRadius="8" Padding="22,20" VerticalAlignment="Center">
                         <StackPanel>
                             <TextBlock Text="PRECIO DE LICENCIA" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
 
@@ -195,7 +187,7 @@
 
                             <TextBlock Text="Pago unico y definitivo" FontSize="12" FontWeight="SemiBold" Foreground="#10B981" HorizontalAlignment="Center" Margin="0,0,0,16" />
 
-                            <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,16">
+                            <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="12,10" Margin="0,0,0,16">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -206,22 +198,14 @@
                                         <TextBlock x:Name="TxtHwidInactivo" Text="Detectando..." FontSize="11" FontWeight="Bold" FontFamily="Consolas, Segoe UI" Foreground="{DynamicResource ThemeTextForeground}" TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
                                     <Button Grid.Column="1" Content="Copiar" HorizontalAlignment="Right" VerticalAlignment="Center" 
-                                            Background="Transparent" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Foreground="{DynamicResource ThemeTextForeground}" 
-                                            Padding="10,4"
-                                            FontSize="11" FontWeight="SemiBold" Cursor="Hand" Click="BtnCopiarHwid_Click">
-                                        <Button.Template>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Button.Template>
-                                    </Button>
+                                            Style="{StaticResource FluentButtonSecondary}"
+                                            Height="28" Padding="10,0"
+                                            FontSize="11" FontWeight="SemiBold" Click="BtnCopiarHwid_Click" />
                                 </Grid>
                             </Border>
 
                             <StackPanel x:Name="PanelPago">
-                                <Button x:Name="BtnPagarMercadoPago" Style="{StaticResource PrimaryActionButtonStyle}" Click="BtnPagarMercadoPago_Click">
+                                <Button x:Name="BtnPagarMercadoPago" Style="{StaticResource MercadoPagoButtonStyle}" Click="BtnPagarMercadoPago_Click">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <TextBlock Text="Pagar con Mercado Pago" Foreground="White" FontWeight="Bold" FontSize="13" VerticalAlignment="Center" />
                                     </StackPanel>
@@ -250,14 +234,17 @@
 
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <Button x:Name="BtnReabrirLink" Content="Reabrir enlace" 
-                                            Background="Transparent" Foreground="#009EE3" 
-                                            BorderThickness="0"
-                                            Cursor="Hand" FontSize="11" FontWeight="Bold" Margin="0,0,12,0"
+                                            Style="{StaticResource FluentButtonSubtle}"
+                                            Foreground="#009EE3"
+                                            Height="30" Padding="8,0"
+                                            FontSize="11" FontWeight="Bold" Margin="0,0,12,0"
                                             Click="BtnReabrirLink_Click" />
 
                                     <Button Content="Cancelar" 
-                                            Background="Transparent" Foreground="{DynamicResource ThemeMutedForeground}" 
-                                            BorderThickness="0" Cursor="Hand" FontSize="11" FontWeight="Medium"
+                                            Style="{StaticResource FluentButtonSubtle}"
+                                            Height="30" Padding="8,0"
+                                            Foreground="{DynamicResource ThemeMutedForeground}" 
+                                            FontSize="11" FontWeight="Medium"
                                             Click="BtnCancelarEspera_Click" />
                                 </StackPanel>
                             </StackPanel>

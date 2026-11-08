@@ -31,6 +31,8 @@ namespace Punto_de_Venta
         private System.Windows.Threading.DispatcherTimer _standbyClockTimer;
         private readonly Dictionary<string, UserControl> _vistasCache = new Dictionary<string, UserControl>();
         private readonly CancellationTokenSource _ctsAutoBackup = new CancellationTokenSource();
+        private string _nombreNegocioActual = "Punto de Venta";
+        private string _vistaActualTitulo = string.Empty;
         #endregion
 
         #region Inicializacion
@@ -103,25 +105,25 @@ namespace Punto_de_Venta
             string nombre = !string.IsNullOrWhiteSpace(config?.NombreNegocio)
                 ? config.NombreNegocio
                 : "Punto de Venta";
+            _nombreNegocioActual = nombre;
 
             try
             {
+                string textoCompleto = string.IsNullOrEmpty(_vistaActualTitulo)
+                    ? _nombreNegocioActual
+                    : $"{_nombreNegocioActual} - {_vistaActualTitulo}";
+
                 if (TxtMiniLogo != null)
                 {
-                    TxtMiniLogo.Text = nombre;
+                    TxtMiniLogo.Text = textoCompleto;
                 }
                 else if (FindName("TxtMiniLogo") is TextBlock miniLogo)
                 {
-                    miniLogo.Text = nombre;
-                }
-
-                if (TxtTituloDashboard != null)
-                {
-                    TxtTituloDashboard.Text = nombre;
+                    miniLogo.Text = textoCompleto;
                 }
                 else if (FindName("TxtTituloDashboard") is TextBlock tituloDash)
                 {
-                    tituloDash.Text = nombre;
+                    tituloDash.Text = textoCompleto;
                 }
 
                 Title = $"{nombre} - Punto de Venta";
@@ -292,6 +294,16 @@ namespace Punto_de_Venta
         public void AbrirVista<T>() where T : UserControl, new()
         {
             string nombreVista = typeof(T).Name;
+            _vistaActualTitulo = nombreVista switch
+            {
+                "CodigosBarrasWindow" => "Etiquetas",
+                _ => nombreVista
+            };
+
+            if (TxtMiniLogo != null)
+            {
+                TxtMiniLogo.Text = $"{_nombreNegocioActual} - {_vistaActualTitulo}";
+            }
 
             if (!_vistasCache.ContainsKey(nombreVista))
             {
@@ -312,6 +324,12 @@ namespace Punto_de_Venta
 
         public void RegresarAlMenu()
         {
+            _vistaActualTitulo = string.Empty;
+            if (TxtMiniLogo != null)
+            {
+                TxtMiniLogo.Text = _nombreNegocioActual;
+            }
+
             ContenedorVistas.Visibility = Visibility.Collapsed;
             ContenedorVistas.Content = null;
 
@@ -330,26 +348,6 @@ namespace Punto_de_Venta
         public void ActualizarEstadoLicenciaUI()
         {
             bool esPremium = LicenciaService.EsPremium();
-
-            if (BtnEstadoLicencia != null)
-            {
-                if (esPremium)
-                {
-                    BtnEstadoLicencia.Content = "✨ Premium";
-                    BtnEstadoLicencia.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(35, 16, 185, 129));
-                    BtnEstadoLicencia.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(16, 185, 129));
-                    BtnEstadoLicencia.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(90, 16, 185, 129));
-                    BtnEstadoLicencia.ToolTip = "Licencia Premium activa";
-                }
-                else
-                {
-                    BtnEstadoLicencia.Content = "⭐ Activar Licencia";
-                    BtnEstadoLicencia.SetResourceReference(Button.BackgroundProperty, "ThemeAccent");
-                    BtnEstadoLicencia.Foreground = System.Windows.Media.Brushes.White;
-                    BtnEstadoLicencia.BorderBrush = System.Windows.Media.Brushes.Transparent;
-                    BtnEstadoLicencia.ToolTip = "Haz clic para activar la version Premium";
-                }
-            }
 
             if (TxtTituloPromociones != null)
                 TxtTituloPromociones.Text = esPremium ? "Promociones" : "Promociones 🔒";
@@ -1131,38 +1129,71 @@ namespace Punto_de_Venta
         #endregion
 
         #region Google Drive
+        private static DateTime _proximoRespaldoAuto = DateTime.MinValue;
+
+        public static void ReiniciarTemporizadorRespaldo()
+        {
+            try
+            {
+                var config = AppConfig.Load();
+                int minutos = config.IntervaloRespaldoMinutos > 0 ? config.IntervaloRespaldoMinutos : 60;
+                _proximoRespaldoAuto = DateTime.Now.AddMinutes(minutos);
+            }
+            catch
+            {
+                _proximoRespaldoAuto = DateTime.Now.AddMinutes(60);
+            }
+        }
+
         private void IniciarRespaldoAutomaticoSilencioso()
         {
+            ReiniciarTemporizadorRespaldo();
+
             Task.Run(async () =>
             {
                 while (!_ctsAutoBackup.Token.IsCancellationRequested)
                 {
                     try
                     {
-                        await Task.Delay(TimeSpan.FromHours(4), _ctsAutoBackup.Token).ConfigureAwait(false);
+                        await Task.Delay(TimeSpan.FromSeconds(10), _ctsAutoBackup.Token).ConfigureAwait(false);
                     }
                     catch (OperationCanceledException)
                     {
                         break;
                     }
 
-                    if (!Properties.Settings.Default.RespaldoAutoActivo || !GoogleDriveBackupService.UsuarioEstaAutenticado())
+                    if (DateTime.Now >= _proximoRespaldoAuto)
                     {
-                        continue;
-                    }
+                        ReiniciarTemporizadorRespaldo();
 
-                    try
-                    {
-                        bool completado = await GoogleDriveBackupService.RespaldarEnDriveAsync(null, modoSilencioso: true).ConfigureAwait(false);
-
-                        if (completado)
+                        try
                         {
-                            System.Diagnostics.Debug.WriteLine($"[AutoBackup] Respaldo exitoso a las {DateTime.Now}");
+                            var config = AppConfig.Load();
+                            BackupService.GenerarRespaldo("Auto", config.RutaRespaldos);
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[AutoBackup] Error: {ex.Message}");
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[AutoBackup Local] Error: {ex.Message}");
+                        }
+
+                        if (!Properties.Settings.Default.RespaldoAutoActivo || !GoogleDriveBackupService.UsuarioEstaAutenticado())
+                        {
+                            continue;
+                        }
+
+                        try
+                        {
+                            bool completado = await GoogleDriveBackupService.RespaldarEnDriveAsync(null, modoSilencioso: true).ConfigureAwait(false);
+
+                            if (completado)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[AutoBackup Drive] Respaldo exitoso a las {DateTime.Now}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[AutoBackup Drive] Error: {ex.Message}");
+                        }
                     }
                 }
             }, _ctsAutoBackup.Token);

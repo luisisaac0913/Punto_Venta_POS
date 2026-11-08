@@ -11,14 +11,14 @@
         IsHitTestVisible="False"
         WindowStartupLocation="Manual">
     <Border x:Name="ToastContainer" 
-            CornerRadius="18" 
+            CornerRadius="8" 
             Padding="16,10" 
-            Margin="12"
-            BorderThickness="1"
-            Background="{DynamicResource ThemeSurfaceBackground}"
+            Margin="12" 
+            BorderThickness="1" 
+            Background="{DynamicResource ThemeSurfaceBackground}" 
             BorderBrush="{DynamicResource ThemeBorder}">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="20" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.18" />
+            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.15" />
         </Border.Effect>
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
             <TextBlock x:Name="IconText" 
@@ -29,12 +29,12 @@
                        VerticalAlignment="Center" />
             <TextBlock x:Name="MessageText" 
                        Text="Operacion completada" 
-                       FontFamily="Segoe UI Variable, Segoe UI, -apple-system" 
+                       FontFamily="Segoe UI Variable, Segoe UI" 
                        FontSize="13" 
                        FontWeight="SemiBold" 
                        Foreground="{DynamicResource ThemeTextForeground}" 
-                       VerticalAlignment="Center"
-                       TextWrapping="Wrap"
+                       VerticalAlignment="Center" 
+                       TextWrapping="Wrap" 
                        MaxWidth="520" />
         </StackPanel>
     </Border>
