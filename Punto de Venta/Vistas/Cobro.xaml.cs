@@ -2141,7 +2141,7 @@ namespace Punto_de_Venta.Vistas
         {
             if (Cart == null || Cart.Count == 0) return 0m;
             var subtotalBruto = Cart.Sum(item => item.Subtotal);
-            var promociones = LicenciaService.EsPremium() ? (_promocionesCargadas ?? new()) : new List<Promocion>();
+            var promociones = _promocionesCargadas ?? new();
             var resultadoPromo = PromocionEngine.Evaluar(Cart, promociones);
             var totalConDescuento = Math.Max(0m, subtotalBruto - resultadoPromo.DescuentoTotal);
             return Math.Round(totalConDescuento, 0, MidpointRounding.AwayFromZero);
@@ -2155,7 +2155,7 @@ namespace Punto_de_Venta.Vistas
             var culture = CultureInfo.GetCultureInfo("es-MX");
             var itemCount = Cart.Count;
             var subtotalBruto = Cart.Sum(item => item.Subtotal);
-            var promociones = LicenciaService.EsPremium() ? (_promocionesCargadas ?? new()) : new List<Promocion>();
+            var promociones = _promocionesCargadas ?? new();
             var resultadoPromo = PromocionEngine.Evaluar(Cart, promociones);
             var totalNetoRedondeado = ObtenerTotalNetoVenta();
             ((TextBlock)FindName("ProductCountText")).Text = itemCount.ToString(culture);

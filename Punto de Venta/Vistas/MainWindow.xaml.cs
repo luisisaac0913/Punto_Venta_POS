@@ -371,7 +371,7 @@ namespace Punto_de_Venta
             bool esPremium = LicenciaService.EsPremium();
 
             if (TxtTituloPromociones != null)
-                TxtTituloPromociones.Text = esPremium ? "Promociones" : "Promociones 🔒";
+                TxtTituloPromociones.Text = "Promociones";
 
             if (TxtTituloPrestamos != null)
                 TxtTituloPrestamos.Text = esPremium ? "Prestamos" : "Prestamos 🔒";
@@ -521,11 +521,6 @@ namespace Punto_de_Venta
         {
             if (SolicitarAutorizacion())
             {
-                if (!LicenciaService.EsPremium())
-                {
-                    LicenciaService.MostrarMensajePremium("Promociones y Ofertas");
-                    return;
-                }
                 AbrirVista<Promociones>();
             }
         }

@@ -39,13 +39,6 @@ namespace Punto_de_Venta
         {
             if ((bool)e.NewValue)
             {
-                if (!LicenciaService.EsPremium())
-                {
-                    LicenciaService.MostrarMensajePremium("Promociones y Ofertas");
-                    (Window.GetWindow(this) as MainWindow)?.RegresarAlMenu();
-                    return;
-                }
-
                 CargarPromociones();
                 this.Focus();
                 FocusSearch();
