@@ -35,6 +35,7 @@ namespace Punto_de_Venta
         public int MaxRespaldosLocales { get; set; } = 5;
         public int MaxRespaldosDrive { get; set; } = 5;
         public int IntervaloRespaldoMinutos { get; set; } = 60;
+        public bool ServidorLocalHabilitado { get; set; } = false;
 
         public string PinAdminHash { get; set; } = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 

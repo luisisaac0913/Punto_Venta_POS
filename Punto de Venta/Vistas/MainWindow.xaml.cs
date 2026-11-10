@@ -99,6 +99,22 @@ namespace Punto_de_Venta
             UpdateClock();
             _clockTimer.Start();
             ActualizarEstadoLicenciaUI();
+
+            _ = System.Threading.Tasks.Task.Run(async () =>
+            {
+                bool? estadoNube = await LicenciaService.VerificarEnNubeAsync().ConfigureAwait(false);
+                if (estadoNube.HasValue)
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        ActualizarEstadoLicenciaUI();
+                        if (_vistasCache.TryGetValue("Activacion", out var actView) && actView is Activacion act)
+                        {
+                            act.ActualizarEstadoVisual();
+                        }
+                    });
+                }
+            });
         }
         #endregion
 

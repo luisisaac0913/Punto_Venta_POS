@@ -14,9 +14,46 @@ namespace Punto_de_Venta
 {
     public partial class App : Application
     {
-        private ServidorLocal _servidorWeb;
+        public static ServidorLocal? ServidorWeb { get; private set; }
         private static Mutex? _singleInstanceMutex;
         public bool IsDarkMode { get; private set; }
+
+        public static async Task IniciarServidorLocalAsync()
+        {
+            try
+            {
+                if (ServidorWeb == null)
+                {
+                    ServidorWeb = new ServidorLocal();
+                }
+                if (!ServidorWeb.EstaCorriendo)
+                {
+                    await ServidorWeb.IniciarAsync();
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        public static async Task DetenerServidorLocalAsync()
+        {
+            try
+            {
+                if (ServidorWeb != null)
+                {
+                    await ServidorWeb.DetenerAsync();
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        public static bool EsServidorLocalActivo()
+        {
+            return ServidorWeb != null && ServidorWeb.EstaCorriendo;
+        }
 
         private static string ErrorLogPath => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -55,8 +92,6 @@ namespace Punto_de_Venta
             QuestPDF.Settings.ThrowOnMissingFontFamilies = false;
             DatabaseHelper.InicializarBaseDeDatos();
             DatabaseHelper.ActualizarEsquemaVentas();
-            _servidorWeb = new ServidorLocal();
-            _ = Task.Run(async () => await _servidorWeb.IniciarAsync());
             AppConfig config = new AppConfig();
             try
             {
@@ -68,6 +103,11 @@ namespace Punto_de_Venta
             {
                 RegistrarErrorEnArchivo(ex, "Startup Init");
                 SetDarkMode(false);
+            }
+
+            if (config.ServidorLocalHabilitado)
+            {
+                _ = Task.Run(async () => await IniciarServidorLocalAsync());
             }
             if (!AppConfig.ExisteArchivoConfiguracion() && string.IsNullOrWhiteSpace(config.NombreNegocio))
             {
