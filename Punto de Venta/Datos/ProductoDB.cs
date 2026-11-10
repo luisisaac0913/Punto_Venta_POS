@@ -2,11 +2,79 @@ using Microsoft.Data.Sqlite;
 using Punto_de_Venta.Modelos;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Punto_de_Venta.Datos
 {
     public static class ProductoDB
     {
+        private static int LeerEntero(SqliteDataReader reader, int ordinal)
+        {
+            if (reader.IsDBNull(ordinal)) return 0;
+            try
+            {
+                return Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private static string LeerTexto(SqliteDataReader reader, int ordinal, string valorPorDefecto = "")
+        {
+            if (reader.IsDBNull(ordinal)) return valorPorDefecto;
+            try
+            {
+                return Convert.ToString(reader.GetValue(ordinal), CultureInfo.InvariantCulture) ?? valorPorDefecto;
+            }
+            catch
+            {
+                return valorPorDefecto;
+            }
+        }
+
+        private static decimal LeerDecimal(SqliteDataReader reader, int ordinal)
+        {
+            if (reader.IsDBNull(ordinal)) return 0m;
+            try
+            {
+                var val = reader.GetValue(ordinal);
+                if (val is decimal d) return d;
+                if (val is double db) return Convert.ToDecimal(db);
+                if (val is float f) return Convert.ToDecimal(f);
+                if (val is long l) return Convert.ToDecimal(l);
+                if (val is int i) return Convert.ToDecimal(i);
+                var s = Convert.ToString(val, CultureInfo.InvariantCulture);
+                if (decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed))
+                {
+                    return parsed;
+                }
+                return 0m;
+            }
+            catch
+            {
+                return 0m;
+            }
+        }
+
+        private static Producto LeerProducto(SqliteDataReader reader)
+        {
+            return new Producto
+            {
+                Id = LeerEntero(reader, 0),
+                Codigo = LeerTexto(reader, 1, string.Empty),
+                Nombre = LeerTexto(reader, 2, string.Empty),
+                Categoria = LeerTexto(reader, 3, "General"),
+                Costo = LeerDecimal(reader, 4),
+                Ganancia = LeerDecimal(reader, 5),
+                Precio = LeerDecimal(reader, 6),
+                Stock = LeerDecimal(reader, 7),
+                PedirCantidadAlCobrar = LeerEntero(reader, 8) == 1,
+                SeVendePorPeso = LeerEntero(reader, 9) == 1
+            };
+        }
+
         public static List<Producto> Load()
         {
             var list = new List<Producto>();
@@ -19,19 +87,62 @@ namespace Punto_de_Venta.Datos
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
-                list.Add(new Producto
-                {
-                    Id = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
-                    Codigo = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
-                    Nombre = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
-                    Categoria = reader.IsDBNull(3) ? "General" : reader.GetString(3),
-                    Costo = reader.IsDBNull(4) ? 0m : Convert.ToDecimal(reader.GetDouble(4)),
-                    Ganancia = reader.IsDBNull(5) ? 0m : Convert.ToDecimal(reader.GetDouble(5)),
-                    Precio = reader.IsDBNull(6) ? 0m : Convert.ToDecimal(reader.GetDouble(6)),
-                    Stock = reader.IsDBNull(7) ? 0m : Convert.ToDecimal(reader.GetDouble(7)),
-                    PedirCantidadAlCobrar = !reader.IsDBNull(8) && reader.GetInt32(8) == 1,
-                    SeVendePorPeso = !reader.IsDBNull(9) && reader.GetInt32(9) == 1 
-                });
+                list.Add(LeerProducto(reader));
+            }
+
+            return list;
+        }
+
+        public static List<Producto> BuscarListaMovil(string? query, int limite = 150)
+        {
+            var list = new List<Producto>();
+            using var conn = DatabaseHelper.GetConnection();
+            using var cmd = conn.CreateCommand();
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                cmd.CommandText = @"
+                    SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso
+                    FROM Productos
+                    ORDER BY Id ASC
+                    LIMIT @limite;";
+                cmd.Parameters.AddWithValue("@limite", limite);
+            }
+            else
+            {
+                string limpio = query.Trim();
+                string sinCeros = limpio.TrimStart('0');
+                int idBuscado = int.TryParse(limpio, out var parsedId) ? parsedId : -1;
+
+                cmd.CommandText = @"
+                    SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso
+                    FROM Productos
+                    WHERE Codigo LIKE @like
+                       OR Nombre LIKE @like
+                       OR (@sinCeros <> '' AND Codigo LIKE @likeSinCeros)
+                       OR Id = @idBuscado
+                    ORDER BY
+                        CASE
+                            WHEN Codigo = @exacto THEN 0
+                            WHEN @sinCeros <> '' AND LTRIM(Codigo, '0') = @sinCeros THEN 1
+                            WHEN Nombre LIKE @empieza THEN 2
+                            ELSE 3
+                        END,
+                        Nombre ASC
+                    LIMIT @limite;";
+                cmd.Parameters.AddWithValue("@exacto", limpio);
+                cmd.Parameters.AddWithValue("@sinCeros", sinCeros);
+                cmd.Parameters.AddWithValue("@like", "%" + limpio + "%");
+                cmd.Parameters.AddWithValue("@likeSinCeros", "%" + sinCeros + "%");
+                cmd.Parameters.AddWithValue("@empieza", limpio + "%");
+                cmd.Parameters.AddWithValue("@idBuscado", idBuscado);
+                cmd.Parameters.AddWithValue("@limite", limite);
+            }
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                list.Add(LeerProducto(reader));
             }
 
             return list;
@@ -110,32 +221,38 @@ namespace Punto_de_Venta.Datos
         {
             if (string.IsNullOrWhiteSpace(query)) return null;
 
+            string limpio = query.Trim();
+            string sinCeros = limpio.TrimStart('0');
+            string conCero = "0" + limpio;
+            int idBuscado = int.TryParse(limpio, out var parsedId) ? parsedId : -1;
+
             using var conn = DatabaseHelper.GetConnection();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
                 SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso 
                 FROM Productos 
-                WHERE Codigo = @query OR Id = @queryInt
+                WHERE TRIM(Codigo) = @limpio COLLATE NOCASE
+                   OR (@sinCeros <> '' AND LTRIM(TRIM(Codigo), '0') = @sinCeros COLLATE NOCASE)
+                   OR TRIM(Codigo) = @conCero COLLATE NOCASE
+                   OR Id = @idBuscado
+                   OR TRIM(Nombre) = @limpio COLLATE NOCASE
+                ORDER BY
+                    CASE
+                        WHEN TRIM(Codigo) = @limpio COLLATE NOCASE THEN 0
+                        WHEN @sinCeros <> '' AND LTRIM(TRIM(Codigo), '0') = @sinCeros COLLATE NOCASE THEN 1
+                        WHEN Id = @idBuscado THEN 2
+                        ELSE 3
+                    END
                 LIMIT 1;";
-            cmd.Parameters.AddWithValue("@query", query.Trim());
-            cmd.Parameters.AddWithValue("@queryInt", int.TryParse(query.Trim(), out var parsedId) ? parsedId : -1);
+            cmd.Parameters.AddWithValue("@limpio", limpio);
+            cmd.Parameters.AddWithValue("@sinCeros", sinCeros);
+            cmd.Parameters.AddWithValue("@conCero", conCero);
+            cmd.Parameters.AddWithValue("@idBuscado", idBuscado);
 
             using var reader = cmd.ExecuteReader();
             if (reader.Read())
             {
-                return new Producto
-                {
-                    Id = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
-                    Codigo = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
-                    Nombre = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
-                    Categoria = reader.IsDBNull(3) ? "General" : reader.GetString(3),
-                    Costo = reader.IsDBNull(4) ? 0m : Convert.ToDecimal(reader.GetDouble(4)),
-                    Ganancia = reader.IsDBNull(5) ? 0m : Convert.ToDecimal(reader.GetDouble(5)),
-                    Precio = reader.IsDBNull(6) ? 0m : Convert.ToDecimal(reader.GetDouble(6)),
-                    Stock = reader.IsDBNull(7) ? 0m : Convert.ToDecimal(reader.GetDouble(7)),
-                    PedirCantidadAlCobrar = !reader.IsDBNull(8) && reader.GetInt32(8) == 1,
-                    SeVendePorPeso = !reader.IsDBNull(9) && reader.GetInt32(9) == 1 
-                };
+                return LeerProducto(reader);
             }
             return null;
         }

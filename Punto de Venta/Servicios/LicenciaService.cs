@@ -2,14 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Management;
+using System.Net;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Win32;
+using Newtonsoft.Json.Linq;
 
 namespace Punto_de_Venta.Servicios
 {
     public static class LicenciaService
     {
+        private const string AzureFunctionVerificarBaseUrl = "https://chipandchapa-d5bsach3emeka6h0.mexicocentral-01.azurewebsites.net/api/verificar/";
+        private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(12) };
         private static readonly string LicenciaPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "POS_DataStorage",
@@ -229,6 +235,105 @@ namespace Punto_de_Venta.Servicios
             Directory.CreateDirectory(Path.GetDirectoryName(LicenciaPath)!);
             File.WriteAllText(LicenciaPath, hash);
             _isPremiumCached = true;
+        }
+
+        public static void DesactivarLicencia()
+        {
+            LimpiarLicenciaLegacy();
+            try
+            {
+                if (File.Exists(LicenciaPath))
+                {
+                    File.Delete(LicenciaPath);
+                }
+            }
+            catch
+            {
+            }
+            _isPremiumCached = false;
+        }
+
+        public static bool InterpretarRespuestaPagado(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return false;
+
+            try
+            {
+                var data = JObject.Parse(json);
+                if (data["pagado"] != null)
+                {
+                    if (data["pagado"]!.Type == JTokenType.Boolean)
+                    {
+                        return data["pagado"]!.Value<bool>();
+                    }
+                    if (data["pagado"]!.Type == JTokenType.String)
+                    {
+                        string val = data["pagado"]!.Value<string>()?.Trim() ?? string.Empty;
+                        return bool.TryParse(val, out bool b) ? b : string.Equals(val, "pagado", StringComparison.OrdinalIgnoreCase) || string.Equals(val, "approved", StringComparison.OrdinalIgnoreCase);
+                    }
+                    return data["pagado"]?.Value<bool>() ?? false;
+                }
+
+                if (data["estatus"] != null || data["status"] != null)
+                {
+                    string? st = (data["estatus"] ?? data["status"])?.ToString();
+                    return string.Equals(st, "pagado", StringComparison.OrdinalIgnoreCase) || string.Equals(st, "approved", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            catch
+            {
+            }
+
+            string jsonLimpio = json.ToLowerInvariant();
+            return jsonLimpio.Contains("\"pagado\": true") ||
+                   jsonLimpio.Contains("\"pagado\":true") ||
+                   jsonLimpio.Contains("\"pagado\":\"true\"") ||
+                   jsonLimpio.Contains("\"pagado\": \"true\"") ||
+                   jsonLimpio.Contains("\"estatus\":\"pagado\"") ||
+                   jsonLimpio.Contains("\"estatus\": \"pagado\"") ||
+                   jsonLimpio.Contains("\"status\":\"approved\"") ||
+                   jsonLimpio.Contains("\"status\": \"approved\"");
+        }
+
+        public static async Task<bool?> VerificarEnNubeAsync()
+        {
+            string hwid = ObtenerIdentificadorHardware();
+            if (string.IsNullOrWhiteSpace(hwid)) return null;
+
+            try
+            {
+                string urlVerificacion = AzureFunctionVerificarBaseUrl.TrimEnd('/') + "/" + Uri.EscapeDataString(hwid);
+                using var response = await _httpClient.GetAsync(urlVerificacion).ConfigureAwait(false);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    bool pagado = InterpretarRespuestaPagado(json);
+                    if (pagado)
+                    {
+                        if (!ValidarLicencia())
+                        {
+                            ActivarLicencia();
+                        }
+                        return true;
+                    }
+                    else
+                    {
+                        DesactivarLicencia();
+                        return false;
+                    }
+                }
+                else if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    DesactivarLicencia();
+                    return false;
+                }
+            }
+            catch
+            {
+            }
+
+            return null;
         }
 
         public static bool ValidarLicencia()

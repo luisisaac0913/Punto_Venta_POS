@@ -207,6 +207,12 @@ namespace Punto_de_Venta
             SeleccionarPorTag(CmbMaxRespaldosLocales, _config.MaxRespaldosLocales.ToString(), 3);
             SeleccionarPorTag(CmbMaxRespaldosDrive, _config.MaxRespaldosDrive.ToString(), 3);
             SeleccionarPorTag(CmbIntervaloRespaldo, _config.IntervaloRespaldoMinutos.ToString(), 1);
+
+            if (EnableLocalServerCheckBox != null)
+            {
+                EnableLocalServerCheckBox.IsChecked = _config.ServidorLocalHabilitado;
+            }
+            ActualizarEstadoServidorUI();
         }
 
         private static void SeleccionarPorTag(ComboBox? combo, string tagBuscado, int indiceDefault = 0)
@@ -351,6 +357,11 @@ namespace Punto_de_Venta
         private void NavImpresion_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelImpresion, true);
         private void NavPersonalizacion_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelPersonalizacion, false);
         private void NavBascula_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelBascula, false);
+        private void NavServidorLocal_Click(object sender, RoutedEventArgs e)
+        {
+            MostrarPanel(PanelServidorLocal, false);
+            ActualizarEstadoServidorUI();
+        }
         private void NavSeguridad_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelSeguridad, false);
         private void NavAtajos_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelAtajos, false);
         private void NavWhatsApp_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelWhatsApp, false);
@@ -361,6 +372,7 @@ namespace Punto_de_Venta
             PanelImpresion.Visibility = Visibility.Collapsed;
             PanelPersonalizacion.Visibility = Visibility.Collapsed;
             PanelBascula.Visibility = Visibility.Collapsed;
+            PanelServidorLocal.Visibility = Visibility.Collapsed;
             PanelSeguridad.Visibility = Visibility.Collapsed;
             PanelAtajos.Visibility = Visibility.Collapsed;
             PanelWhatsApp.Visibility = Visibility.Collapsed;
@@ -373,6 +385,7 @@ namespace Punto_de_Venta
             ActualizarBotonSidebar(NavImpresionBtn, panel == PanelImpresion);
             ActualizarBotonSidebar(NavPersonalizacionBtn, panel == PanelPersonalizacion);
             ActualizarBotonSidebar(NavBasculaBtn, panel == PanelBascula);
+            ActualizarBotonSidebar(NavServidorLocalBtn, panel == PanelServidorLocal);
             ActualizarBotonSidebar(NavWhatsAppBtn, panel == PanelWhatsApp);
             ActualizarBotonSidebar(NavSeguridadBtn, panel == PanelSeguridad);
             ActualizarBotonSidebar(NavAtajosBtn, panel == PanelAtajos);
@@ -457,6 +470,80 @@ namespace Punto_de_Venta
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = "https://chipandchapa.com",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"No se pudo abrir el navegador: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void ActualizarEstadoServidorUI()
+        {
+            if (TxtEstadoServidor == null) return;
+
+            bool habilitado = _config?.ServidorLocalHabilitado ?? false;
+            bool activo = App.EsServidorLocalActivo();
+
+            if (habilitado && activo)
+            {
+                TxtEstadoServidor.Text = "Activo en segundo plano (Puerto 5001)";
+                TxtEstadoServidor.Foreground = (Brush)FindResource("SystemGreen");
+            }
+            else if (habilitado)
+            {
+                TxtEstadoServidor.Text = "Iniciando servicio...";
+                TxtEstadoServidor.SetResourceReference(TextBlock.ForegroundProperty, "ThemeAccent");
+            }
+            else
+            {
+                TxtEstadoServidor.Text = "Inactivo (Servidor local deshabilitado)";
+                TxtEstadoServidor.SetResourceReference(TextBlock.ForegroundProperty, "ThemeMutedForeground");
+            }
+        }
+
+        private void BtnExtraerIp_Click(object sender, RoutedEventArgs e)
+        {
+            string ip = ServidorLocal.ObtenerIpLocal();
+            if (TxtDireccionIp != null)
+            {
+                TxtDireccionIp.Text = ip;
+            }
+            if (TxtUrlMovil != null)
+            {
+                TxtUrlMovil.Text = $"https://{ip}:5001";
+            }
+            ActualizarEstadoServidorUI();
+            ToastNotification.Show($"IP local detectada: {ip}", ToastType.Success);
+        }
+
+        private void BtnCopiarUrlMovil_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string url = TxtUrlMovil?.Text?.Trim() ?? string.Empty;
+                if (!string.IsNullOrEmpty(url))
+                {
+                    Clipboard.SetText(url);
+                    ToastNotification.Show("Enlace copiado al portapapeles", ToastType.Success);
+                }
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"No se pudo copiar: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void BtnAbrirUrlMovil_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string url = TxtUrlMovil?.Text?.Trim() ?? string.Empty;
+                if (string.IsNullOrEmpty(url)) url = "https://localhost:5001";
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = url,
                     UseShellExecute = true
                 });
             }
@@ -646,7 +733,27 @@ namespace Punto_de_Venta
                 }
 
                 _config.MensajeWhatsAppRecordatorio = WhatsAppTemplateBox.Text.Trim();
+                bool habilitarSv = EnableLocalServerCheckBox?.IsChecked == true;
+                _config.ServidorLocalHabilitado = habilitarSv;
                 _config.Save();
+
+                if (habilitarSv)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        await App.IniciarServidorLocalAsync();
+                        Dispatcher.Invoke(ActualizarEstadoServidorUI);
+                    });
+                }
+                else
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        await App.DetenerServidorLocalAsync();
+                        Dispatcher.Invoke(ActualizarEstadoServidorUI);
+                    });
+                }
+                ActualizarEstadoServidorUI();
 
                 MainWindow.ReiniciarTemporizadorRespaldo();
                 try

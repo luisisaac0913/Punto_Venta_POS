@@ -60,12 +60,20 @@ namespace Punto_de_Venta
 
             try
             {
-                if (!LicenciaService.EsPremium() && !string.IsNullOrWhiteSpace(_hwid))
+                if (!string.IsNullOrWhiteSpace(_hwid))
                 {
-                    bool yaPago = await ConsultarEstatusPagoAsync().ConfigureAwait(true);
-                    if (yaPago)
+                    bool eraPremium = LicenciaService.EsPremium();
+                    bool? estadoNube = await LicenciaService.VerificarEnNubeAsync().ConfigureAwait(true);
+
+                    if (estadoNube == true && !eraPremium)
                     {
                         CompletarActivacionExitosa();
+                    }
+                    else if (estadoNube == false)
+                    {
+                        ActualizarEstadoVisual();
+                        var mainWindow = Window.GetWindow(this) as MainWindow ?? Application.Current.MainWindow as MainWindow;
+                        mainWindow?.ActualizarEstadoLicenciaUI();
                     }
                 }
             }

@@ -133,6 +133,7 @@
                     <Button x:Name="NavImpresionBtn" Content="🖨️  Impresion" Style="{StaticResource SidebarButtonStyle}" Click="NavImpresion_Click" />
                     <Button x:Name="NavPersonalizacionBtn" Content="🎨  Personalizacion" Style="{StaticResource SidebarButtonStyle}" Click="NavPersonalizacion_Click" />
                     <Button x:Name="NavBasculaBtn" Content="⚖️  Bascula digital" Style="{StaticResource SidebarButtonStyle}" Click="NavBascula_Click" />
+                    <Button x:Name="NavServidorLocalBtn" Content="🌐  Servidor Local" Style="{StaticResource SidebarButtonStyle}" Click="NavServidorLocal_Click" />
                     <Button x:Name="NavWhatsAppBtn" Content="📱  WhatsApp" Style="{StaticResource SidebarButtonStyle}" Click="NavWhatsApp_Click" />
                     <Button x:Name="NavSeguridadBtn" Content="🛡️  Caja y Seguridad" Style="{StaticResource SidebarButtonStyle}" Click="NavSeguridad_Click" />
                     <Button x:Name="NavAtajosBtn" Content="⌨️  Atajos de teclado" Style="{StaticResource SidebarButtonStyle}" Click="NavAtajos_Click" />
@@ -401,6 +402,110 @@
                                             </Button.Template>
                                         </Button>
                                     </Grid>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel x:Name="PanelServidorLocal" Visibility="Collapsed">
+                                <TextBlock Text="Servidor Local (Acceso Movil)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,6" />
+                                <TextBlock Text="Conecta dispositivos moviles en la misma red Wi-Fi para auditar y consultar inventario." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,12" />
+
+                                <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="8" Padding="14" Margin="0,0,0,12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="Habilitar servidor local" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="Permite que otros dispositivos en tu red local se conecten al inventario (se aplica al guardar)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                        <CheckBox x:Name="EnableLocalServerCheckBox" Grid.Column="1" VerticalAlignment="Center" Cursor="Hand" />
+                                    </Grid>
+                                </Border>
+
+                                <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="Estado del servicio" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,4" />
+                                        <TextBlock x:Name="TxtEstadoServidor" Text="Estado: Verificando..." FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Text="Direccion IP de esta computadora" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="TxtDireccionIp" Style="{StaticResource FormTextBoxStyle}" IsReadOnly="True" />
+                                    <Button x:Name="BtnExtraerIp" Grid.Column="2" Content="🔍 Extraer IP" Height="36" Padding="14,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnExtraerIp_Click">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="IpBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="IpBorder" Property="Opacity" Value="0.9" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="IpBorder" Property="Opacity" Value="0.8" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+
+                                <TextBlock Text="Enlace de acceso para el navegador movil" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                <TextBox x:Name="TxtUrlMovil" Style="{StaticResource FormTextBoxStyle}" IsReadOnly="True" Margin="0,0,0,10" />
+
+                                <WrapPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                    <Button Content="📋 Copiar enlace" Height="34" Padding="14,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Cursor="Hand" Margin="0,0,8,0" Click="BtnCopiarUrlMovil_Click">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="CopyUrlBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="CopyUrlBorder" Property="Opacity" Value="0.9" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="CopyUrlBorder" Property="Opacity" Value="0.8" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <Button Content="🌐 Abrir en navegador" Height="34" Padding="14,0" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="Bold" Cursor="Hand" Click="BtnAbrirUrlMovil_Click">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="OpenUrlBorder" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="OpenUrlBorder" Property="Opacity" Value="0.9" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="OpenUrlBorder" Property="Opacity" Value="0.8" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </WrapPanel>
+
+                                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
+                                    <StackPanel>
+                                        <TextBlock Text="INSTRUCCIONES DE CONEXION" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,6" />
+                                        <TextBlock Text="1. Conecta tu celular a la misma red Wi-Fi en la que esta esta computadora." FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,2" />
+                                        <TextBlock Text="2. Abre Google Chrome o Safari en tu celular y escribe el enlace de acceso mostrado arriba." FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,2" />
+                                        <TextBlock Text="3. Ingresa el PIN de empleado por defecto: 1234." FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,2" />
+                                        <TextBlock Text="4. Usa la camara para escanear codigos, consultar y sumar stock directamente." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2" />
+                                    </StackPanel>
                                 </Border>
                             </StackPanel>
 

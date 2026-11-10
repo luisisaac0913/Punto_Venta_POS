@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Punto_de_Venta.Datos;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -13,18 +14,175 @@ using System.Net.Sockets;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Windows;
 
 namespace Punto_de_Venta.Servicios
 {
-    public record ActualizarProductoRequest(string? Codigo, string? Modo, decimal Cantidad);
-    public record SeleccionarInventarioRequest(string? Codigo);
-    public record CrearProductoRequest(string? Codigo, string? Nombre, decimal Precio, decimal Costo, decimal Stock, string? Categoria);
+    public class ActualizarProductoRequest
+    {
+        [JsonPropertyName("codigo")]
+        public string? Codigo { get; set; }
+
+        [JsonPropertyName("modo")]
+        public string? Modo { get; set; }
+
+        [JsonPropertyName("cantidad")]
+        public decimal Cantidad { get; set; }
+    }
+
+    public class SeleccionarInventarioRequest
+    {
+        [JsonPropertyName("codigo")]
+        public string? Codigo { get; set; }
+    }
+
+    public class CrearProductoRequest
+    {
+        [JsonPropertyName("codigo")]
+        public string? Codigo { get; set; }
+
+        [JsonPropertyName("nombre")]
+        public string? Nombre { get; set; }
+
+        [JsonPropertyName("precio")]
+        public decimal Precio { get; set; }
+
+        [JsonPropertyName("costo")]
+        public decimal Costo { get; set; }
+
+        [JsonPropertyName("stock")]
+        public decimal Stock { get; set; }
+
+        [JsonPropertyName("categoria")]
+        public string? Categoria { get; set; }
+    }
+
+    public class ProductoMovilDto
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("codigo")]
+        public string Codigo { get; set; } = string.Empty;
+
+        [JsonPropertyName("nombre")]
+        public string Nombre { get; set; } = string.Empty;
+
+        [JsonPropertyName("categoria")]
+        public string Categoria { get; set; } = "General";
+
+        [JsonPropertyName("precio")]
+        public decimal Precio { get; set; }
+
+        [JsonPropertyName("costo")]
+        public decimal Costo { get; set; }
+
+        [JsonPropertyName("stock")]
+        public decimal Stock { get; set; }
+    }
+
+    public class ListaInventarioResponse
+    {
+        [JsonPropertyName("ok")]
+        public bool Ok { get; set; }
+
+        [JsonPropertyName("mensaje")]
+        public string? Mensaje { get; set; }
+
+        [JsonPropertyName("productos")]
+        public List<ProductoMovilDto> Productos { get; set; } = new List<ProductoMovilDto>();
+    }
+
+    public class ProductoDetalleResponse
+    {
+        [JsonPropertyName("ok")]
+        public bool Ok { get; set; }
+
+        [JsonPropertyName("mensaje")]
+        public string? Mensaje { get; set; }
+
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("codigo")]
+        public string Codigo { get; set; } = string.Empty;
+
+        [JsonPropertyName("nombre")]
+        public string Nombre { get; set; } = string.Empty;
+
+        [JsonPropertyName("categoria")]
+        public string Categoria { get; set; } = "General";
+
+        [JsonPropertyName("precio")]
+        public decimal Precio { get; set; }
+
+        [JsonPropertyName("costo")]
+        public decimal Costo { get; set; }
+
+        [JsonPropertyName("stock")]
+        public decimal Stock { get; set; }
+
+        [JsonPropertyName("cantidad")]
+        public decimal Cantidad { get; set; }
+    }
+
+    public class EstadoOperacionResponse
+    {
+        [JsonPropertyName("ok")]
+        public bool Ok { get; set; }
+
+        [JsonPropertyName("mensaje")]
+        public string Mensaje { get; set; } = string.Empty;
+
+        [JsonPropertyName("nombre")]
+        public string? Nombre { get; set; }
+
+        [JsonPropertyName("stock")]
+        public decimal Stock { get; set; }
+
+        [JsonPropertyName("cantidad")]
+        public decimal Cantidad { get; set; }
+    }
 
     public class ServidorLocal
     {
         private WebApplication? _app;
+        public bool EstaCorriendo { get; private set; }
+
+        public static string ObtenerIpLocal()
+        {
+            try
+            {
+                using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0);
+                socket.Connect("8.8.8.8", 65530);
+                if (socket.LocalEndPoint is IPEndPoint endPoint)
+                {
+                    return endPoint.Address.ToString();
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                var host = Dns.GetHostEntry(Dns.GetHostName());
+                foreach (var ip in host.AddressList)
+                {
+                    if (ip.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(ip))
+                    {
+                        return ip.ToString();
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            return "127.0.0.1";
+        }
 
         private static X509Certificate2 ObtenerOCrearCertificado()
         {
@@ -99,44 +257,16 @@ namespace Punto_de_Venta.Servicios
             if (string.IsNullOrWhiteSpace(codigo)) return null;
 
             string limpio = codigo.Trim();
-            string sinCeros = limpio.TrimStart('0');
-            string conCero = "0" + limpio;
 
             try
             {
-                var catalogo = ProductoDB.Load();
-
-                var prod = catalogo.FirstOrDefault(p =>
-                {
-                    if (string.IsNullOrWhiteSpace(p.Codigo)) return false;
-                    var c = p.Codigo.Trim();
-                    return string.Equals(c, limpio, StringComparison.OrdinalIgnoreCase) ||
-                           (!string.IsNullOrEmpty(sinCeros) && string.Equals(c.TrimStart('0'), sinCeros, StringComparison.OrdinalIgnoreCase)) ||
-                           string.Equals(c, conCero, StringComparison.OrdinalIgnoreCase) ||
-                           p.Id.ToString() == limpio;
-                });
-
+                var prod = ProductoDB.BuscarPorCodigoOId(limpio);
                 if (prod != null) return prod;
 
-                prod = ProductoDB.BuscarPorCodigoOId(limpio);
-                if (prod != null) return prod;
+                var coincidencias = ProductoDB.BuscarListaMovil(limpio, 1);
+                if (coincidencias.Count > 0) return coincidencias[0];
 
-                if (!string.IsNullOrEmpty(sinCeros))
-                {
-                    prod = ProductoDB.BuscarPorCodigoOId(sinCeros);
-                }
-                if (prod != null) return prod;
-
-                prod = catalogo.FirstOrDefault(p =>
-                    !string.IsNullOrWhiteSpace(p.Nombre) &&
-                    string.Equals(p.Nombre.Trim(), limpio, StringComparison.OrdinalIgnoreCase));
-                if (prod != null) return prod;
-
-                prod = catalogo.FirstOrDefault(p =>
-                    !string.IsNullOrWhiteSpace(p.Nombre) &&
-                    p.Nombre.Contains(limpio, StringComparison.OrdinalIgnoreCase));
-
-                return prod;
+                return null;
             }
             catch
             {
@@ -144,44 +274,15 @@ namespace Punto_de_Venta.Servicios
             }
         }
 
-        private static System.Collections.Generic.List<Punto_de_Venta.Modelos.Producto> BuscarProductosLista(string? query)
+        private static List<Punto_de_Venta.Modelos.Producto> BuscarProductosLista(string? query)
         {
             try
             {
-                var catalogo = ProductoDB.Load();
-                if (string.IsNullOrWhiteSpace(query))
-                {
-                    return catalogo.Take(150).ToList();
-                }
-
-                string q = query.Trim();
-                string sinCeros = q.TrimStart('0');
-
-                return catalogo.Where(p =>
-                {
-                    if (!string.IsNullOrWhiteSpace(p.Codigo) && (
-                        p.Codigo.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-                        (!string.IsNullOrEmpty(sinCeros) && p.Codigo.Contains(sinCeros, StringComparison.OrdinalIgnoreCase))))
-                    {
-                        return true;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(p.Nombre) && p.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-
-                    if (p.Id.ToString() == q)
-                    {
-                        return true;
-                    }
-
-                    return false;
-                }).Take(150).ToList();
+                return ProductoDB.BuscarListaMovil(query, 150);
             }
             catch
             {
-                return new System.Collections.Generic.List<Punto_de_Venta.Modelos.Producto>();
+                return new List<Punto_de_Venta.Modelos.Producto>();
             }
         }
 
@@ -651,13 +752,19 @@ namespace Punto_de_Venta.Servicios
                                     const q = (document.getElementById('searchInput').value || '').trim();
                                     mostrarStatus('Buscando...', null);
                                     fetch('/api/inventario/lista?q=' + encodeURIComponent(q))
-                                        .then(r => r.json())
+                                        .then(async r => {
+                                            const data = await r.json();
+                                            if (!r.ok || (data && data.ok === false)) {
+                                                throw new Error(data && data.mensaje ? data.mensaje : 'Error ' + r.status);
+                                            }
+                                            return data;
+                                        })
                                         .then(data => {
                                             mostrarStatus('', null);
                                             renderizarLista(data.productos || []);
                                         })
                                         .catch(err => {
-                                            mostrarStatus('Error al conectar con el servidor', false);
+                                            mostrarStatus(err && err.message ? err.message : 'Error al conectar con el servidor', false);
                                         });
                                 }
 
@@ -907,19 +1014,35 @@ namespace Punto_de_Venta.Servicios
 
                 _app.MapGet("/api/inventario/lista", (HttpContext ctx) =>
                 {
-                    string? q = ctx.Request.Query["q"];
-                    var lista = BuscarProductosLista(q);
-                    var resultado = lista.Select(p => new
+                    try
                     {
-                        id = p.Id,
-                        codigo = p.Codigo,
-                        nombre = p.Nombre,
-                        categoria = p.Categoria,
-                        precio = p.Precio,
-                        costo = p.Costo,
-                        stock = p.Stock
-                    });
-                    return Results.Ok(new { ok = true, productos = resultado });
+                        string? q = ctx.Request.Query["q"];
+                        var lista = BuscarProductosLista(q);
+                        var resultado = lista.Select(p => new ProductoMovilDto
+                        {
+                            Id = p.Id,
+                            Codigo = p.Codigo ?? string.Empty,
+                            Nombre = p.Nombre ?? string.Empty,
+                            Categoria = p.Categoria ?? "General",
+                            Precio = p.Precio,
+                            Costo = p.Costo,
+                            Stock = p.Stock
+                        }).ToList();
+                        return Results.Ok(new ListaInventarioResponse
+                        {
+                            Ok = true,
+                            Productos = resultado
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Json(new ListaInventarioResponse
+                        {
+                            Ok = false,
+                            Mensaje = "Error al leer inventario: " + ex.Message,
+                            Productos = new List<ProductoMovilDto>()
+                        }, statusCode: 500);
+                    }
                 }).AllowAnonymous();
 
                 _app.MapGet("/api/producto", (HttpContext ctx) =>
@@ -927,26 +1050,26 @@ namespace Punto_de_Venta.Servicios
                     string? codigo = ctx.Request.Query["codigo"];
                     if (string.IsNullOrWhiteSpace(codigo))
                     {
-                        return Results.BadRequest(new { ok = false, mensaje = "Codigo no proporcionado" });
+                        return Results.BadRequest(new EstadoOperacionResponse { Ok = false, Mensaje = "Codigo no proporcionado" });
                     }
 
                     var producto = BuscarProducto(codigo);
                     if (producto == null)
                     {
-                        return Results.NotFound(new { ok = false, mensaje = "Producto no encontrado en inventario" });
+                        return Results.NotFound(new EstadoOperacionResponse { Ok = false, Mensaje = "Producto no encontrado en inventario" });
                     }
 
-                    return Results.Ok(new
+                    return Results.Ok(new ProductoDetalleResponse
                     {
-                        ok = true,
-                        id = producto.Id,
-                        codigo = producto.Codigo,
-                        nombre = producto.Nombre,
-                        categoria = producto.Categoria,
-                        precio = producto.Precio,
-                        costo = producto.Costo,
-                        stock = producto.Stock,
-                        cantidad = producto.Stock
+                        Ok = true,
+                        Id = producto.Id,
+                        Codigo = producto.Codigo ?? string.Empty,
+                        Nombre = producto.Nombre ?? string.Empty,
+                        Categoria = producto.Categoria ?? "General",
+                        Precio = producto.Precio,
+                        Costo = producto.Costo,
+                        Stock = producto.Stock,
+                        Cantidad = producto.Stock
                     });
                 }).AllowAnonymous();
 
@@ -955,20 +1078,20 @@ namespace Punto_de_Venta.Servicios
                     var producto = BuscarProducto(codigo);
                     if (producto == null)
                     {
-                        return Results.NotFound(new { ok = false, mensaje = "Producto no encontrado en inventario" });
+                        return Results.NotFound(new EstadoOperacionResponse { Ok = false, Mensaje = "Producto no encontrado en inventario" });
                     }
 
-                    return Results.Ok(new
+                    return Results.Ok(new ProductoDetalleResponse
                     {
-                        ok = true,
-                        id = producto.Id,
-                        codigo = producto.Codigo,
-                        nombre = producto.Nombre,
-                        categoria = producto.Categoria,
-                        precio = producto.Precio,
-                        costo = producto.Costo,
-                        stock = producto.Stock,
-                        cantidad = producto.Stock
+                        Ok = true,
+                        Id = producto.Id,
+                        Codigo = producto.Codigo ?? string.Empty,
+                        Nombre = producto.Nombre ?? string.Empty,
+                        Categoria = producto.Categoria ?? "General",
+                        Precio = producto.Precio,
+                        Costo = producto.Costo,
+                        Stock = producto.Stock,
+                        Cantidad = producto.Stock
                     });
                 }).AllowAnonymous();
 
@@ -979,13 +1102,13 @@ namespace Punto_de_Venta.Servicios
                         var req = await ctx.Request.ReadFromJsonAsync<ActualizarProductoRequest>();
                         if (req == null || string.IsNullOrWhiteSpace(req.Codigo))
                         {
-                            return Results.BadRequest(new { ok = false, mensaje = "Datos invalidos" });
+                            return Results.BadRequest(new EstadoOperacionResponse { Ok = false, Mensaje = "Datos invalidos" });
                         }
 
                         var producto = BuscarProducto(req.Codigo);
                         if (producto == null)
                         {
-                            return Results.NotFound(new { ok = false, mensaje = "Producto no encontrado" });
+                            return Results.NotFound(new EstadoOperacionResponse { Ok = false, Mensaje = "Producto no encontrado" });
                         }
 
                         bool esSuma = string.Equals(req.Modo, "sumar", StringComparison.OrdinalIgnoreCase);
@@ -1013,18 +1136,18 @@ namespace Punto_de_Venta.Servicios
                             }
                         }));
 
-                        return Results.Ok(new
+                        return Results.Ok(new EstadoOperacionResponse
                         {
-                            ok = true,
-                            mensaje = esSuma ? $"+{cantMod} piezas sumadas" : $"Stock fijado en {nStock}",
-                            nombre = producto.Nombre,
-                            stock = producto.Stock,
-                            cantidad = producto.Stock
+                            Ok = true,
+                            Mensaje = esSuma ? $"+{cantMod} piezas sumadas" : $"Stock fijado en {nStock}",
+                            Nombre = producto.Nombre,
+                            Stock = producto.Stock,
+                            Cantidad = producto.Stock
                         });
                     }
                     catch (Exception ex)
                     {
-                        return Results.Json(new { ok = false, mensaje = "Error en base de datos: " + ex.Message }, statusCode: 500);
+                        return Results.Json(new EstadoOperacionResponse { Ok = false, Mensaje = "Error en base de datos: " + ex.Message }, statusCode: 500);
                     }
                 }).AllowAnonymous();
 
@@ -1033,7 +1156,7 @@ namespace Punto_de_Venta.Servicios
                     var req = await ctx.Request.ReadFromJsonAsync<SeleccionarInventarioRequest>();
                     if (req == null || string.IsNullOrWhiteSpace(req.Codigo))
                     {
-                        return Results.BadRequest(new { ok = false, mensaje = "Codigo invalido" });
+                        return Results.BadRequest(new EstadoOperacionResponse { Ok = false, Mensaje = "Codigo invalido" });
                     }
 
                     bool seleccionado = false;
@@ -1050,7 +1173,7 @@ namespace Punto_de_Venta.Servicios
                         });
                     }
 
-                    return Results.Ok(new { ok = seleccionado, mensaje = seleccionado ? "Producto seleccionado en PC" : "No se pudo seleccionar" });
+                    return Results.Ok(new EstadoOperacionResponse { Ok = seleccionado, Mensaje = seleccionado ? "Producto seleccionado en PC" : "No se pudo seleccionar" });
                 }).AllowAnonymous();
 
                 _app.MapPost("/api/inventario/nuevo", async (HttpContext ctx) =>
@@ -1072,7 +1195,7 @@ namespace Punto_de_Venta.Servicios
                         });
                     }
 
-                    return Results.Ok(new { ok = abierto, mensaje = abierto ? "Codigo enviado al formulario en PC" : "No se pudo enviar" });
+                    return Results.Ok(new EstadoOperacionResponse { Ok = abierto, Mensaje = abierto ? "Codigo enviado al formulario en PC" : "No se pudo enviar" });
                 }).AllowAnonymous();
 
                 _app.MapPost("/api/inventario/crear", async (HttpContext ctx) =>
@@ -1080,7 +1203,7 @@ namespace Punto_de_Venta.Servicios
                     var req = await ctx.Request.ReadFromJsonAsync<CrearProductoRequest>();
                     if (req == null || string.IsNullOrWhiteSpace(req.Nombre))
                     {
-                        return Results.BadRequest(new { ok = false, mensaje = "Nombre de producto requerido" });
+                        return Results.BadRequest(new EstadoOperacionResponse { Ok = false, Mensaje = "Nombre de producto requerido" });
                     }
 
                     bool creado = false;
@@ -1102,13 +1225,15 @@ namespace Punto_de_Venta.Servicios
                         });
                     }
 
-                    return Results.Ok(new { ok = creado, mensaje = creado ? "Producto registrado con exito" : "No se pudo registrar el producto" });
+                    return Results.Ok(new EstadoOperacionResponse { Ok = creado, Mensaje = creado ? "Producto registrado con exito" : "No se pudo registrar el producto" });
                 }).AllowAnonymous();
 
                 await _app.StartAsync();
+                EstaCorriendo = true;
             }
             catch (Exception ex)
             {
+                EstaCorriendo = false;
                 System.Diagnostics.Debug.WriteLine($"[ServidorLocal] Error al iniciar servidor: {ex.Message}");
             }
         }
@@ -1120,9 +1245,15 @@ namespace Punto_de_Venta.Servicios
                 try
                 {
                     await _app.StopAsync();
+                    await _app.DisposeAsync();
                 }
                 catch
                 {
+                }
+                finally
+                {
+                    _app = null;
+                    EstaCorriendo = false;
                 }
             }
         }
