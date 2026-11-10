@@ -1,6 +1,8 @@
 ﻿<Window x:Class="Punto_de_Venta.Vistas.EnlaceRapidoModal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Icon="pack://application:,,,/Imagenes/CHC_icono.ico"
+        ShowInTaskbar="False"
         Width="450" Height="360"
         WindowStartupLocation="CenterOwner"
         WindowStyle="None"

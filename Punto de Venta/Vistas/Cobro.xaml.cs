@@ -2118,6 +2118,25 @@ namespace Punto_de_Venta.Vistas
             RefreshSummary();
         }
 
+
+
+        internal void ActualizarStockEnCatalogo(string codigo, decimal nuevoStock)
+        {
+            if (string.IsNullOrWhiteSpace(codigo)) return;
+            string limpio = codigo.Trim();
+            string sinCeros = limpio.TrimStart('0');
+
+            var prod = _catalog.FirstOrDefault(p =>
+                string.Equals(p.Codigo?.Trim(), limpio, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(sinCeros) && string.Equals(p.Codigo?.Trim().TrimStart('0'), sinCeros, StringComparison.OrdinalIgnoreCase)) ||
+                p.Id.ToString() == limpio);
+
+            if (prod != null)
+            {
+                prod.Stock = nuevoStock;
+            }
+        }
+
         private decimal ObtenerTotalNetoVenta()
         {
             if (Cart == null || Cart.Count == 0) return 0m;

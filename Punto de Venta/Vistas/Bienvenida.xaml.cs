@@ -14,6 +14,11 @@ namespace Punto_de_Venta.Vistas
         public Bienvenida()
         {
             InitializeComponent();
+            try
+            {
+                Icon = System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/Imagenes/CHC_icono.ico"));
+            }
+            catch { }
             CargarImpresoras();
             CargarPuertos();
             ActualizarVistaPasos();

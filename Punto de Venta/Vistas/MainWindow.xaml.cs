@@ -40,6 +40,11 @@ namespace Punto_de_Venta
         {
             InstanciaActual = this;
             InitializeComponent();
+            try
+            {
+                Icon = System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/Imagenes/CHC_icono.ico"));
+            }
+            catch { }
             IniciarRespaldoAutomaticoSilencioso();
             _standbyClockTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _standbyClockTimer.Tick += (s, args) =>
@@ -381,6 +386,64 @@ namespace Punto_de_Venta
             {
                 grf.RefreshData();
             }
+        }
+
+        public void ActualizarStockDesdeMovil(string codigo, decimal nuevoStock, string nombreProducto, decimal cantidadModificada, bool esSuma)
+        {
+            string limpio = codigo?.Trim() ?? string.Empty;
+            string sinCeros = limpio.TrimStart('0');
+
+            if (_vistasCache.TryGetValue("Inventario", out var invView) && invView is Inventario inv)
+            {
+                var prodEnLista = inv.Products.FirstOrDefault(p =>
+                    string.Equals(p.Codigo?.Trim(), limpio, StringComparison.OrdinalIgnoreCase) ||
+                    (!string.IsNullOrEmpty(sinCeros) && string.Equals(p.Codigo?.Trim().TrimStart('0'), sinCeros, StringComparison.OrdinalIgnoreCase)) ||
+                    p.Id.ToString() == limpio);
+                if (prodEnLista != null)
+                {
+                    prodEnLista.Stock = nuevoStock;
+                    inv.ProductsView?.Refresh();
+                    inv.UpdateProductCount();
+                }
+            }
+
+            if (_vistasCache.TryGetValue("Cobro", out var cobroView) && cobroView is Cobro cbr)
+            {
+                cbr.ActualizarStockEnCatalogo(codigo, nuevoStock);
+            }
+
+            string mensaje = esSuma
+                ? $"[Movil] +{cantidadModificada} pzas a '{nombreProducto}'. Stock: {nuevoStock}"
+                : $"[Movil] '{nombreProducto}': stock fijado en {nuevoStock}";
+            ToastNotification.Show(mensaje, ToastType.Success);
+        }
+
+        public void AbrirInventarioYSeleccionar(string codigo)
+        {
+            AbrirVista<Inventario>();
+            if (ContenedorVistas?.Content is Inventario inv)
+            {
+                inv.SeleccionarProductoDesdeMovil(codigo);
+            }
+        }
+
+        public void AbrirInventarioYNuevoCodigo(string codigo)
+        {
+            AbrirVista<Inventario>();
+            if (ContenedorVistas?.Content is Inventario inv)
+            {
+                inv.CargarNuevoCodigoDesdeMovil(codigo);
+            }
+        }
+
+        public bool CrearProductoEnInventarioDesdeMovil(string codigo, string nombre, decimal precio, decimal costo, decimal stock, string categoria)
+        {
+            AbrirVista<Inventario>();
+            if (ContenedorVistas?.Content is Inventario inv)
+            {
+                return inv.CrearProductoDesdeMovil(codigo, nombre, precio, costo, stock, categoria);
+            }
+            return false;
         }
 
         private void BtnEstadoLicencia_Click(object sender, RoutedEventArgs e)

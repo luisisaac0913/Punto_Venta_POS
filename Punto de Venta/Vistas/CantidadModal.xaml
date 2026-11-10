@@ -1,6 +1,8 @@
 ﻿<Window x:Class="Punto_de_Venta.CantidadModal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Icon="pack://application:,,,/Imagenes/CHC_icono.ico"
+        ShowInTaskbar="False"
         Title="Cantidad"
         Width="340" Height="230"
         WindowStartupLocation="CenterOwner"
