@@ -19,7 +19,10 @@ using System.Windows.Input;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using System.Windows.Media;
+using WpfColor = System.Windows.Media.Color;
+using Brush = System.Windows.Media.Brush;
+using SolidColorBrush = System.Windows.Media.SolidColorBrush;
+using Brushes = System.Windows.Media.Brushes;
 using System.Windows.Threading;
 
 namespace Punto_de_Venta
@@ -48,6 +51,7 @@ namespace Punto_de_Venta
         public Axis[] EjesYPrincipal { get; private set; } = [];
         public ObservableCollection<TopProductoItem> TopProductos { get; } = [];
         public ObservableCollection<CorteAuditoriaItem> CortesAuditoria { get; } = [];
+        public ObservableCollection<FilaTablaMetricasItem> FilasTablaMetricas { get; } = [];
         public ObservableCollection<MovimientoCaja> MovimientosDelTurnoList { get; } = new ObservableCollection<MovimientoCaja>();
         public event PropertyChangedEventHandler? PropertyChanged;
         #endregion
@@ -294,21 +298,63 @@ namespace Punto_de_Venta
             MainChartView.Visibility = Visibility.Collapsed;
             PieChartView.Visibility = Visibility.Collapsed;
             CortesContainerView.Visibility = Visibility.Collapsed;
+            if (TableViewContainer != null) TableViewContainer.Visibility = Visibility.Collapsed;
 
             if (PremiumChartOverlay != null) PremiumChartOverlay.Visibility = Visibility.Collapsed;
-            if (_currentView == ChartView.CortesCaja) { CortesContainerView.Visibility = Visibility.Visible; CargarTablaCortes(selectedCortes); }
-            else if (_currentView == ChartView.MetodosPago) { PieChartView.Visibility = Visibility.Visible; CargarGraficaMetodosPago(selectedSales, _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end).ToList()); }
-            else if (_currentView == ChartView.Pareto) { PieChartView.Visibility = Visibility.Visible; CargarGraficaPareto(selectedSales); }
+            if (_currentView == ChartView.CortesCaja)
+            {
+                CortesContainerView.Visibility = Visibility.Visible;
+                CargarTablaCortes(selectedCortes);
+            }
             else
             {
-                MainChartView.Visibility = Visibility.Visible;
-                switch (_currentView)
+                var cfg = AppConfig.Load();
+                bool modoTablas = string.Equals(cfg?.ModoVisualizacionMetricas, "Tablas", StringComparison.OrdinalIgnoreCase);
+
+                if (modoTablas && TableViewContainer != null)
                 {
-                    case ChartView.Finanzas: CargarGraficaFinanciera(totalVentas, totalCosto, totalGanancia, totalGastos); break;
-                    case ChartView.Categorias: CargarGraficaCategorias(selectedSales); break;
-                    case ChartView.HorasPico: CargarGraficaHorasPico(selectedSales); break;
-                    case ChartView.Rentabilidad: CargarGraficaRentabilidad(selectedSales); break;
-                    case ChartView.Rotacion: CargarGraficaRotacion(selectedSales, (end - start).Days + 1); break;
+                    TableViewContainer.Visibility = Visibility.Visible;
+                    switch (_currentView)
+                    {
+                        case ChartView.Finanzas:
+                            CargarTablaFinanzas(totalVentas, totalCosto, totalGanancia, totalGastos);
+                            break;
+                        case ChartView.MetodosPago:
+                            CargarTablaMetodosPago(selectedSales, _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end).ToList());
+                            break;
+                        case ChartView.Categorias:
+                            CargarTablaCategorias(selectedSales);
+                            break;
+                        case ChartView.HorasPico:
+                            CargarTablaHorasPico(selectedSales);
+                            break;
+                        case ChartView.Rentabilidad:
+                            CargarTablaRentabilidad(selectedSales);
+                            break;
+                        case ChartView.Rotacion:
+                            CargarTablaRotacion(selectedSales, (end - start).Days + 1);
+                            break;
+                        case ChartView.Pareto:
+                            CargarTablaPareto(selectedSales);
+                            break;
+                    }
+                }
+                else
+                {
+                    if (_currentView == ChartView.MetodosPago) { PieChartView.Visibility = Visibility.Visible; CargarGraficaMetodosPago(selectedSales, _movimientos.Where(m => m.FechaHora.Date >= start && m.FechaHora.Date <= end).ToList()); }
+                    else if (_currentView == ChartView.Pareto) { PieChartView.Visibility = Visibility.Visible; CargarGraficaPareto(selectedSales); }
+                    else
+                    {
+                        MainChartView.Visibility = Visibility.Visible;
+                        switch (_currentView)
+                        {
+                            case ChartView.Finanzas: CargarGraficaFinanciera(totalVentas, totalCosto, totalGanancia, totalGastos); break;
+                            case ChartView.Categorias: CargarGraficaCategorias(selectedSales); break;
+                            case ChartView.HorasPico: CargarGraficaHorasPico(selectedSales); break;
+                            case ChartView.Rentabilidad: CargarGraficaRentabilidad(selectedSales); break;
+                            case ChartView.Rotacion: CargarGraficaRotacion(selectedSales, (end - start).Days + 1); break;
+                        }
+                    }
                 }
             }
             if (_currentView == ChartView.Rentabilidad) { TopListTitleText.Text = "Top Rentables (Utilidad)"; CargarTopProductosPorUtilidad(selectedSales); }
@@ -340,10 +386,17 @@ namespace Punto_de_Venta
                 else if (s.MetodoPago == "Transferencia") transferencia += (double)s.Total;
                 else if (s.MetodoPago == "Mixto")
                 {
-                    efectivo += (double)(s.PagoEfectivo - s.Cambio);
+                    efectivo += (double)Math.Max(0m, s.PagoEfectivo - s.Cambio);
                     tarjeta += (double)s.PagoTarjeta;
-                    transferencia += (double)s.PagoTransferencia; } } foreach (var m in movimientos.Where(m => m.Concepto != null && m.Concepto.StartsWith("Abono", StringComparison.OrdinalIgnoreCase))) { if (m.Concepto.EndsWith("en tarjeta", StringComparison.OrdinalIgnoreCase)) tarjeta += (double)m.Monto; else if (m.Concepto.EndsWith("en transferencia", StringComparison.OrdinalIgnoreCase)) transferencia += (double)m.Monto; else efectivo += (double)m.Monto; { fiado = Math.Max(0, fiado - (double)m.Monto);
+                    transferencia += (double)s.PagoTransferencia;
                 }
+            }
+
+            foreach (var m in movimientos.Where(m => m.Concepto != null && m.Concepto.StartsWith("Abono", StringComparison.OrdinalIgnoreCase)))
+            {
+                if (m.Concepto.EndsWith("en tarjeta", StringComparison.OrdinalIgnoreCase)) tarjeta += (double)m.Monto;
+                else if (m.Concepto.EndsWith("en transferencia", StringComparison.OrdinalIgnoreCase)) transferencia += (double)m.Monto;
+                else efectivo += (double)m.Monto;
             }
 
             SeriesPie = [
@@ -440,12 +493,27 @@ namespace Punto_de_Venta
 
         private void CargarGraficaHorasPico(List<Venta> sales)
         {
-            ChartTitleText.Text = "Horas Pico de Clientes (8:00 AM - 10:00 PM)";
-            var horas = Enumerable.Range(8, 15).ToArray();
+            ChartTitleText.Text = "Horas Pico de Clientes";
+            int minHora = 8;
+            int maxHora = 22;
+            if (sales.Count > 0)
+            {
+                int minVenta = sales.Min(s => s.FechaHora.Hour);
+                int maxVenta = sales.Max(s => s.FechaHora.Hour);
+                minHora = Math.Min(minHora, minVenta);
+                maxHora = Math.Max(maxHora, maxVenta);
+            }
+            int totalHoras = maxHora - minHora + 1;
+            var horas = Enumerable.Range(minHora, totalHoras).ToArray();
             var ventasPorHora = new double[horas.Length];
 
-            foreach (var s in sales) { int hora = s.FechaHora.Hour; int idx = Array.IndexOf(horas, hora); if (idx >= 0) ventasPorHora[idx] += (double)s.Total; }
-            var etiquetas = horas.Select(h => h > 12 ? $"{h - 12}pm" : (h == 12 ? "12pm" : $"{h}am")).ToArray();
+            foreach (var s in sales)
+            {
+                int hora = s.FechaHora.Hour;
+                int idx = Array.IndexOf(horas, hora);
+                if (idx >= 0) ventasPorHora[idx] += (double)s.Total;
+            }
+            var etiquetas = horas.Select(h => h == 0 ? "12am" : (h > 12 ? $"{h - 12}pm" : (h == 12 ? "12pm" : $"{h}am"))).ToArray();
 
             SeriesPrincipal = [new ColumnSeries<double> { Name = "Venta en esa Hora", Values = ventasPorHora, Fill = new SolidColorPaint(new SKColor(255, 149, 0)), MaxBarWidth = 26 }];
             EjesXPrincipal = [new Axis { Labels = etiquetas, LabelsPaint = new SolidColorPaint(ObtenerColorTextoEje()), TextSize = 11 }];
@@ -465,6 +533,365 @@ namespace Punto_de_Venta
             EjesXPrincipal = [new Axis { Labels = sorted.Select(x => x.Key).ToArray(), LabelsPaint = new SolidColorPaint(ObtenerColorTextoEje()), TextSize = 12 }];
             EjesYPrincipal = [new Axis { MinLimit = 0, Labeler = v => v.ToString("C0", _mexicanCulture), LabelsPaint = new SolidColorPaint(ObtenerColorTextoEje()), TextSize = 12 }];
             NotifyChartProperties();
+        }
+        private static SolidColorBrush CrearBrocha(byte a, byte r, byte g, byte b)
+        {
+            return new SolidColorBrush(System.Windows.Media.Color.FromArgb(a, r, g, b));
+        }
+
+        private static SolidColorBrush CrearBrocha(byte r, byte g, byte b)
+        {
+            return new SolidColorBrush(System.Windows.Media.Color.FromRgb(r, g, b));
+        }
+
+        private void CargarTablaFinanzas(decimal venta, decimal costo, decimal ganancia, decimal gastos)
+        {
+            ChartTitleText.Text = "Tabla Financiera: Venta vs Inversion vs Ganancia vs Gastos";
+            FilasTablaMetricas.Clear();
+
+            decimal balance = ganancia - gastos;
+            decimal margen = venta > 0 ? (ganancia / venta) * 100m : 0m;
+
+            FilasTablaMetricas.Add(new FilaTablaMetricasItem(
+                "Venta Total Bruta",
+                venta.ToString("C2", _mexicanCulture),
+                "100% de los ingresos",
+                "Ingreso Base",
+                CrearBrocha(30, 0, 122, 255),
+                CrearBrocha(0, 122, 255)
+            ));
+
+            FilasTablaMetricas.Add(new FilaTablaMetricasItem(
+                "Costo de Mercancia (Inversion)",
+                costo.ToString("C2", _mexicanCulture),
+                venta > 0 ? $"{(costo / venta) * 100m:F1}% de venta" : "0%",
+                "Costo Base",
+                CrearBrocha(30, 142, 142, 147),
+                CrearBrocha(142, 142, 147)
+            ));
+
+            FilasTablaMetricas.Add(new FilaTablaMetricasItem(
+                "Ganancia Bruta",
+                ganancia.ToString("C2", _mexicanCulture),
+                $"{margen:F1}% margen",
+                margen >= 30 ? "Saludable" : "Bajo Margen",
+                CrearBrocha(30, 52, 199, 89),
+                CrearBrocha(52, 199, 89)
+            ));
+
+            FilasTablaMetricas.Add(new FilaTablaMetricasItem(
+                "Gastos y Salidas de Caja",
+                gastos.ToString("C2", _mexicanCulture),
+                venta > 0 ? $"{(gastos / venta) * 100m:F1}% de venta" : "0%",
+                gastos > 0 ? "Egresos" : "Sin Gastos",
+                CrearBrocha(30, 239, 68, 68),
+                CrearBrocha(239, 68, 68)
+            ));
+
+            FilasTablaMetricas.Add(new FilaTablaMetricasItem(
+                "Utilidad Neta del Periodo",
+                balance.ToString("C2", _mexicanCulture),
+                "Ganancia menos gastos",
+                balance >= 0 ? "Superavit" : "Deficit",
+                balance >= 0 ? CrearBrocha(30, 52, 199, 89) : CrearBrocha(30, 239, 68, 68),
+                balance >= 0 ? CrearBrocha(52, 199, 89) : CrearBrocha(239, 68, 68)
+            ));
+        }
+
+        private void CargarTablaMetodosPago(List<Venta> sales, List<MovimientoCaja> movimientos)
+        {
+            ChartTitleText.Text = "Tabla de Distribucion por Metodo de Pago";
+            FilasTablaMetricas.Clear();
+
+            decimal efectivo = 0m, tarjeta = 0m, transferencia = 0m, fiado = 0m;
+
+            foreach (var s in sales)
+            {
+                if (string.Equals(s.Estado, "Fiado", StringComparison.OrdinalIgnoreCase) || string.Equals(s.MetodoPago, "Fiado", StringComparison.OrdinalIgnoreCase))
+                {
+                    fiado += s.Total;
+                    continue;
+                }
+                if (string.Equals(s.MetodoPago, "Efectivo", StringComparison.OrdinalIgnoreCase)) efectivo += s.Total;
+                else if (string.Equals(s.MetodoPago, "Tarjeta", StringComparison.OrdinalIgnoreCase)) tarjeta += s.Total;
+                else if (string.Equals(s.MetodoPago, "Transferencia", StringComparison.OrdinalIgnoreCase)) transferencia += s.Total;
+                else if (string.Equals(s.MetodoPago, "Mixto", StringComparison.OrdinalIgnoreCase))
+                {
+                    efectivo += Math.Max(0m, s.PagoEfectivo - s.Cambio);
+                    tarjeta += s.PagoTarjeta;
+                    transferencia += s.PagoTransferencia;
+                }
+            }
+
+            foreach (var m in movimientos.Where(m => m.Concepto != null && m.Concepto.StartsWith("Abono", StringComparison.OrdinalIgnoreCase)))
+            {
+                if (m.Concepto.EndsWith("en tarjeta", StringComparison.OrdinalIgnoreCase)) tarjeta += m.Monto;
+                else if (m.Concepto.EndsWith("en transferencia", StringComparison.OrdinalIgnoreCase)) transferencia += m.Monto;
+                else efectivo += m.Monto;
+            }
+
+            decimal total = efectivo + tarjeta + transferencia + fiado;
+
+            void AgregarMetodo(string nombre, decimal monto, Brush badgeBg, Brush badgeFg)
+            {
+                decimal pct = total > 0 ? (monto / total) * 100m : 0m;
+                FilasTablaMetricas.Add(new FilaTablaMetricasItem(
+                    nombre,
+                    monto.ToString("C2", _mexicanCulture),
+                    $"{pct:F1}% del total",
+                    $"{pct:F0}%",
+                    badgeBg,
+                    badgeFg
+                ));
+            }
+
+            AgregarMetodo("Efectivo en Caja", efectivo, CrearBrocha(30, 52, 199, 89), CrearBrocha(52, 199, 89));
+            AgregarMetodo("Tarjeta Bancaria (TPV)", tarjeta, CrearBrocha(30, 0, 122, 255), CrearBrocha(0, 122, 255));
+            AgregarMetodo("Transferencia SPEI", transferencia, CrearBrocha(30, 175, 82, 222), CrearBrocha(175, 82, 222));
+            AgregarMetodo("Pendiente de Cobro (Fiado)", fiado, CrearBrocha(30, 255, 149, 0), CrearBrocha(255, 149, 0));
+        }
+
+        private void CargarTablaCategorias(List<Venta> sales)
+        {
+            ChartTitleText.Text = "Tabla de Ventas por Categoria";
+            FilasTablaMetricas.Clear();
+
+            var dictPiezas = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+            var dictIngresos = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var s in sales)
+            {
+                if (s.Productos.Count > 0)
+                {
+                    foreach (var p in s.Productos)
+                    {
+                        var cat = !string.IsNullOrWhiteSpace(p.Categoria) && p.Categoria != "N/A" ? p.Categoria.Trim() : (_catalog.FirstOrDefault(c => c.Id == p.Id)?.Categoria ?? "General");
+                        dictPiezas[cat] = dictPiezas.GetValueOrDefault(cat) + p.Cantidad;
+                        dictIngresos[cat] = dictIngresos.GetValueOrDefault(cat) + (p.Precio * p.Cantidad);
+                    }
+                }
+                else
+                {
+                    foreach (var (name, qty) in ParseLegacySummary(s.ProductosResumen))
+                    {
+                        var prod = _catalog.FirstOrDefault(c => string.Equals(c.Nombre, name, StringComparison.OrdinalIgnoreCase));
+                        var cat = prod?.Categoria ?? "General";
+                        dictPiezas[cat] = dictPiezas.GetValueOrDefault(cat) + qty;
+                        dictIngresos[cat] = dictIngresos.GetValueOrDefault(cat) + ((prod?.Precio ?? 0m) * qty);
+                    }
+                }
+            }
+
+            decimal totalPiezas = dictPiezas.Values.Sum();
+
+            foreach (var kvp in dictPiezas.OrderByDescending(x => x.Value))
+            {
+                decimal ingreso = dictIngresos.GetValueOrDefault(kvp.Key);
+                decimal pct = totalPiezas > 0 ? (kvp.Value / totalPiezas) * 100m : 0m;
+
+                FilasTablaMetricas.Add(new FilaTablaMetricasItem(
+                    kvp.Key,
+                    $"{kvp.Value} piezas",
+                    ingreso.ToString("C2", _mexicanCulture),
+                    $"{pct:F1}% volumen",
+                    CrearBrocha(30, 0, 122, 255),
+                    CrearBrocha(0, 122, 255)
+                ));
+            }
+
+            if (FilasTablaMetricas.Count == 0)
+            {
+                FilasTablaMetricas.Add(new FilaTablaMetricasItem("Sin ventas en el periodo", "0 piezas", "$0.00", "0%", Brushes.Transparent, Brushes.Gray));
+            }
+        }
+
+        private void CargarTablaHorasPico(List<Venta> sales)
+        {
+            ChartTitleText.Text = "Tabla de Horarios y Ventas (Horas Pico)";
+            FilasTablaMetricas.Clear();
+
+            int minHora = 8;
+            int maxHora = 22;
+            if (sales.Count > 0)
+            {
+                int minVenta = sales.Min(s => s.FechaHora.Hour);
+                int maxVenta = sales.Max(s => s.FechaHora.Hour);
+                minHora = Math.Min(minHora, minVenta);
+                maxHora = Math.Max(maxHora, maxVenta);
+            }
+            int totalHoras = maxHora - minHora + 1;
+            var horas = Enumerable.Range(minHora, totalHoras).ToArray();
+            var dictHoras = new Dictionary<int, (decimal Total, int Conteo)>();
+
+            foreach (int h in horas) dictHoras[h] = (0m, 0);
+
+            foreach (var s in sales)
+            {
+                int h = s.FechaHora.Hour;
+                if (dictHoras.ContainsKey(h))
+                {
+                    var actual = dictHoras[h];
+                    dictHoras[h] = (actual.Total + s.Total, actual.Conteo + 1);
+                }
+            }
+
+            decimal maxMonto = dictHoras.Values.Select(v => v.Total).DefaultIfEmpty(0m).Max();
+
+            foreach (int h in horas)
+            {
+                var info = dictHoras[h];
+                string etiquetaHora = h == 0 ? "12:00 AM" : (h > 12 ? $"{h - 12}:00 PM" : (h == 12 ? "12:00 PM" : $"{h}:00 AM"));
+                bool esPico = maxMonto > 0 && info.Total >= (maxMonto * 0.75m);
+
+                FilasTablaMetricas.Add(new FilaTablaMetricasItem(
+                    etiquetaHora,
+                    info.Total.ToString("C2", _mexicanCulture),
+                    $"{info.Conteo} transaccion(es)",
+                    esPico ? "Hora Pico" : "Flujo Normal",
+                    esPico ? CrearBrocha(30, 255, 149, 0) : CrearBrocha(30, 142, 142, 147),
+                    esPico ? CrearBrocha(255, 149, 0) : CrearBrocha(142, 142, 147)
+                ));
+            }
+        }
+
+        private void CargarTablaRentabilidad(List<Venta> sales)
+        {
+            ChartTitleText.Text = "Tabla de Rentabilidad y Margen Real por Articulo";
+            FilasTablaMetricas.Clear();
+
+            var dict = new Dictionary<string, (decimal Cantidad, decimal Ganancia, decimal VentaTotal)>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var s in sales)
+            {
+                foreach (var p in s.Productos)
+                {
+                    var cur = dict.GetValueOrDefault(p.Nombre);
+                    dict[p.Nombre] = (
+                        cur.Cantidad + p.Cantidad,
+                        cur.Ganancia + (p.Ganancia * p.Cantidad),
+                        cur.VentaTotal + (p.Precio * p.Cantidad)
+                    );
+                }
+            }
+
+            foreach (var kvp in dict.OrderByDescending(x => x.Value.Ganancia).Take(20))
+            {
+                decimal margen = kvp.Value.VentaTotal > 0 ? (kvp.Value.Ganancia / kvp.Value.VentaTotal) * 100m : 0m;
+
+                FilasTablaMetricas.Add(new FilaTablaMetricasItem(
+                    kvp.Key,
+                    kvp.Value.Ganancia.ToString("C2", _mexicanCulture),
+                    $"{kvp.Value.Cantidad} piezas vendidas",
+                    $"{margen:F1}% margen",
+                    CrearBrocha(30, 52, 199, 89),
+                    CrearBrocha(52, 199, 89)
+                ));
+            }
+
+            if (FilasTablaMetricas.Count == 0)
+            {
+                FilasTablaMetricas.Add(new FilaTablaMetricasItem("Sin datos registrados", "$0.00", "0 piezas", "0%", Brushes.Transparent, Brushes.Gray));
+            }
+        }
+
+        private void CargarTablaRotacion(List<Venta> sales, int diasPeriodo)
+        {
+            ChartTitleText.Text = "Tabla de Rotacion de Inventario y Stock";
+            FilasTablaMetricas.Clear();
+
+            int dias = Math.Max(1, diasPeriodo);
+            var ventasPorProducto = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+            foreach (var s in sales)
+            {
+                if (s.Productos.Count > 0)
+                {
+                    foreach (var p in s.Productos) ventasPorProducto[p.Nombre] = ventasPorProducto.GetValueOrDefault(p.Nombre) + p.Cantidad;
+                }
+                else
+                {
+                    foreach (var (name, qty) in ParseLegacySummary(s.ProductosResumen)) ventasPorProducto[name] = ventasPorProducto.GetValueOrDefault(name) + qty;
+                }
+            }
+
+            foreach (var kvp in ventasPorProducto.OrderByDescending(x => x.Value).Take(20))
+            {
+                var prod = _catalog.FirstOrDefault(c => string.Equals(c.Nombre, kvp.Key, StringComparison.OrdinalIgnoreCase));
+                decimal stock = prod?.Stock ?? 0m;
+                decimal ventaDiaria = kvp.Value / dias;
+                decimal diasRestantes = ventaDiaria > 0m ? stock / ventaDiaria : 999m;
+                bool riesgoAgotamiento = stock <= 0m || diasRestantes <= 3m;
+
+                FilasTablaMetricas.Add(new FilaTablaMetricasItem(
+                    kvp.Key,
+                    $"{kvp.Value:0.###} pzas ({ventaDiaria:0.#}/dia)",
+                    $"Stock actual: {stock:0.###} pzas",
+                    riesgoAgotamiento ? "Riesgo Agotar" : "Stock Seguro",
+                    riesgoAgotamiento ? CrearBrocha(30, 239, 68, 68) : CrearBrocha(30, 52, 199, 89),
+                    riesgoAgotamiento ? CrearBrocha(239, 68, 68) : CrearBrocha(52, 199, 89)
+                ));
+            }
+
+            if (FilasTablaMetricas.Count == 0)
+            {
+                FilasTablaMetricas.Add(new FilaTablaMetricasItem("Sin movimientos registrados", "0 pzas", "0 pzas", "N/A", Brushes.Transparent, Brushes.Gray));
+            }
+        }
+
+        private void CargarTablaPareto(List<Venta> sales)
+        {
+            ChartTitleText.Text = "Tabla de Clasificacion ABC (Analisis 80/20)";
+            FilasTablaMetricas.Clear();
+
+            var ingresos = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+            foreach (var s in sales)
+            {
+                if (s.Productos.Count > 0)
+                {
+                    foreach (var p in s.Productos) ingresos[p.Nombre] = ingresos.GetValueOrDefault(p.Nombre) + (p.Precio * p.Cantidad);
+                }
+                else
+                {
+                    foreach (var (name, qty) in ParseLegacySummary(s.ProductosResumen))
+                    {
+                        var precio = _catalog.FirstOrDefault(c => string.Equals(c.Nombre, name, StringComparison.OrdinalIgnoreCase))?.Precio ?? 0m;
+                        ingresos[name] = ingresos.GetValueOrDefault(name) + (precio * qty);
+                    }
+                }
+            }
+
+            decimal totalIngresos = ingresos.Values.Sum();
+            if (totalIngresos <= 0)
+            {
+                FilasTablaMetricas.Add(new FilaTablaMetricasItem("Sin ventas en el periodo", "$0.00", "0%", "N/A", Brushes.Transparent, Brushes.Gray));
+                return;
+            }
+
+            var ordenados = ingresos.OrderByDescending(x => x.Value).ToList();
+            decimal acumulado = 0m;
+
+            foreach (var item in ordenados.Take(25))
+            {
+                acumulado += item.Value;
+                decimal pctAcumulado = (acumulado / totalIngresos) * 100m;
+                string clase = pctAcumulado <= 80m ? "Clase A (80%)" : (pctAcumulado <= 95m ? "Clase B (15%)" : "Clase C (5%)");
+
+                Brush bg = pctAcumulado <= 80m
+                    ? CrearBrocha(30, 52, 199, 89)
+                    : (pctAcumulado <= 95m ? CrearBrocha(30, 255, 149, 0) : CrearBrocha(30, 239, 68, 68));
+
+                Brush fg = pctAcumulado <= 80m
+                    ? CrearBrocha(52, 199, 89)
+                    : (pctAcumulado <= 95m ? CrearBrocha(255, 149, 0) : CrearBrocha(239, 68, 68));
+
+                FilasTablaMetricas.Add(new FilaTablaMetricasItem(
+                    item.Key,
+                    item.Value.ToString("C2", _mexicanCulture),
+                    $"Acumulado: {pctAcumulado:F1}%",
+                    clase,
+                    bg,
+                    fg
+                ));
+            }
         }
         #endregion
 
@@ -808,5 +1235,6 @@ namespace Punto_de_Venta
 
     public sealed record TopProductoItem(int Posicion, string Nombre, decimal Cantidad, decimal Ingreso);
     public sealed record CorteAuditoriaItem(int TurnoId, string FechaHoraFormateada, string FolioTexto, string EsperadoFormateado, string ContadoFormateado, string DiferenciaFormateada, Brush BadgeBackground, Brush BadgeForeground);
+    public sealed record FilaTablaMetricasItem(string Concepto, string ValorPrincipal, string ValorSecundario, string PorcentajeOEstado, Brush BadgeBackground, Brush BadgeForeground);
     #endregion
 }

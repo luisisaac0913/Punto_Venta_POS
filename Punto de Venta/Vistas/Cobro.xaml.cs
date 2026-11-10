@@ -945,7 +945,8 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            if (!decimal.TryParse(amountText, NumberStyles.Any, CultureInfo.InvariantCulture, out var addAmount) || addAmount <= 0)
+            string limpioAmount = (amountText ?? string.Empty).Trim().Replace(',', '.');
+            if (!decimal.TryParse(limpioAmount, NumberStyles.AllowDecimalPoint | NumberStyles.Integer | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var addAmount) || addAmount <= 0)
             {
                 QrStatusMessage.Text = "Ingresa una cantidad entera mayor a 0.";
                 QrAddAmountBox.Focus();

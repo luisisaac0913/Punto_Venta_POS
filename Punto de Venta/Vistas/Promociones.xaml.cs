@@ -80,6 +80,7 @@ namespace Punto_de_Venta
             switch (tipo)
             {
                 case "Volumen":
+                case "Mayoreo":
                     LabelProd1.Text = "ID Producto Principal";
                     PanelProducto2.Visibility = Visibility.Collapsed;
                     PanelVolumen.Visibility = Visibility.Visible;
@@ -100,7 +101,7 @@ namespace Punto_de_Venta
                     PanelProducto2.Visibility = Visibility.Collapsed;
                     PanelVolumen.Visibility = Visibility.Collapsed;
                     PanelPrecioCombo.Visibility = Visibility.Collapsed;
-                    PanelPorcentaje.Visibility = Visibility.Collapsed;
+                    PanelPorcentaje.Visibility = Visibility.Visible;
                     break;
             }
         }

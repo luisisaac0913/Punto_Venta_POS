@@ -316,6 +316,53 @@
                             <lvc:CartesianChart x:Name="MainChartView" Grid.Row="1" Series="{Binding SeriesPrincipal}" XAxes="{Binding EjesXPrincipal}" YAxes="{Binding EjesYPrincipal}" />
                             <lvc:PieChart x:Name="PieChartView" Grid.Row="1" Series="{Binding SeriesPie}" Visibility="Collapsed" LegendPosition="Right" />
 
+                            <Grid x:Name="TableViewContainer" Grid.Row="1" Visibility="Collapsed">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <Border Grid.Row="0" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14,10" Margin="0,0,0,6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="150" />
+                                            <ColumnDefinition Width="150" />
+                                            <ColumnDefinition Width="130" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Concepto / Elemento" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                                        <TextBlock Grid.Column="1" Text="Valor Principal" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,0,16,0" />
+                                        <TextBlock Grid.Column="2" Text="Valor Secundario" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,0,16,0" />
+                                        <TextBlock Grid.Column="3" Text="Porcentaje / Estado" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" />
+                                    </Grid>
+                                </Border>
+
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding FilasTablaMetricas}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Padding="14,11" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource ThemeBorder}" Background="Transparent">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="150" />
+                                                            <ColumnDefinition Width="150" />
+                                                            <ColumnDefinition Width="130" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding Concepto}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding ValorPrincipal}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,16,0" />
+                                                        <TextBlock Grid.Column="2" Text="{Binding ValorSecundario}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,16,0" />
+                                                        <Border Grid.Column="3" Background="{Binding BadgeBackground}" CornerRadius="4" Padding="8,4" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding PorcentajeOEstado}" FontSize="12" FontWeight="Bold" Foreground="{Binding BadgeForeground}" />
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Grid>
+
                             <Border x:Name="PremiumChartOverlay" Grid.Row="1" Visibility="Collapsed"
                                     Background="{DynamicResource ThemeInputBackground}" 
                                     BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" 

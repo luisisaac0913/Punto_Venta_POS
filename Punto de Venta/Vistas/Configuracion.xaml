@@ -208,6 +208,23 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="Modo de visualizacion de metricas" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="Elige si deseas ver el modulo de reportes en graficas interactivas o tablas detalladas" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                        <ComboBox x:Name="CmbModoMetricas" Grid.Column="1" Width="150" Height="36" VerticalAlignment="Center">
+                                            <ComboBoxItem Content="Graficas" Tag="Graficas" />
+                                            <ComboBoxItem Content="Tablas" Tag="Tablas" />
+                                        </ComboBox>
+                                    </Grid>
+                                </Border>
+
+                                <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="8" Padding="14" Margin="0,0,0,12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel VerticalAlignment="Center">
                                             <TextBlock Text="Modo de bascula (F8)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                             <TextBlock Text="Elige como se abre la ventana de pesaje por defecto" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
                                         </StackPanel>
