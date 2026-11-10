@@ -143,6 +143,18 @@ namespace Punto_de_Venta
 
 
             DarkModeCheckBox.IsChecked = _config.ModoOscuro;
+            if (CmbModoMetricas != null)
+            {
+                string modo = string.Equals(_config.ModoVisualizacionMetricas, "Tablas", StringComparison.OrdinalIgnoreCase) ? "Tablas" : "Graficas";
+                foreach (ComboBoxItem item in CmbModoMetricas.Items)
+                {
+                    if (string.Equals(item.Tag?.ToString(), modo, StringComparison.OrdinalIgnoreCase))
+                    {
+                        CmbModoMetricas.SelectedItem = item;
+                        break;
+                    }
+                }
+            }
             AskBeforePrintCheckBox.IsChecked = _config.PreguntarAntesDeImprimir;
             AutoPrintCheckBox.IsChecked = _config.ImprimirTicketAutomatico;
 
@@ -665,6 +677,11 @@ namespace Punto_de_Venta
 
                 var modoOscuroSeleccionado = DarkModeCheckBox.IsChecked == true;
                 _config.ModoOscuro = modoOscuroSeleccionado;
+
+                if (CmbModoMetricas?.SelectedItem is ComboBoxItem itemMetricas && itemMetricas.Tag != null)
+                {
+                    _config.ModoVisualizacionMetricas = itemMetricas.Tag.ToString() ?? "Graficas";
+                }
 
                 if (!LicenciaService.EsPremium())
                 {

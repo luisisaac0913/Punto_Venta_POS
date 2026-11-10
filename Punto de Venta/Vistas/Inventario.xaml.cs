@@ -371,7 +371,7 @@ namespace Punto_de_Venta
                 return;
             }
 
-            if (!decimal.TryParse(GestorLoteCantidadBox.Text.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var qty) || qty <= 0)
+            if (!TryParseDecimalFlexible(GestorLoteCantidadBox.Text, out var qty) || qty <= 0)
             {
                 ToastNotification.Show("Ingresa una cantidad valida mayor a 0.", ToastType.Warning);
                 return;
@@ -907,7 +907,7 @@ namespace Punto_de_Venta
                 return false;
             }
 
-            if (!decimal.TryParse(StockBox.Text.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out stock) || stock < 0)
+            if (!TryParseDecimalFlexible(StockBox.Text, out stock) || stock < 0)
             {
                 ShowValidationError("Introduce un stock valido igual o mayor que cero.", "StockBox");
                 return false;
@@ -968,6 +968,14 @@ namespace Punto_de_Venta
                 ToastNotification.Show($"Error al guardar inventario: {exception.Message}", ToastType.Error);
                 return false;
             }
+        }
+
+        private static bool TryParseDecimalFlexible(string? text, out decimal value)
+        {
+            value = 0m;
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            string limpio = text.Trim().Replace(',', '.');
+            return decimal.TryParse(limpio, NumberStyles.AllowDecimalPoint | NumberStyles.Integer | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out value);
         }
 
         private void ShowValidationError(string message, string controlName)
@@ -1150,7 +1158,7 @@ namespace Punto_de_Venta
                 return;
             }
 
-            if (!decimal.TryParse(amountText, NumberStyles.Any, CultureInfo.InvariantCulture, out var addAmount) || addAmount <= 0)
+            if (!TryParseDecimalFlexible(amountText, out var addAmount) || addAmount <= 0)
             {
                 QrStatusMessage.Text = "Ingresa una cantidad valida mayor a 0.";
                 QrAddAmountBox.Focus();

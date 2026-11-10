@@ -620,7 +620,7 @@ namespace Punto_de_Venta
                 .Where(s => s.Estado.Equals("Abierta", StringComparison.OrdinalIgnoreCase))
                 .Sum(s =>
                     s.MetodoPago.Equals("Efectivo", StringComparison.OrdinalIgnoreCase) ? s.Total :
-                    s.MetodoPago.Equals("Mixto", StringComparison.OrdinalIgnoreCase) ? (s.PagoEfectivo - s.Cambio) : 0m
+                    s.MetodoPago.Equals("Mixto", StringComparison.OrdinalIgnoreCase) ? Math.Max(0m, s.PagoEfectivo - s.Cambio) : 0m
                 );
 
             using (var conn = DatabaseHelper.GetConnection())
