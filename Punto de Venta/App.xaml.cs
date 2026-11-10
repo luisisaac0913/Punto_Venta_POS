@@ -46,8 +46,6 @@ namespace Punto_de_Venta
                 return;
             }
 
-            _servidorWeb = new ServidorLocal();
-            _ = Task.Run(async () => await _servidorWeb.IniciarAsync());
             DispatcherUnhandledException += App_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
@@ -57,6 +55,8 @@ namespace Punto_de_Venta
             QuestPDF.Settings.ThrowOnMissingFontFamilies = false;
             DatabaseHelper.InicializarBaseDeDatos();
             DatabaseHelper.ActualizarEsquemaVentas();
+            _servidorWeb = new ServidorLocal();
+            _ = Task.Run(async () => await _servidorWeb.IniciarAsync());
             AppConfig config = new AppConfig();
             try
             {

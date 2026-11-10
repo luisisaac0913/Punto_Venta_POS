@@ -102,28 +102,87 @@ namespace Punto_de_Venta.Servicios
             string sinCeros = limpio.TrimStart('0');
             string conCero = "0" + limpio;
 
-            var catalogo = ProductoDB.Load();
-
-            var prod = catalogo.FirstOrDefault(p =>
+            try
             {
-                if (string.IsNullOrWhiteSpace(p.Codigo)) return false;
-                var c = p.Codigo.Trim();
-                return string.Equals(c, limpio, StringComparison.OrdinalIgnoreCase) ||
-                       (!string.IsNullOrEmpty(sinCeros) && string.Equals(c.TrimStart('0'), sinCeros, StringComparison.OrdinalIgnoreCase)) ||
-                       string.Equals(c, conCero, StringComparison.OrdinalIgnoreCase) ||
-                       p.Id.ToString() == limpio;
-            });
+                var catalogo = ProductoDB.Load();
 
-            if (prod != null) return prod;
+                var prod = catalogo.FirstOrDefault(p =>
+                {
+                    if (string.IsNullOrWhiteSpace(p.Codigo)) return false;
+                    var c = p.Codigo.Trim();
+                    return string.Equals(c, limpio, StringComparison.OrdinalIgnoreCase) ||
+                           (!string.IsNullOrEmpty(sinCeros) && string.Equals(c.TrimStart('0'), sinCeros, StringComparison.OrdinalIgnoreCase)) ||
+                           string.Equals(c, conCero, StringComparison.OrdinalIgnoreCase) ||
+                           p.Id.ToString() == limpio;
+                });
 
-            prod = ProductoDB.BuscarPorCodigoOId(limpio);
-            if (prod != null) return prod;
+                if (prod != null) return prod;
 
-            if (!string.IsNullOrEmpty(sinCeros))
-            {
-                prod = ProductoDB.BuscarPorCodigoOId(sinCeros);
+                prod = ProductoDB.BuscarPorCodigoOId(limpio);
+                if (prod != null) return prod;
+
+                if (!string.IsNullOrEmpty(sinCeros))
+                {
+                    prod = ProductoDB.BuscarPorCodigoOId(sinCeros);
+                }
+                if (prod != null) return prod;
+
+                prod = catalogo.FirstOrDefault(p =>
+                    !string.IsNullOrWhiteSpace(p.Nombre) &&
+                    string.Equals(p.Nombre.Trim(), limpio, StringComparison.OrdinalIgnoreCase));
+                if (prod != null) return prod;
+
+                prod = catalogo.FirstOrDefault(p =>
+                    !string.IsNullOrWhiteSpace(p.Nombre) &&
+                    p.Nombre.Contains(limpio, StringComparison.OrdinalIgnoreCase));
+
+                return prod;
             }
-            return prod;
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static System.Collections.Generic.List<Punto_de_Venta.Modelos.Producto> BuscarProductosLista(string? query)
+        {
+            try
+            {
+                var catalogo = ProductoDB.Load();
+                if (string.IsNullOrWhiteSpace(query))
+                {
+                    return catalogo.Take(150).ToList();
+                }
+
+                string q = query.Trim();
+                string sinCeros = q.TrimStart('0');
+
+                return catalogo.Where(p =>
+                {
+                    if (!string.IsNullOrWhiteSpace(p.Codigo) && (
+                        p.Codigo.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                        (!string.IsNullOrEmpty(sinCeros) && p.Codigo.Contains(sinCeros, StringComparison.OrdinalIgnoreCase))))
+                    {
+                        return true;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(p.Nombre) && p.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+
+                    if (p.Id.ToString() == q)
+                    {
+                        return true;
+                    }
+
+                    return false;
+                }).Take(150).ToList();
+            }
+            catch
+            {
+                return new System.Collections.Generic.List<Punto_de_Venta.Modelos.Producto>();
+            }
         }
 
         public async Task IniciarAsync()
@@ -183,27 +242,61 @@ namespace Punto_de_Venta.Servicios
                 _app.UseAuthentication();
                 _app.UseAuthorization();
 
+                _app.MapGet("/logo", () =>
+                {
+                    string ruta1 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Imagenes", "CHC_Mascota.png");
+                    if (File.Exists(ruta1)) return Results.File(ruta1, "image/png");
+
+                    string ruta2 = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CHC_Mascota.png");
+                    if (File.Exists(ruta2)) return Results.File(ruta2, "image/png");
+
+                    try
+                    {
+                        var uri = new Uri("pack://application:,,,/Imagenes/CHC_Mascota.png");
+                        var sri = Application.GetResourceStream(uri);
+                        if (sri != null)
+                        {
+                            using var ms = new MemoryStream();
+                            sri.Stream.CopyTo(ms);
+                            return Results.File(ms.ToArray(), "image/png");
+                        }
+                    }
+                    catch
+                    {
+                    }
+
+                    return Results.NotFound();
+                }).AllowAnonymous();
+
                 _app.MapGet("/login", (HttpContext ctx) =>
                 {
-                    string errorMsg = ctx.Request.Query.ContainsKey("error") ? "<p style='color:#EF4444; font-weight:bold;'>PIN Incorrecto</p>" : "";
+                    string errorMsg = ctx.Request.Query.ContainsKey("error") ? "<p style='color:#FF6666; font-weight:bold; margin-bottom:12px;'>PIN Incorrecto</p>" : "";
 
                     string html = $@"
                         <!DOCTYPE html>
-                        <html>
+                        <html lang='es'>
                         <head>
                             <meta charset='UTF-8'>
                             <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-                            <title>Acceso Restringido</title>
+                            <title>Acceso - Chip&Chapa</title>
+                            <style>
+                                * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+                                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #000000; color: #FFFFFF; text-align: center; padding: 40px 16px; }}
+                                .card {{ background: #FFFFFF; color: #000000; max-width: 360px; margin: 0 auto; padding: 24px; border-radius: 4px; }}
+                                input {{ width: 140px; padding: 12px; font-size: 24px; text-align: center; background: #FFFFFF; color: #000000; border: 2px solid #000000; border-radius: 4px; margin-bottom: 16px; }}
+                                button {{ width: 100%; padding: 12px; font-size: 15px; font-weight: bold; background: #000000; color: #FFFFFF; border: none; border-radius: 4px; cursor: pointer; }}
+                            </style>
                         </head>
-                        <body style='font-family: sans-serif; background: #121212; color: #fff; text-align: center; padding-top: 40px;'>
-                            <h2>🔒 Acceso Restringido</h2>
-                            <p>Ingresa tu PIN de empleado</p>
-                            {errorMsg}
-                            <form method='POST' action='/login'>
-                                <input type='password' name='pin' pattern='[0-9]*' inputmode='numeric' autofocus
-                                       style='padding: 12px; font-size: 24px; text-align: center; width: 150px; border-radius: 8px; border: none;'><br><br>
-                                <button type='submit' style='padding: 12px 30px; font-size: 16px; background: #007AFF; color: white; border: none; border-radius: 8px; font-weight:bold;'>Entrar</button>
-                            </form>
+                        <body>
+                            <div class='card'>
+                                <h2 style='font-size: 20px; font-weight: bold; margin-bottom: 8px;'>Acceso Restringido</h2>
+                                <p style='font-size: 13px; color: #555555; margin-bottom: 16px;'>Ingresa tu PIN de empleado</p>
+                                {errorMsg}
+                                <form method='POST' action='/login'>
+                                    <input type='password' name='pin' pattern='[0-9]*' inputmode='numeric' autofocus /><br>
+                                    <button type='submit'>Entrar</button>
+                                </form>
+                            </div>
                         </body>
                         </html>";
                     return Results.Content(html, "text/html");
@@ -235,179 +328,443 @@ namespace Punto_de_Venta.Servicios
                         <head>
                             <meta charset='UTF-8'>
                             <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
-                            <title>Inventario Movil Chip&Chapa</title>
+                            <title>Chip&Chapa - Inventario Movil</title>
                             <script src='https://unpkg.com/html5-qrcode'></script>
                             <style>
-                                * { box-sizing: border-box; }
-                                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0F172A; color: #F8FAFC; margin: 0; padding: 14px; text-align: center; }
-                                h2 { margin: 6px 0 14px 0; font-size: 19px; font-weight: bold; color: #38BDF8; }
-                                .search-bar { display: flex; gap: 8px; max-width: 480px; margin: 0 auto 12px auto; }
-                                .search-input { flex: 1; padding: 12px; font-size: 15px; border-radius: 8px; border: 1px solid #475569; background: #1E293B; color: #fff; text-align: center; }
-                                .search-btn { padding: 12px 18px; font-size: 15px; font-weight: bold; background: #0284C7; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
-                                #reader { width: 100%; max-width: 480px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 1px solid #334155; background: #1E293B; }
-                                .result-card { background: #1E293B; border: 1px solid #334155; padding: 18px; margin: 14px auto 0 auto; max-width: 480px; border-radius: 12px; display: none; text-align: left; }
-                                .stock-badge { background: #064E3B; border: 1px solid #059669; color: #6EE7B7; padding: 10px; border-radius: 8px; text-align: center; margin: 12px 0; }
-                                .quick-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 10px 0; }
-                                .quick-btn { background: #334155; color: #F1F5F9; border: 1px solid #475569; padding: 10px 0; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
-                                .quick-btn:active { background: #0284C7; color: #fff; }
-                                .input-cant { width: 100%; padding: 12px; font-size: 18px; font-weight: bold; text-align: center; border-radius: 8px; border: 1px solid #475569; background: #0F172A; color: #fff; margin-top: 6px; }
-                                .btn-action { width: 100%; border: none; padding: 13px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 8px; display: block; }
-                                .btn-add { background: #059669; color: white; }
-                                .btn-set { background: #2563EB; color: white; }
-                                .btn-pc { background: #7C3AED; color: white; }
-                                .btn-nuevo { background: #D97706; color: white; }
-                                .btn-scan { background: #475569; color: white; margin-top: 14px; }
-                                .status-box { font-size: 14px; font-weight: bold; text-align: center; margin-top: 12px; min-height: 20px; }
-                                .form-group { margin-bottom: 10px; }
-                                .form-label { display: block; font-size: 12px; color: #94A3B8; margin-bottom: 4px; font-weight: bold; }
-                                .form-control { width: 100%; padding: 10px; font-size: 14px; border-radius: 6px; border: 1px solid #475569; background: #0F172A; color: #fff; }
+                                * { box-sizing: border-box; margin: 0; padding: 0; }
+                                body {
+                                    background: #000000;
+                                    color: #FFFFFF;
+                                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                                    padding: 16px;
+                                    text-align: center;
+                                }
+                                .header {
+                                    margin-bottom: 18px;
+                                }
+                                .header img {
+                                    width: 72px;
+                                    height: 72px;
+                                    object-fit: contain;
+                                    display: block;
+                                    margin: 0 auto;
+                                }
+                                .header a {
+                                    color: #FFFFFF;
+                                    font-size: 18px;
+                                    font-weight: bold;
+                                    text-decoration: underline;
+                                    margin-top: 6px;
+                                    display: inline-block;
+                                }
+                                .header .sub {
+                                    color: #888888;
+                                    font-size: 12px;
+                                    letter-spacing: 1px;
+                                    margin-top: 3px;
+                                    text-transform: uppercase;
+                                }
+                                .tabs {
+                                    display: flex;
+                                    gap: 8px;
+                                    max-width: 480px;
+                                    margin: 0 auto 16px auto;
+                                }
+                                .tab-btn {
+                                    flex: 1;
+                                    padding: 10px;
+                                    font-size: 13px;
+                                    font-weight: bold;
+                                    cursor: pointer;
+                                    border-radius: 4px;
+                                    background: #000000;
+                                    color: #FFFFFF;
+                                    border: 1px solid #555555;
+                                }
+                                .tab-btn.active {
+                                    background: #FFFFFF;
+                                    color: #000000;
+                                    border: 1px solid #FFFFFF;
+                                }
+                                .card {
+                                    background: #FFFFFF;
+                                    color: #000000;
+                                    padding: 16px;
+                                    border-radius: 4px;
+                                    max-width: 480px;
+                                    margin: 0 auto 16px auto;
+                                    text-align: left;
+                                }
+                                .card-title {
+                                    font-size: 18px;
+                                    font-weight: bold;
+                                    margin-bottom: 4px;
+                                    color: #000000;
+                                }
+                                .card-subtitle {
+                                    font-size: 13px;
+                                    color: #444444;
+                                    margin-bottom: 8px;
+                                }
+                                .input-field {
+                                    width: 100%;
+                                    padding: 11px;
+                                    font-size: 14px;
+                                    background: #FFFFFF;
+                                    color: #000000;
+                                    border: 1px solid #000000;
+                                    border-radius: 4px;
+                                    margin-bottom: 8px;
+                                }
+                                .btn {
+                                    width: 100%;
+                                    padding: 12px;
+                                    font-size: 14px;
+                                    font-weight: bold;
+                                    cursor: pointer;
+                                    border-radius: 4px;
+                                    background: #FFFFFF;
+                                    color: #000000;
+                                    border: 2px solid #000000;
+                                    margin-top: 8px;
+                                    display: block;
+                                    text-align: center;
+                                }
+                                .btn:active {
+                                    background: #E5E5E5;
+                                }
+                                .btn-dark {
+                                    background: #000000;
+                                    color: #FFFFFF;
+                                    border: 2px solid #000000;
+                                }
+                                .btn-dark:active {
+                                    background: #222222;
+                                }
+                                .quick-grid {
+                                    display: grid;
+                                    grid-template-columns: repeat(4, 1fr);
+                                    gap: 6px;
+                                    margin: 8px 0;
+                                }
+                                .quick-btn {
+                                    padding: 10px 0;
+                                    font-size: 14px;
+                                    font-weight: bold;
+                                    background: #FFFFFF;
+                                    color: #000000;
+                                    border: 1px solid #000000;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                }
+                                .quick-btn:active {
+                                    background: #E5E5E5;
+                                }
+                                .stock-box {
+                                    border: 2px solid #000000;
+                                    padding: 12px;
+                                    border-radius: 4px;
+                                    text-align: center;
+                                    margin: 12px 0;
+                                    background: #FFFFFF;
+                                }
+                                .stock-label {
+                                    font-size: 11px;
+                                    font-weight: bold;
+                                    color: #000000;
+                                    letter-spacing: 1px;
+                                    display: block;
+                                }
+                                .stock-val {
+                                    font-size: 28px;
+                                    font-weight: bold;
+                                    color: #000000;
+                                }
+                                .item-row {
+                                    background: #FFFFFF;
+                                    color: #000000;
+                                    border: 1px solid #000000;
+                                    border-radius: 4px;
+                                    padding: 12px;
+                                    margin-bottom: 8px;
+                                    cursor: pointer;
+                                    text-align: left;
+                                }
+                                .item-row:active {
+                                    background: #E5E5E5;
+                                }
+                                .status-msg {
+                                    color: #FFFFFF;
+                                    font-size: 14px;
+                                    font-weight: bold;
+                                    text-align: center;
+                                    margin-top: 10px;
+                                    min-height: 20px;
+                                }
+                                #reader {
+                                    width: 100%;
+                                    max-width: 480px;
+                                    margin: 0 auto;
+                                    border-radius: 4px;
+                                    overflow: hidden;
+                                    border: 1px solid #444444;
+                                    background: #111111;
+                                }
                             </style>
                         </head>
                         <body>
-                            <h2>📦 Inventario Movil - Chip&Chapa</h2>
-
-                            <div class='search-bar'>
-                                <input id='manualCodeBox' type='text' class='search-input' placeholder='Escribe o pega un codigo...' />
-                                <button type='button' class='search-btn' onclick='buscarManual()'>Buscar</button>
+                            <div class='header'>
+                                <img src='/logo' alt='Chip&Chapa' />
+                                <a href='https://www.chipandchapa.com' target='_blank'>Chip&Chapa</a>
+                                <div class='sub'>Inventario Movil</div>
                             </div>
-                            
-                            <div id='reader'></div>
-                            
-                            <div id='result' class='result-card'>
-                                <div id='foundSection' style='display: none;'>
-                                    <h3 id='prodName' style='margin:0 0 6px 0; font-size: 19px; color:#F8FAFC;'>Cargando...</h3>
-                                    <p id='prodCode' style='color: #94A3B8; font-size: 13px; margin:0 0 10px 0;'></p>
-                                    <p id='prodPrice' style='color: #38BDF8; font-size: 13px; margin:0 0 10px 0;'></p>
-                                    
-                                    <div class='stock-badge'>
-                                        <span style='font-size: 12px; font-weight: 600; display:block; letter-spacing: 0.5px;'>STOCK ACTUAL EN SISTEMA</span>
-                                        <span id='prodStock' style='font-size: 28px; font-weight: 800;'>0</span>
-                                    </div>
 
-                                    <div id='actionControls'>
-                                        <label style='font-size: 12px; font-weight: bold; color:#94A3B8;'>CANTIDAD A APLICAR:</label>
-                                        <input id='inputCantidad' type='number' class='input-cant' value='1' min='0.001' step='any' />
-                                        
-                                        <div class='quick-btns'>
-                                            <button type='button' class='quick-btn' onclick='sumarACantidad(1)'>+1</button>
-                                            <button type='button' class='quick-btn' onclick='sumarACantidad(6)'>+6</button>
-                                            <button type='button' class='quick-btn' onclick='sumarACantidad(12)'>+12</button>
-                                            <button type='button' class='quick-btn' onclick='sumarACantidad(24)'>+24</button>
-                                        </div>
+                            <div class='tabs'>
+                                <button id='tabBuscarBtn' type='button' class='tab-btn active' onclick=""cambiarTab('buscar')"">Buscar y Catalogo</button>
+                                <button id='tabCamaraBtn' type='button' class='tab-btn' onclick=""cambiarTab('camara')"">Camara Scanner</button>
+                            </div>
 
-                                        <button type='button' class='btn-action btn-add' onclick=""enviarCambioStock('sumar')"">📦 Sumar al Stock (Reabastecer)</button>
-                                        <button type='button' class='btn-action btn-set' onclick=""enviarCambioStock('fijar')"">✏️ Fijar Stock Exacto</button>
-                                        <button type='button' class='btn-action btn-pc' onclick='seleccionarEnPC()'>🖥️ Seleccionar en PC (Inventario)</button>
+                            <div id='panelBuscar'>
+                                <div class='card'>
+                                    <input id='searchInput' type='text' class='input-field' placeholder='Escribe codigo o nombre...' onkeydown='if(event.key===""Enter"") buscarProductos();' />
+                                    <div style='display:flex; gap:8px;'>
+                                        <button type='button' class='btn' onclick='buscarProductos()'>Buscar</button>
+                                        <button type='button' class='btn' onclick='cargarTodoElInventario()'>Ver Todo</button>
                                     </div>
                                 </div>
 
-                                <div id='notFoundSection' style='display: none;'>
-                                    <h3 style='margin:0 0 6px 0; font-size: 19px; color:#F87171;'>⚠️ Producto no registrado</h3>
-                                    <p id='unregisteredCodeLabel' style='color: #94A3B8; font-size: 13px; margin:0 0 14px 0;'></p>
+                                <div id='listaContainer' style='max-width:480px; margin:0 auto;'></div>
+                            </div>
 
-                                    <button type='button' class='btn-action btn-pc' onclick='enviarNuevoCodigoAPC()'>🖥️ Enviar a Formulario en PC</button>
-                                    <button type='button' class='btn-action btn-nuevo' onclick='mostrarFormularioAlta()'>➕ Dar de Alta desde el Movil</button>
+                            <div id='panelCamara' style='display:none;'>
+                                <div id='reader'></div>
+                                <div style='margin-top:10px; color:#888888; font-size:12px;'>Apunta la camara al codigo de barras</div>
+                            </div>
 
-                                    <div id='altaForm' style='display: none; margin-top: 14px; border-top: 1px solid #334155; padding-top: 14px;'>
-                                        <div class='form-group'>
-                                            <label class='form-label'>NOMBRE DEL PRODUCTO:</label>
-                                            <input id='nuevoNombre' type='text' class='form-control' placeholder='Ej. Martillo de bola 16oz' />
-                                        </div>
-                                        <div class='form-group'>
-                                            <label class='form-label'>PRECIO DE VENTA ($):</label>
-                                            <input id='nuevoPrecio' type='number' step='any' class='form-control' value='0.00' />
-                                        </div>
-                                        <div class='form-group'>
-                                            <label class='form-label'>COSTO ($):</label>
-                                            <input id='nuevoCosto' type='number' step='any' class='form-control' value='0.00' />
-                                        </div>
-                                        <div class='form-group'>
-                                            <label class='form-label'>STOCK INICIAL:</label>
-                                            <input id='nuevoStock' type='number' step='any' class='form-control' value='1' />
-                                        </div>
-                                        <div class='form-group'>
-                                            <label class='form-label'>CATEGORIA:</label>
-                                            <input id='nuevoCategoria' type='text' class='form-control' value='General' />
-                                        </div>
-                                        <button type='button' class='btn-action btn-add' onclick='guardarAltaMovil()'>💾 Guardar y Crear Producto</button>
-                                    </div>
+                            <div id='panelDetalle' class='card' style='display:none;'>
+                                <div id='detNombre' class='card-title'></div>
+                                <div id='detInfo' class='card-subtitle'></div>
+                                <div id='detPrecios' class='card-subtitle'></div>
+
+                                <div class='stock-box'>
+                                    <span class='stock-label'>STOCK ACTUAL EN SISTEMA</span>
+                                    <span id='detStock' class='stock-val'>0</span>
                                 </div>
 
-                                <div id='actionStatus' class='status-box'></div>
+                                <label style='font-size:12px; font-weight:bold; color:#000000; display:block; margin-bottom:4px;'>CANTIDAD A APLICAR:</label>
+                                <input id='inputCantidad' type='number' class='input-field' value='1' min='0.001' step='any' style='text-align:center; font-weight:bold; font-size:18px;' />
 
-                                <button type='button' class='btn-action btn-scan' onclick='escanearDeNuevo()'>📷 Escanear otro codigo</button>
+                                <div class='quick-grid'>
+                                    <button type='button' class='quick-btn' onclick='sumarACantidad(1)'>+1</button>
+                                    <button type='button' class='quick-btn' onclick='sumarACantidad(6)'>+6</button>
+                                    <button type='button' class='quick-btn' onclick='sumarACantidad(12)'>+12</button>
+                                    <button type='button' class='quick-btn' onclick='sumarACantidad(24)'>+24</button>
+                                </div>
+
+                                <button type='button' class='btn' onclick=""enviarCambioStock('sumar')"">Sumar al Stock (Reabastecer)</button>
+                                <button type='button' class='btn' onclick=""enviarCambioStock('fijar')"">Fijar Stock Exacto</button>
+                                <button type='button' class='btn' onclick='seleccionarEnPC()'>Seleccionar en PC (Inventario)</button>
+                                <button type='button' class='btn btn-dark' style='margin-top:14px;' onclick='cerrarDetalle()'>Volver</button>
                             </div>
+
+                            <div id='panelNoRegistrado' class='card' style='display:none;'>
+                                <div class='card-title'>Producto no registrado</div>
+                                <div id='noRegCodigo' class='card-subtitle'></div>
+
+                                <button type='button' class='btn' onclick='enviarNuevoCodigoAPC()'>Enviar codigo a PC</button>
+                                <button type='button' class='btn' onclick='toggleAltaForm()'>Dar de alta desde el movil</button>
+
+                                <div id='altaForm' style='display:none; margin-top:14px; border-top:1px solid #000000; padding-top:12px;'>
+                                    <label style='font-size:12px; font-weight:bold; color:#000000; display:block; margin-bottom:2px;'>NOMBRE:</label>
+                                    <input id='nuevoNombre' type='text' class='input-field' placeholder='Nombre del producto' />
+
+                                    <label style='font-size:12px; font-weight:bold; color:#000000; display:block; margin-bottom:2px;'>PRECIO DE VENTA ($):</label>
+                                    <input id='nuevoPrecio' type='number' step='any' class='input-field' value='0.00' />
+
+                                    <label style='font-size:12px; font-weight:bold; color:#000000; display:block; margin-bottom:2px;'>COSTO ($):</label>
+                                    <input id='nuevoCosto' type='number' step='any' class='input-field' value='0.00' />
+
+                                    <label style='font-size:12px; font-weight:bold; color:#000000; display:block; margin-bottom:2px;'>STOCK INICIAL:</label>
+                                    <input id='nuevoStock' type='number' step='any' class='input-field' value='1' />
+
+                                    <label style='font-size:12px; font-weight:bold; color:#000000; display:block; margin-bottom:2px;'>CATEGORIA:</label>
+                                    <input id='nuevoCategoria' type='text' class='input-field' value='General' />
+
+                                    <button type='button' class='btn' onclick='guardarAltaMovil()'>Guardar Producto</button>
+                                </div>
+
+                                <button type='button' class='btn btn-dark' style='margin-top:14px;' onclick='cerrarNoRegistrado()'>Volver</button>
+                            </div>
+
+                            <div id='statusBox' class='status-msg'></div>
 
                             <script>
                                 let currentProduct = null;
-                                let scannedCode = '';
-                                let html5QrcodeScanner = null;
+                                let currentCode = '';
+                                let scanner = null;
+                                let scannerIniciado = false;
 
-                                try {
-                                    html5QrcodeScanner = new Html5QrcodeScanner(
-                                        'reader', 
-                                        { fps: 10, qrbox: { width: 280, height: 120 } }, 
-                                        false
-                                    );
-                                    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-                                } catch(e) {}
+                                function cambiarTab(tab) {
+                                    document.getElementById('statusBox').innerText = '';
+                                    document.getElementById('panelDetalle').style.display = 'none';
+                                    document.getElementById('panelNoRegistrado').style.display = 'none';
 
-                                function onScanSuccess(decodedText, decodedResult) {
-                                    try { html5QrcodeScanner.pause(true); } catch(e) {}
+                                    if (tab === 'buscar') {
+                                        document.getElementById('tabBuscarBtn').className = 'tab-btn active';
+                                        document.getElementById('tabCamaraBtn').className = 'tab-btn';
+                                        document.getElementById('panelBuscar').style.display = 'block';
+                                        document.getElementById('panelCamara').style.display = 'none';
+                                        detenerScanner();
+                                    } else {
+                                        document.getElementById('tabBuscarBtn').className = 'tab-btn';
+                                        document.getElementById('tabCamaraBtn').className = 'tab-btn active';
+                                        document.getElementById('panelBuscar').style.display = 'none';
+                                        document.getElementById('panelCamara').style.display = 'block';
+                                        iniciarScanner();
+                                    }
+                                }
+
+                                function iniciarScanner() {
+                                    if (scannerIniciado) {
+                                        try { if (scanner) scanner.resume(); } catch(e) {}
+                                        return;
+                                    }
+                                    try {
+                                        scanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: { width: 280, height: 120 } }, false);
+                                        scanner.render(onScanSuccess, onScanFailure);
+                                        scannerIniciado = true;
+                                    } catch(e) {}
+                                }
+
+                                function detenerScanner() {
+                                    try { if (scanner) scanner.pause(true); } catch(e) {}
+                                }
+
+                                function onScanSuccess(decodedText) {
+                                    detenerScanner();
                                     cargarProducto(decodedText);
                                 }
 
-                                function buscarManual() {
-                                    const val = (document.getElementById('manualCodeBox').value || '').trim();
-                                    if (!val) return;
-                                    try { if (html5QrcodeScanner) html5QrcodeScanner.pause(true); } catch(e) {}
-                                    cargarProducto(val);
+                                function onScanFailure(err) {}
+
+                                function buscarProductos() {
+                                    const q = (document.getElementById('searchInput').value || '').trim();
+                                    mostrarStatus('Buscando...', null);
+                                    fetch('/api/inventario/lista?q=' + encodeURIComponent(q))
+                                        .then(r => r.json())
+                                        .then(data => {
+                                            mostrarStatus('', null);
+                                            renderizarLista(data.productos || []);
+                                        })
+                                        .catch(err => {
+                                            mostrarStatus('Error al conectar con el servidor', false);
+                                        });
+                                }
+
+                                function cargarTodoElInventario() {
+                                    document.getElementById('searchInput').value = '';
+                                    buscarProductos();
+                                }
+
+                                function renderizarLista(items) {
+                                    const container = document.getElementById('listaContainer');
+                                    container.innerHTML = '';
+                                    if (!items || items.length === 0) {
+                                        container.innerHTML = ""<div style='color:#888888; padding:20px; text-align:center;'>No se encontraron productos</div>"";
+                                        return;
+                                    }
+
+                                    items.forEach(p => {
+                                        const div = document.createElement('div');
+                                        div.className = 'item-row';
+                                        div.onclick = () => { abrirDetalle(p); };
+                                        div.innerHTML = ""<div style='font-size:15px; font-weight:bold; margin-bottom:4px;'>"" + (p.nombre || 'Sin nombre') + ""</div>"" +
+                                            ""<div style='font-size:12px; color:#555555; margin-bottom:4px;'>Codigo: "" + (p.codigo || 'N/A') + "" | Categoria: "" + (p.categoria || 'General') + ""</div>"" +
+                                            ""<div style='font-size:14px; font-weight:bold; display:flex; justify-content:space-between;'>"" +
+                                            ""<span>Precio: $"" + Number(p.precio || 0).toFixed(2) + ""</span>"" +
+                                            ""<span>Stock: "" + (p.stock ?? 0) + ""</span>"" +
+                                            ""</div>"";
+                                        container.appendChild(div);
+                                    });
                                 }
 
                                 function cargarProducto(codigo) {
                                     codigo = (codigo || '').toString().trim();
-                                    scannedCode = codigo;
+                                    currentCode = codigo;
                                     mostrarStatus('Buscando producto...', null);
 
-                                    fetch('/api/producto?codigo=' + encodeURIComponent(codigo), {
-                                        headers: { 'Accept': 'application/json' }
-                                    })
+                                    fetch('/api/producto?codigo=' + encodeURIComponent(codigo))
                                         .then(async r => {
-                                            const ct = r.headers.get('content-type') || '';
-                                            if (ct.includes('application/json')) {
-                                                const data = await r.json();
-                                                if (r.ok && data.ok) return data;
-                                                throw new Error(data && data.mensaje ? data.mensaje : 'Producto no registrado');
-                                            }
-                                            throw new Error('Respuesta no reconocida');
+                                            const data = await r.json();
+                                            if (r.ok && data.ok) return data;
+                                            throw new Error(data && data.mensaje ? data.mensaje : 'No registrado');
                                         })
                                         .then(data => {
-                                            currentProduct = data;
-                                            document.getElementById('prodName').innerText = data.nombre;
-                                            document.getElementById('prodCode').innerText = 'Codigo: ' + data.codigo + ' | Categoria: ' + (data.categoria || 'General');
-                                            document.getElementById('prodPrice').innerText = 'Precio: $' + Number(data.precio).toFixed(2) + ' | Costo: $' + Number(data.costo || 0).toFixed(2);
-                                            document.getElementById('prodStock').innerText = data.stock ?? data.cantidad ?? 0;
-                                            document.getElementById('inputCantidad').value = 1;
-
-                                            document.getElementById('foundSection').style.display = 'block';
-                                            document.getElementById('notFoundSection').style.display = 'none';
-                                            document.getElementById('actionStatus').innerText = '';
-                                            mostrarResultado();
+                                            mostrarStatus('', null);
+                                            abrirDetalle(data);
                                         })
                                         .catch(err => {
-                                            currentProduct = null;
-                                            document.getElementById('unregisteredCodeLabel').innerText = 'Codigo leido: ' + codigo;
-                                            document.getElementById('altaForm').style.display = 'none';
-                                            document.getElementById('nuevoNombre').value = '';
-                                            document.getElementById('nuevoPrecio').value = '0.00';
-                                            document.getElementById('nuevoCosto').value = '0.00';
-                                            document.getElementById('nuevoStock').value = '1';
-
-                                            document.getElementById('foundSection').style.display = 'none';
-                                            document.getElementById('notFoundSection').style.display = 'block';
-                                            document.getElementById('actionStatus').innerText = '';
-                                            mostrarResultado();
+                                            mostrarStatus('', null);
+                                            abrirNoRegistrado(codigo);
                                         });
+                                }
+
+                                function abrirDetalle(prod) {
+                                    currentProduct = prod;
+                                    currentCode = prod.codigo || '';
+
+                                    document.getElementById('detNombre').innerText = prod.nombre || 'Sin nombre';
+                                    document.getElementById('detInfo').innerText = 'Codigo: ' + (prod.codigo || 'N/A') + ' | Categoria: ' + (prod.categoria || 'General');
+                                    document.getElementById('detPrecios').innerText = 'Precio: $' + Number(prod.precio || 0).toFixed(2) + ' | Costo: $' + Number(prod.costo || 0).toFixed(2);
+                                    document.getElementById('detStock').innerText = prod.stock ?? prod.cantidad ?? 0;
+                                    document.getElementById('inputCantidad').value = 1;
+
+                                    document.getElementById('panelBuscar').style.display = 'none';
+                                    document.getElementById('panelCamara').style.display = 'none';
+                                    document.getElementById('panelNoRegistrado').style.display = 'none';
+                                    document.getElementById('panelDetalle').style.display = 'block';
+                                }
+
+                                function cerrarDetalle() {
+                                    document.getElementById('panelDetalle').style.display = 'none';
+                                    if (document.getElementById('tabCamaraBtn').className.includes('active')) {
+                                        document.getElementById('panelCamara').style.display = 'block';
+                                        try { if (scanner) scanner.resume(); } catch(e) {}
+                                    } else {
+                                        document.getElementById('panelBuscar').style.display = 'block';
+                                    }
+                                }
+
+                                function abrirNoRegistrado(codigo) {
+                                    currentProduct = null;
+                                    currentCode = codigo;
+
+                                    document.getElementById('noRegCodigo').innerText = 'Codigo leido: ' + codigo;
+                                    document.getElementById('altaForm').style.display = 'none';
+                                    document.getElementById('nuevoNombre').value = '';
+                                    document.getElementById('nuevoPrecio').value = '0.00';
+                                    document.getElementById('nuevoCosto').value = '0.00';
+                                    document.getElementById('nuevoStock').value = '1';
+
+                                    document.getElementById('panelBuscar').style.display = 'none';
+                                    document.getElementById('panelCamara').style.display = 'none';
+                                    document.getElementById('panelDetalle').style.display = 'none';
+                                    document.getElementById('panelNoRegistrado').style.display = 'block';
+                                }
+
+                                function cerrarNoRegistrado() {
+                                    document.getElementById('panelNoRegistrado').style.display = 'none';
+                                    if (document.getElementById('tabCamaraBtn').className.includes('active')) {
+                                        document.getElementById('panelCamara').style.display = 'block';
+                                        try { if (scanner) scanner.resume(); } catch(e) {}
+                                    } else {
+                                        document.getElementById('panelBuscar').style.display = 'block';
+                                    }
+                                }
+
+                                function toggleAltaForm() {
+                                    const f = document.getElementById('altaForm');
+                                    f.style.display = f.style.display === 'none' ? 'block' : 'none';
                                 }
 
                                 function sumarACantidad(val) {
@@ -438,14 +795,14 @@ namespace Punto_de_Venta.Servicios
                                     .then(res => {
                                         if (res.ok) {
                                             currentProduct.stock = res.stock;
-                                            document.getElementById('prodStock').innerText = res.stock;
-                                            mostrarStatus('✅ ' + res.mensaje + ' (Reflejado en PC)', true);
+                                            document.getElementById('detStock').innerText = res.stock;
+                                            mostrarStatus(res.mensaje + ' (Reflejado en PC)', true);
                                         } else {
-                                            mostrarStatus('❌ ' + (res.mensaje || 'Error al actualizar'), false);
+                                            mostrarStatus(res.mensaje || 'Error al actualizar', false);
                                         }
                                     })
                                     .catch(err => {
-                                        mostrarStatus('❌ Error de conexion con la PC', false);
+                                        mostrarStatus('Error de conexion con la PC', false);
                                     });
                                 }
 
@@ -460,13 +817,13 @@ namespace Punto_de_Venta.Servicios
                                     .then(r => r.json())
                                     .then(res => {
                                         if (res.ok) {
-                                            mostrarStatus('🖥️ Producto seleccionado en el Inventario de la PC', true);
+                                            mostrarStatus('Producto seleccionado en el Inventario de la PC', true);
                                         } else {
-                                            mostrarStatus('⚠️ ' + (res.mensaje || 'No se pudo seleccionar en PC'), false);
+                                            mostrarStatus(res.mensaje || 'No se pudo seleccionar en PC', false);
                                         }
                                     })
                                     .catch(err => {
-                                        mostrarStatus('❌ Error de conexion con la PC', false);
+                                        mostrarStatus('Error de conexion con la PC', false);
                                     });
                                 }
 
@@ -475,24 +832,19 @@ namespace Punto_de_Venta.Servicios
                                     fetch('/api/inventario/nuevo', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ codigo: scannedCode })
+                                        body: JSON.stringify({ codigo: currentCode })
                                     })
                                     .then(r => r.json())
                                     .then(res => {
                                         if (res.ok) {
-                                            mostrarStatus('🖥️ Codigo cargado en el formulario de la PC', true);
+                                            mostrarStatus('Codigo cargado en el formulario de la PC', true);
                                         } else {
-                                            mostrarStatus('⚠️ ' + (res.mensaje || 'No se pudo cargar en PC'), false);
+                                            mostrarStatus(res.mensaje || 'No se pudo cargar en PC', false);
                                         }
                                     })
                                     .catch(err => {
-                                        mostrarStatus('❌ Error de conexion con la PC', false);
+                                        mostrarStatus('Error de conexion con la PC', false);
                                     });
-                                }
-
-                                function mostrarFormularioAlta() {
-                                    const form = document.getElementById('altaForm');
-                                    form.style.display = form.style.display === 'none' ? 'block' : 'none';
                                 }
 
                                 function guardarAltaMovil() {
@@ -512,7 +864,7 @@ namespace Punto_de_Venta.Servicios
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({
-                                            codigo: scannedCode,
+                                            codigo: currentCode,
                                             nombre: nombre,
                                             precio: precio,
                                             costo: costo,
@@ -523,49 +875,52 @@ namespace Punto_de_Venta.Servicios
                                     .then(r => r.json())
                                     .then(res => {
                                         if (res.ok) {
-                                            mostrarStatus('✅ ' + res.mensaje, true);
-                                            setTimeout(() => { cargarProducto(scannedCode); }, 1200);
+                                            mostrarStatus(res.mensaje, true);
+                                            setTimeout(() => { cargarProducto(currentCode); }, 1200);
                                         } else {
-                                            mostrarStatus('❌ ' + (res.mensaje || 'Error al guardar'), false);
+                                            mostrarStatus(res.mensaje || 'Error al guardar', false);
                                         }
                                     })
                                     .catch(err => {
-                                        mostrarStatus('❌ Error de conexion con la PC', false);
+                                        mostrarStatus('Error de conexion con la PC', false);
                                     });
                                 }
 
                                 function mostrarStatus(txt, exito) {
-                                    const el = document.getElementById('actionStatus');
+                                    const el = document.getElementById('statusBox');
                                     el.innerText = txt;
                                     if (exito === true) {
-                                        el.style.color = '#34D399';
+                                        el.style.color = '#FFFFFF';
                                     } else if (exito === false) {
-                                        el.style.color = '#F87171';
+                                        el.style.color = '#FF6666';
                                     } else {
-                                        el.style.color = '#94A3B8';
+                                        el.style.color = '#AAAAAA';
                                     }
                                 }
 
-                                function onScanFailure(error) {
-                                }
-
-                                function mostrarResultado() {
-                                    document.getElementById('reader').style.display = 'none';
-                                    document.getElementById('result').style.display = 'block';
-                                }
-
-                                function escanearDeNuevo() {
-                                    document.getElementById('result').style.display = 'none';
-                                    document.getElementById('reader').style.display = 'block';
-                                    try {
-                                        if (html5QrcodeScanner) html5QrcodeScanner.resume();
-                                    } catch(e) {}
-                                }
+                                buscarProductos();
                             </script>
                         </body>
                         </html>";
                     return Results.Content(html, "text/html");
-                }).RequireAuthorization();
+                }).AllowAnonymous();
+
+                _app.MapGet("/api/inventario/lista", (HttpContext ctx) =>
+                {
+                    string? q = ctx.Request.Query["q"];
+                    var lista = BuscarProductosLista(q);
+                    var resultado = lista.Select(p => new
+                    {
+                        id = p.Id,
+                        codigo = p.Codigo,
+                        nombre = p.Nombre,
+                        categoria = p.Categoria,
+                        precio = p.Precio,
+                        costo = p.Costo,
+                        stock = p.Stock
+                    });
+                    return Results.Ok(new { ok = true, productos = resultado });
+                }).AllowAnonymous();
 
                 _app.MapGet("/api/producto", (HttpContext ctx) =>
                 {
@@ -619,51 +974,58 @@ namespace Punto_de_Venta.Servicios
 
                 _app.MapPost("/api/producto/actualizar", async (HttpContext ctx) =>
                 {
-                    var req = await ctx.Request.ReadFromJsonAsync<ActualizarProductoRequest>();
-                    if (req == null || string.IsNullOrWhiteSpace(req.Codigo))
+                    try
                     {
-                        return Results.BadRequest(new { ok = false, mensaje = "Datos invalidos" });
-                    }
-
-                    var producto = BuscarProducto(req.Codigo);
-                    if (producto == null)
-                    {
-                        return Results.NotFound(new { ok = false, mensaje = "Producto no encontrado" });
-                    }
-
-                    bool esSuma = string.Equals(req.Modo, "sumar", StringComparison.OrdinalIgnoreCase);
-                    if (esSuma)
-                    {
-                        producto.Stock += req.Cantidad;
-                    }
-                    else
-                    {
-                        producto.Stock = req.Cantidad;
-                    }
-
-                    ProductoDB.Save(new[] { producto });
-
-                    var codProd = producto.Codigo;
-                    var nStock = producto.Stock;
-                    var nomProd = producto.Nombre;
-                    var cantMod = req.Cantidad;
-
-                    Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
-                    {
-                        if (Application.Current.MainWindow is MainWindow mw)
+                        var req = await ctx.Request.ReadFromJsonAsync<ActualizarProductoRequest>();
+                        if (req == null || string.IsNullOrWhiteSpace(req.Codigo))
                         {
-                            mw.ActualizarStockDesdeMovil(codProd, nStock, nomProd, cantMod, esSuma);
+                            return Results.BadRequest(new { ok = false, mensaje = "Datos invalidos" });
                         }
-                    }));
 
-                    return Results.Ok(new
+                        var producto = BuscarProducto(req.Codigo);
+                        if (producto == null)
+                        {
+                            return Results.NotFound(new { ok = false, mensaje = "Producto no encontrado" });
+                        }
+
+                        bool esSuma = string.Equals(req.Modo, "sumar", StringComparison.OrdinalIgnoreCase);
+                        if (esSuma)
+                        {
+                            producto.Stock += req.Cantidad;
+                        }
+                        else
+                        {
+                            producto.Stock = req.Cantidad;
+                        }
+
+                        ProductoDB.Save(new[] { producto });
+
+                        var codProd = producto.Codigo;
+                        var nStock = producto.Stock;
+                        var nomProd = producto.Nombre;
+                        var cantMod = req.Cantidad;
+
+                        Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
+                        {
+                            if (Application.Current.MainWindow is MainWindow mw)
+                            {
+                                mw.ActualizarStockDesdeMovil(codProd, nStock, nomProd, cantMod, esSuma);
+                            }
+                        }));
+
+                        return Results.Ok(new
+                        {
+                            ok = true,
+                            mensaje = esSuma ? $"+{cantMod} piezas sumadas" : $"Stock fijado en {nStock}",
+                            nombre = producto.Nombre,
+                            stock = producto.Stock,
+                            cantidad = producto.Stock
+                        });
+                    }
+                    catch (Exception ex)
                     {
-                        ok = true,
-                        mensaje = esSuma ? $"+{cantMod} piezas sumadas" : $"Stock fijado en {nStock}",
-                        nombre = producto.Nombre,
-                        stock = producto.Stock,
-                        cantidad = producto.Stock
-                    });
+                        return Results.Json(new { ok = false, mensaje = "Error en base de datos: " + ex.Message }, statusCode: 500);
+                    }
                 }).AllowAnonymous();
 
                 _app.MapPost("/api/inventario/seleccionar", async (HttpContext ctx) =>
