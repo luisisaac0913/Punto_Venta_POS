@@ -2,7 +2,7 @@
         PreviewKeyDown="Window_PreviewKeyDown"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Icon="pack://application:,,,/Imagenes/Logo.ico"
+        Icon="pack://application:,,,/Imagenes/CHC_icono.ico"
         Width="1280" Height="720"
         WindowStyle="None"
         AllowsTransparency="True"

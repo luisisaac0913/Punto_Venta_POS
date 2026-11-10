@@ -1,76 +1,88 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <RootNamespace>Punto_de_Venta</RootNamespace>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
-    <ApplicationIcon>Logo.ico</ApplicationIcon>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<RootNamespace>Punto_de_Venta</RootNamespace>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UseWPF>true</UseWPF>
+		<ApplicationIcon>CHC_icono.ico</ApplicationIcon>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="credentials.json" />
-    <None Remove="Imagenes\Blanco.png" />
-    <None Remove="Imagenes\Intro.mp4" />
-    <None Remove="Imagenes\Logo.ico" />
-    <None Remove="Imagenes\Oscuro.png" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Remove="credentials.json" />
+		<None Remove="Imagenes\Blanco.png" />
+		<None Remove="Imagenes\CHC_icono.ico" />
+		<None Remove="Imagenes\CHC_logo.png" />
+		<None Remove="Imagenes\Intro.mp4" />
+		<None Remove="Imagenes\Oscuro.png" />
+		<None Remove="Imagenes\P_Acreditado.mp4" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Google.Apis.Auth" Version="1.78.0" />
-    <PackageReference Include="Google.Apis.Drive.v3" Version="1.78.0.4313" />
-    <PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.5" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
-    <PackageReference Include="Obfuscar" Version="2.2.50">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="QuestPDF" Version="2026.9.1" />
-    <PackageReference Include="System.IO.Ports" Version="10.0.12" />
-    <PackageReference Include="System.Management" Version="10.0.13" />
-    <PackageReference Include="Velopack" Version="1.2.161" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Google.Apis.Auth" Version="1.78.0" />
+		<PackageReference Include="Google.Apis.Drive.v3" Version="1.78.0.4313" />
+		<PackageReference Include="LiveChartsCore.SkiaSharpView.WPF" Version="2.0.5" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+		<PackageReference Include="Obfuscar" Version="2.2.50">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="QuestPDF" Version="2026.9.1" />
+		<PackageReference Include="System.IO.Ports" Version="10.0.12" />
+		<PackageReference Include="System.Management" Version="10.0.13" />
+		<PackageReference Include="Velopack" Version="1.2.161" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Resource Include="Imagenes\Blanco.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Content Include="Imagenes\Intro.mp4">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <EmbeddedResource Include="credentials.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <Resource Include="Logo.ico">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Imagenes\Logo.ico">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Imagenes\Oscuro.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-  </ItemGroup>
+	<ItemGroup>
+		<Resource Include="Imagenes\Blanco.png">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
+		<Content Include="Imagenes\Intro.mp4">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Imagenes\P_Acreditado.mp4">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<EmbeddedResource Include="credentials.json">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<Resource Include="CHC_icono.ico">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
+		<Resource Include="Imagenes\CHC_icono.ico">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
+		<Resource Include="Imagenes\CHC_logo.png">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
+		<Resource Include="Imagenes\Oscuro.png">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
+	</ItemGroup>
 
-  <ItemGroup>
-    <Compile Update="Properties\Settings.Designer.cs">
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-    </Compile>
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Update="Properties\Settings.Designer.cs">
+			<DesignTimeSharedInput>True</DesignTimeSharedInput>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Settings.settings</DependentUpon>
+		</Compile>
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Update="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Update="Properties\Settings.settings">
+			<Generator>SettingsSingleFileGenerator</Generator>
+			<LastGenOutput>Settings.Designer.cs</LastGenOutput>
+		</None>
+	</ItemGroup>
 
-  <Target Name="ObfuscateAssembly" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release'">
-    <Exec Command="$(Obfuscar) &quot;$(ProjectDir)obfuscar.xml&quot;" WorkingDirectory="$(TargetDir)" />
-    <Copy SourceFiles="$(TargetDir)Obfuscated\Punto de Venta.dll" DestinationFolder="$(TargetDir)" />
-  </Target>
+	<Target Name="ObfuscateAssembly" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release'">
+		<Exec Command="$(Obfuscar) &quot;$(ProjectDir)obfuscar.xml&quot;" WorkingDirectory="$(TargetDir)" />
+		<Copy SourceFiles="$(TargetDir)Obfuscated\Punto de Venta.dll" DestinationFolder="$(TargetDir)" />
+	</Target>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
 </Project>

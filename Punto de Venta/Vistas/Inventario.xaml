@@ -142,71 +142,68 @@
 
     <Border Background="Transparent" ClipToBounds="True">
         <Grid>
-            <Grid Margin="32,20,32,24">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <Grid Grid.Row="0" Margin="0,0,0,14">
-                    <TextBlock Text="Inventario" Visibility="Collapsed" />
+            <Grid Margin="32,16,32,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2.1*" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
 
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <TextBlock x:Name="CantProd" Text="Presiona ESC para volver" Foreground="{DynamicResource ThemeMutedForeground}" FontSize="13" VerticalAlignment="Center" Margin="0,0,16,0" />
-                        <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14,6" VerticalAlignment="Center">
-                            <TextBlock x:Name="ClockText" Text="6:08 PM" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
-                        </Border>
-                    </StackPanel>
-                </Grid>
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="14" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="8" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-                <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2.1*" />
-                        <ColumnDefinition Width="20" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid Grid.Column="0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="14" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <Grid Grid.Row="0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="10" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="10" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="10" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <Border Grid.Column="0" Height="40" Style="{StaticResource FluentInputContainerStyle}" Padding="12,0">
-                                <Grid VerticalAlignment="Center">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                                    <Grid Grid.Column="1">
-                                        <TextBox x:Name="SearchBox" Style="{StaticResource EmbeddedTextBoxStyle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" CaretBrush="{DynamicResource ThemeAccent}" TextChanged="SearchBox_TextChanged" />
-                                        <TextBlock x:Name="SearchPlaceholder" Text="id, codigo o nombre..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
-                                    </Grid>
+                        <Border Grid.Column="0" Height="40" Style="{StaticResource FluentInputContainerStyle}" Padding="12,0">
+                            <Grid VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <Grid Grid.Column="1">
+                                    <TextBox x:Name="SearchBox" Style="{StaticResource EmbeddedTextBoxStyle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" CaretBrush="{DynamicResource ThemeAccent}" TextChanged="SearchBox_TextChanged" />
+                                    <TextBlock x:Name="SearchPlaceholder" Text="id, codigo o nombre..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
                                 </Grid>
-                            </Border>
+                            </Grid>
+                        </Border>
 
-                            <Button x:Name="BtnCargarLote" Grid.Column="2" Content="📦 Cargar Lote" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Height="40" Padding="14,0" Click="OpenLotesModal_Click" ToolTip="Ingresar mercancia masiva por proveedor" />
+                        <Button x:Name="BtnCargarLote" Grid.Column="2" Content="📦 Cargar Lote" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Height="40" Padding="12,0" Click="OpenLotesModal_Click" ToolTip="Ingresar mercancia masiva por proveedor" />
 
-                            <Button Grid.Column="4" Content="ReStock rapido" Style="{StaticResource PrimaryAddButtonStyle}" Height="40" Padding="14,0" Click="OpenQuickRestockModal_Click" ToolTip="Escanear y reabastecer a gran velocidad" />
+                        <Button Grid.Column="4" Content="ReStock rapido" Style="{StaticResource PrimaryAddButtonStyle}" Height="40" Padding="12,0" Click="OpenQuickRestockModal_Click" ToolTip="Escanear y reabastecer a gran velocidad" />
 
-                            <Border Grid.Column="6" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="3" Height="40">
-                                <StackPanel Orientation="Horizontal">
-                                    <RadioButton x:Name="FilterAllRadio" Content="Todos" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="All" />
-                                    <RadioButton x:Name="FilterLowRadio" Content="Stock Bajo" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="Low" />
-                                    <RadioButton x:Name="FilterOutRadio" Content="Agotados" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="Out" />
-                                </StackPanel>
-                            </Border>
-                        </Grid>
+                        <Border Grid.Column="6" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="3" Height="40">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="FilterAllRadio" Content="Todos" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="All" />
+                                <RadioButton x:Name="FilterLowRadio" Content="Stock Bajo" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="Low" />
+                                <RadioButton x:Name="FilterOutRadio" Content="Agotados" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="Out" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="8" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="10,0" Height="40" VerticalAlignment="Center">
+                            <TextBlock x:Name="CantProd" Text="0 prod" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
+                        </Border>
+
+                        <Border Grid.Column="10" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="12,0" Height="40" VerticalAlignment="Center">
+                            <TextBlock x:Name="ClockText" Text="6:08 PM" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
+                        </Border>
+                    </Grid>
 
                         <Border Grid.Row="2" Style="{StaticResource ProductCardStyle}" Padding="0" ClipToBounds="True">
                             <DataGrid x:Name="ProductGrid" ItemsSource="{Binding ProductsView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="48" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="ProductGrid_SelectionChanged" EnableRowVirtualization="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
@@ -414,7 +411,6 @@
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
-            </Grid>
             <Grid x:Name="QuickRestockOverlay" Background="#66000000" Visibility="Collapsed" Panel.ZIndex="100">
                 <Border Width="460" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                     <StackPanel>

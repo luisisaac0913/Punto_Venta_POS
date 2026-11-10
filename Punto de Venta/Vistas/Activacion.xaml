@@ -48,6 +48,18 @@
                     Effect="{StaticResource FluentCardShadow}"
                     HorizontalAlignment="Center" MaxWidth="580">
                 <StackPanel HorizontalAlignment="Center">
+                    <Image Source="pack://application:,,,/Imagenes/CHC_logo.png" 
+                           Width="150" Height="78" 
+                           Stretch="Uniform"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           SnapsToDevicePixels="True"
+                           UseLayoutRounding="True"
+                           HorizontalAlignment="Center" Margin="0,0,0,6" />
+                    <TextBlock Text="Chip&amp;Chapa" FontSize="18" FontWeight="Bold" 
+                               Foreground="{DynamicResource ThemeTextForeground}" 
+                               FontFamily="Segoe UI Variable, Segoe UI" 
+                               HorizontalAlignment="Center" Margin="0,0,0,18" />
+
                     <Border Width="56" Height="56" CornerRadius="4" 
                             Background="#1510B981" BorderBrush="#3510B981" BorderThickness="1" 
                             HorizontalAlignment="Center" Margin="0,0,0,16">
@@ -102,6 +114,20 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <StackPanel HorizontalAlignment="Left" Margin="0,0,0,16">
+                            <Image Source="pack://application:,,,/Imagenes/CHC_logo.png" 
+                                   Width="130" Height="68" 
+                                   Stretch="Uniform"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   SnapsToDevicePixels="True"
+                                   UseLayoutRounding="True"
+                                   HorizontalAlignment="Left" Margin="0,0,0,6" />
+                            <TextBlock Text="Chip&amp;Chapa" FontSize="16" FontWeight="Bold" 
+                                       Foreground="{DynamicResource ThemeTextForeground}" 
+                                       FontFamily="Segoe UI Variable, Segoe UI" 
+                                       HorizontalAlignment="Left" />
+                        </StackPanel>
+
                         <TextBlock Text="Activar Version Premium" FontSize="22" FontWeight="Bold" 
                                    Foreground="{DynamicResource ThemeTextForeground}" 
                                    FontFamily="Segoe UI Variable, Segoe UI" Margin="0,0,0,4" />
@@ -253,6 +279,36 @@
                     </Border>
                 </Grid>
             </Border>
+
+            <Grid x:Name="OverlayVideoAcreditado" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border Background="{DynamicResource ThemeSurfaceBackground}" 
+                        BorderBrush="{DynamicResource ThemeBorder}" 
+                        BorderThickness="1" 
+                        CornerRadius="8" 
+                        Padding="24"
+                        Effect="{StaticResource FluentModalShadow}"
+                        MaxWidth="640">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="Pago Acreditado Exitosamente" FontSize="20" FontWeight="Bold" 
+                                   Foreground="{DynamicResource ThemeTextForeground}" 
+                                   FontFamily="Segoe UI Variable, Segoe UI"
+                                   HorizontalAlignment="Center" Margin="0,0,0,14" />
+
+                        <Border CornerRadius="8" ClipToBounds="True" Background="Transparent" Width="580" Height="326">
+                            <MediaElement x:Name="VideoAcreditado" 
+                                          LoadedBehavior="Manual" 
+                                          UnloadedBehavior="Stop" 
+                                          Stretch="UniformToFill" 
+                                          MediaEnded="VideoAcreditado_MediaEnded" 
+                                          MediaFailed="VideoAcreditado_MediaFailed" />
+                        </Border>
+
+                        <Button Content="Continuar" Height="36" Width="180" Margin="0,18,0,0"
+                                Style="{StaticResource FluentButtonPrimary}"
+                                Click="BtnSaltarVideo_Click" />
+                    </StackPanel>
+                </Border>
+            </Grid>
 
         </Grid>
     </ScrollViewer>

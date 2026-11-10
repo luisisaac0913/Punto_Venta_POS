@@ -101,9 +101,14 @@
                     <TextBlock Text="Cobro" Visibility="Collapsed" />
 
                     <StackPanel Grid.Column="0" VerticalAlignment="Bottom">
-                        <TextBlock Text="Buscar producto" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="4,0,0,6" />
+                        <!-- Moviendo el mensaje de alerta al lado del título -->
+                        <StackPanel Orientation="Horizontal" Margin="4,0,0,6">
+                            <TextBlock Text="Buscar producto" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="SearchMessage" Text="" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource SystemRed}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
 
-                        <Border x:Name="SearchBorder" Height="40" Style="{StaticResource FluentInputContainerStyle}" Padding="12,0">
+                        <!-- Alineación inferior estricta sin margen extra debajo -->
+                        <Border x:Name="SearchBorder" Height="36" Style="{StaticResource FluentInputContainerStyle}" Padding="12,0" VerticalAlignment="Bottom" Margin="0,0,0,1">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -211,7 +216,6 @@
                                 </ListBox>
                             </Border>
                         </Popup>
-                        <TextBlock x:Name="SearchMessage" Text="" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource SystemRed}" Margin="6,6,0,0" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,1">
@@ -259,79 +263,79 @@
                     </Grid.ColumnDefinitions>
 
                     <Grid Grid.Column="0">
-                            <Border Style="{StaticResource CardBorderStyle}" Padding="0" ClipToBounds="True">
-                                <DataGrid x:Name="CartGrid" ItemsSource="{Binding Cart}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="48" SelectionUnit="FullRow" SelectionMode="Single" EnableRowVirtualization="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
-                                    <DataGrid.ColumnHeaderStyle>
-                                        <Style TargetType="DataGridColumnHeader">
-                                            <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
-                                            <Setter Property="Foreground" Value="{DynamicResource ThemeMutedForeground}" />
-                                            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
-                                            <Setter Property="FontSize" Value="12" />
-                                            <Setter Property="FontWeight" Value="SemiBold" />
-                                            <Setter Property="Padding" Value="12,10" />
-                                            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
-                                            <Setter Property="BorderThickness" Value="0,0,0,1" />
-                                        </Style>
-                                    </DataGrid.ColumnHeaderStyle>
-                                    <DataGrid.CellStyle>
-                                        <Style TargetType="DataGridCell">
-                                            <Setter Property="Background" Value="Transparent" />
-                                            <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=DataGridRow}}" />
-                                            <Setter Property="BorderThickness" Value="0" />
-                                            <Setter Property="Padding" Value="12,4" />
-                                            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="DataGridCell">
-                                                        <Border Background="{TemplateBinding Background}" BorderThickness="0" Padding="{TemplateBinding Padding}">
-                                                            <ContentPresenter VerticalAlignment="Center" />
-                                                        </Border>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </DataGrid.CellStyle>
-                                    <DataGrid.RowStyle>
-                                        <Style TargetType="DataGridRow">
-                                            <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
-                                            <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
-                                            <Setter Property="BorderThickness" Value="0" />
-                                            <Style.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
-                                                </Trigger>
-                                                <Trigger Property="IsSelected" Value="True">
-                                                    <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
-                                                    <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}" />
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </DataGrid.RowStyle>
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="ID" Binding="{Binding ProductoId}" Width="0.55*" />
-                                        <DataGridTextColumn Header="NOMBRE" Binding="{Binding Nombre}" Width="2.2*" />
-                                        <DataGridTextColumn Header="CANTIDAD" Binding="{Binding Cantidad, StringFormat={}{0:0.###}}" Width="0.85*" />
-                                        <DataGridTextColumn Header="PRECIO UNIT." Binding="{Binding Precio, StringFormat={}{0:C2}}" Width="1.1*" />
-                                        <DataGridTextColumn Header="SUBTOTAL" Binding="{Binding Subtotal, StringFormat={}{0:C2}}" Width="1.1*">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="FontWeight" Value="SemiBold" />
-                                                    <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}" />
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
-                                    </DataGrid.Columns>
-                                </DataGrid>
-                            </Border>
+                        <Border Style="{StaticResource CardBorderStyle}" Padding="0" ClipToBounds="True">
+                            <DataGrid x:Name="CartGrid" ItemsSource="{Binding Cart}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="48" SelectionUnit="FullRow" SelectionMode="Single" EnableRowVirtualization="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <DataGrid.ColumnHeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource ThemeMutedForeground}" />
+                                        <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+                                        <Setter Property="FontSize" Value="12" />
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                        <Setter Property="Padding" Value="12,10" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
+                                        <Setter Property="BorderThickness" Value="0,0,0,1" />
+                                    </Style>
+                                </DataGrid.ColumnHeaderStyle>
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="DataGridCell">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=DataGridRow}}" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Padding" Value="12,4" />
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="DataGridCell">
+                                                    <Border Background="{TemplateBinding Background}" BorderThickness="0" Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter VerticalAlignment="Center" />
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </DataGrid.CellStyle>
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding ProductoId}" Width="0.55*" />
+                                    <DataGridTextColumn Header="NOMBRE" Binding="{Binding Nombre}" Width="2.2*" />
+                                    <DataGridTextColumn Header="CANTIDAD" Binding="{Binding Cantidad, StringFormat={}{0:0.###}}" Width="0.85*" />
+                                    <DataGridTextColumn Header="PRECIO UNIT." Binding="{Binding Precio, StringFormat={}{0:C2}}" Width="1.1*" />
+                                    <DataGridTextColumn Header="SUBTOTAL" Binding="{Binding Subtotal, StringFormat={}{0:C2}}" Width="1.1*">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                                <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}" />
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
 
-                            <Border x:Name="EmptyCartPanel" Background="Transparent" IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <Border Width="64" Height="64" CornerRadius="4" Background="#108E8E93" BorderBrush="#208E8E93" BorderThickness="1" HorizontalAlignment="Center" Margin="0,0,0,14">
-                                        <TextBlock Text="🛒" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.75" />
-                                    </Border>
-                                    <TextBlock Text="El carrito esta vacio" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
-                                </StackPanel>
-                            </Border>
+                        <Border x:Name="EmptyCartPanel" Background="Transparent" IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Border Width="64" Height="64" CornerRadius="4" Background="#108E8E93" BorderBrush="#208E8E93" BorderThickness="1" HorizontalAlignment="Center" Margin="0,0,0,14">
+                                    <TextBlock Text="🛒" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.75" />
+                                </Border>
+                                <TextBlock Text="El carrito esta vacio" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
                     </Grid>
 
                     <Grid Grid.Column="2">
