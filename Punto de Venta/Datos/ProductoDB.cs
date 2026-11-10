@@ -21,21 +21,22 @@ namespace Punto_de_Venta.Datos
             {
                 list.Add(new Producto
                 {
-                    Id = reader.GetInt32(0),
-                    Codigo = reader.GetString(1),
-                    Nombre = reader.GetString(2),
-                    Categoria = reader.GetString(3),
-                    Costo = Convert.ToDecimal(reader.GetDouble(4)),
-                    Ganancia = Convert.ToDecimal(reader.GetDouble(5)),
-                    Precio = Convert.ToDecimal(reader.GetDouble(6)),
-                    Stock = Convert.ToDecimal(reader.GetDouble(7)),
-                    PedirCantidadAlCobrar = reader.GetInt32(8) == 1,
-                    SeVendePorPeso = reader.GetInt32(9) == 1 
+                    Id = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                    Codigo = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                    Nombre = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                    Categoria = reader.IsDBNull(3) ? "General" : reader.GetString(3),
+                    Costo = reader.IsDBNull(4) ? 0m : Convert.ToDecimal(reader.GetDouble(4)),
+                    Ganancia = reader.IsDBNull(5) ? 0m : Convert.ToDecimal(reader.GetDouble(5)),
+                    Precio = reader.IsDBNull(6) ? 0m : Convert.ToDecimal(reader.GetDouble(6)),
+                    Stock = reader.IsDBNull(7) ? 0m : Convert.ToDecimal(reader.GetDouble(7)),
+                    PedirCantidadAlCobrar = !reader.IsDBNull(8) && reader.GetInt32(8) == 1,
+                    SeVendePorPeso = !reader.IsDBNull(9) && reader.GetInt32(9) == 1 
                 });
             }
 
             return list;
         }
+
         public static void Delete(int id)
         {
             using (var conn = DatabaseHelper.GetConnection())
@@ -48,6 +49,7 @@ namespace Punto_de_Venta.Datos
                 }
             }
         }
+
         public static void Save(IEnumerable<Producto> products)
         {
             using var conn = DatabaseHelper.GetConnection();
@@ -86,7 +88,7 @@ namespace Punto_de_Venta.Datos
                     pId.Value = prod.Id;
                     pCodigo.Value = prod.Codigo ?? string.Empty;
                     pNombre.Value = prod.Nombre ?? string.Empty;
-                    pCategoria.Value = prod.Categoria ?? "N/A";
+                    pCategoria.Value = prod.Categoria ?? "General";
                     pCosto.Value = Convert.ToDouble(prod.Costo);
                     pGanancia.Value = Convert.ToDouble(prod.Ganancia);
                     pPrecio.Value = Convert.ToDouble(prod.Precio);
@@ -103,6 +105,7 @@ namespace Punto_de_Venta.Datos
                 throw;
             }
         }
+
         public static Producto? BuscarPorCodigoOId(string query)
         {
             if (string.IsNullOrWhiteSpace(query)) return null;
@@ -122,16 +125,16 @@ namespace Punto_de_Venta.Datos
             {
                 return new Producto
                 {
-                    Id = reader.GetInt32(0),
-                    Codigo = reader.GetString(1),
-                    Nombre = reader.GetString(2),
-                    Categoria = reader.GetString(3),
-                    Costo = Convert.ToDecimal(reader.GetDouble(4)),
-                    Ganancia = Convert.ToDecimal(reader.GetDouble(5)),
-                    Precio = Convert.ToDecimal(reader.GetDouble(6)),
-                    Stock = Convert.ToDecimal(reader.GetDouble(7)),
-                    PedirCantidadAlCobrar = reader.GetInt32(8) == 1,
-                    SeVendePorPeso = reader.GetInt32(9) == 1 
+                    Id = reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                    Codigo = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                    Nombre = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                    Categoria = reader.IsDBNull(3) ? "General" : reader.GetString(3),
+                    Costo = reader.IsDBNull(4) ? 0m : Convert.ToDecimal(reader.GetDouble(4)),
+                    Ganancia = reader.IsDBNull(5) ? 0m : Convert.ToDecimal(reader.GetDouble(5)),
+                    Precio = reader.IsDBNull(6) ? 0m : Convert.ToDecimal(reader.GetDouble(6)),
+                    Stock = reader.IsDBNull(7) ? 0m : Convert.ToDecimal(reader.GetDouble(7)),
+                    PedirCantidadAlCobrar = !reader.IsDBNull(8) && reader.GetInt32(8) == 1,
+                    SeVendePorPeso = !reader.IsDBNull(9) && reader.GetInt32(9) == 1 
                 };
             }
             return null;

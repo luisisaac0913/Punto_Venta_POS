@@ -40,6 +40,9 @@
 		<Content Include="Imagenes\P_Acreditado.mp4">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
+		<Content Include="Imagenes\CHC_Mascota.png">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
 		<EmbeddedResource Include="credentials.json">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>

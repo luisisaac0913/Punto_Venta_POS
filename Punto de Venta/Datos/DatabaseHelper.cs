@@ -22,8 +22,10 @@ namespace Punto_de_Venta.Datos
         {
             DataSource = DbPath,
             Mode = SqliteOpenMode.ReadWriteCreate,
-            Cache = SqliteCacheMode.Shared
+            Cache = SqliteCacheMode.Default,
+            DefaultTimeout = 30
         }.ToString();
+
         public static void ActualizarEsquemaVentas()
         {
             using var conn = GetConnection();
@@ -31,7 +33,10 @@ namespace Punto_de_Venta.Datos
                 "ALTER TABLE Ventas ADD COLUMN PagoEfectivo REAL DEFAULT 0;",
                 "ALTER TABLE Ventas ADD COLUMN PagoTarjeta REAL DEFAULT 0;",
                 "ALTER TABLE Ventas ADD COLUMN PagoTransferencia REAL DEFAULT 0;",
-                "ALTER TABLE Ventas ADD COLUMN Estado TEXT NOT NULL DEFAULT 'Completada';"
+                "ALTER TABLE Ventas ADD COLUMN Estado TEXT NOT NULL DEFAULT 'Completada';",
+                "ALTER TABLE MovimientosCaja ADD COLUMN CorteCajaId INTEGER NULL;",
+                "ALTER TABLE Productos ADD COLUMN PedirCantidadAlCobrar INTEGER NOT NULL DEFAULT 0;",
+                "ALTER TABLE Productos ADD COLUMN SeVendePorPeso INTEGER NOT NULL DEFAULT 0;"
             };
             foreach (var query in queries)
             {
@@ -46,10 +51,14 @@ namespace Punto_de_Venta.Datos
                 }
             }
         }
+
         public static SqliteConnection GetConnection()
         {
             var conn = new SqliteConnection(ConnectionString);
             conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "PRAGMA busy_timeout = 5000;";
+            cmd.ExecuteNonQuery();
             return conn;
         }
 
@@ -62,12 +71,11 @@ namespace Punto_de_Venta.Datos
             using var conn = GetConnection();
             using (var pragmaCmd = conn.CreateCommand())
             {
-                pragmaCmd.CommandText = "PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;";
+                pragmaCmd.CommandText = "PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 5000;";
                 pragmaCmd.ExecuteNonQuery();
             }
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                -- 1. PRODUCTOS (Actualizado)
                 CREATE TABLE IF NOT EXISTS Productos (
                     Id INTEGER PRIMARY KEY,
                     Codigo TEXT NOT NULL,
@@ -83,7 +91,6 @@ namespace Punto_de_Venta.Datos
                 CREATE INDEX IF NOT EXISTS IX_Productos_Codigo ON Productos(Codigo);
                 CREATE INDEX IF NOT EXISTS IX_Productos_Nombre ON Productos(Nombre);
 
-                -- 2. VENTAS (Con Estado garantizado)
                 CREATE TABLE IF NOT EXISTS Ventas (
                     Id INTEGER PRIMARY KEY,
                     FechaHora TEXT NOT NULL,
@@ -98,7 +105,6 @@ namespace Punto_de_Venta.Datos
                 );
                 CREATE INDEX IF NOT EXISTS IX_Ventas_FechaHora ON Ventas(FechaHora);
 
-                -- 3. DETALLE DE VENTAS
                 CREATE TABLE IF NOT EXISTS VentasDetalle (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     VentaId INTEGER NOT NULL,
@@ -113,11 +119,10 @@ namespace Punto_de_Venta.Datos
                 );
                 CREATE INDEX IF NOT EXISTS IX_VentasDetalle_VentaId ON VentasDetalle(VentaId);
 
-                -- 4. MOVIMIENTOS DE CAJA
                 CREATE TABLE IF NOT EXISTS MovimientosCaja (
                     Id INTEGER PRIMARY KEY,
                     FechaHora TEXT NOT NULL,
-                    Tipo TEXT NOT NULL, -- 'Entrada', 'Salida' o 'Fondo'
+                    Tipo TEXT NOT NULL,
                     Monto REAL NOT NULL,
                     Concepto TEXT NOT NULL,
                     CorteCajaId INTEGER NULL,
@@ -125,7 +130,6 @@ namespace Punto_de_Venta.Datos
                 );
                 CREATE INDEX IF NOT EXISTS IX_Movimientos_FechaHora ON MovimientosCaja(FechaHora);
 
-                -- 5. DEUDORES / PRESTAMOS
                 CREATE TABLE IF NOT EXISTS Deudores (
                     Id INTEGER PRIMARY KEY,
                     Nombre TEXT NOT NULL,
@@ -135,7 +139,6 @@ namespace Punto_de_Venta.Datos
                     TotalAbonado REAL NOT NULL DEFAULT 0
                 );
 
-                -- 6. ABONOS DE PRESTAMOS
                 CREATE TABLE IF NOT EXISTS Abonos (
                     Id INTEGER PRIMARY KEY,
                     DeudorId INTEGER NOT NULL,
@@ -185,50 +188,6 @@ namespace Punto_de_Venta.Datos
             ";
             cmd.ExecuteNonQuery();
             ActualizarEsquemaVentas();
-            using (var alterCmd2 = conn.CreateCommand())
-            {
-                alterCmd2.CommandText = "PRAGMA table_info(MovimientosCaja);";
-                bool tieneCorteId = false;
-                using (var reader = alterCmd2.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        if (reader.GetString(1).Equals("CorteCajaId", StringComparison.OrdinalIgnoreCase))
-                        {
-                            tieneCorteId = true;
-                            break;
-                        }
-                    }
-                }
-                if (!tieneCorteId)
-                {
-                    using var updateCmd2 = conn.CreateCommand();
-                    updateCmd2.CommandText = "ALTER TABLE MovimientosCaja ADD COLUMN CorteCajaId INTEGER NULL;";
-                    updateCmd2.ExecuteNonQuery();
-                }
-            }
-            using (var alterCmd = conn.CreateCommand())
-            {
-                alterCmd.CommandText = "PRAGMA table_info(Productos);";
-                bool tieneSeVendePorPeso = false;
-                using (var reader = alterCmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        if (reader.GetString(1).Equals("SeVendePorPeso", StringComparison.OrdinalIgnoreCase))
-                        {
-                            tieneSeVendePorPeso = true;
-                            break;
-                        }
-                    }
-                }
-                if (!tieneSeVendePorPeso)
-                {
-                    using var updateCmd = conn.CreateCommand();
-                    updateCmd.CommandText = "ALTER TABLE Productos ADD COLUMN SeVendePorPeso INTEGER NOT NULL DEFAULT 0;";
-                    updateCmd.ExecuteNonQuery();
-                }
-            }
         }
     }
 }
