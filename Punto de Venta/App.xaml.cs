@@ -86,7 +86,7 @@ namespace Punto_de_Venta
         public void SetDarkMode(bool isDark)
         {
             IsDarkMode = isDark;
-            string rutaLogo = isDark ? "pack://application:,,,/Imagenes/Blanco.png" : "pack://application:,,,/Imagenes/Oscuro.png";
+            string rutaLogo = "pack://application:,,,/Imagenes/CHC_logo.png";
             Application.Current.Resources["ThemeLogo"] = new System.Windows.Media.Imaging.BitmapImage(new Uri(rutaLogo));
             if (isDark)
             {

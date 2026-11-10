@@ -988,7 +988,7 @@ namespace Punto_de_Venta
             ModifyButton.IsEnabled = enabled;
         }
 
-        private void UpdateProductCount() =>
+        internal void UpdateProductCount() =>
             CantProd.Text = $"Cantidad de prod: {Products.Count}";
 
         private int GetNextId() => checked(Products.Select(product => product.Id).DefaultIfEmpty(0).Max() + 1);
@@ -1176,6 +1176,73 @@ namespace Punto_de_Venta
                 prod.Stock -= addAmount;
                 QrStatusMessage.Text = "Error al guardar en disco.";
             }
+        }
+
+        internal bool SeleccionarProductoDesdeMovil(string codigo)
+        {
+            if (string.IsNullOrWhiteSpace(codigo)) return false;
+            string limpio = codigo.Trim();
+            string sinCeros = limpio.TrimStart('0');
+
+            var prod = Products.FirstOrDefault(p =>
+                string.Equals(p.Codigo?.Trim(), limpio, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(sinCeros) && string.Equals(p.Codigo?.Trim().TrimStart('0'), sinCeros, StringComparison.OrdinalIgnoreCase)) ||
+                p.Id.ToString(CultureInfo.InvariantCulture) == limpio);
+
+            if (prod != null)
+            {
+                SelectProduct(prod);
+                ToastNotification.Show($"[Movil] '{prod.Nombre}' seleccionado en inventario", ToastType.Info);
+                return true;
+            }
+            return false;
+        }
+
+        internal void CargarNuevoCodigoDesdeMovil(string codigo)
+        {
+            ClearSelectionAndForm();
+            ProductCodeBox.Text = codigo?.Trim() ?? string.Empty;
+            ProductNameBox.Focus();
+            Keyboard.Focus(ProductNameBox);
+            ToastNotification.Show($"[Movil] Codigo '{codigo}' cargado al formulario", ToastType.Info);
+        }
+
+        internal bool CrearProductoDesdeMovil(string codigo, string nombre, decimal precio, decimal costo, decimal stock, string categoria)
+        {
+            if (string.IsNullOrWhiteSpace(nombre)) return false;
+
+            int id;
+            try
+            {
+                id = GetNextId();
+            }
+            catch
+            {
+                id = 1;
+            }
+
+            var newProd = new Producto
+            {
+                Id = id,
+                Codigo = codigo?.Trim() ?? string.Empty,
+                Nombre = nombre.Trim(),
+                Precio = precio,
+                Costo = costo,
+                Stock = stock,
+                Categoria = string.IsNullOrWhiteSpace(categoria) ? "General" : categoria.Trim(),
+                Ganancia = Math.Max(0, precio - costo)
+            };
+
+            if (TrySave(new[] { newProd }))
+            {
+                Products.Add(newProd);
+                ProductsView.Refresh();
+                UpdateProductCount();
+                SelectProduct(newProd);
+                ToastNotification.Show($"[Movil] Producto '{newProd.Nombre}' registrado", ToastType.Success);
+                return true;
+            }
+            return false;
         }
         #endregion
     }

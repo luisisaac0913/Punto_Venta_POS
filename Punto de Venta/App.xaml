@@ -6,7 +6,7 @@
 
     <Application.Resources>
 
-        <BitmapImage x:Key="ThemeLogo" UriSource="pack://application:,,,/Imagenes/Oscuro.png" />
+        <BitmapImage x:Key="ThemeLogo" UriSource="pack://application:,,,/Imagenes/CHC_logo.png" />
         <SolidColorBrush x:Key="ThemeWindowBackground" Color="#F2F2F7" />
         <SolidColorBrush x:Key="ThemeSurfaceBackground" Color="#FFFFFF" />
         <SolidColorBrush x:Key="ThemeInputBackground" Color="#F2F2F7" />

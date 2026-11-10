@@ -12,11 +12,9 @@
 
 	<ItemGroup>
 		<None Remove="credentials.json" />
-		<None Remove="Imagenes\Blanco.png" />
 		<None Remove="Imagenes\CHC_icono.ico" />
 		<None Remove="Imagenes\CHC_logo.png" />
 		<None Remove="Imagenes\Intro.mp4" />
-		<None Remove="Imagenes\Oscuro.png" />
 		<None Remove="Imagenes\P_Acreditado.mp4" />
 	</ItemGroup>
 
@@ -36,9 +34,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Resource Include="Imagenes\Blanco.png">
-			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</Resource>
 		<Content Include="Imagenes\Intro.mp4">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
@@ -51,13 +46,13 @@
 		<Resource Include="CHC_icono.ico">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</Resource>
+		<Resource Include="CHC_logo.png">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Resource>
 		<Resource Include="Imagenes\CHC_icono.ico">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</Resource>
 		<Resource Include="Imagenes\CHC_logo.png">
-			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</Resource>
-		<Resource Include="Imagenes\Oscuro.png">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</Resource>
 	</ItemGroup>

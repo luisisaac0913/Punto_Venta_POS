@@ -1,6 +1,7 @@
 ﻿<Window x:Class="Punto_de_Venta.Vistas.Bienvenida"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Icon="pack://application:,,,/Imagenes/CHC_icono.ico"
         Title="Configuracion Inicial" Height="620" Width="850"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterScreen"
