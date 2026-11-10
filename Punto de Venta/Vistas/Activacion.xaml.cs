@@ -3,6 +3,7 @@ using Punto_de_Venta.Servicios;
 using Punto_de_Venta.Vistas;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -23,6 +24,9 @@ namespace Punto_de_Venta
         private string _initPointUrl = string.Empty;
         private CancellationTokenSource? _pollingCts;
         private bool _estaPollingActivo = false;
+        private bool _animacionAcreditadoFinalizada = false;
+        private bool _activacionEnProceso = false;
+        private bool _videoYaReproducido = false;
 
         public Activacion()
         {
@@ -277,32 +281,81 @@ namespace Punto_de_Venta
 
         private void CompletarActivacionExitosa()
         {
+            if (_activacionEnProceso || _videoYaReproducido) return;
+            _activacionEnProceso = true;
+
             DetenerPolling();
             PanelEspera.Visibility = Visibility.Collapsed;
 
             try
             {
                 LicenciaService.ActivarLicencia();
+                _animacionAcreditadoFinalizada = false;
 
-                CustomMessageBox.Show(
-                    "Pago confirmado con exito. El equipo ha sido registrado y la licencia ha sido activada permanentemente.",
-                    "Activacion Exitosa",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-
-                ActualizarEstadoVisual();
-
-                var mainWindow = Window.GetWindow(this) as MainWindow;
-                mainWindow?.ActualizarEstadoLicenciaUI();
+                var rutaVideo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Imagenes", "P_Acreditado.mp4");
+                if (File.Exists(rutaVideo))
+                {
+                    PanelLicenciaInactiva.Visibility = Visibility.Collapsed;
+                    OverlayVideoAcreditado.Visibility = Visibility.Visible;
+                    VideoAcreditado.Source = new Uri(rutaVideo);
+                    VideoAcreditado.Position = TimeSpan.Zero;
+                    VideoAcreditado.Play();
+                }
+                else
+                {
+                    FinalizarAnimacionAcreditado();
+                }
             }
             catch (Exception ex)
             {
+                _activacionEnProceso = false;
                 CustomMessageBox.Show(
                     $"El pago fue confirmado pero ocurrio un error al registrar la licencia: {ex.Message}",
                     "Error al Guardar Licencia",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
+        }
+
+        private void FinalizarAnimacionAcreditado()
+        {
+            if (_animacionAcreditadoFinalizada) return;
+            _animacionAcreditadoFinalizada = true;
+            _videoYaReproducido = true;
+            _activacionEnProceso = false;
+
+            try
+            {
+                VideoAcreditado.Stop();
+                VideoAcreditado.Close();
+                VideoAcreditado.Source = null;
+            }
+            catch
+            {
+            }
+
+            OverlayVideoAcreditado.Visibility = Visibility.Collapsed;
+            ActualizarEstadoVisual();
+
+            var mainWindow = Window.GetWindow(this) as MainWindow;
+            mainWindow?.ActualizarEstadoLicenciaUI();
+
+            ToastNotification.Show("Pago acreditado y licencia activada exitosamente", ToastType.Success);
+        }
+
+        private void VideoAcreditado_MediaEnded(object sender, RoutedEventArgs e)
+        {
+            FinalizarAnimacionAcreditado();
+        }
+
+        private void VideoAcreditado_MediaFailed(object? sender, ExceptionRoutedEventArgs e)
+        {
+            FinalizarAnimacionAcreditado();
+        }
+
+        private void BtnSaltarVideo_Click(object sender, RoutedEventArgs e)
+        {
+            FinalizarAnimacionAcreditado();
         }
 
         private static bool InterpretarRespuestaPagado(string json)

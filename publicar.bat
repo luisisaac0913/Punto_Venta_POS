@@ -23,9 +23,9 @@ echo.
 echo ======================================================
 echo [2/2] Generando instalador y deltas con Velopack (%VERSION%)...
 echo ======================================================
-vpk pack --packId "PuntoDeVenta" --packVersion "%VERSION%" --packDir ".\publish" --mainExe "Punto de Venta.exe" --icon "Punto de Venta\Logo.ico" --outputDir ".\Releases"
+vpk pack --packId "PuntoDeVenta" --packTitle "Punto de Venta" --packVersion "%VERSION%" --runtime win-x64 --packDir ".\publish" --mainExe "Punto de Venta.exe" --icon "Punto de Venta\CHC_icono.ico" --outputDir ".\Releases"
 if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Fallo vpk pack. Asegurate de tener vpk instalado (dotnet tool install -g vpk).
+    echo [ERROR] Fallo vpk pack. Asegurate de tener vpk instalado con: dotnet tool install -g vpk
     exit /b %ERRORLEVEL%
 )
 

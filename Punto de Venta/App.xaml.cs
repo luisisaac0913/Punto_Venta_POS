@@ -14,6 +14,7 @@ namespace Punto_de_Venta
 {
     public partial class App : Application
     {
+        private ServidorLocal _servidorWeb;
         private static Mutex? _singleInstanceMutex;
         public bool IsDarkMode { get; private set; }
 
@@ -45,6 +46,8 @@ namespace Punto_de_Venta
                 return;
             }
 
+            _servidorWeb = new ServidorLocal();
+            _ = Task.Run(async () => await _servidorWeb.IniciarAsync());
             DispatcherUnhandledException += App_DispatcherUnhandledException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;

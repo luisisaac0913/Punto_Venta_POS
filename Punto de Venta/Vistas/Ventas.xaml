@@ -102,30 +102,40 @@
     </UserControl.Resources>
 
     <Border Background="Transparent" ClipToBounds="True">
-        <Grid Margin="32,20,32,24" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
+        <Grid Margin="32,16,32,24" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Image Source="/Imagenes/Logo.png" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform" Width="450" Opacity="0.12" IsHitTestVisible="False" Panel.ZIndex="0" Grid.RowSpan="4" />
+            <Image Source="/Imagenes/Logo.png" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform" Width="450" Opacity="0.12" IsHitTestVisible="False" Panel.ZIndex="0" Grid.RowSpan="3" />
 
-            <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid Grid.Row="0" Margin="0,0,0,14">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                    <TextBlock Text="Ventas" Visibility="Collapsed" />
-                </StackPanel>
+                <Border Grid.Column="0" Height="40" Style="{StaticResource FluentInputContainerStyle}" Padding="12,0">
+                    <Grid VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <Grid Grid.Column="1">
+                            <TextBox x:Name="SearchBox" Style="{StaticResource EmbeddedTextBoxStyle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" TextChanged="SearchBox_TextChanged" AutomationProperties.Name="Buscar venta por ID, fecha o productos" />
+                            <TextBlock x:Name="SearchPlaceholder" Text="Buscar venta por ID, producto o fecha (ej. 24/10/2026)..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
+                        </Grid>
+                    </Grid>
+                </Border>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="BtnExportarExcel" Content="📥 Exportar Excel (F8)" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,12,0" Height="36" Padding="12,0" Foreground="{DynamicResource ThemeAccent}" Click="ExportButton_Click" ToolTip="Descargar historial filtrado en archivo Excel/CSV" />
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="BtnExportarExcel" Content="📥 Exportar Excel (F8)" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,12,0" Height="40" Padding="12,0" Foreground="{DynamicResource ThemeAccent}" Click="ExportButton_Click" ToolTip="Descargar historial filtrado en archivo Excel/CSV" />
 
-                    <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="3" Margin="0,0,12,0">
+                    <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="3" Height="40" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
                             <Button x:Name="BtnPeriodoDia" Content="Dia" Style="{StaticResource PeriodSegmentButtonStyle}" Click="BtnPeriodo_Click" Tag="Dia" />
                             <Button x:Name="BtnPeriodoSemana" Content="Semana" Style="{StaticResource PeriodSegmentButtonStyle}" Click="BtnPeriodo_Click" Tag="Semana" />
@@ -135,32 +145,18 @@
                     </Border>
 
                     <StackPanel x:Name="CustomDatePanel" Orientation="Horizontal" Margin="0,0,12,0" Visibility="Collapsed" VerticalAlignment="Center">
-                        <DatePicker x:Name="DatePickerDesde" Height="36" Width="120" VerticalContentAlignment="Center" SelectedDateChanged="DatePicker_SelectedDateChanged" />
+                        <DatePicker x:Name="DatePickerDesde" Height="40" Width="120" VerticalContentAlignment="Center" SelectedDateChanged="DatePicker_SelectedDateChanged" />
                         <TextBlock Text="al" VerticalAlignment="Center" Margin="6,0" Foreground="{DynamicResource ThemeMutedForeground}" FontSize="12" />
-                        <DatePicker x:Name="DatePickerHasta" Height="36" Width="120" VerticalContentAlignment="Center" SelectedDateChanged="DatePicker_SelectedDateChanged" />
+                        <DatePicker x:Name="DatePickerHasta" Height="40" Width="120" VerticalContentAlignment="Center" SelectedDateChanged="DatePicker_SelectedDateChanged" />
                     </StackPanel>
 
-                    <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14,6" VerticalAlignment="Center">
-                        <TextBlock x:Name="ClockText" Text="6:08 PM" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
+                    <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14,0" Height="40" VerticalAlignment="Center">
+                        <TextBlock x:Name="ClockText" Text="6:08 PM" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
                     </Border>
                 </StackPanel>
             </Grid>
 
-            <Border Grid.Row="1" Height="40" Style="{StaticResource FluentInputContainerStyle}" Margin="0,0,0,16" Padding="12,0">
-                <Grid VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                    <Grid Grid.Column="1">
-                        <TextBox x:Name="SearchBox" Style="{StaticResource EmbeddedTextBoxStyle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" TextChanged="SearchBox_TextChanged" AutomationProperties.Name="Buscar venta por ID, fecha o productos" />
-                        <TextBlock x:Name="SearchPlaceholder" Text="Buscar venta por ID, producto o fecha (ej. 24/10/2026)..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
-                    </Grid>
-                </Grid>
-            </Border>
-
-            <Border Grid.Row="2" Style="{StaticResource AppleCardStyle}" Padding="0" ClipToBounds="True">
+            <Border Grid.Row="1" Style="{StaticResource AppleCardStyle}" Padding="0" ClipToBounds="True">
                 <DataGrid x:Name="SalesGrid" ItemsSource="{Binding SalesView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="SalesGrid_SelectionChanged" MouseDoubleClick="SalesGrid_MouseDoubleClick" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="48" EnableRowVirtualization="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
@@ -279,7 +275,7 @@
                 </DataGrid>
             </Border>
 
-            <Grid Grid.Row="3" Margin="0,16,0,0">
+            <Grid Grid.Row="2" Margin="0,14,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="10" />
