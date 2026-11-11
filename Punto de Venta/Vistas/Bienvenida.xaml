@@ -150,10 +150,10 @@
                         <TextBlock Text="Nombre de la Tienda *" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
                         <TextBox x:Name="TxtNombreNegocio" Style="{StaticResource FormInputStyle}" Margin="0,0,0,16" />
 
-                        <TextBlock Text="Direccion (Opcional)" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <TextBlock x:Name="LblDireccion" Text="Direccion (Opcional)" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
                         <TextBox x:Name="TxtDireccion" Style="{StaticResource FormInputStyle}" Margin="0,0,0,16" />
 
-                        <TextBlock Text="Mensaje del Ticket" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <TextBlock x:Name="LblMensajeTicket" Text="Mensaje del Ticket" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
                         <TextBox x:Name="TxtMensajePie" Text="Gracias por su preferencia!" Style="{StaticResource FormInputStyle}" />
                     </StackPanel>
 
@@ -174,9 +174,9 @@
                         <TextBlock Text="Fondo de caja inicial ($)" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
                         <TextBox x:Name="TxtFondoCaja" Text="500.00" Style="{StaticResource FormInputStyle}" Margin="0,0,0,24" />
 
-                        <TextBlock Text="PIN de Administrador (4 digitos)" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
+                        <TextBlock x:Name="LblPinAdminTitulo" Text="PIN de Administrador (4 digitos)" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6" />
                         <PasswordBox x:Name="TxtPinAdmin" MaxLength="4" Style="{StaticResource FormPasswordStyle}" Margin="0,0,0,8" />
-                        <TextBlock Text="Este codigo es para autorizar cancelaciones. Dejalo vacio si no deseas usar PIN por ahora." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" />
+                        <TextBlock x:Name="LblPinAdminDesc" Text="Este codigo es para autorizar cancelaciones. Dejalo vacio si no deseas usar PIN por ahora." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" />
                     </StackPanel>
                 </Grid>
 

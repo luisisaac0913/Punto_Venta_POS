@@ -79,13 +79,6 @@ namespace Punto_de_Venta
         {
             if ((bool)e.NewValue)
             {
-                if (!LicenciaService.EsPremium())
-                {
-                    LicenciaService.MostrarMensajePremium("Cuentas por Cobrar (Fiado)");
-                    (Window.GetWindow(this) as MainWindow)?.RegresarAlMenu();
-                    return;
-                }
-
                 CargarDeudoresDesdeBaseDatos();
                 UpdateDashboardKPIs();
                 SetNextId();
@@ -263,6 +256,13 @@ namespace Punto_de_Venta
                 ShowStatus("Monto sumado a la cuenta existente del cliente.", true);
                 return;
             }
+
+            if (!LicenciaService.EsPremium() && Debtors.Count >= 5)
+            {
+                LicenciaService.MostrarMensajePremium("Limite de 5 prestamos");
+                return;
+            }
+
             int id;
             try
             {
@@ -483,6 +483,12 @@ namespace Punto_de_Venta
         #region Recordatorios WhatsApp
         private void WhatsAppButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Cobranza por WhatsApp");
+                return;
+            }
+
             if (_selectedDebtor == null) return;
             var telefono = DebtorPhoneBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(telefono))
@@ -858,6 +864,7 @@ namespace Punto_de_Venta
             LiquidateButton.IsEnabled = hasSelection && _selectedDebtor!.SaldoRestante > 0;
             ViewHistoryButton.IsEnabled = hasSelection;
             WhatsAppButton.IsEnabled = hasSelection && _selectedDebtor!.SaldoRestante > 0;
+            WhatsAppButton.Content = LicenciaService.EsPremium() ? "📨 Enviar recordatorio" : "📨 Enviar recordatorio 🔒";
         }
         private void UpdateDashboardKPIs()
         {
@@ -867,7 +874,9 @@ namespace Punto_de_Venta
             var clientesActivos = Debtors.Count(d => d.SaldoRestante > 0);
             KpiDeudaTotal.Text = totalDeuda.ToString("C2", culture);
             KpiTotalRecuperado.Text = totalRecuperado.ToString("C2", culture);
-            KpiClientesActivos.Text = clientesActivos.ToString();
+            KpiClientesActivos.Text = LicenciaService.EsPremium()
+                ? clientesActivos.ToString()
+                : $"{clientesActivos} / 5";
         }
         private void ClearForm()
         {

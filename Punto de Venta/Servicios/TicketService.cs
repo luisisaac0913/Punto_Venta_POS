@@ -26,8 +26,11 @@ namespace Punto_de_Venta.Servicios
             var culture = CultureInfo.GetCultureInfo("es-MX");
             int ancho = config.AnchoTicketCaracteres > 0 ? config.AnchoTicketCaracteres : 32;
             if (!string.IsNullOrWhiteSpace(config.NombreNegocio)) sb.AppendLine(CentrarTexto(config.NombreNegocio.Trim(), ancho));
-            if (!string.IsNullOrWhiteSpace(config.GiroNegocio)) sb.AppendLine(CentrarTexto(config.GiroNegocio.Trim(), ancho));
-            if (!string.IsNullOrWhiteSpace(config.DireccionNegocio)) sb.AppendLine(CentrarTexto(config.DireccionNegocio.Trim(), ancho));
+            if (LicenciaService.EsPremium())
+            {
+                if (!string.IsNullOrWhiteSpace(config.GiroNegocio)) sb.AppendLine(CentrarTexto(config.GiroNegocio.Trim(), ancho));
+                if (!string.IsNullOrWhiteSpace(config.DireccionNegocio)) sb.AppendLine(CentrarTexto(config.DireccionNegocio.Trim(), ancho));
+            }
             sb.AppendLine(new string('-', ancho));
             sb.AppendLine($"Folio: #{venta.Id}");
             sb.AppendLine($"Fecha: {venta.FechaHora:dd/MM/yyyy hh:mm tt}");
@@ -70,12 +73,13 @@ namespace Punto_de_Venta.Servicios
                 sb.AppendLine(AlinearDerecha($"CAMBIO: {cambio.ToString("C2", culture)}", ancho));
             }
             sb.AppendLine(new string('-', ancho));
-            if (!string.IsNullOrWhiteSpace(config.MensajePie))
+            string pieTicket = LicenciaService.EsPremium()
+                ? (string.IsNullOrWhiteSpace(config.MensajePie) ? "GRACIAS POR SU COMPRA\nVuelva pronto" : config.MensajePie)
+                : "GRACIAS POR SU COMPRA\nVuelva pronto";
+
+            foreach (var linea in pieTicket.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None))
             {
-                foreach (var linea in config.MensajePie.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None))
-                {
-                    sb.AppendLine(CentrarTexto(linea.Trim(), ancho));
-                }
+                sb.AppendLine(CentrarTexto(linea.Trim(), ancho));
             }
             sb.AppendLine("\n\n");
             return sb.ToString();

@@ -203,6 +203,7 @@ namespace Punto_de_Venta
             {
                 BtnEnlaceRapidoInventario.Content = esPremium ? "Enlace R" : "🔒 Enlace R";
             }
+            UpdateProductCount();
         }
         #endregion
 
@@ -727,6 +728,12 @@ namespace Punto_de_Venta
                 return;
             }
 
+            if (!LicenciaService.EsPremium() && Products.Count >= 400)
+            {
+                LicenciaService.MostrarMensajePremium("Limite de 400 productos en inventario");
+                return;
+            }
+
             if (HasDuplicateName(name))
             {
                 ShowValidationError("Ya existe un producto con ese nombre.", "ProductNameBox");
@@ -996,8 +1003,15 @@ namespace Punto_de_Venta
             ModifyButton.IsEnabled = enabled;
         }
 
-        internal void UpdateProductCount() =>
-            CantProd.Text = $"Cantidad de prod: {Products.Count}";
+        internal void UpdateProductCount()
+        {
+            if (CantProd != null)
+            {
+                CantProd.Text = LicenciaService.EsPremium()
+                    ? $"Cantidad de prod: {Products.Count}"
+                    : $"Cantidad de prod: {Products.Count} / 400";
+            }
+        }
 
         private int GetNextId() => checked(Products.Select(product => product.Id).DefaultIfEmpty(0).Max() + 1);
 
@@ -1218,6 +1232,11 @@ namespace Punto_de_Venta
         internal bool CrearProductoDesdeMovil(string codigo, string nombre, decimal precio, decimal costo, decimal stock, string categoria)
         {
             if (string.IsNullOrWhiteSpace(nombre)) return false;
+
+            if (!LicenciaService.EsPremium() && Products.Count >= 400)
+            {
+                return false;
+            }
 
             int id;
             try

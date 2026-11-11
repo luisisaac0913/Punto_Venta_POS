@@ -33,6 +33,7 @@ namespace Punto_de_Venta
         private readonly CancellationTokenSource _ctsAutoBackup = new CancellationTokenSource();
         private string _nombreNegocioActual = "Punto de Venta";
         private string _vistaActualTitulo = string.Empty;
+        private DateTime _ultimoDiaVerificadoTurno = DateTime.Today;
         #endregion
 
         #region Inicializacion
@@ -46,6 +47,7 @@ namespace Punto_de_Venta
             }
             catch { }
             IniciarRespaldoAutomaticoSilencioso();
+            Loaded += MainWindow_Loaded;
             _standbyClockTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _standbyClockTimer.Tick += (s, args) =>
             {
@@ -115,6 +117,30 @@ namespace Punto_de_Venta
                     });
                 }
             });
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            VerificarTurnoPendienteDeDiasAnteriores();
+        }
+
+        public void VerificarTurnoPendienteDeDiasAnteriores()
+        {
+            try
+            {
+                var turno = TurnoCajaManager.ObtenerTurnoPendienteDeDiasAnteriores();
+                if (turno != null)
+                {
+                    string fechaStr = turno.FechaHora.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+                    string horaStr = turno.FechaHora.ToString("hh:mm tt", CultureInfo.InvariantCulture);
+                    string mensaje = $"Tiene un turno pendiente por cerrar del dia {fechaStr} ({horaStr}). Por favor realiza el corte de caja en Ventas.";
+                    ToastNotification.Show(mensaje, ToastType.Warning);
+                    CustomMessageBox.Show(this, mensaje, "Turno Pendiente de Cierre", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch
+            {
+            }
         }
         #endregion
 
@@ -299,6 +325,12 @@ namespace Punto_de_Venta
             var now = DateTime.Now;
             var spanishCulture = CultureInfo.GetCultureInfo("es-MX");
 
+            if (now.Date != _ultimoDiaVerificadoTurno)
+            {
+                _ultimoDiaVerificadoTurno = now.Date;
+                VerificarTurnoPendienteDeDiasAnteriores();
+            }
+
             if (FindName("ClockText") is TextBlock clockBlock)
             {
                 clockBlock.Text = now.ToString("hh:mm:ss tt", CultureInfo.GetCultureInfo("en-US"));
@@ -374,7 +406,7 @@ namespace Punto_de_Venta
                 TxtTituloPromociones.Text = "Promociones";
 
             if (TxtTituloPrestamos != null)
-                TxtTituloPrestamos.Text = esPremium ? "Prestamos" : "Prestamos 🔒";
+                TxtTituloPrestamos.Text = "Prestamos";
 
             if (TxtTituloEtiquetas != null)
                 TxtTituloEtiquetas.Text = esPremium ? "Etiquetas" : "Etiquetas 🔒";
@@ -479,11 +511,6 @@ namespace Punto_de_Venta
 
         private void Prestamos_Click(object sender, RoutedEventArgs e)
         {
-            if (!LicenciaService.EsPremium())
-            {
-                LicenciaService.MostrarMensajePremium("Cuentas por Cobrar (Fiado)");
-                return;
-            }
             AbrirVista<Prestamos>();
         }
 
@@ -612,6 +639,7 @@ namespace Punto_de_Venta
         #endregion
 
         #region Importacion de Base de Datos (Archivos CSV)
+
         private void AbrirModalImportar_Click(object sender, RoutedEventArgs e)
         {
             if (FindName("ImportarOverlay") is Grid overlay)
@@ -636,7 +664,7 @@ namespace Punto_de_Venta
 
         private void EjecutarImportacion_Click(object sender, RoutedEventArgs e)
         {
-            var openFileDialog = new OpenFileDialog
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
                 Filter = "Archivos CSV (*.csv)|*.csv|Todos los archivos (*.*)|*.*",
                 Title = "Seleccionar lista de productos para importar a SQLite"
@@ -650,9 +678,12 @@ namespace Punto_de_Venta
 
                 if (lineasNuevas.Length == 0)
                 {
-                    ToastNotification.Show("El archivo seleccionado esta completamente vacio.", ToastType.Warning);
+                    ToastNotification.Show("El archivo seleccionado esta vacio.", ToastType.Warning);
                     return;
                 }
+
+                string encabezado = lineasNuevas[0].ToLowerInvariant();
+                bool esFormatoEleventa = encabezado.Contains("descripcion") || encabezado.Contains("precio venta") || encabezado.Contains("departamento");
 
                 var productosExistentes = ProductoDB.Load();
                 var catalogoPorId = productosExistentes.ToDictionary(p => p.Id);
@@ -660,12 +691,19 @@ namespace Punto_de_Venta
                 int maxId = catalogoPorId.Keys.DefaultIfEmpty(0).Max();
                 int importadosCount = 0;
                 int omitidosCount = 0;
+                bool esPrimeraLinea = true;
 
                 foreach (var linea in lineasNuevas)
                 {
                     if (string.IsNullOrWhiteSpace(linea)) continue;
 
-                    var prod = ParsearLineaProducto(linea);
+                    if (esPrimeraLinea)
+                    {
+                        esPrimeraLinea = false;
+                        continue;
+                    }
+
+                    var prod = ParsearLineaProducto(linea, esFormatoEleventa);
                     if (prod == null)
                     {
                         omitidosCount++;
@@ -675,6 +713,7 @@ namespace Punto_de_Venta
                     if (prod.Id <= 0 || !catalogoPorId.ContainsKey(prod.Id))
                     {
                         var existentePorCodigo = catalogoPorId.Values.FirstOrDefault(p => !string.IsNullOrEmpty(p.Codigo) && p.Codigo == prod.Codigo);
+
                         if (existentePorCodigo != null)
                         {
                             prod.Id = existentePorCodigo.Id;
@@ -699,9 +738,9 @@ namespace Punto_de_Venta
                     ProductoDB.Save(catalogoPorId.Values);
                     CerrarImportar();
 
-                    if (omitidosCount > 1)
+                    if (omitidosCount > 0)
                     {
-                        ToastNotification.Show($"Se importaron {importadosCount} productos. Se omitieron {omitidosCount - 1} filas con formato incorrecto.", ToastType.Info);
+                        ToastNotification.Show($"Se importaron {importadosCount} productos. Se omitieron {omitidosCount} filas con formato incorrecto.", ToastType.Info);
                     }
                     else
                     {
@@ -710,16 +749,16 @@ namespace Punto_de_Venta
                 }
                 else
                 {
-                    ToastNotification.Show("No se detecto ningun producto valido. Verifica que el archivo sea un CSV con el orden de columnas correcto.", ToastType.Warning);
+                    ToastNotification.Show("No se detectó ningún producto válido. Verifica que el archivo sea un CSV correcto.", ToastType.Warning);
                 }
             }
             catch (Exception ex)
             {
-                ToastNotification.Show($"Error critico al leer el archivo: {ex.Message}", ToastType.Error);
+                ToastNotification.Show($"Error crítico al leer el archivo: {ex.Message}", ToastType.Error);
             }
         }
 
-        private static Producto? ParsearLineaProducto(string linea)
+        private static Producto? ParsearLineaProducto(string linea, bool esEleventa)
         {
             var partes = linea.Split(',');
             if (partes.Length < 4)
@@ -733,70 +772,42 @@ namespace Punto_de_Venta
                 partes[i] = partes[i].Trim(' ', '"');
             }
 
-            int.TryParse(partes[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var id);
-            var codigo = partes[1];
-            var nombre = partes[2];
-
-            if (string.IsNullOrWhiteSpace(nombre) || nombre.Equals("Nombre", StringComparison.OrdinalIgnoreCase))
-                return null;
-
-            var categoria = "N/A";
-            decimal costo = 0m, ganancia = 0m, precio = 0m;
-            decimal stock = 0m;
+            int id = 0;
+            string codigo, nombre, categoria = "General";
+            decimal costo = 0m, ganancia = 0m, precio = 0m, stock = 0m;
             bool pedirCantidad = false, seVendePorPeso = false;
 
-            if (partes.Length >= 10)
+            if (esEleventa)
             {
-                categoria = string.IsNullOrWhiteSpace(partes[3]) ? "N/A" : partes[3];
-                costo = ParseDecimalFlexible(partes[4]);
-                ganancia = ParseDecimalFlexible(partes[5]);
-                precio = ParseDecimalFlexible(partes[6]);
-                decimal.TryParse(partes[7], NumberStyles.Any, CultureInfo.InvariantCulture, out stock);
-                bool.TryParse(partes[8], out pedirCantidad);
-                bool.TryParse(partes[9], out seVendePorPeso);
-            }
-            else if (partes.Length == 9)
-            {
-                categoria = string.IsNullOrWhiteSpace(partes[3]) ? "N/A" : partes[3];
-                costo = ParseDecimalFlexible(partes[4]);
-                ganancia = ParseDecimalFlexible(partes[5]);
-                precio = ParseDecimalFlexible(partes[6]);
-                decimal.TryParse(partes[7], NumberStyles.Any, CultureInfo.InvariantCulture, out stock);
-                bool.TryParse(partes[8], out pedirCantidad);
-            }
-            else if (partes.Length == 8)
-            {
-                categoria = string.IsNullOrWhiteSpace(partes[3]) ? "N/A" : partes[3];
-                costo = ParseDecimalFlexible(partes[4]);
-                ganancia = ParseDecimalFlexible(partes[5]);
-                precio = ParseDecimalFlexible(partes[6]);
-                decimal.TryParse(partes[7], NumberStyles.Any, CultureInfo.InvariantCulture, out stock);
-            }
-            else if (partes.Length == 7)
-            {
-                categoria = string.IsNullOrWhiteSpace(partes[3]) ? "N/A" : partes[3];
-                costo = ParseDecimalFlexible(partes[4]);
-                ganancia = ParseDecimalFlexible(partes[5]);
-                precio = ParseDecimalFlexible(partes[6]);
-            }
-            else if (partes.Length == 6)
-            {
-                costo = ParseDecimalFlexible(partes[3]);
-                ganancia = ParseDecimalFlexible(partes[4]);
-                precio = ParseDecimalFlexible(partes[5]);
-            }
-            else if (partes.Length == 5)
-            {
-                precio = ParseDecimalFlexible(partes[3]);
-                categoria = string.IsNullOrWhiteSpace(partes[4]) ? "N/A" : partes[4];
-                ganancia = precio;
-            }
-            else if (partes.Length == 4)
-            {
-                precio = ParseDecimalFlexible(partes[3]);
-                ganancia = precio;
-            }
+                codigo = partes[0];
+                nombre = partes[1];
+                if (string.IsNullOrWhiteSpace(nombre)) return null;
 
+                costo = partes.Length > 2 ? ParseDecimalFlexible(partes[2]) : 0m;
+                precio = partes.Length > 3 ? ParseDecimalFlexible(partes[3]) : 0m;
+                ganancia = precio - costo; 
+                categoria = partes.Length > 5 && !string.IsNullOrWhiteSpace(partes[5]) ? partes[5] : "General";
+                stock = partes.Length > 6 ? ParseDecimalFlexible(partes[6]) : 0m;
+            }
+            else
+            {
+                int.TryParse(partes[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out id);
+                codigo = partes[1];
+                nombre = partes[2];
+
+                if (string.IsNullOrWhiteSpace(nombre)) return null;
+
+                if (partes.Length >= 7)
+                {
+                    categoria = string.IsNullOrWhiteSpace(partes[3]) ? "General" : partes[3];
+                    costo = ParseDecimalFlexible(partes[4]);
+                    ganancia = ParseDecimalFlexible(partes[5]);
+                    precio = ParseDecimalFlexible(partes[6]);
+                }
+                if (partes.Length >= 8) decimal.TryParse(partes[7], NumberStyles.Any, CultureInfo.InvariantCulture, out stock);
+                if (partes.Length >= 9) bool.TryParse(partes[8], out pedirCantidad);
+                if (partes.Length >= 10) bool.TryParse(partes[9], out seVendePorPeso);
+            }
             if (precio == 0m && (costo > 0m || ganancia > 0m))
             {
                 precio = costo + ganancia;
@@ -820,8 +831,11 @@ namespace Punto_de_Venta
         private static decimal ParseDecimalFlexible(string text)
         {
             const NumberStyles styles = NumberStyles.Number | NumberStyles.AllowDecimalPoint;
-            if (decimal.TryParse(text.Trim(), styles, CultureInfo.InvariantCulture, out var val) ||
-                decimal.TryParse(text.Trim(), styles, CultureInfo.GetCultureInfo("es-MX"), out val))
+
+            text = text.Replace("$", "").Trim();
+
+            if (decimal.TryParse(text, styles, CultureInfo.InvariantCulture, out var val) ||
+                decimal.TryParse(text, styles, CultureInfo.GetCultureInfo("es-MX"), out val))
             {
                 return val;
             }
