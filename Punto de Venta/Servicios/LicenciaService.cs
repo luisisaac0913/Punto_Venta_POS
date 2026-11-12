@@ -21,13 +21,31 @@ namespace Punto_de_Venta.Servicios
         {
             var handler = new SocketsHttpHandler
             {
+                UseProxy = false,
+                Proxy = null,
                 SslOptions = new System.Net.Security.SslClientAuthenticationOptions
                 {
-                    EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13,
                     RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
                 }
             };
-            return new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
+            var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) POS/1.0");
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            return client;
+        }
+
+        private static HttpClient CrearHttpClientFallback(int timeoutSegundos)
+        {
+            var handler = new HttpClientHandler
+            {
+                UseProxy = false,
+                Proxy = null,
+                ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+            };
+            var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) POS/1.0");
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            return client;
         }
         private static readonly string LicenciaPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -313,28 +331,16 @@ namespace Punto_de_Venta.Servicios
             string hwid = ObtenerIdentificadorHardware();
             if (string.IsNullOrWhiteSpace(hwid)) return null;
 
+            string urlVerificacion = AzureFunctionVerificarBaseUrl.TrimEnd('/') + "/" + Uri.EscapeDataString(hwid);
+            string json = string.Empty;
+
             try
             {
-                string urlVerificacion = AzureFunctionVerificarBaseUrl.TrimEnd('/') + "/" + Uri.EscapeDataString(hwid);
                 using var response = await _httpClient.GetAsync(urlVerificacion).ConfigureAwait(false);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    bool pagado = InterpretarRespuestaPagado(json);
-                    if (pagado)
-                    {
-                        if (!ValidarLicencia())
-                        {
-                            ActivarLicencia();
-                        }
-                        return true;
-                    }
-                    else
-                    {
-                        DesactivarLicencia();
-                        return false;
-                    }
+                    json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
                 {
@@ -346,7 +352,82 @@ namespace Punto_de_Venta.Servicios
             {
             }
 
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                try
+                {
+                    using var fallbackClient = CrearHttpClientFallback(12);
+                    using var response = await fallbackClient.GetAsync(urlVerificacion).ConfigureAwait(false);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    }
+                    else if (response.StatusCode == HttpStatusCode.NotFound)
+                    {
+                        DesactivarLicencia();
+                        return false;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                try
+                {
+                    json = await EjecutarGetConCurlAsync(urlVerificacion).ConfigureAwait(false);
+                }
+                catch
+                {
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                bool pagado = InterpretarRespuestaPagado(json);
+                if (pagado)
+                {
+                    if (!ValidarLicencia())
+                    {
+                        ActivarLicencia();
+                    }
+                    return true;
+                }
+                else
+                {
+                    DesactivarLicencia();
+                    return false;
+                }
+            }
+
             return null;
+        }
+
+        private static async Task<string> EjecutarGetConCurlAsync(string url)
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "curl.exe",
+                    Arguments = $"-s -k -H \"Accept: application/json\" \"{url}\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+                using var proc = System.Diagnostics.Process.Start(psi);
+                if (proc == null) return string.Empty;
+                string output = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+                await proc.WaitForExitAsync().ConfigureAwait(false);
+                return output;
+            }
+            catch
+            {
+                return string.Empty;
+            }
         }
 
         public static bool ValidarLicencia()
