@@ -15,7 +15,19 @@ namespace Punto_de_Venta.Servicios
     public static class LicenciaService
     {
         private const string AzureFunctionVerificarBaseUrl = "https://chipandchapa-d5bsach3emeka6h0.mexicocentral-01.azurewebsites.net/api/verificar/";
-        private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(12) };
+        private static readonly HttpClient _httpClient = CrearHttpClientSeguro(12);
+
+        private static HttpClient CrearHttpClientSeguro(int timeoutSegundos)
+        {
+            var handler = new SocketsHttpHandler
+            {
+                SslOptions = new System.Net.Security.SslClientAuthenticationOptions
+                {
+                    EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13
+                }
+            };
+            return new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
+        }
         private static readonly string LicenciaPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "POS_DataStorage",
