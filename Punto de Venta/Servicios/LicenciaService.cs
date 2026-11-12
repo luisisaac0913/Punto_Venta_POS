@@ -23,7 +23,8 @@ namespace Punto_de_Venta.Servicios
             {
                 SslOptions = new System.Net.Security.SslClientAuthenticationOptions
                 {
-                    EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13
+                    EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13,
+                    RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
                 }
             };
             return new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
