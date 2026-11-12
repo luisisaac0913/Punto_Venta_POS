@@ -177,8 +177,12 @@ namespace Punto_de_Venta
             }
             catch (Exception ex)
             {
+                string mensajeDetalle = ex.InnerException != null
+                    ? $"{ex.Message} ({ex.InnerException.Message})"
+                    : ex.Message;
+
                 CustomMessageBox.Show(
-                    $"Error al procesar la solicitud: {ex.Message}",
+                    $"Error al procesar la solicitud: {mensajeDetalle}",
                     "Fallo de Conexion",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
