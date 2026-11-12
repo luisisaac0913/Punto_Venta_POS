@@ -28,13 +28,34 @@ namespace Punto_de_Venta.Vistas
             {
                 TxtNombreNegocio.Text = config.NombreNegocio;
             }
-            if (!string.IsNullOrWhiteSpace(config.DireccionNegocio))
+
+            bool esPremium = LicenciaService.EsPremium();
+            if (!esPremium)
             {
-                TxtDireccion.Text = config.DireccionNegocio;
+                LblDireccion.Text = "Direccion (Opcional) 🔒";
+                TxtDireccion.IsEnabled = false;
+                TxtDireccion.Text = string.Empty;
+                TxtDireccion.ToolTip = "Personalizacion de ticket exclusiva de Version Premium";
+
+                LblMensajeTicket.Text = "Mensaje del Ticket 🔒";
+                TxtMensajePie.IsEnabled = false;
+                TxtMensajePie.Text = "GRACIAS POR SU COMPRA\nVuelva pronto";
+                TxtMensajePie.ToolTip = "Personalizacion de ticket exclusiva de Version Premium";
+
+                LblPinAdminTitulo.Text = "PIN de Administrador (4 digitos) 🔒";
+                TxtPinAdmin.IsEnabled = false;
+                LblPinAdminDesc.Text = "El PIN de seguridad y autorizacion de cancelaciones requiere Version Premium.";
             }
-            if (!string.IsNullOrWhiteSpace(config.MensajePie))
+            else
             {
-                TxtMensajePie.Text = config.MensajePie;
+                if (!string.IsNullOrWhiteSpace(config.DireccionNegocio))
+                {
+                    TxtDireccion.Text = config.DireccionNegocio;
+                }
+                if (!string.IsNullOrWhiteSpace(config.MensajePie))
+                {
+                    TxtMensajePie.Text = config.MensajePie;
+                }
             }
         }
 
@@ -182,22 +203,32 @@ namespace Punto_de_Venta.Vistas
             var config = AppConfig.Load();
 
             config.NombreNegocio = TxtNombreNegocio.Text.Trim();
-            config.DireccionNegocio = TxtDireccion.Text.Trim();
-            config.MensajePie = string.IsNullOrWhiteSpace(TxtMensajePie.Text) ? "GRACIAS POR SU COMPRA\nVuelva pronto" : TxtMensajePie.Text.Trim();
+            if (!LicenciaService.EsPremium())
+            {
+                config.DireccionNegocio = string.Empty;
+                config.MensajePie = "GRACIAS POR SU COMPRA\nVuelva pronto";
+                config.SolicitarPinAdmin = false;
+            }
+            else
+            {
+                config.DireccionNegocio = TxtDireccion.Text.Trim();
+                config.MensajePie = string.IsNullOrWhiteSpace(TxtMensajePie.Text) ? "GRACIAS POR SU COMPRA\nVuelva pronto" : TxtMensajePie.Text.Trim();
+                if (!string.IsNullOrWhiteSpace(TxtPinAdmin.Password))
+                {
+                    config.EstablecerNuevoPin(TxtPinAdmin.Password.Trim());
+                    config.SolicitarPinAdmin = true;
+                }
+                else
+                {
+                    config.SolicitarPinAdmin = false;
+                }
+            }
+
             if (CmbImpresoras.SelectedIndex > 0 && CmbImpresoras.SelectedItem != null)
                 config.ImpresoraSeleccionada = CmbImpresoras.SelectedItem.ToString();
             config.BasculaHabilitada = ChkUsarBascula.IsChecked == true;
             if (CmbPuertosCOM.SelectedIndex > 0 && CmbPuertosCOM.SelectedItem != null)
                 config.BasculaPuerto = CmbPuertosCOM.SelectedItem.ToString();
-            if (!string.IsNullOrWhiteSpace(TxtPinAdmin.Password))
-            {
-                config.EstablecerNuevoPin(TxtPinAdmin.Password.Trim());
-                config.SolicitarPinAdmin = true;
-            }
-            else
-            {
-                config.SolicitarPinAdmin = false;
-            }
             config.Save();
             if (decimal.TryParse(textoFondo, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal montoFondo) ||
                 decimal.TryParse(textoFondo, NumberStyles.Any, CultureInfo.GetCultureInfo("es-MX"), out montoFondo))

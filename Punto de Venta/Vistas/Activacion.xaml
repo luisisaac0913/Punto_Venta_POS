@@ -140,7 +140,7 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="&#x2713;" Foreground="{DynamicResource ThemeAccent}" FontWeight="Bold" FontSize="13" Margin="0,0,10,0" />
-                                <TextBlock Grid.Column="1" Text="Integracion con Bascula (F8), apertura de cajon y ventas en espera (F2)" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="1" Text="Sin limites: inventario con mas de 400 productos, prestamos y promociones ilimitadas" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
                             </Grid>
 
                             <Grid Margin="0,0,0,10">
@@ -149,7 +149,7 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="&#x2713;" Foreground="{DynamicResource ThemeAccent}" FontWeight="Bold" FontSize="13" Margin="0,0,10,0" />
-                                <TextBlock Grid.Column="1" Text="Modulo completo de Fiado: cuentas por cobrar, abonos y cobranza por WhatsApp" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="1" Text="Recargas electronicas de tiempo aire y cobro de servicios (API integrada)" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
                             </Grid>
 
                             <Grid Margin="0,0,0,10">
@@ -158,7 +158,7 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="&#x2713;" Foreground="{DynamicResource ThemeAccent}" FontWeight="Bold" FontSize="13" Margin="0,0,10,0" />
-                                <TextBlock Grid.Column="1" Text="Inteligencia de negocio: utilidades reales, margenes y exportacion a Excel y PDF" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="1" Text="Personalizacion completa: colores de acento, logotipo y diseno personalizado de tickets" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
                             </Grid>
 
                             <Grid Margin="0,0,0,10">
@@ -167,7 +167,7 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="&#x2713;" Foreground="{DynamicResource ThemeAccent}" FontWeight="Bold" FontSize="13" Margin="0,0,10,0" />
-                                <TextBlock Grid.Column="1" Text="Gestion de lotes, precios de mayoreo e impresion de etiquetas con codigos de barra" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="1" Text="Cobranza automatizada: recordatorios y estados de cuenta por WhatsApp con un solo clic" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
                             </Grid>
 
                             <Grid Margin="0,0,0,10">
@@ -176,7 +176,16 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="&#x2713;" Foreground="{DynamicResource ThemeAccent}" FontWeight="Bold" FontSize="13" Margin="0,0,10,0" />
-                                <TextBlock Grid.Column="1" Text="Promociones y ofertas automaticas configurables (descuentos y 2x1)" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="1" Text="Servidor local y acceso remoto: consulta tu punto de venta desde cualquier celular o tablet" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
+                            </Grid>
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="&#x2713;" Foreground="{DynamicResource ThemeAccent}" FontWeight="Bold" FontSize="13" Margin="0,0,10,0" />
+                                <TextBlock Grid.Column="1" Text="Seguridad avanzada: autorizacion con PIN de administrador y respaldos automaticos en Google Drive" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
                             </Grid>
 
                             <Grid>
@@ -185,7 +194,7 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="&#x2713;" Foreground="{DynamicResource ThemeAccent}" FontWeight="Bold" FontSize="13" Margin="0,0,10,0" />
-                                <TextBlock Grid.Column="1" Text="Seguridad con PIN de administrador y respaldos automaticos en Google Drive" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="1" Text="Control de inventario profesional: gestion de lotes con caducidad e impresion de codigos de barra" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
                             </Grid>
                         </StackPanel>
 
@@ -214,7 +223,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                        <TextBlock Text="ID de Hardware:" FontSize="10" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,2" />
+                                        <TextBlock Text="ID de Hardware:" FontSize="10" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,2" Height="15" />
                                         <TextBlock x:Name="TxtHwidInactivo" Text="Detectando..." FontSize="11" FontWeight="Bold" FontFamily="Consolas, Segoe UI" Foreground="{DynamicResource ThemeTextForeground}" TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
                                     <Button Grid.Column="1" Content="Copiar" HorizontalAlignment="Right" VerticalAlignment="Center" 

@@ -34,6 +34,10 @@ namespace Punto_de_Venta
                 ListaPromociones.Add(p);
             }
             PromocionesGrid.ItemsSource = ListaPromociones;
+            if (_promocionEnEdicion == null && TituloFormularioText != null)
+            {
+                TituloFormularioText.Text = LicenciaService.EsPremium() ? "Nueva Promocion" : $"Nueva Promocion ({ListaPromociones.Count}/5)";
+            }
         }
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
@@ -141,6 +145,13 @@ namespace Punto_de_Venta
                     ToastNotification.Show("Esta promocion ya vencio. Edita su fecha limite para reactivarla.", ToastType.Warning);
                     return;
                 }
+                if (!LicenciaService.EsPremium() && promo.Activa && ListaPromociones.Count(p => p.Activa) > 5)
+                {
+                    promo.Activa = false;
+                    cb.IsChecked = false;
+                    LicenciaService.MostrarMensajePremium("Limite de 5 promociones activas");
+                    return;
+                }
                 if (PromocionDbStore.Update(promo, out string error))
                 {
                     ToastNotification.Show(promo.Activa ? "Promocion Activada" : "Promocion Desactivada", ToastType.Info);
@@ -225,7 +236,7 @@ namespace Punto_de_Venta
         private void LimpiarFormulario()
         {
             _promocionEnEdicion = null;
-            TituloFormularioText.Text = "Nueva Promocion";
+            TituloFormularioText.Text = LicenciaService.EsPremium() ? "Nueva Promocion" : $"Nueva Promocion ({ListaPromociones.Count}/5)";
             BtnGuardarPromo.Content = "Guardar Promocion";
             BtnCancelarEdicion.Visibility = Visibility.Collapsed;
 
@@ -367,6 +378,11 @@ namespace Punto_de_Venta
             }
             else
             {
+                if (!LicenciaService.EsPremium() && ListaPromociones.Count >= 5)
+                {
+                    LicenciaService.MostrarMensajePremium("Limite de 5 promociones");
+                    return;
+                }
                 guardadoConExito = PromocionDbStore.Save(promocion, out error);
             }
             if (guardadoConExito)

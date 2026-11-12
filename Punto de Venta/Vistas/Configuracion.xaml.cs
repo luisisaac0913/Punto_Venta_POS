@@ -35,9 +35,37 @@ namespace Punto_de_Venta
         {
             bool esPremium = LicenciaService.EsPremium();
 
+            if (NavPersonalizacionBtn != null)
+            {
+                NavPersonalizacionBtn.Content = esPremium ? "🎨  Personalizacion" : "🔒  Personalizacion";
+            }
+            if (NavServidorLocalBtn != null)
+            {
+                NavServidorLocalBtn.Content = esPremium ? "🌐  Servidor Local" : "🔒  Servidor Local";
+            }
+            if (NavWhatsAppBtn != null)
+            {
+                NavWhatsAppBtn.Content = esPremium ? "📱  WhatsApp" : "🔒  WhatsApp";
+            }
             if (NavSeguridadBtn != null)
             {
                 NavSeguridadBtn.Content = esPremium ? "🛡️  Caja y Seguridad" : "🔒  Caja y Seguridad";
+            }
+
+            if (BusinessSubtitleBox != null)
+            {
+                BusinessSubtitleBox.IsEnabled = esPremium;
+                BusinessSubtitleBox.ToolTip = esPremium ? null : "Personalizacion de ticket exclusiva de Version Premium";
+            }
+            if (BusinessAddressBox != null)
+            {
+                BusinessAddressBox.IsEnabled = esPremium;
+                BusinessAddressBox.ToolTip = esPremium ? null : "Personalizacion de ticket exclusiva de Version Premium";
+            }
+            if (FooterMessageBox != null)
+            {
+                FooterMessageBox.IsEnabled = esPremium;
+                FooterMessageBox.ToolTip = esPremium ? null : "Personalizacion de ticket exclusiva de Version Premium";
             }
 
             if (LblColorAcentoTitulo != null)
@@ -137,9 +165,18 @@ namespace Punto_de_Venta
                 PaperWidthComboBox.SelectedIndex = 0;
 
             BusinessNameBox.Text = _config.NombreNegocio ?? string.Empty;
-            BusinessSubtitleBox.Text = _config.GiroNegocio ?? string.Empty;
-            BusinessAddressBox.Text = _config.DireccionNegocio ?? string.Empty;
-            FooterMessageBox.Text = _config.MensajePie ?? string.Empty;
+            if (!LicenciaService.EsPremium())
+            {
+                BusinessSubtitleBox.Text = string.Empty;
+                BusinessAddressBox.Text = string.Empty;
+                FooterMessageBox.Text = "GRACIAS POR SU COMPRA\nVuelva pronto";
+            }
+            else
+            {
+                BusinessSubtitleBox.Text = _config.GiroNegocio ?? string.Empty;
+                BusinessAddressBox.Text = _config.DireccionNegocio ?? string.Empty;
+                FooterMessageBox.Text = _config.MensajePie ?? string.Empty;
+            }
 
 
             DarkModeCheckBox.IsChecked = _config.ModoOscuro;
@@ -367,16 +404,45 @@ namespace Punto_de_Venta
         }
 
         private void NavImpresion_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelImpresion, true);
-        private void NavPersonalizacion_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelPersonalizacion, false);
+        private void NavPersonalizacion_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Personalizacion del sistema");
+                return;
+            }
+            MostrarPanel(PanelPersonalizacion, false);
+        }
         private void NavBascula_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelBascula, false);
         private void NavServidorLocal_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Servidor Local");
+                return;
+            }
             MostrarPanel(PanelServidorLocal, false);
             ActualizarEstadoServidorUI();
         }
-        private void NavSeguridad_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelSeguridad, false);
+        private void NavSeguridad_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Caja y Seguridad");
+                return;
+            }
+            MostrarPanel(PanelSeguridad, false);
+        }
         private void NavAtajos_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelAtajos, false);
-        private void NavWhatsApp_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelWhatsApp, false);
+        private void NavWhatsApp_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Plantilla de WhatsApp");
+                return;
+            }
+            MostrarPanel(PanelWhatsApp, false);
+        }
         private void NavAyuda_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelAyuda, false);
 
         private void MostrarPanel(StackPanel panel, bool verPreviewTicket)
@@ -670,10 +736,22 @@ namespace Punto_de_Venta
                     _config.AnchoTicketCaracteres = width;
 
                 _config.NombreNegocio = BusinessNameBox.Text.Trim();
-                _config.GiroNegocio = BusinessSubtitleBox.Text.Trim();
-                _config.DireccionNegocio = BusinessAddressBox.Text.Trim();
-                _config.MensajePie = FooterMessageBox.Text.Trim();
-
+                if (!LicenciaService.EsPremium())
+                {
+                    _config.GiroNegocio = string.Empty;
+                    _config.DireccionNegocio = string.Empty;
+                    _config.MensajePie = "GRACIAS POR SU COMPRA\nVuelva pronto";
+                    _config.ColorAcentoHex = "#007AFF";
+                    _config.SolicitarPinAdmin = false;
+                }
+                else
+                {
+                    _config.GiroNegocio = BusinessSubtitleBox.Text.Trim();
+                    _config.DireccionNegocio = BusinessAddressBox.Text.Trim();
+                    _config.MensajePie = FooterMessageBox.Text.Trim();
+                    _config.ColorAcentoHex = _selectedColorHex;
+                    _config.SolicitarPinAdmin = RequirePinCheckBox.IsChecked == true;
+                }
 
                 var modoOscuroSeleccionado = DarkModeCheckBox.IsChecked == true;
                 _config.ModoOscuro = modoOscuroSeleccionado;
@@ -681,17 +759,6 @@ namespace Punto_de_Venta
                 if (CmbModoMetricas?.SelectedItem is ComboBoxItem itemMetricas && itemMetricas.Tag != null)
                 {
                     _config.ModoVisualizacionMetricas = itemMetricas.Tag.ToString() ?? "Graficas";
-                }
-
-                if (!LicenciaService.EsPremium())
-                {
-                    _config.ColorAcentoHex = "#007AFF";
-                    _config.SolicitarPinAdmin = false;
-                }
-                else
-                {
-                    _config.ColorAcentoHex = _selectedColorHex;
-                    _config.SolicitarPinAdmin = RequirePinCheckBox.IsChecked == true;
                 }
 
                 _config.BasculaHabilitada = EnableScaleCheckBox.IsChecked == true;
@@ -750,7 +817,7 @@ namespace Punto_de_Venta
                 }
 
                 _config.MensajeWhatsAppRecordatorio = WhatsAppTemplateBox.Text.Trim();
-                bool habilitarSv = EnableLocalServerCheckBox?.IsChecked == true;
+                bool habilitarSv = LicenciaService.EsPremium() && (EnableLocalServerCheckBox?.IsChecked == true);
                 _config.ServidorLocalHabilitado = habilitarSv;
                 _config.Save();
 

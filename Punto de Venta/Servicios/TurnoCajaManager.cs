@@ -87,6 +87,22 @@ namespace Punto_de_Venta
             return null;
         }
 
+        public static CorteCaja? ObtenerTurnoPendienteDeDiasAnteriores()
+        {
+            try
+            {
+                var turno = ObtenerTurnoActivo();
+                if (turno != null && turno.FechaHora.Date < DateTime.Today)
+                {
+                    return turno;
+                }
+            }
+            catch
+            {
+            }
+            return null;
+        }
+
         public static void CerrarTurno(CorteCaja turnoActivo, decimal totalContadoFisico, string observacionesCierre, decimal ventasEfectivo)
         {
             using var conn = DatabaseHelper.GetConnection();

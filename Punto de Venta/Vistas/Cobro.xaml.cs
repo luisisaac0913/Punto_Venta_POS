@@ -80,6 +80,7 @@ namespace Punto_de_Venta.Vistas
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             ActualizarIndicadoresPremiumUI();
+            VerificarTurnoPendienteDeDiasAnteriores();
             try
             {
                 _catalog = ProductoDB.Load();
@@ -135,6 +136,7 @@ namespace Punto_de_Venta.Vistas
             if ((bool)e.NewValue)
             {
                 ActualizarIndicadoresPremiumUI();
+                VerificarTurnoPendienteDeDiasAnteriores();
                 try { _catalog = ProductoDB.Load(); } catch { _catalog = new(); }
                 CargarPromocionesDesdeDb();
                 CargarVentasEnEsperaDesdeDb();
@@ -147,6 +149,22 @@ namespace Punto_de_Venta.Vistas
                     SearchBox?.Focus();
                     SearchBox?.SelectAll();
                 }));
+            }
+        }
+
+        private void VerificarTurnoPendienteDeDiasAnteriores()
+        {
+            try
+            {
+                var turno = TurnoCajaManager.ObtenerTurnoPendienteDeDiasAnteriores();
+                if (turno != null)
+                {
+                    string fechaStr = turno.FechaHora.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+                    ToastNotification.Show($"Atencion: Tienes un turno pendiente por cerrar del dia {fechaStr}.", ToastType.Warning);
+                }
+            }
+            catch
+            {
             }
         }
 
@@ -259,11 +277,11 @@ namespace Punto_de_Venta.Vistas
             }
             if (RbMixto != null)
             {
-                RbMixto.Content = esPremium ? "Mixto (F7)" : "🔒 Mixto (F7)";
+                RbMixto.Content = "Mixto (F7)";
             }
             if (CreditButton != null)
             {
-                CreditButton.Content = esPremium ? "FIAR (F6)" : "🔒 FIAR (F6)";
+                CreditButton.Content = "FIAR (F6)";
             }
         }
         #endregion
@@ -272,12 +290,6 @@ namespace Punto_de_Venta.Vistas
 
         private async void AbrirModalPesaje()
         {
-            if (!LicenciaService.EsPremium())
-            {
-                LicenciaService.MostrarMensajePremium("Integracion con Bascula");
-                return;
-            }
-
             var cartGrid = (DataGrid)FindName("CartGrid");
             _itemEnPesaje = cartGrid.SelectedItem as ItemCarrito ?? Cart.LastOrDefault();
 
@@ -1068,6 +1080,13 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
+            if (!LicenciaService.EsPremium() && _catalog.Count >= 400)
+            {
+                QuickValidationMessage.Text = "Limite de 400 productos alcanzado.";
+                LicenciaService.MostrarMensajePremium("Limite de 400 productos en inventario");
+                return;
+            }
+
             var siguiente = _catalog.Select(p => p.Id).DefaultIfEmpty(0).Max() + 1;
             var nuevoProd = new Producto
             {
@@ -1214,24 +1233,12 @@ namespace Punto_de_Venta.Vistas
                 if (e.Key == Key.F3) { RbTransferencia.IsChecked = true; e.Handled = true; return; }
                 if (e.Key == Key.F7)
                 {
-                    if (!LicenciaService.EsPremium())
-                    {
-                        LicenciaService.MostrarMensajePremium("Pago Mixto");
-                        e.Handled = true;
-                        return;
-                    }
                     RbMixto.IsChecked = true;
                     e.Handled = true;
                     return;
                 }
                 if (e.Key == Key.F6)
                 {
-                    if (!LicenciaService.EsPremium())
-                    {
-                        LicenciaService.MostrarMensajePremium("Fiar Venta");
-                        e.Handled = true;
-                        return;
-                    }
                     StartCreditProcess();
                     e.Handled = true;
                     return;
@@ -1295,24 +1302,12 @@ namespace Punto_de_Venta.Vistas
             if (e.Key == Key.F10 || (e.Key == Key.System && e.SystemKey == Key.F10)) { OpenQuickRestockModal(); e.Handled = true; return; }
             if (e.Key == Key.F8)
             {
-                if (!LicenciaService.EsPremium())
-                {
-                    LicenciaService.MostrarMensajePremium("Integracion con Bascula");
-                    e.Handled = true;
-                    return;
-                }
                 AbrirModalPesaje();
                 e.Handled = true;
                 return;
             }
             if (e.Key == Key.F5)
             {
-                if (!LicenciaService.EsPremium())
-                {
-                    LicenciaService.MostrarMensajePremium("Apertura de Cajon");
-                    e.Handled = true;
-                    return;
-                }
                 CajonService.AbrirCajon();
                 e.Handled = true;
                 return;
@@ -1396,12 +1391,6 @@ namespace Punto_de_Venta.Vistas
 
         private void StartCreditProcess()
         {
-            if (!LicenciaService.EsPremium())
-            {
-                LicenciaService.MostrarMensajePremium("Fiar Venta");
-                return;
-            }
-
             CreditValidationMessage.Text = string.Empty;
             DebtorNameBox.Clear();
             CreditOverlay.Visibility = Visibility.Visible;
@@ -1469,6 +1458,13 @@ namespace Punto_de_Venta.Vistas
                 }
                 else
                 {
+                    if (!LicenciaService.EsPremium() && debtors.Count >= 5)
+                    {
+                        CreditValidationMessage.Text = "Limite de 5 prestamos alcanzado.";
+                        LicenciaService.MostrarMensajePremium("Limite de 5 prestamos");
+                        return;
+                    }
+
                     var nextDebtorId = debtors.Select(d => d.Id).DefaultIfEmpty(0).Max() + 1;
                     debtors.Add(new Deudor
                     {
@@ -1643,13 +1639,6 @@ namespace Punto_de_Venta.Vistas
 
             if (RbMixto.IsChecked == true)
             {
-                if (!LicenciaService.EsPremium())
-                {
-                    RbEfectivo.IsChecked = true;
-                    LicenciaService.MostrarMensajePremium("Pago Mixto");
-                    return;
-                }
-
                 SinglePaymentLabel.Visibility = Visibility.Collapsed;
                 SinglePaymentContainer.Visibility = Visibility.Collapsed;
                 MixedPaymentContainer.Visibility = Visibility.Visible;

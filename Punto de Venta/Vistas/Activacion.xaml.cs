@@ -18,7 +18,19 @@ namespace Punto_de_Venta
     {
         private const string AzureFunctionVerificarBaseUrl = "https://chipandchapa-d5bsach3emeka6h0.mexicocentral-01.azurewebsites.net/api/verificar/";
         private const string AzureFunctionGenerarPagoUrl = "https://chipandchapa-d5bsach3emeka6h0.mexicocentral-01.azurewebsites.net/api/crear-preferencia";
-        private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+        private static readonly HttpClient _httpClient = CrearHttpClientSeguro(15);
+
+        private static HttpClient CrearHttpClientSeguro(int timeoutSegundos)
+        {
+            var handler = new SocketsHttpHandler
+            {
+                SslOptions = new System.Net.Security.SslClientAuthenticationOptions
+                {
+                    EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13
+                }
+            };
+            return new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
+        }
 
         private string _hwid = string.Empty;
         private string _initPointUrl = string.Empty;
@@ -187,9 +199,22 @@ namespace Punto_de_Venta
                     UseShellExecute = true
                 });
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.WriteLine($"[Activacion] No se pudo abrir el navegador: {ex.Message}");
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "cmd",
+                        Arguments = $"/c start \"\" \"{url}\"",
+                        CreateNoWindow = true
+                    });
+                }
+                catch
+                {
+                    try { Clipboard.SetText(url); } catch { }
+                    ToastNotification.Show("Enlace de pago copiado al portapapeles. Pegalo en tu navegador.", ToastType.Info);
+                }
             }
         }
 

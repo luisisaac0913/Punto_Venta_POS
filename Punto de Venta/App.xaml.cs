@@ -73,6 +73,14 @@ namespace Punto_de_Venta
         }
         protected override void OnStartup(StartupEventArgs e)
         {
+            try
+            {
+                System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12 | System.Net.SecurityProtocolType.Tls13;
+            }
+            catch
+            {
+            }
+
             VelopackApp.Build().Run();
 
             _singleInstanceMutex = new Mutex(true, @"Global\POS_PuntoDeVenta_SingleInstance_Mutex", out bool createdNew);

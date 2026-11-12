@@ -74,11 +74,6 @@ namespace Punto_de_Venta.Servicios
 
         public static bool AbrirCajon(string? nombreImpresora = null)
         {
-            if (!LicenciaService.EsPremium())
-            {
-                return false;
-            }
-
             try
             {
                 var printer = nombreImpresora;

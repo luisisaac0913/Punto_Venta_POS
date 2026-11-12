@@ -68,9 +68,26 @@ namespace Punto_de_Venta
             {
                 ActualizarIndicadoresPremiumUI();
                 RecargarDatosDesdeBD();
+                VerificarTurnoPendienteDeDiasAnteriores();
                 FocusSearch();
                 this.Focus();
                 Keyboard.Focus(this);
+            }
+        }
+
+        private void VerificarTurnoPendienteDeDiasAnteriores()
+        {
+            try
+            {
+                var turno = TurnoCajaManager.ObtenerTurnoPendienteDeDiasAnteriores();
+                if (turno != null)
+                {
+                    string fechaStr = turno.FechaHora.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+                    ToastNotification.Show($"Atencion: Tienes un turno pendiente por cerrar del dia {fechaStr}.", ToastType.Warning);
+                }
+            }
+            catch
+            {
             }
         }
 
