@@ -210,9 +210,21 @@
                                     </Style>
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="PRODUCTO" Binding="{Binding Producto.Nombre}" Width="2*" />
-                                    <DataGridTextColumn Header="CODIGO" Binding="{Binding Producto.Codigo}" Width="1*" />
-                                    <DataGridTextColumn Header="CANTIDAD" Binding="{Binding Cantidad}" Width="0.8*" ElementStyle="{StaticResource {x:Type TextBlock}}" />
+                                    <DataGridTextColumn Binding="{Binding Producto.Nombre}" Width="2*">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{DynamicResource BarcodeColProduct}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Producto.Codigo}" Width="1*">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{DynamicResource InvColCode}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Cantidad}" Width="0.8*" ElementStyle="{StaticResource {x:Type TextBlock}}">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{DynamicResource PosColQty}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
                                     <DataGridTemplateColumn Width="50">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>

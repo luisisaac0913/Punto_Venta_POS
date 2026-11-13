@@ -65,7 +65,7 @@ namespace Punto_de_Venta.Modelos
                     decimal piezas = 0m;
                     foreach (var p in Productos)
                     {
-                        if (p.SeVendePorPeso || p.Cantidad % 1m != 0m)
+                        if (p.ContarComoUnaPieza || p.SeVendePorPeso || p.Cantidad % 1m != 0m)
                         {
                             piezas += 1m;
                         }
@@ -115,5 +115,6 @@ namespace Punto_de_Venta.Modelos
         public decimal Subtotal => Precio * Cantidad;
         public string Categoria { get; set; } = "N/A";
         public bool SeVendePorPeso { get; set; }
+        public bool ContarComoUnaPieza { get; set; }
     }
 }

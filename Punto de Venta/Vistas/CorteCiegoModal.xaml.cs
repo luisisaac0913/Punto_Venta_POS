@@ -77,6 +77,11 @@ namespace Punto_de_Venta
             int.TryParse(Box100.Text.Trim(), out var b100);
             int.TryParse(Box50.Text.Trim(), out var b50);
             int.TryParse(Box20.Text.Trim(), out var b20);
+            b500 = Math.Max(0, b500);
+            b200 = Math.Max(0, b200);
+            b100 = Math.Max(0, b100);
+            b50 = Math.Max(0, b50);
+            b20 = Math.Max(0, b20);
 
             decimal totalMonedas = 0m;
             if (_contarMonedasIndividualmente)
@@ -85,6 +90,10 @@ namespace Punto_de_Venta
                 int.TryParse(Box5?.Text.Trim(), out var c5);
                 int.TryParse(Box2?.Text.Trim(), out var c2);
                 int.TryParse(Box1?.Text.Trim(), out var c1);
+                c10 = Math.Max(0, c10);
+                c5 = Math.Max(0, c5);
+                c2 = Math.Max(0, c2);
+                c1 = Math.Max(0, c1);
 
                 var centavosText = BoxCentavos?.Text.Trim() ?? string.Empty;
                 decimal centavos = 0m;
@@ -95,6 +104,7 @@ namespace Punto_de_Venta
                     {
                         centavos = 0m;
                     }
+                    centavos = Math.Max(0m, centavos);
                 }
 
                 totalMonedas = (c10 * 10m) + (c5 * 5m) + (c2 * 2m) + (c1 * 1m) + centavos;
@@ -110,6 +120,7 @@ namespace Punto_de_Venta
                     {
                         coins = 0m;
                     }
+                    coins = Math.Max(0m, coins);
                 }
                 totalMonedas = coins;
             }

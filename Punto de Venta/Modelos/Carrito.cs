@@ -15,6 +15,7 @@ namespace Punto_de_Venta.Modelos
         public decimal Precio { get; set; }
         public string Categoria { get; set; } = "N/A";
         public bool SeVendePorPeso { get; set; }
+        public bool ContarComoUnaPieza { get; set; }
 
         public decimal Cantidad
         {

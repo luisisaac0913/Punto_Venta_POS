@@ -116,6 +116,14 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
+            if (ProductoDB.ExisteCodigo(nuevoCodigo, _productoSeleccionado.Id))
+            {
+                ToastNotification.Show("Ese codigo de barras ya pertenece a otro producto", ToastType.Warning);
+                TxtCodigo.Focus();
+                TxtCodigo.SelectAll();
+                return;
+            }
+
             try
             {
                 using (var conn = DatabaseHelper.GetConnection())

@@ -10,7 +10,9 @@ namespace Punto_de_Venta.Vistas
     public partial class Bienvenida : Window
     {
         private int _pasoActual = 0; 
-        private bool _setupCompletado = false; 
+        private bool _setupCompletado = false;
+        private bool _actualizandoIdioma = false;
+
         public Bienvenida()
         {
             InitializeComponent();
@@ -19,34 +21,21 @@ namespace Punto_de_Venta.Vistas
                 Icon = System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/Imagenes/CHC_icono.ico"));
             }
             catch { }
+            var config = AppConfig.Load();
+            IdiomaService.AplicarIdioma(config.Idioma);
             CargarImpresoras();
             CargarPuertos();
             ActualizarVistaPasos();
-            var config = AppConfig.Load();
             BtnThemeToggle.Content = config.ModoOscuro ? "☀️" : "🌙";
             if (!string.IsNullOrWhiteSpace(config.NombreNegocio))
             {
                 TxtNombreNegocio.Text = config.NombreNegocio;
             }
 
-            bool esPremium = LicenciaService.EsPremium();
-            if (!esPremium)
-            {
-                LblDireccion.Text = "Direccion (Opcional) 🔒";
-                TxtDireccion.IsEnabled = false;
-                TxtDireccion.Text = string.Empty;
-                TxtDireccion.ToolTip = "Personalizacion de ticket exclusiva de Version Premium";
+            SincronizarControlesIdioma();
+            AplicarTextosDinamicos();
 
-                LblMensajeTicket.Text = "Mensaje del Ticket 🔒";
-                TxtMensajePie.IsEnabled = false;
-                TxtMensajePie.Text = "GRACIAS POR SU COMPRA\nVuelva pronto";
-                TxtMensajePie.ToolTip = "Personalizacion de ticket exclusiva de Version Premium";
-
-                LblPinAdminTitulo.Text = "PIN de Administrador (4 digitos) 🔒";
-                TxtPinAdmin.IsEnabled = false;
-                LblPinAdminDesc.Text = "El PIN de seguridad y autorizacion de cancelaciones requiere Version Premium.";
-            }
-            else
+            if (LicenciaService.EsPremium())
             {
                 if (!string.IsNullOrWhiteSpace(config.DireccionNegocio))
                 {
@@ -56,6 +45,80 @@ namespace Punto_de_Venta.Vistas
                 {
                     TxtMensajePie.Text = config.MensajePie;
                 }
+            }
+        }
+
+        private void SincronizarControlesIdioma()
+        {
+            _actualizandoIdioma = true;
+            try
+            {
+                bool esEn = IdiomaService.EsIngles();
+                if (CmbIdiomaHeader != null)
+                {
+                    CmbIdiomaHeader.SelectedIndex = esEn ? 1 : 0;
+                }
+            }
+            finally
+            {
+                _actualizandoIdioma = false;
+            }
+        }
+
+        private void CambiarIdioma(string codigo)
+        {
+            if (_actualizandoIdioma) return;
+            IdiomaService.AplicarIdioma(codigo);
+            var config = AppConfig.Load();
+            config.Idioma = IdiomaService.IdiomaActual;
+            if (AppConfig.ExisteArchivoConfiguracion())
+            {
+                config.Save();
+            }
+            SincronizarControlesIdioma();
+            AplicarTextosDinamicos();
+        }
+
+        private void AplicarTextosDinamicos()
+        {
+            if (CmbImpresoras != null && CmbImpresoras.Items.Count > 0)
+            {
+                int sel = CmbImpresoras.SelectedIndex;
+                CmbImpresoras.Items[0] = IdiomaService.Obtener("WelcomePrinterNone", "(Ninguna / Mas tarde)");
+                CmbImpresoras.SelectedIndex = sel >= 0 ? sel : 0;
+            }
+
+            bool esPremium = LicenciaService.EsPremium();
+            if (!esPremium)
+            {
+                LblDireccion.Text = IdiomaService.Obtener("WelcomeAddressLocked", "Direccion (Opcional) 🔒");
+                TxtDireccion.IsEnabled = false;
+                TxtDireccion.Text = string.Empty;
+                TxtDireccion.ToolTip = IdiomaService.Obtener("WelcomePremiumTicketTooltip", "Personalizacion de ticket exclusiva de Version Premium");
+
+                LblMensajeTicket.Text = IdiomaService.Obtener("WelcomeTicketMsgLocked", "Mensaje del Ticket 🔒");
+                TxtMensajePie.IsEnabled = false;
+                TxtMensajePie.Text = IdiomaService.Obtener("WelcomeTicketFreeDefault", "GRACIAS POR SU COMPRA\nVuelva pronto");
+                TxtMensajePie.ToolTip = IdiomaService.Obtener("WelcomePremiumTicketTooltip", "Personalizacion de ticket exclusiva de Version Premium");
+
+                LblPinAdminTitulo.Text = IdiomaService.Obtener("WelcomePinLocked", "PIN de Administrador (4 digitos) 🔒");
+                TxtPinAdmin.IsEnabled = false;
+                LblPinAdminDesc.Text = IdiomaService.Obtener("WelcomePinLockedDesc", "El PIN de seguridad y autorizacion de cancelaciones requiere Version Premium.");
+            }
+            else if (string.IsNullOrWhiteSpace(TxtMensajePie.Text) ||
+                     TxtMensajePie.Text == "Gracias por su preferencia!" ||
+                     TxtMensajePie.Text == "Thank you for your business!")
+            {
+                TxtMensajePie.Text = IdiomaService.Obtener("WelcomeTicketMsgDefault", "Gracias por su preferencia!");
+            }
+        }
+
+        private void CmbIdiomaHeader_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (_actualizandoIdioma) return;
+            if (CmbIdiomaHeader?.SelectedItem is System.Windows.Controls.ComboBoxItem item && item.Tag is string codigo)
+            {
+                CambiarIdioma(codigo);
             }
         }
 
@@ -91,7 +154,7 @@ namespace Punto_de_Venta.Vistas
 
         private void CargarImpresoras()
         {
-            CmbImpresoras.Items.Add("(Ninguna / Mas tarde)");
+            CmbImpresoras.Items.Add(IdiomaService.Obtener("WelcomePrinterNone", "(Ninguna / Mas tarde)"));
             try
             {
                 foreach (string printer in PrinterSettings.InstalledPrinters)
@@ -153,7 +216,11 @@ namespace Punto_de_Venta.Vistas
         {
             if (_pasoActual == 1 && string.IsNullOrWhiteSpace(TxtNombreNegocio.Text))
             {
-                CustomMessageBox.Show("El nombre de la tienda es obligatorio para poder continuar.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show(
+                    IdiomaService.Obtener("WelcomeStoreRequired", "El nombre de la tienda es obligatorio para poder continuar."),
+                    IdiomaService.Obtener("CommonNotice", "Aviso"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 TxtNombreNegocio.Focus();
                 return;
             }
@@ -186,7 +253,11 @@ namespace Punto_de_Venta.Vistas
                 if (!decimal.TryParse(textoFondo, NumberStyles.Any, CultureInfo.InvariantCulture, out _) &&
                     !decimal.TryParse(textoFondo, NumberStyles.Any, CultureInfo.GetCultureInfo("es-MX"), out _))
                 {
-                    CustomMessageBox.Show("El monto inicial del fondo de caja contiene caracteres invalidos. Solo usa numeros y un punto decimal.", "Fondo Invalido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    CustomMessageBox.Show(
+                        IdiomaService.Obtener("WelcomeCashInvalid", "El monto inicial del fondo de caja contiene caracteres invalidos. Solo usa numeros y un punto decimal."),
+                        IdiomaService.Obtener("CommonNotice", "Aviso"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
                     TxtFondoCaja.Focus();
                     TxtFondoCaja.SelectAll();
                     return;
@@ -195,24 +266,31 @@ namespace Punto_de_Venta.Vistas
 
             if (!string.IsNullOrWhiteSpace(TxtPinAdmin.Password) && TxtPinAdmin.Password.Length < 4)
             {
-                CustomMessageBox.Show("El PIN debe tener al menos 4 digitos numericos o dejarse vacio por ahora.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                CustomMessageBox.Show(
+                    IdiomaService.Obtener("WelcomePinInvalid", "El PIN debe tener al menos 4 digitos numericos o dejarse vacio por ahora."),
+                    IdiomaService.Obtener("CommonNotice", "Aviso"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 TxtPinAdmin.Focus();
                 return;
             }
 
             var config = AppConfig.Load();
+            config.Idioma = IdiomaService.IdiomaActual;
 
             config.NombreNegocio = TxtNombreNegocio.Text.Trim();
             if (!LicenciaService.EsPremium())
             {
                 config.DireccionNegocio = string.Empty;
-                config.MensajePie = "GRACIAS POR SU COMPRA\nVuelva pronto";
+                config.MensajePie = IdiomaService.Obtener("WelcomeTicketFreeDefault", "GRACIAS POR SU COMPRA\nVuelva pronto");
                 config.SolicitarPinAdmin = false;
             }
             else
             {
                 config.DireccionNegocio = TxtDireccion.Text.Trim();
-                config.MensajePie = string.IsNullOrWhiteSpace(TxtMensajePie.Text) ? "GRACIAS POR SU COMPRA\nVuelva pronto" : TxtMensajePie.Text.Trim();
+                config.MensajePie = string.IsNullOrWhiteSpace(TxtMensajePie.Text)
+                    ? IdiomaService.Obtener("WelcomeTicketFreeDefault", "GRACIAS POR SU COMPRA\nVuelva pronto")
+                    : TxtMensajePie.Text.Trim();
                 if (!string.IsNullOrWhiteSpace(TxtPinAdmin.Password))
                 {
                     config.EstablecerNuevoPin(TxtPinAdmin.Password.Trim());

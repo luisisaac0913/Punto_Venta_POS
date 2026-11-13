@@ -5,6 +5,10 @@
              ShutdownMode="OnExplicitShutdown">
 
     <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Recursos/Idiomas/Strings.es.xaml" />
+            </ResourceDictionary.MergedDictionaries>
 
         <BitmapImage x:Key="ThemeLogo" UriSource="pack://application:,,,/Imagenes/CHC_logo.png" />
         <SolidColorBrush x:Key="ThemeWindowBackground" Color="#F2F2F7" />
@@ -889,5 +893,6 @@
             </Setter>
         </Style>
 
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

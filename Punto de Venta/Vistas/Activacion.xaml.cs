@@ -12,9 +12,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
+using Punto_de_Venta.Vistas;
+
 namespace Punto_de_Venta
 {
-    public partial class Activacion : UserControl
+    public partial class Activacion : UserControl, IManejadorEscape
     {
         private const string AzureFunctionVerificarBaseUrl = "https://chipandchapa-d5bsach3emeka6h0.mexicocentral-01.azurewebsites.net/api/verificar/";
         private const string AzureFunctionGenerarPagoUrl = "https://chipandchapa-d5bsach3emeka6h0.mexicocentral-01.azurewebsites.net/api/crear-preferencia";
@@ -24,12 +26,31 @@ namespace Punto_de_Venta
         {
             var handler = new SocketsHttpHandler
             {
+                UseProxy = false,
+                Proxy = null,
                 SslOptions = new System.Net.Security.SslClientAuthenticationOptions
                 {
-                    EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13
+                    RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
                 }
             };
-            return new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
+            var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) POS/1.0");
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            return client;
+        }
+
+        private static HttpClient CrearHttpClientFallback(int timeoutSegundos)
+        {
+            var handler = new HttpClientHandler
+            {
+                UseProxy = false,
+                Proxy = null,
+                ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+            };
+            var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) POS/1.0");
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            return client;
         }
 
         private string _hwid = string.Empty;
@@ -51,13 +72,53 @@ namespace Punto_de_Venta
             Loaded += Activacion_Loaded;
             Unloaded += Activacion_Unloaded;
             PreviewKeyDown += Activacion_PreviewKeyDown;
+            this.PreviewGotKeyboardFocus += Activacion_PreviewGotKeyboardFocus;
+        }
+
+        public bool ManejarEscape()
+        {
+            if (OverlayVideoAcreditado != null && OverlayVideoAcreditado.Visibility == Visibility.Visible)
+            {
+                CerrarOverlayVideo();
+                return true;
+            }
+            DetenerPolling();
+            return false;
+        }
+
+        private void CerrarOverlayVideo()
+        {
+            _videoYaReproducido = true;
+            _activacionEnProceso = false;
+            try
+            {
+                VideoAcreditado.Stop();
+                VideoAcreditado.Close();
+                VideoAcreditado.Source = null;
+            }
+            catch { }
+            OverlayVideoAcreditado.Visibility = Visibility.Collapsed;
+            ActualizarEstadoVisual();
+        }
+
+        private void Activacion_PreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            if (OverlayVideoAcreditado != null && OverlayVideoAcreditado.Visibility == Visibility.Visible)
+            {
+                ModalFocusHelper.ProtegerFoco(e, OverlayVideoAcreditado);
+            }
         }
 
         private void Activacion_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
             {
-                DetenerPolling();
+                if (ManejarEscape())
+                {
+                    e.Handled = true;
+                    return;
+                }
+
                 var mainWindow = Window.GetWindow(this) as MainWindow ?? Application.Current.MainWindow as MainWindow;
                 mainWindow?.RegresarAlMenu();
                 e.Handled = true;
@@ -151,21 +212,82 @@ namespace Punto_de_Venta
                 string jsonBody = $"{{\"hwid\":\"{_hwid}\"}}";
                 var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PostAsync(AzureFunctionGenerarPagoUrl, content).ConfigureAwait(true);
+                string responseString = string.Empty;
+                var errores = new System.Collections.Generic.List<string>();
 
-                if (!response.IsSuccessStatusCode)
+                try
                 {
-                    throw new InvalidOperationException("El servidor no pudo generar el enlace de pago.");
+                    using var response = await _httpClient.PostAsync(AzureFunctionGenerarPagoUrl, content).ConfigureAwait(true);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(true);
+                    }
+                    else
+                    {
+                        string bodyError = await response.Content.ReadAsStringAsync().ConfigureAwait(true);
+                        errores.Add($"[SocketsHttp] HTTP {(int)response.StatusCode} ({response.StatusCode}): {bodyError}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errores.Add($"[SocketsHttp] {FormatearExcepcionCompleta(ex)}");
                 }
 
-                string responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(true);
+                if (string.IsNullOrWhiteSpace(responseString))
+                {
+                    try
+                    {
+                        using var fallbackClient = CrearHttpClientFallback(15);
+                        using var fallbackContent = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+                        using var responseFallback = await fallbackClient.PostAsync(AzureFunctionGenerarPagoUrl, fallbackContent).ConfigureAwait(true);
+                        if (responseFallback.IsSuccessStatusCode)
+                        {
+                            responseString = await responseFallback.Content.ReadAsStringAsync().ConfigureAwait(true);
+                        }
+                        else
+                        {
+                            string bodyError = await responseFallback.Content.ReadAsStringAsync().ConfigureAwait(true);
+                            errores.Add($"[HttpHandler] HTTP {(int)responseFallback.StatusCode} ({responseFallback.StatusCode}): {bodyError}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        errores.Add($"[HttpHandler] {FormatearExcepcionCompleta(ex)}");
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(responseString))
+                {
+                    try
+                    {
+                        responseString = await EjecutarPostConCurlAsync(AzureFunctionGenerarPagoUrl, jsonBody).ConfigureAwait(true);
+                        if (string.IsNullOrWhiteSpace(responseString))
+                        {
+                            errores.Add("[Curl] Respuesta vacia sin codigo de error.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        errores.Add($"[Curl] {FormatearExcepcionCompleta(ex)}");
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(responseString))
+                {
+                    string detalleFinal = errores.Count == 0
+                        ? "El servidor no devolvio respuesta."
+                        : string.Join("\n", errores);
+                    throw new InvalidOperationException($"No se pudo generar el enlace de pago:\n{detalleFinal}");
+                }
+
                 var data = JObject.Parse(responseString);
 
                 _initPointUrl = data["init_point"]?.ToString() ?? string.Empty;
 
                 if (string.IsNullOrWhiteSpace(_initPointUrl))
                 {
-                    throw new InvalidOperationException("La respuesta del servidor no contiene un enlace valido.");
+                    string mensajeServidor = data["error"]?.ToString() ?? data["message"]?.ToString() ?? responseString;
+                    throw new InvalidOperationException($"La respuesta del servidor no contiene un enlace valido: {mensajeServidor}");
                 }
 
                 TxtEstadoEspera.Text = "Esperando confirmacion del pago en la nube...";
@@ -176,8 +298,10 @@ namespace Punto_de_Venta
             }
             catch (Exception ex)
             {
+                string mensajeDetalle = FormatearExcepcionCompleta(ex);
+
                 CustomMessageBox.Show(
-                    $"Error al procesar la solicitud: {ex.Message}",
+                    $"Error al procesar la solicitud:\n{mensajeDetalle}",
                     "Fallo de Conexion",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
@@ -225,27 +349,135 @@ namespace Punto_de_Venta
                 return false;
             }
 
+            string urlVerificacion = AzureFunctionVerificarBaseUrl.TrimEnd('/') + "/" + Uri.EscapeDataString(_hwid);
+            string json = string.Empty;
+
             try
             {
-                string urlVerificacion = AzureFunctionVerificarBaseUrl.TrimEnd('/') + "/" + Uri.EscapeDataString(_hwid);
                 using var response = await _httpClient.GetAsync(urlVerificacion, cancellationToken).ConfigureAwait(false);
-
                 if (response.IsSuccessStatusCode)
                 {
-                    string json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                    return InterpretarRespuestaPagado(json);
+                    json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)
             {
                 throw;
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.WriteLine($"[PollingActivacion] Error consultando estatus: {ex.Message}");
+            }
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                try
+                {
+                    using var fallbackClient = CrearHttpClientFallback(12);
+                    using var response = await fallbackClient.GetAsync(urlVerificacion, cancellationToken).ConfigureAwait(false);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch
+                {
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                try
+                {
+                    json = await EjecutarGetConCurlAsync(urlVerificacion).ConfigureAwait(false);
+                }
+                catch
+                {
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                return InterpretarRespuestaPagado(json);
             }
 
             return false;
+        }
+
+        private static string FormatearExcepcionCompleta(Exception ex)
+        {
+            var sb = new StringBuilder();
+            Exception? actual = ex;
+            int nivel = 0;
+            while (actual != null && nivel < 6)
+            {
+                if (nivel > 0) sb.Append(" -> ");
+                sb.Append($"{actual.GetType().Name}: {actual.Message}");
+                if (actual is HttpRequestException httpEx && httpEx.StatusCode.HasValue)
+                {
+                    sb.Append($" [Status {(int)httpEx.StatusCode.Value}]");
+                }
+                actual = actual.InnerException;
+                nivel++;
+            }
+            return sb.ToString();
+        }
+
+        private static async Task<string> EjecutarPostConCurlAsync(string url, string jsonBody)
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "curl.exe",
+                Arguments = $"-sS -k -X POST -H \"Content-Type: application/json\" -H \"Accept: application/json\" -d \"{jsonBody.Replace("\"", "\\\"")}\" \"{url}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi) ?? throw new InvalidOperationException("No se pudo iniciar curl.exe");
+            Task<string> outTask = proc.StandardOutput.ReadToEndAsync();
+            Task<string> errTask = proc.StandardError.ReadToEndAsync();
+            await proc.WaitForExitAsync().ConfigureAwait(false);
+            string output = await outTask.ConfigureAwait(false);
+            string errorOutput = await errTask.ConfigureAwait(false);
+
+            if (proc.ExitCode != 0)
+            {
+                throw new InvalidOperationException($"ExitCode {proc.ExitCode}: {(string.IsNullOrWhiteSpace(errorOutput) ? output : errorOutput).Trim()}");
+            }
+            if (string.IsNullOrWhiteSpace(output) && !string.IsNullOrWhiteSpace(errorOutput))
+            {
+                throw new InvalidOperationException(errorOutput.Trim());
+            }
+            return output;
+        }
+
+        private static async Task<string> EjecutarGetConCurlAsync(string url)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "curl.exe",
+                    Arguments = $"-s -k -H \"Accept: application/json\" \"{url}\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                };
+                using var proc = Process.Start(psi);
+                if (proc == null) return string.Empty;
+                string output = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+                await proc.WaitForExitAsync().ConfigureAwait(false);
+                return output;
+            }
+            catch
+            {
+                return string.Empty;
+            }
         }
 
         private void IniciarPollingVerificacion()

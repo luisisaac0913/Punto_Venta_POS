@@ -87,7 +87,7 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" x:Name="TxtTitle" Text="Aviso" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,12" TextAlignment="Center" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="0" x:Name="TxtTitle" Text="{DynamicResource CommonNotice}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,12" TextAlignment="Center" TextWrapping="Wrap" />
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,20">
                     <TextBlock x:Name="TxtMessage" Text="Cuerpo del mensaje" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
                 </ScrollViewer>

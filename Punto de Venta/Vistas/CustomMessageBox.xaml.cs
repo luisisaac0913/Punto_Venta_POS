@@ -21,10 +21,30 @@ namespace Punto_de_Venta.Vistas
             {
                 this.Owner = owner;
             }
+            else if (Application.Current?.MainWindow != null && Application.Current.MainWindow.IsVisible)
+            {
+                this.Owner = Application.Current.MainWindow;
+            }
 
-            TxtTitle.Text = titulo;
-            TxtMessage.Text = mensaje;
+            KeyboardNavigation.SetTabNavigation(this, KeyboardNavigationMode.Cycle);
+            KeyboardNavigation.SetDirectionalNavigation(this, KeyboardNavigationMode.Cycle);
+            KeyboardNavigation.SetControlTabNavigation(this, KeyboardNavigationMode.Cycle);
+
+            this.PreviewKeyDown += CustomMessageBox_PreviewKeyDown;
+
+            TxtTitle.Text = Punto_de_Venta.Servicios.IdiomaService.TraducirTexto(titulo);
+            TxtMessage.Text = Punto_de_Venta.Servicios.IdiomaService.TraducirTexto(mensaje);
             ConfigurarBotones(botones);
+        }
+
+        private void CustomMessageBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                Resultado = (BotonesGrid.Columns == 1) ? MessageBoxResult.OK : MessageBoxResult.Cancel;
+                this.Close();
+                e.Handled = true;
+            }
         }
 
         private void ConfigurarBotones(MessageBoxButton botones)
@@ -40,12 +60,12 @@ namespace Punto_de_Venta.Vistas
             {
                 BotonesGrid.Columns = 2;
                 BotonesGrid.Children.Add(CrearBoton("No", MessageBoxResult.No, false));
-                BotonesGrid.Children.Add(CrearBoton("Si", MessageBoxResult.Yes, true));
+                BotonesGrid.Children.Add(CrearBoton(Punto_de_Venta.Servicios.IdiomaService.EsIngles() ? "Yes" : "Si", MessageBoxResult.Yes, true));
             }
             else if (botones == MessageBoxButton.OKCancel)
             {
                 BotonesGrid.Columns = 2;
-                BotonesGrid.Children.Add(CrearBoton("Cancelar", MessageBoxResult.Cancel, false));
+                BotonesGrid.Children.Add(CrearBoton(Punto_de_Venta.Servicios.IdiomaService.EsIngles() ? "Cancel" : "Cancelar", MessageBoxResult.Cancel, false));
                 BotonesGrid.Children.Add(CrearBoton("OK", MessageBoxResult.OK, true));
             }
         }
@@ -55,7 +75,9 @@ namespace Punto_de_Venta.Vistas
             Button btn = new Button
             {
                 Content = texto,
-                Style = esPrimario ? (Style)FindResource("AlertPrimaryButtonStyle") : (Style)FindResource("AlertButtonStyle")
+                Style = esPrimario ? (Style)FindResource("AlertPrimaryButtonStyle") : (Style)FindResource("AlertButtonStyle"),
+                IsDefault = esPrimario,
+                IsCancel = (resultadoAlClic == MessageBoxResult.Cancel || resultadoAlClic == MessageBoxResult.No || (BotonesGrid.Columns == 1 && esPrimario))
             };
             if (esPrimario)
             {
@@ -78,7 +100,6 @@ namespace Punto_de_Venta.Vistas
         private void Fondo_MouseDown(object sender, MouseButtonEventArgs e)
         {
         }
-
 
         public static MessageBoxResult Show(string mensaje)
         {

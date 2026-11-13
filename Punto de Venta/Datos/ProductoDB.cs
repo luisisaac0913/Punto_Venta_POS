@@ -71,7 +71,8 @@ namespace Punto_de_Venta.Datos
                 Precio = LeerDecimal(reader, 6),
                 Stock = LeerDecimal(reader, 7),
                 PedirCantidadAlCobrar = LeerEntero(reader, 8) == 1,
-                SeVendePorPeso = LeerEntero(reader, 9) == 1
+                SeVendePorPeso = LeerEntero(reader, 9) == 1,
+                ContarComoUnaPieza = reader.FieldCount > 10 && LeerEntero(reader, 10) == 1
             };
         }
 
@@ -81,7 +82,7 @@ namespace Punto_de_Venta.Datos
             using var conn = DatabaseHelper.GetConnection();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso 
+                SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, COALESCE(ContarComoUnaPieza, 0) 
                 FROM Productos 
                 ORDER BY Id ASC;";
             using var reader = cmd.ExecuteReader();
@@ -102,7 +103,7 @@ namespace Punto_de_Venta.Datos
             if (string.IsNullOrWhiteSpace(query))
             {
                 cmd.CommandText = @"
-                    SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso
+                    SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, COALESCE(ContarComoUnaPieza, 0)
                     FROM Productos
                     ORDER BY Id ASC
                     LIMIT @limite;";
@@ -115,7 +116,7 @@ namespace Punto_de_Venta.Datos
                 int idBuscado = int.TryParse(limpio, out var parsedId) ? parsedId : -1;
 
                 cmd.CommandText = @"
-                    SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso
+                    SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, COALESCE(ContarComoUnaPieza, 0)
                     FROM Productos
                     WHERE Codigo LIKE @like
                        OR Nombre LIKE @like
@@ -148,6 +149,27 @@ namespace Punto_de_Venta.Datos
             return list;
         }
 
+        public static int ObtenerSiguienteId()
+        {
+            using var conn = DatabaseHelper.GetConnection();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT COALESCE(MAX(Id), 0) + 1 FROM Productos;";
+            return Convert.ToInt32(cmd.ExecuteScalar() ?? 1);
+        }
+
+        public static bool ExisteCodigo(string codigo, int? excluirId = null)
+        {
+            if (string.IsNullOrWhiteSpace(codigo)) return false;
+            using var conn = DatabaseHelper.GetConnection();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = excluirId.HasValue
+                ? "SELECT 1 FROM Productos WHERE LOWER(TRIM(Codigo)) = LOWER(TRIM(@codigo)) AND Id <> @excluirId LIMIT 1;"
+                : "SELECT 1 FROM Productos WHERE LOWER(TRIM(Codigo)) = LOWER(TRIM(@codigo)) LIMIT 1;";
+            cmd.Parameters.AddWithValue("@codigo", codigo.Trim());
+            if (excluirId.HasValue) cmd.Parameters.AddWithValue("@excluirId", excluirId.Value);
+            return cmd.ExecuteScalar() != null;
+        }
+
         public static void Delete(int id)
         {
             using (var conn = DatabaseHelper.GetConnection())
@@ -171,8 +193,8 @@ namespace Punto_de_Venta.Datos
                 using var insertar = conn.CreateCommand();
                 insertar.Transaction = transaction;
                 insertar.CommandText = @"
-                    INSERT INTO Productos (Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso)
-                    VALUES (@id, @codigo, @nombre, @categoria, @costo, @ganancia, @precio, @stock, @pedirCantidad, @seVendePorPeso)
+                    INSERT INTO Productos (Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, ContarComoUnaPieza)
+                    VALUES (@id, @codigo, @nombre, @categoria, @costo, @ganancia, @precio, @stock, @pedirCantidad, @seVendePorPeso, @contarComoUnaPieza)
                     ON CONFLICT(Id) DO UPDATE SET 
                         Codigo = excluded.Codigo,
                         Nombre = excluded.Nombre,
@@ -182,7 +204,8 @@ namespace Punto_de_Venta.Datos
                         Precio = excluded.Precio,
                         Stock = excluded.Stock,
                         PedirCantidadAlCobrar = excluded.PedirCantidadAlCobrar,
-                        SeVendePorPeso = excluded.SeVendePorPeso;";
+                        SeVendePorPeso = excluded.SeVendePorPeso,
+                        ContarComoUnaPieza = excluded.ContarComoUnaPieza;";
 
                 var pId = insertar.Parameters.Add("@id", SqliteType.Integer);
                 var pCodigo = insertar.Parameters.Add("@codigo", SqliteType.Text);
@@ -194,6 +217,7 @@ namespace Punto_de_Venta.Datos
                 var pStock = insertar.Parameters.Add("@stock", SqliteType.Real);
                 var pPedir = insertar.Parameters.Add("@pedirCantidad", SqliteType.Integer);
                 var pPeso = insertar.Parameters.Add("@seVendePorPeso", SqliteType.Integer);
+                var pContar1 = insertar.Parameters.Add("@contarComoUnaPieza", SqliteType.Integer);
                 foreach (var prod in products)
                 {
                     pId.Value = prod.Id;
@@ -206,6 +230,7 @@ namespace Punto_de_Venta.Datos
                     pStock.Value = Convert.ToDouble(prod.Stock);
                     pPedir.Value = prod.PedirCantidadAlCobrar ? 1 : 0;
                     pPeso.Value = prod.SeVendePorPeso ? 1 : 0;
+                    pContar1.Value = prod.ContarComoUnaPieza ? 1 : 0;
                     insertar.ExecuteNonQuery();
                 }
                 transaction.Commit();
@@ -229,7 +254,7 @@ namespace Punto_de_Venta.Datos
             using var conn = DatabaseHelper.GetConnection();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso 
+                SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, COALESCE(ContarComoUnaPieza, 0) 
                 FROM Productos 
                 WHERE TRIM(Codigo) = @limpio COLLATE NOCASE
                    OR (@sinCeros <> '' AND LTRIM(TRIM(Codigo), '0') = @sinCeros COLLATE NOCASE)

@@ -58,7 +58,7 @@
                            Foreground="{DynamicResource ThemeTextForeground}" 
                            TextAlignment="Center" 
                            TextTrimming="CharacterEllipsis" />
-                <TextBlock Text="Cantidad" 
+                <TextBlock Text="{DynamicResource QtyModalSubtitle}" 
                            FontSize="12" 
                            Foreground="{DynamicResource ThemeMutedForeground}" 
                            TextAlignment="Center" 
@@ -84,7 +84,7 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Button Content="Cancelar (Esc)" 
+                <Button Content="{DynamicResource QtyModalCancel}" 
                         Height="36" 
                         Background="{DynamicResource ThemeInputBackground}" 
                         Foreground="{DynamicResource ThemeTextForeground}" 
@@ -114,7 +114,7 @@
                 </Button>
 
                 <Button Grid.Column="2" 
-                        Content="Aceptar (Enter)" 
+                        Content="{DynamicResource QtyModalAccept}" 
                         Height="36" 
                         Background="{DynamicResource ThemeAccent}" 
                         Foreground="White" 

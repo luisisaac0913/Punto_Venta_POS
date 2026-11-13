@@ -61,7 +61,7 @@
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0" Visibility="Collapsed">
-                <TextBlock Text="Promociones" Visibility="Collapsed" />
+                <TextBlock Text="{DynamicResource PromosTitle}" Visibility="Collapsed" />
             </Grid>
 
             <Grid Grid.Row="1" Margin="32,20,32,20">
@@ -74,10 +74,25 @@
                 <Border Grid.Column="0" Style="{StaticResource FluentCardStyle}" Padding="10">
                     <DataGrid x:Name="PromocionesGrid" SelectionMode="Single">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="NOMBRE" Binding="{Binding Nombre}" Width="2*" />
-                            <DataGridTextColumn Header="TIPO" Binding="{Binding Tipo}" Width="1*" />
-                            <DataGridTextColumn Header="VIGENCIA" Binding="{Binding VigenciaTexto}" Width="1.3*" />
-                            <DataGridTemplateColumn Header="ACTIVA" Width="80">
+                            <DataGridTextColumn Binding="{Binding Nombre}" Width="2*">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource PosColName}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding Tipo}" Width="1*">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource PromosColType}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding VigenciaTexto}" Width="1.3*">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource PromosColValidity}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Width="80">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{DynamicResource PromosColActive}" />
+                                </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <CheckBox IsChecked="{Binding Activa, Mode=TwoWay}" 
@@ -88,7 +103,10 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="ACCIONES" Width="100">
+                            <DataGridTemplateColumn Width="100">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{DynamicResource PromosColActions}" />
+                                </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -104,24 +122,24 @@
 
                 <Border Grid.Column="2" Style="{StaticResource FluentCardStyle}" Padding="20">
                     <StackPanel>
-                        <TextBlock x:Name="TituloFormularioText" Text="Nueva Promocion" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
+                        <TextBlock x:Name="TituloFormularioText" Text="{DynamicResource PromosNewTitle}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
 
-                        <TextBlock Text="Nombre descriptivo" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                        <TextBlock Text="{DynamicResource PromosNameLabel}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                         <TextBox x:Name="NombrePromoBox" Margin="0,0,0,12" />
 
-                        <TextBlock Text="Tipo de Promocion" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                        <TextBlock Text="{DynamicResource PromosTypeLabel}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                         <ComboBox x:Name="TipoPromoCombo" Margin="0,0,0,12" SelectionChanged="TipoPromoCombo_SelectionChanged">
-                            <ComboBoxItem Content="Volumen (Ej: 3 por $45)" IsSelected="True" Tag="Volumen" />
-                            <ComboBoxItem Content="Combo (Producto A + B)" Tag="Combo" />
-                            <ComboBoxItem Content="Segunda pieza con Descuento" Tag="PorcentajeSegundo" />
-                            <ComboBoxItem Content="Mayoreo (A partir de N piezas, baja precio unitario)" Tag="Mayoreo" />
+                            <ComboBoxItem Content="{DynamicResource PromosTypeVolume}" IsSelected="True" Tag="Volumen" />
+                            <ComboBoxItem Content="{DynamicResource PromosTypeCombo}" Tag="Combo" />
+                            <ComboBoxItem Content="{DynamicResource PromosTypeSecond}" Tag="PorcentajeSegundo" />
+                            <ComboBoxItem Content="{DynamicResource PromosTypeWholesale}" Tag="Mayoreo" />
                         </ComboBox>
 
-                        <TextBlock x:Name="LabelProd1" Text="ID Producto Principal" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                        <TextBlock x:Name="LabelProd1" Text="{DynamicResource PromosMainProdId}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                         <TextBox x:Name="ProdId1Box" Margin="0,0,0,12" />
 
                         <StackPanel x:Name="PanelProducto2" Visibility="Collapsed" Margin="0,0,0,12">
-                            <TextBlock Text="ID Segundo Producto (B)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                            <TextBlock Text="{DynamicResource PromosSecondProdId}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                             <TextBox x:Name="ProdId2Box" />
                         </StackPanel>
 
@@ -132,26 +150,26 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Cantidad Minima" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                <TextBlock Text="{DynamicResource PromosMinQty}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <TextBox x:Name="CantidadMinBox" Text="3" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Precio Especial ($)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                <TextBlock Text="{DynamicResource PromosSpecialPrice}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <TextBox x:Name="PrecioEspecialBox" Text="0.00" />
                             </StackPanel>
                         </Grid>
 
                         <StackPanel x:Name="PanelPrecioCombo" Visibility="Collapsed" Margin="0,0,0,12">
-                            <TextBlock Text="Precio Total del Combo ($)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                            <TextBlock Text="{DynamicResource PromosComboPrice}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                             <TextBox x:Name="PrecioComboTotalBox" Text="0.00" />
                         </StackPanel>
 
                         <StackPanel x:Name="PanelPorcentaje" Visibility="Collapsed" Margin="0,0,0,12">
-                            <TextBlock Text="% Descuento en 2da pieza (ej: 50)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                            <TextBlock Text="{DynamicResource PromosDiscountPct}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                             <TextBox x:Name="PorcentajeDescuentoBox" Text="50" />
                         </StackPanel>
 
-                        <CheckBox x:Name="ChkTiempoLimite" Content="Definir tiempo limite (fechas)" Margin="2,2,0,10" Checked="ChkTiempoLimite_Changed" Unchecked="ChkTiempoLimite_Changed" />
+                        <CheckBox x:Name="ChkTiempoLimite" Content="{DynamicResource PromosLimitTime}" Margin="2,2,0,10" Checked="ChkTiempoLimite_Changed" Unchecked="ChkTiempoLimite_Changed" />
 
                         <Grid x:Name="PanelFechas" Visibility="Collapsed" Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
@@ -160,11 +178,11 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Fecha Inicio" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                <TextBlock Text="{DynamicResource PromosStartDate}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <DatePicker x:Name="FechaInicioPicker" />
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Fecha Fin (Limite)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                <TextBlock Text="{DynamicResource PromosEndDate}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <DatePicker x:Name="FechaFinPicker" />
                             </StackPanel>
                         </Grid>
@@ -174,8 +192,8 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Button x:Name="BtnCancelarEdicion" Grid.Column="0" Content="Cancelar" Visibility="Collapsed" Style="{StaticResource FluentButtonSecondary}" Margin="0,0,10,0" Click="CancelarEdicion_Click" />
-                            <Button x:Name="BtnGuardarPromo" Grid.Column="1" Content="Guardar Promocion" Style="{StaticResource FluentButtonPrimary}" Click="GuardarPromo_Click" />
+                            <Button x:Name="BtnCancelarEdicion" Grid.Column="0" Content="{DynamicResource CommonCancel}" Visibility="Collapsed" Style="{StaticResource FluentButtonSecondary}" Margin="0,0,10,0" Click="CancelarEdicion_Click" />
+                            <Button x:Name="BtnGuardarPromo" Grid.Column="1" Content="{DynamicResource PromosSaveBtn}" Style="{StaticResource FluentButtonPrimary}" Click="GuardarPromo_Click" />
                         </Grid>
                     </StackPanel>
                 </Border>

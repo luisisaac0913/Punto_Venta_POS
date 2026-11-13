@@ -23,9 +23,11 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
 
+using Punto_de_Venta.Vistas;
+
 namespace Punto_de_Venta
 {
-    public partial class Ventas : UserControl, ILimpiarSeleccion
+    public partial class Ventas : UserControl, ILimpiarSeleccion, IManejadorEscape
     {
         private readonly DispatcherTimer _clockTimer;
         private List<Producto> _catalog = [];
@@ -252,7 +254,7 @@ namespace Punto_de_Venta
                 {
                     foreach (var det in sale.Productos)
                     {
-                        if (det.SeVendePorPeso || det.Cantidad % 1m != 0m)
+                        if (det.ContarComoUnaPieza || det.SeVendePorPeso || det.Cantidad % 1m != 0m)
                         {
                             totalPiezasFisicas += 1;
                         }
@@ -336,6 +338,11 @@ namespace Punto_de_Venta
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e) => FocusSearch();
+
+        public bool ManejarEscape()
+        {
+            return false;
+        }
 
         private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
         {
@@ -447,7 +454,7 @@ namespace Punto_de_Venta
                     config
                 );
 
-                byte[] buffer = System.Text.Encoding.ASCII.GetBytes(textoTicket);
+                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(textoTicket);
                 bool impreso = RawPrinterHelper.SendBytesToPrinter(config.ImpresoraSeleccionada, buffer);
 
                 if (impreso)
@@ -595,28 +602,44 @@ namespace Punto_de_Venta
             var result = CustomMessageBox.Show(Application.Current.MainWindow, "¿Deseas marcar esta venta como devuelta/cancelada?", "Confirmar devolucion", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result != MessageBoxResult.Yes) return;
 
-            var previousState = _selectedSale.Estado;
-            try
-            {
-                VentaDB.ActualizarEstado(_selectedSale.Id, "Cancelada");
-                _selectedSale.Estado = "Cancelada";
-            }
-            catch (Exception ex)
-            {
-                _selectedSale.Estado = previousState;
-                ToastNotification.Show($"Error al cancelar venta: {ex.Message}", ToastType.Error);
-                return;
-            }
-
             try
             {
                 var catalog = ProductoDB.Load();
-                if (_selectedSale.Productos.Count > 0) { foreach (var item in _selectedSale.Productos) { var prod = catalog.FirstOrDefault(p => p.Id == item.Id || string.Equals(p.Nombre, item.Nombre, StringComparison.OrdinalIgnoreCase)); if (prod != null) prod.Stock += item.Cantidad; } }
-                else if (!string.IsNullOrWhiteSpace(_selectedSale.ProductosResumen)) { foreach (var (name, quantity) in ParseProductSummary(_selectedSale.ProductosResumen)) { var prod = catalog.FirstOrDefault(p => string.Equals(p.Nombre, name, StringComparison.OrdinalIgnoreCase)); if (prod != null) prod.Stock += quantity; } }
-                ProductoDB.Save(catalog);
+                var productosModificados = new List<Producto>();
+                if (_selectedSale.Productos.Count > 0)
+                {
+                    foreach (var item in _selectedSale.Productos)
+                    {
+                        var prod = catalog.FirstOrDefault(p => p.Id == item.Id || string.Equals(p.Nombre, item.Nombre, StringComparison.OrdinalIgnoreCase));
+                        if (prod != null)
+                        {
+                            prod.Stock += item.Cantidad;
+                            if (!productosModificados.Contains(prod)) productosModificados.Add(prod);
+                        }
+                    }
+                }
+                else if (!string.IsNullOrWhiteSpace(_selectedSale.ProductosResumen))
+                {
+                    foreach (var (name, quantity) in ParseProductSummary(_selectedSale.ProductosResumen))
+                    {
+                        var prod = catalog.FirstOrDefault(p => string.Equals(p.Nombre, name, StringComparison.OrdinalIgnoreCase));
+                        if (prod != null)
+                        {
+                            prod.Stock += quantity;
+                            if (!productosModificados.Contains(prod)) productosModificados.Add(prod);
+                        }
+                    }
+                }
+
+                VentaDB.CancelarVentaConStock(_selectedSale.Id, productosModificados);
+                _selectedSale.Estado = "Cancelada";
                 ToastNotification.Show($"Venta #{_selectedSale.Id} cancelada. Stock reincorporado", ToastType.Success);
             }
-            catch (Exception ex) { ToastNotification.Show($"Error al reponer inventario: {ex.Message}", ToastType.Error); }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"Error al cancelar venta: {ex.Message}", ToastType.Error);
+                return;
+            }
 
             SalesView.Refresh(); RefreshMetrics();
             ReturnButton.IsEnabled = false;
@@ -633,7 +656,7 @@ namespace Punto_de_Venta
             decimal entradas = 0m;
             decimal salidas = 0m;
 
-            decimal cashSales = Sales
+            decimal cashSales = VentaDB.Load()
                 .Where(s => s.Estado.Equals("Abierta", StringComparison.OrdinalIgnoreCase))
                 .Sum(s =>
                     s.MetodoPago.Equals("Efectivo", StringComparison.OrdinalIgnoreCase) ? s.Total :
@@ -644,7 +667,7 @@ namespace Punto_de_Venta
             {
                 using (var cmdMovs = conn.CreateCommand())
                 {
-                    cmdMovs.CommandText = "SELECT COALESCE(SUM(CASE WHEN Tipo = 'Entrada' THEN Monto ELSE 0 END), 0) AS Entradas, COALESCE(SUM(CASE WHEN Tipo = 'Salida' THEN Monto ELSE 0 END), 0) AS Salidas FROM MovimientosCaja WHERE CorteCajaId = @id;";
+                    cmdMovs.CommandText = "SELECT COALESCE(SUM(CASE WHEN Tipo = 'Entrada' THEN Monto ELSE 0 END), 0) AS Entradas, COALESCE(SUM(CASE WHEN Tipo = 'Salida' OR Tipo = 'Gasto' THEN Monto ELSE 0 END), 0) AS Salidas FROM MovimientosCaja WHERE CorteCajaId = @id;";
                     cmdMovs.Parameters.AddWithValue("@id", turnoActivo.Id);
                     using (var reader = cmdMovs.ExecuteReader()) { if (reader.Read()) { entradas = Convert.ToDecimal(reader.GetDouble(0)); salidas = Convert.ToDecimal(reader.GetDouble(1)); } }
                 }
@@ -671,7 +694,6 @@ namespace Punto_de_Venta
             try
             {
                 TurnoCajaManager.CerrarTurno(turnoActivo, contadoFisico, diferenciaTexto, cashSales);
-                using (var conn = DatabaseHelper.GetConnection()) { using (var updateVentasCmd = conn.CreateCommand()) { updateVentasCmd.CommandText = "UPDATE Ventas SET Estado = 'Cerrada' WHERE Estado = 'Abierta';"; updateVentasCmd.ExecuteNonQuery(); } }
 
                 RecargarDatosDesdeBD();
 

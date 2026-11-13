@@ -1,4 +1,4 @@
-<Window x:Class="Punto_de_Venta.MainWindow"
+﻿<Window x:Class="Punto_de_Venta.MainWindow"
         PreviewKeyDown="Window_PreviewKeyDown"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -24,6 +24,7 @@
         <StreamGeometry x:Key="IconExportar">M 21,15 L 21,19 A 2,2 0 0 1 19,21 L 5,21 A 2,2 0 0 1 3,19 L 3,15 M 17,8 L 12,3 L 7,8 M 12,3 L 12,15</StreamGeometry>
         <StreamGeometry x:Key="IconImportar">M 21,15 L 21,19 A 2,2 0 0 1 19,21 L 5,21 A 2,2 0 0 1 3,19 L 3,15 M 7,10 L 12,15 L 17,10 M 12,15 L 12,3</StreamGeometry>
         <StreamGeometry x:Key="IconConfiguracion">M 21,4 L 14,4 M 10,4 L 3,4 M 21,12 L 12,12 M 8,12 L 3,12 M 21,20 L 16,20 M 12,20 L 3,20 M 14,2 L 14,6 M 8,10 L 8,14 M 16,18 L 16,22</StreamGeometry>
+        <StreamGeometry x:Key="IconLibreta">M 4,4 L 4,20 C 4,21.1 4.9,22 6,22 L 18,22 C 19.1,22 20,21.1 20,20 L 20,4 C 20,2.9 19.1,2 18,2 L 6,2 C 4.9,2 4,2.9 4,4 Z M 8,2 L 8,22 M 12,7 L 16,7 M 12,11 L 16,11 M 12,15 L 15,15</StreamGeometry>
 
         <Style x:Key="WinCaptionButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="42" />
@@ -200,13 +201,13 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,6,0">
-                        <Button Style="{StaticResource WinCaptionButtonStyle}" Click="BtnMinimize_Click" ToolTip="Minimizar">
+                        <Button Style="{StaticResource WinCaptionButtonStyle}" Click="BtnMinimize_Click" ToolTip="{DynamicResource MainMinimize}">
                             <Path Data="M 0,0 L 10,0" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" VerticalAlignment="Center" />
                         </Button>
-                        <Button Style="{StaticResource WinCaptionButtonStyle}" Click="BtnMaximize_Click" ToolTip="Maximizar">
+                        <Button Style="{StaticResource WinCaptionButtonStyle}" Click="BtnMaximize_Click" ToolTip="{DynamicResource MainMaximize}">
                             <Border Width="10" Height="10" BorderBrush="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" BorderThickness="1.5" CornerRadius="2" />
                         </Button>
-                        <Button Style="{StaticResource WinCaptionCloseButtonStyle}" Click="BtnClose_Click" ToolTip="Cerrar">
+                        <Button Style="{StaticResource WinCaptionCloseButtonStyle}" Click="BtnClose_Click" ToolTip="{DynamicResource MainClose}">
                             <Path Data="M 0,0 L 9,9 M 9,0 L 0,9" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" VerticalAlignment="Center" />
                         </Button>
                     </StackPanel>
@@ -250,8 +251,8 @@
                                             </Viewbox>
                                         </Border>
                                         <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
-                                            <TextBlock Text="Cobro" FontSize="48" FontWeight="ExtraBold" Foreground="White" />
-                                            <TextBlock Text="Iniciar una venta nueva" FontSize="16" FontWeight="Medium" Foreground="#E0FFFFFF" Margin="0,4,0,0" />
+                                            <TextBlock Text="{DynamicResource MainNavCharge}" FontSize="48" FontWeight="ExtraBold" Foreground="White" />
+                                            <TextBlock Text="{DynamicResource MainNavChargeDesc}" FontSize="16" FontWeight="Medium" Foreground="#E0FFFFFF" Margin="0,4,0,0" />
                                         </StackPanel>
                                     </Grid>
                                 </Button>
@@ -270,8 +271,8 @@
                                             </Viewbox>
                                         </Border>
                                         <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
-                                            <TextBlock Text="Ventas" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                            <TextBlock Text="Historial y tickets" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
+                                            <TextBlock Text="{DynamicResource MainNavSales}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="{DynamicResource MainNavSalesDesc}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </Grid>
                                 </Button>
@@ -290,8 +291,8 @@
                                             </Viewbox>
                                         </Border>
                                         <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
-                                            <TextBlock Text="Inventario" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                            <TextBlock Text="Productos y stock" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
+                                            <TextBlock Text="{DynamicResource MainNavInventory}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="{DynamicResource MainNavInventoryDesc}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </Grid>
                                 </Button>
@@ -310,8 +311,8 @@
                                             </Viewbox>
                                         </Border>
                                         <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
-                                            <TextBlock x:Name="TxtTituloPromociones" Text="Promociones" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                            <TextBlock Text="Ofertas activas" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
+                                            <TextBlock x:Name="TxtTituloPromociones" Text="{DynamicResource MainNavPromos}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="{DynamicResource MainNavPromosDesc}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </Grid>
                                 </Button>
@@ -330,14 +331,14 @@
                                             </Viewbox>
                                         </Border>
                                         <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
-                                            <TextBlock x:Name="TxtTituloPrestamos" Text="Prestamos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                            <TextBlock Text="Cuentas por cobrar" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
+                                            <TextBlock x:Name="TxtTituloPrestamos" Text="{DynamicResource MainNavCredits}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="{DynamicResource MainNavCreditsDesc}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,3,0,0" />
                                         </StackPanel>
                                     </Grid>
                                 </Button>
                             </Grid>
 
-                            <UniformGrid Grid.Row="1" Rows="1" Columns="5" Height="86" Margin="-8,14,-8,0">
+                            <UniformGrid Grid.Row="1" Rows="1" Columns="6" Height="86" Margin="-8,14,-8,0">
                                 <Button Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Codigos de Barras" Click="CodigosDeBarras_Click">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <Viewbox Width="20" Height="20" VerticalAlignment="Center">
@@ -345,7 +346,7 @@
                                                 <Path Data="{StaticResource IconEtiquetas}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                             </Canvas>
                                         </Viewbox>
-                                        <TextBlock x:Name="TxtTituloEtiquetas" Text="Etiquetas" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock x:Name="TxtTituloEtiquetas" Text="{DynamicResource MainNavBarcodes}" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Graficas" Click="Graficas_Click">
@@ -355,7 +356,17 @@
                                                 <Path Data="{StaticResource IconGraficas}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                             </Canvas>
                                         </Viewbox>
-                                        <TextBlock Text="Graficas" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock Text="{DynamicResource MainNavCharts}" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Libreta" Click="Libreta_Click">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Viewbox Width="20" Height="20" VerticalAlignment="Center">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="{StaticResource IconLibreta}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Text="{DynamicResource MainNavNotebook}" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
                                 </Button>
                                 <Button x:Name="ExportButton" Style="{StaticResource BentoPillStyle}" AutomationProperties.Name="Exportar" Click="Exportar_Click">
@@ -365,7 +376,7 @@
                                                 <Path Data="{StaticResource IconExportar}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                             </Canvas>
                                         </Viewbox>
-                                        <TextBlock x:Name="TxtTituloExportar" Text="Exportar" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock x:Name="TxtTituloExportar" Text="{DynamicResource MainNavExport}" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
                                 </Button>
 
@@ -376,7 +387,7 @@
                                                 <Path Data="{StaticResource IconImportar}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                             </Canvas>
                                         </Viewbox>
-                                        <TextBlock Text="Importar" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock Text="{DynamicResource MainNavImport}" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
                                 </Button>
 
@@ -387,7 +398,7 @@
                                                 <Path Data="{StaticResource IconConfiguracion}" Stroke="{DynamicResource ThemeAccent}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
                                             </Canvas>
                                         </Viewbox>
-                                        <TextBlock Text="Configuracion" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock Text="{DynamicResource MainNavConfig}" Margin="12,0,0,0" VerticalAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
                                 </Button>
                             </UniformGrid>
@@ -395,7 +406,7 @@
                     </Grid>
                     <ContentControl x:Name="ContenedorVistas" Margin="0" Visibility="Collapsed" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
 
-                    <Grid x:Name="ExportarOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" Panel.ZIndex="10" MouseDown="ExportarOverlay_MouseDown" PreviewKeyDown="ExportarOverlay_PreviewKeyDown">
+                    <Grid x:Name="ExportarOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" Panel.ZIndex="10" MouseDown="ExportarOverlay_MouseDown" PreviewKeyDown="ExportarOverlay_PreviewKeyDown">
                         <Border Width="760" Height="410" MaxWidth="900" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -403,14 +414,14 @@
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
                                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,20">
-                                    <TextBlock Text="OPCIONES DE EXPORTACION" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" HorizontalAlignment="Center" Margin="0,0,0,4" />
-                                    <TextBlock Text="Exportar Datos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="26" FontWeight="ExtraBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{DynamicResource MainExportHeader}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                                    <TextBlock Text="{DynamicResource MainExportTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="26" FontWeight="ExtraBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
                                 </StackPanel>
                                 <UniformGrid Grid.Row="1" Columns="3">
                                     <Button Style="{StaticResource ExportModalCardStyle}" AutomationProperties.Name="Exportar ventas" Click="ExportarVentas_Click">
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="Ventas" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
-                                            <TextBlock Text="Exporta las ventas registradas en la ultima semana, organizadas por dia." TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Height="50" />
+                                            <TextBlock Text="{DynamicResource MainExportSales}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                                            <TextBlock Text="{DynamicResource MainExportSalesDesc}" TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Height="50" />
                                             <Viewbox Width="56" Height="64" Margin="0,12,0,0">
                                                 <Canvas Width="70" Height="84">
                                                     <Path Data="M 14,5 L 43,5 L 57,19 L 57,77 L 14,77 Z M 43,5 L 43,19 L 57,19" Stroke="{DynamicResource ThemeTextForeground}" StrokeThickness="3.5" StrokeLineJoin="Round" />
@@ -422,8 +433,8 @@
                                     </Button>
                                     <Button Style="{StaticResource ExportModalCardStyle}" AutomationProperties.Name="Exportar productos" Click="ExportarProductos_Click">
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="Productos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
-                                            <TextBlock Text="Exporta el catalogo completo de productos con stock y precios vigentes." TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Height="50" />
+                                            <TextBlock Text="{DynamicResource MainExportProducts}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                                            <TextBlock Text="{DynamicResource MainExportProductsDesc}" TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Height="50" />
                                             <Viewbox Width="60" Height="64" Margin="0,12,0,0">
                                                 <Canvas Width="80" Height="84">
                                                     <Path Data="M 16,15 L 30,15 C 30,7 49,7 49,15 L 63,15 L 63,76 L 16,76 Z" Stroke="{DynamicResource ThemeTextForeground}" StrokeThickness="3.5" StrokeLineJoin="Round" />
@@ -434,8 +445,8 @@
                                     </Button>
                                     <Button Style="{StaticResource ExportModalCardStyle}" AutomationProperties.Name="Exportar prestamos" Click="ExportarPrestamos_Click">
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="Prestamos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
-                                            <TextBlock Text="Exporta el historial de clientes y cuentas fiadas pendientes en la libreta." TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Height="50" />
+                                            <TextBlock Text="{DynamicResource MainExportCredits}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                                            <TextBlock Text="{DynamicResource MainExportCreditsDesc}" TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" TextAlignment="Center" Height="50" />
                                             <Viewbox Width="66" Height="64" Margin="0,12,0,0">
                                                 <Canvas Width="90" Height="84">
                                                     <Path Data="M 15,60 L 31,60 L 43,50 L 57,50 C 63,50 63,58 57,60 L 44,64 L 67,56 C 76,53 80,61 71,66 L 48,77 L 29,72 L 15,72 Z" Fill="{DynamicResource ThemeInputBackground}" Stroke="{DynamicResource ThemeTextForeground}" StrokeThickness="3.5" StrokeLineJoin="Round" />
@@ -449,7 +460,7 @@
                             </Grid>
                         </Border>
                     </Grid>
-                    <Grid x:Name="ImportarOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" Panel.ZIndex="10" MouseDown="ImportarOverlay_MouseDown">
+                    <Grid x:Name="ImportarOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" Panel.ZIndex="10" MouseDown="ImportarOverlay_MouseDown">
                         <Border Width="650" Height="420" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="32" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -458,28 +469,24 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,16">
-                                    <TextBlock Text="MIGRACION Y ACTUALIZACION" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" HorizontalAlignment="Center" Margin="0,0,0,4" />
-                                    <TextBlock Text="Importar Catalogo (CSV)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="26" FontWeight="ExtraBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{DynamicResource MainImportHeader}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" HorizontalAlignment="Center" Margin="0,0,0,4" />
+                                    <TextBlock Text="{DynamicResource MainImportTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="26" FontWeight="ExtraBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
                                 </StackPanel>
 
                                 <Border Grid.Row="1" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="20">
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Formato Requerido" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,8" />
-                                        <TextBlock Text="El sistema admite archivos .csv separados por comas (,) o punto y coma (;). El orden de las columnas que lee el sistema de izquierda a derecha debe ser estrictamente el siguiente:" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,12" />
+                                        <TextBlock Text="{DynamicResource MainImportFormat}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,8" />
+                                        <TextBlock Text="{DynamicResource MainImportDesc}" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,12" />
 
                                         <Border Background="{DynamicResource ThemeSurfaceBackground}" CornerRadius="4" Padding="12" Margin="0,0,0,12">
-                                            <TextBlock FontFamily="Consolas, Courier New" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap">
-                                            1. ID (Vacio o 0) | 2. Codigo | 3. Nombre<LineBreak/>
-                                            4. Categoria      | 5. Costo  | 6. Ganancia<LineBreak/>
-                                            7. Precio Final   | 8. Stock  | 9. PedirCant (true/false) | 10. PorPeso (true/false)
-                                            </TextBlock>
+                                            <TextBlock FontFamily="Consolas, Courier New" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" Text="{DynamicResource MainImportColumns}" />
                                         </Border>
 
-                                        <TextBlock Text="* Si el archivo contiene una fila de encabezados, el sistema la omitira automaticamente." TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" FontStyle="Italic" />
+                                        <TextBlock Text="{DynamicResource MainImportNote}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" FontStyle="Italic" />
                                     </StackPanel>
                                 </Border>
 
-                                <Button Grid.Row="2" Content="SELECCIONAR ARCHIVO Y SUBIR" Height="40" Background="{DynamicResource ThemeAccent}" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="EjecutarImportacion_Click" Margin="0,20,0,0" Style="{StaticResource FluentButtonPrimary}" />
+                                <Button Grid.Row="2" Content="{DynamicResource MainImportBtn}" Height="40" Background="{DynamicResource ThemeAccent}" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="EjecutarImportacion_Click" Margin="0,20,0,0" Style="{StaticResource FluentButtonPrimary}" />
                             </Grid>
                         </Border>
                     </Grid>
@@ -503,10 +510,10 @@
 
                     <TextBlock x:Name="StandbyDateText" Text="lunes, 1 de enero" FontSize="22" Foreground="#EAEAEA" HorizontalAlignment="Center" FontWeight="Light" FontFamily="Segoe UI Variable, Segoe UI" Margin="0,0,0,24"/>
 
-                    <TextBlock Text="Sistema en reposo" FontSize="16" Foreground="#888888" HorizontalAlignment="Center" FontWeight="Medium" FontFamily="Segoe UI Variable, Segoe UI"/>
+                    <TextBlock Text="{DynamicResource MainStandbyTitle}" FontSize="16" Foreground="#888888" HorizontalAlignment="Center" FontWeight="Medium" FontFamily="Segoe UI Variable, Segoe UI"/>
                 </StackPanel>
 
-                <TextBlock Grid.Row="2" Text="Haz clic o presiona cualquier tecla para desbloquear" FontSize="13" Foreground="#555555" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontWeight="SemiBold" FontFamily="Segoe UI Variable, Segoe UI" Margin="0,0,0,40"/>
+                <TextBlock Grid.Row="2" Text="{DynamicResource MainStandbyHint}" FontSize="13" Foreground="#555555" HorizontalAlignment="Center" VerticalAlignment="Bottom" FontWeight="SemiBold" FontFamily="Segoe UI Variable, Segoe UI" Margin="0,0,0,40"/>
             </Grid>
 
         </Grid>
