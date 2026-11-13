@@ -21,7 +21,7 @@ using System.Windows.Threading;
 
 namespace Punto_de_Venta.Vistas
 {
-    public partial class Cobro : UserControl, ILimpiarSeleccion
+    public partial class Cobro : UserControl, ILimpiarSeleccion, IManejadorEscape
     {
         #region Campos Privados y Colecciones
         private DispatcherTimer _typingTimer;
@@ -72,6 +72,25 @@ namespace Punto_de_Venta.Vistas
                             SuggestionsPopup.IsOpen = false;
                         }
                     }), DispatcherPriority.Input);
+                };
+            }
+            this.PreviewGotKeyboardFocus += Cobro_PreviewGotKeyboardFocus;
+            if (QuickChkCantidad != null && QuickChkBascula != null && QuickChkContar1Pz != null)
+            {
+                QuickChkCantidad.Checked += (s, e) =>
+                {
+                    QuickChkBascula.IsChecked = false;
+                    QuickChkContar1Pz.IsChecked = false;
+                };
+                QuickChkBascula.Checked += (s, e) =>
+                {
+                    QuickChkCantidad.IsChecked = false;
+                    QuickChkContar1Pz.IsChecked = false;
+                };
+                QuickChkContar1Pz.Checked += (s, e) =>
+                {
+                    QuickChkCantidad.IsChecked = false;
+                    QuickChkBascula.IsChecked = false;
                 };
             }
             Unloaded += UserControl_Unloaded;
@@ -138,6 +157,27 @@ namespace Punto_de_Venta.Vistas
                 ActualizarIndicadoresPremiumUI();
                 VerificarTurnoPendienteDeDiasAnteriores();
                 try { _catalog = ProductoDB.Load(); } catch { _catalog = new(); }
+                if (Cart.Count > 0 && _catalog.Count > 0)
+                {
+                    var porId = _catalog.ToDictionary(p => p.Id);
+                    foreach (var item in Cart)
+                    {
+                        if (porId.TryGetValue(item.ProductoId, out var prodActualizado))
+                        {
+                            item.Nombre = prodActualizado.Nombre;
+                            item.Costo = prodActualizado.Costo;
+                            if (!item.ContarComoUnaPieza)
+                            {
+                                item.Precio = prodActualizado.Precio;
+                                item.Ganancia = prodActualizado.Ganancia;
+                            }
+                            item.Categoria = prodActualizado.Categoria;
+                            item.SeVendePorPeso = prodActualizado.SeVendePorPeso;
+                            item.ContarComoUnaPieza = prodActualizado.ContarComoUnaPieza;
+                        }
+                    }
+                    RefreshSummary();
+                }
                 CargarPromocionesDesdeDb();
                 CargarVentasEnEsperaDesdeDb();
                 ActualizarEstadoHardwareAsync();
@@ -684,6 +724,9 @@ namespace Punto_de_Venta.Vistas
             if (FindName("SuggestionsPopup") is Popup popup)
                 popup.IsOpen = false;
 
+            if (ObtenerModalActivo() != null)
+                return;
+
             decimal cantidad = 1m;
 
             if (product.SeVendePorPeso)
@@ -706,6 +749,38 @@ namespace Punto_de_Venta.Vistas
                 AnimarEntradaProducto();
 
                 AbrirModalPesaje();
+                return;
+            }
+            else if (product.ContarComoUnaPieza)
+            {
+                var modal = new CantidadModal(product.Nombre);
+
+                if (Window.GetWindow(this) is Window w)
+                {
+                    modal.Owner = w;
+                }
+
+                Application.Current.Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+
+                modal.ShowDialog();
+
+                if (!modal.Confirmado)
+                {
+                    var sBox = (TextBox)FindName("SearchBox");
+                    sBox?.Clear();
+                    FocusSearch();
+                    return;
+                }
+
+                decimal factor = modal.CantidadResult;
+                AddProductContarComoUnaPieza(product, factor);
+
+                var sBox1pz = (TextBox)FindName("SearchBox");
+                sBox1pz?.Clear();
+
+                FocusSearch();
+                ActualizarVisibilidadEmptyState();
+                AnimarEntradaProducto();
                 return;
             }
             else if (product.PedirCantidadAlCobrar)
@@ -751,6 +826,38 @@ namespace Punto_de_Venta.Vistas
             AnimarEntradaProducto();
         }
 
+        private void AddProductContarComoUnaPieza(Producto product, decimal factor)
+        {
+            decimal precioBase = product.Precio > 0m ? product.Precio : 1m;
+            decimal costoBase = product.Costo;
+            decimal precioFinal = Math.Round(precioBase * factor, 2);
+            decimal costoFinal = Math.Round(costoBase * factor, 2);
+            decimal gananciaFinal = precioFinal - costoFinal;
+
+            var newItem = new ItemCarrito
+            {
+                ProductoId = product.Id,
+                Codigo = product.Codigo,
+                Nombre = product.Nombre,
+                Costo = costoFinal,
+                Ganancia = gananciaFinal,
+                Precio = precioFinal,
+                Categoria = string.IsNullOrWhiteSpace(product.Categoria) ? "N/A" : product.Categoria,
+                Cantidad = 1m,
+                SeVendePorPeso = false,
+                ContarComoUnaPieza = true
+            };
+            ActualizarVisibilidadEmptyState();
+            newItem.PropertyChanged += CartItem_PropertyChanged;
+            Cart.Add(newItem);
+            if (CartGrid != null)
+            {
+                CartGrid.SelectedItem = newItem;
+                CartGrid.ScrollIntoView(newItem);
+            }
+            RefreshSummary();
+        }
+
         private void AddSearchedProduct()
         {
             _typingTimer?.Stop();
@@ -782,13 +889,6 @@ namespace Punto_de_Venta.Vistas
                 }
             }
 
-            if (matchExacto != null)
-            {
-                if (FindName("SuggestionsPopup") is Popup p) p.IsOpen = false;
-                AddSuggestion(matchExacto);
-                return;
-            }
-
             if (FindName("SuggestionsPopup") is Popup popup && popup.IsOpen)
             {
                 var suggestionsList = (ListBox)FindName("SuggestionsList");
@@ -798,6 +898,13 @@ namespace Punto_de_Venta.Vistas
                     AddSuggestion(selectedProduct);
                     return;
                 }
+            }
+
+            if (matchExacto != null)
+            {
+                if (FindName("SuggestionsPopup") is Popup p) p.IsOpen = false;
+                AddSuggestion(matchExacto);
+                return;
             }
 
             if (FindName("SuggestionsPopup") is Popup popupCierre) popupCierre.IsOpen = false;
@@ -846,7 +953,10 @@ namespace Punto_de_Venta.Vistas
 
             var selectedItem = cartGrid?.SelectedItem as ItemCarrito ?? Cart.LastOrDefault();
             if (selectedItem == null)
+            {
+                FocusSearch();
                 return;
+            }
 
             selectedItem.PropertyChanged -= CartItem_PropertyChanged;
             Cart.Remove(selectedItem);
@@ -864,6 +974,7 @@ namespace Punto_de_Venta.Vistas
                 ToastType.Info);
 
             ActualizarVisibilidadEmptyState();
+            FocusSearch();
         }
 
         private void SearchBox_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -1000,6 +1111,9 @@ namespace Punto_de_Venta.Vistas
             QuickMarginBox.Clear();
             QuickPriceBox.Clear();
             QuickValidationMessage.Text = string.Empty;
+            QuickChkCantidad.IsChecked = false;
+            QuickChkBascula.IsChecked = false;
+            QuickChkContar1Pz.IsChecked = false;
 
             QuickAddOverlay.Visibility = Visibility.Visible;
             QuickNameBox.Focus();
@@ -1098,7 +1212,8 @@ namespace Punto_de_Venta.Vistas
                 Ganancia = margin,
                 Precio = cost + margin,
                 PedirCantidadAlCobrar = QuickChkCantidad.IsChecked == true,
-                SeVendePorPeso = QuickChkBascula.IsChecked == true
+                SeVendePorPeso = QuickChkBascula.IsChecked == true,
+                ContarComoUnaPieza = QuickChkContar1Pz.IsChecked == true
             };
 
             try
@@ -1114,13 +1229,44 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            AddProduct(nuevoProd);
             CloseQuickAdd();
             ToastNotification.Show($"Producto '{nuevoProd.Nombre}' registrado", ToastType.Success);
+            AddSuggestion(nuevoProd);
         }
         #endregion
 
         #region Atajos de Teclado Centralizados
+        public bool ManejarEscape()
+        {
+            if (CerrarModalActivo())
+            {
+                return true;
+            }
+            LimpiarEventosCarrito();
+            return false;
+        }
+
+        private UIElement ObtenerModalActivo()
+        {
+            if (VentasEnEsperaOverlay != null && VentasEnEsperaOverlay.Visibility == Visibility.Visible) return VentasEnEsperaOverlay;
+            if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible) return PaymentOverlay;
+            if (ScaleOverlay != null && ScaleOverlay.Visibility == Visibility.Visible) return ScaleOverlay;
+            if (QuickRestockOverlay != null && QuickRestockOverlay.Visibility == Visibility.Visible) return QuickRestockOverlay;
+            if (CreditOverlay != null && CreditOverlay.Visibility == Visibility.Visible) return CreditOverlay;
+            if (CashMovementOverlay != null && CashMovementOverlay.Visibility == Visibility.Visible) return CashMovementOverlay;
+            if (QuickAddOverlay != null && QuickAddOverlay.Visibility == Visibility.Visible) return QuickAddOverlay;
+            return null;
+        }
+
+        private void Cobro_PreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            UIElement modal = ObtenerModalActivo();
+            if (modal != null)
+            {
+                ModalFocusHelper.ProtegerFoco(e, modal);
+            }
+        }
+
         private bool CerrarModalActivo()
         {
             if (VentasEnEsperaOverlay != null && VentasEnEsperaOverlay.Visibility == Visibility.Visible)
@@ -1299,6 +1445,17 @@ namespace Punto_de_Venta.Vistas
                 }
             }
 
+            if (ObtenerModalActivo() != null)
+            {
+                if (e.Key == Key.Escape)
+                {
+                    CerrarModalActivo();
+                    e.Handled = true;
+                    return;
+                }
+                return;
+            }
+
             if (e.Key == Key.F10 || (e.Key == Key.System && e.SystemKey == Key.F10)) { OpenQuickRestockModal(); e.Handled = true; return; }
             if (e.Key == Key.F8)
             {
@@ -1367,6 +1524,7 @@ namespace Punto_de_Venta.Vistas
                 if (searchBox != null && (!searchBox.IsKeyboardFocusWithin || string.IsNullOrEmpty(searchBox.Text)))
                 {
                     RemoveSelectedProduct();
+                    FocusSearch();
                     e.Handled = true;
                 }
             }
@@ -1497,7 +1655,8 @@ namespace Punto_de_Venta.Vistas
                             Ganancia = precioDescuento - item.Costo,
                             Precio = precioDescuento,
                             Categoria = item.Categoria,
-                            SeVendePorPeso = item.SeVendePorPeso
+                            SeVendePorPeso = item.SeVendePorPeso,
+                            ContarComoUnaPieza = item.ContarComoUnaPieza
                         };
                     }).ToList()
                 };
@@ -1513,8 +1672,7 @@ namespace Punto_de_Venta.Vistas
                     }
                 }
 
-                PrestamoDB.Save(debtors);
-                VentaDB.RegistrarVentaConStock(sale, productosModificados);
+                VentaDB.RegistrarFiadoConStock(sale, productosModificados, debtors);
 
                 var config = AppConfig.Load();
                 TicketService.GuardarCopiaDigital(sale, sale.Productos, 0m, 0m, config);
@@ -1585,9 +1743,13 @@ namespace Punto_de_Venta.Vistas
         {
             MovementValidationMessage.Text = string.Empty;
 
-            if (!decimal.TryParse(MovementAmountBox.Text, out decimal monto) || monto <= 0)
+            string tipoMovimiento = "Salida";
+            if (RbEntrada.IsChecked == true) tipoMovimiento = "Entrada";
+            if (RbFondo.IsChecked == true) tipoMovimiento = "Fondo";
+
+            if (!decimal.TryParse(MovementAmountBox.Text, out decimal monto) || (tipoMovimiento == "Fondo" ? monto < 0 : monto <= 0))
             {
-                MovementValidationMessage.Text = "Ingresa un monto valido mayor a 0.";
+                MovementValidationMessage.Text = tipoMovimiento == "Fondo" ? "Ingresa un monto valido mayor o igual a 0." : "Ingresa un monto valido mayor a 0.";
                 MovementAmountBox.Focus();
                 return;
             }
@@ -1600,17 +1762,13 @@ namespace Punto_de_Venta.Vistas
                 return;
             }
 
-            string tipoMovimiento = "Salida";
-            if (RbEntrada.IsChecked == true) tipoMovimiento = "Entrada";
-            if (RbFondo.IsChecked == true) tipoMovimiento = "Fondo";
-
             try
             {
                 if (tipoMovimiento == "Fondo")
                 {
                     var turnoActual = TurnoCajaManager.ObtenerTurnoActivo();
                     if (turnoActual != null) { MovementValidationMessage.Text = "Ya existe un turno abierto. Cierra la caja primero."; return; }
-                    TurnoCajaManager.AbrirTurno(monto);
+                    TurnoCajaManager.AbrirTurno(monto, concepto);
                 }
                 else
                 {
@@ -1623,6 +1781,7 @@ namespace Punto_de_Venta.Vistas
                 CashMovementOverlay.Visibility = Visibility.Collapsed;
                 MovementAmountBox.Clear();
                 MovementConceptBox.Clear();
+                FocusSearch();
             }
             catch (Exception ex)
             {
@@ -1802,7 +1961,8 @@ namespace Punto_de_Venta.Vistas
                             Ganancia = precioDescuento - item.Costo,
                             Precio = precioDescuento,
                             Categoria = item.Categoria,
-                            SeVendePorPeso = item.SeVendePorPeso
+                            SeVendePorPeso = item.SeVendePorPeso,
+                            ContarComoUnaPieza = item.ContarComoUnaPieza
                         };
                     }).ToList()
                 };
@@ -1822,6 +1982,15 @@ namespace Punto_de_Venta.Vistas
                 {
                     VentaDB.RegistrarVentaConStock(sale, productosModificados);
                 });
+
+                LimpiarEventosCarrito();
+                _saleNumber++;
+                RefreshSummary();
+                ((Grid)FindName("PaymentOverlay")).Visibility = Visibility.Collapsed;
+                ((TextBox)FindName("SearchBox")).Clear();
+                ShowPurchaseFeedback(true, $"Venta liquidada ({paymentMethod}).");
+                ToastNotification.Show($"Venta #{saleId} finalizada exitosamente ({paymentMethod})", ToastType.Success);
+                FocusSearch();
 
                 var config = AppConfig.Load();
                 bool imprimir = config.ImprimirTicketAutomatico;
@@ -1847,15 +2016,6 @@ namespace Punto_de_Venta.Vistas
                         TicketService.ImprimirFisico(sale, sale.Productos, amountReceived, change, config);
                     }
                 });
-
-                LimpiarEventosCarrito();
-                _saleNumber++;
-                RefreshSummary();
-                ((Grid)FindName("PaymentOverlay")).Visibility = Visibility.Collapsed;
-                ((TextBox)FindName("SearchBox")).Clear();
-                ShowPurchaseFeedback(true, $"Venta liquidada ({paymentMethod}).");
-                ToastNotification.Show($"Venta #{saleId} finalizada exitosamente ({paymentMethod})", ToastType.Success);
-                FocusSearch();
             }
             catch (OverflowException)
             {
@@ -1971,7 +2131,7 @@ namespace Punto_de_Venta.Vistas
         #region Utilidades, Calculos y Retroalimentacion
         private void FocusSearch()
         {
-            Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+            void DoFocus()
             {
                 if (CashMovementOverlay.IsVisible ||
                     CreditOverlay.IsVisible ||
@@ -1987,11 +2147,14 @@ namespace Punto_de_Venta.Vistas
                 var searchBox = (TextBox)FindName("SearchBox");
                 if (searchBox != null)
                 {
-                    this.Focus();
                     searchBox.Focus();
                     Keyboard.Focus(searchBox);
+                    searchBox.CaretIndex = searchBox.Text.Length;
                 }
-            }));
+            }
+
+            DoFocus();
+            Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(DoFocus));
         }
 
         private void LimpiarEventosCarrito()
@@ -2043,7 +2206,7 @@ namespace Punto_de_Venta.Vistas
 
             var searchMessage = (TextBlock)FindName("SearchMessage");
 
-            if (!product.PedirCantidadAlCobrar)
+            if (!product.PedirCantidadAlCobrar && !product.ContarComoUnaPieza)
             {
                 if (product.Stock <= 0)
                 {
@@ -2095,7 +2258,8 @@ namespace Punto_de_Venta.Vistas
                 Precio = product.Precio,
                 Categoria = string.IsNullOrWhiteSpace(product.Categoria) ? "N/A" : product.Categoria,
                 Cantidad = Math.Round(cantidad, 3),
-                SeVendePorPeso = product.SeVendePorPeso
+                SeVendePorPeso = product.SeVendePorPeso,
+                ContarComoUnaPieza = product.ContarComoUnaPieza
             };
             ActualizarVisibilidadEmptyState();
             newItem.PropertyChanged += CartItem_PropertyChanged;
@@ -2253,7 +2417,9 @@ namespace Punto_de_Venta.Vistas
                         Ganancia = i.Ganancia,
                         Precio = i.Precio,
                         Categoria = i.Categoria,
-                        Cantidad = i.Cantidad
+                        Cantidad = i.Cantidad,
+                        SeVendePorPeso = i.SeVendePorPeso,
+                        ContarComoUnaPieza = i.ContarComoUnaPieza
                     }).ToList()
                 };
 

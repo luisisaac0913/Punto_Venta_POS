@@ -63,7 +63,7 @@ namespace Punto_de_Venta.Datos
             }
             using (var cmdDetalle = conn.CreateCommand())
             {
-                cmdDetalle.CommandText = "SELECT Id, VentaId, ProductoId, Nombre, Cantidad, Costo, Ganancia, Precio, Categoria FROM VentasDetalle;";
+                cmdDetalle.CommandText = "SELECT Id, VentaId, ProductoId, Nombre, Cantidad, Costo, Ganancia, Precio, Categoria, COALESCE(SeVendePorPeso, 0), COALESCE(ContarComoUnaPieza, 0) FROM VentasDetalle;";
                 using var rDet = cmdDetalle.ExecuteReader();
                 while (rDet.Read())
                 {
@@ -73,13 +73,16 @@ namespace Punto_de_Venta.Datos
                         venta.Productos.Add(new DetalleVenta
                         {
                             Id = rDet.GetInt32(2),
+                            ProductoId = rDet.GetInt32(2),
                             VentaId = ventaId,
                             Nombre = rDet.GetString(3),
                             Cantidad = Convert.ToDecimal(rDet.GetDouble(4)),
                             Costo = Convert.ToDecimal(rDet.GetDouble(5)),
                             Ganancia = Convert.ToDecimal(rDet.GetDouble(6)),
                             Precio = Convert.ToDecimal(rDet.GetDouble(7)),
-                            Categoria = rDet.GetString(8)
+                            Categoria = rDet.GetString(8),
+                            SeVendePorPeso = rDet.FieldCount > 9 && rDet.GetInt32(9) == 1,
+                            ContarComoUnaPieza = rDet.FieldCount > 10 && rDet.GetInt32(10) == 1
                         });
                     }
                 }
@@ -118,26 +121,71 @@ namespace Punto_de_Venta.Datos
             try
             {
                 InsertInternal(conn, tr, sale);
-
-                using var updateProd = conn.CreateCommand();
-                updateProd.Transaction = tr;
-                updateProd.CommandText = "UPDATE Productos SET Stock = @stock WHERE Id = @id;";
-                var pId = updateProd.Parameters.Add("@id", SqliteType.Integer);
-                var pStock = updateProd.Parameters.Add("@stock", SqliteType.Real);
-
-                foreach (var prod in productosModificados)
-                {
-                    pId.Value = prod.Id;
-                    pStock.Value = Convert.ToDouble(prod.Stock);
-                    updateProd.ExecuteNonQuery();
-                }
-
+                ActualizarStockInternal(conn, tr, productosModificados);
                 tr.Commit();
             }
             catch
             {
                 tr.Rollback();
                 throw;
+            }
+        }
+
+        public static void RegistrarFiadoConStock(Venta sale, IEnumerable<Producto> productosModificados, IEnumerable<Deudor> debtors)
+        {
+            using var conn = DatabaseHelper.GetConnection();
+            using var tr = conn.BeginTransaction();
+            try
+            {
+                PrestamoDB.SaveInternal(conn, tr, debtors);
+                InsertInternal(conn, tr, sale);
+                ActualizarStockInternal(conn, tr, productosModificados);
+                tr.Commit();
+            }
+            catch
+            {
+                tr.Rollback();
+                throw;
+            }
+        }
+
+        public static void CancelarVentaConStock(int ventaId, IEnumerable<Producto> productosModificados)
+        {
+            using var conn = DatabaseHelper.GetConnection();
+            using var tr = conn.BeginTransaction();
+            try
+            {
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.Transaction = tr;
+                    cmd.CommandText = "UPDATE Ventas SET Estado = 'Cancelada' WHERE Id = @id;";
+                    cmd.Parameters.AddWithValue("@id", ventaId);
+                    cmd.ExecuteNonQuery();
+                }
+
+                ActualizarStockInternal(conn, tr, productosModificados);
+                tr.Commit();
+            }
+            catch
+            {
+                tr.Rollback();
+                throw;
+            }
+        }
+
+        private static void ActualizarStockInternal(SqliteConnection conn, SqliteTransaction tr, IEnumerable<Producto> productosModificados)
+        {
+            using var updateProd = conn.CreateCommand();
+            updateProd.Transaction = tr;
+            updateProd.CommandText = "UPDATE Productos SET Stock = @stock WHERE Id = @id;";
+            var pId = updateProd.Parameters.Add("@id", SqliteType.Integer);
+            var pStock = updateProd.Parameters.Add("@stock", SqliteType.Real);
+
+            foreach (var prod in productosModificados)
+            {
+                pId.Value = prod.Id;
+                pStock.Value = Convert.ToDouble(prod.Stock);
+                updateProd.ExecuteNonQuery();
             }
         }
 
@@ -183,8 +231,8 @@ namespace Punto_de_Venta.Datos
                 using var insertDetalle = conn.CreateCommand();
                 insertDetalle.Transaction = tr;
                 insertDetalle.CommandText = @"
-                    INSERT INTO VentasDetalle (VentaId, ProductoId, Nombre, Cantidad, Costo, Ganancia, Precio, Categoria)
-                    VALUES (@vId, @pId, @nom, @cant, @costo, @gan, @precio, @cat);";
+                    INSERT INTO VentasDetalle (VentaId, ProductoId, Nombre, Cantidad, Costo, Ganancia, Precio, Categoria, SeVendePorPeso, ContarComoUnaPieza)
+                    VALUES (@vId, @pId, @nom, @cant, @costo, @gan, @precio, @cat, @peso, @contar1);";
                 var dVId = insertDetalle.Parameters.Add("@vId", SqliteType.Integer);
                 var dPId = insertDetalle.Parameters.Add("@pId", SqliteType.Integer);
                 var dNom = insertDetalle.Parameters.Add("@nom", SqliteType.Text);
@@ -193,6 +241,8 @@ namespace Punto_de_Venta.Datos
                 var dGan = insertDetalle.Parameters.Add("@gan", SqliteType.Real);
                 var dPrecio = insertDetalle.Parameters.Add("@precio", SqliteType.Real);
                 var dCat = insertDetalle.Parameters.Add("@cat", SqliteType.Text);
+                var dPeso = insertDetalle.Parameters.Add("@peso", SqliteType.Integer);
+                var dContar1 = insertDetalle.Parameters.Add("@contar1", SqliteType.Integer);
 
                 foreach (var det in sale.Productos)
                 {
@@ -204,6 +254,8 @@ namespace Punto_de_Venta.Datos
                     dGan.Value = Convert.ToDouble(det.Ganancia);
                     dPrecio.Value = Convert.ToDouble(det.Precio);
                     dCat.Value = det.Categoria ?? "N/A";
+                    dPeso.Value = det.SeVendePorPeso ? 1 : 0;
+                    dContar1.Value = det.ContarComoUnaPieza ? 1 : 0;
                     insertDetalle.ExecuteNonQuery();
                 }
             }

@@ -42,10 +42,12 @@ namespace Punto_de_Venta.Datos
                 return resultado;
             }
 
-            var estadoCarrito = carrito.ToDictionary(
-                c => c.ProductoId,
-                c => new EvaluacionItem { Item = c, CantidadDisponible = c.Cantidad }
-            );
+            var estadoCarrito = carrito
+                .GroupBy(c => c.ProductoId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => new EvaluacionItem { Item = g.First(), CantidadDisponible = g.Sum(x => x.Cantidad) }
+                );
 
             var combos = promocionesVigentes.Where(p => p.Tipo == TipoPromocion.Combo).ToList();
             foreach (var promo in combos)

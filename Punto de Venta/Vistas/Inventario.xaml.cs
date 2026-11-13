@@ -15,9 +15,11 @@ using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Threading;
 
+using Punto_de_Venta.Vistas;
+
 namespace Punto_de_Venta
 {
-    public partial class Inventario : UserControl, ILimpiarSeleccion
+    public partial class Inventario : UserControl, ILimpiarSeleccion, IManejadorEscape
     {
         #region Campos Privados y Colecciones
         private readonly DispatcherTimer _clockTimer;
@@ -67,15 +69,17 @@ namespace Punto_de_Venta
                 }
             }
             catch { }
-            if (AskQuantityCheckBox != null && ScaleWeighCheckBox != null)
+            if (AskQuantityCheckBox != null && ScaleWeighCheckBox != null && CountAsOnePieceCheckBox != null)
             {
                 AskQuantityCheckBox.Checked += AskQuantityCheckBox_Checked;
                 ScaleWeighCheckBox.Checked += ScaleWeighCheckBox_Checked;
+                CountAsOnePieceCheckBox.Checked += CountAsOnePieceCheckBox_Checked;
             }
 
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => ClockText.Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
             _clockTimer.Start();
+            this.PreviewGotKeyboardFocus += Inventario_PreviewGotKeyboardFocus;
 
             Loaded += (_, _) => ActualizarIndicadoresPremiumUI();
 
@@ -127,27 +131,52 @@ namespace Punto_de_Venta
         #endregion
 
         #region Eventos Principales y Atajos de Teclado
+        public bool ManejarEscape()
+        {
+            if (QuickRestockOverlay != null && QuickRestockOverlay.Visibility == Visibility.Visible)
+            {
+                CloseQuickRestock_Click(null, null);
+                return true;
+            }
+
+            if (GestorLotesOverlay != null && GestorLotesOverlay.Visibility == Visibility.Visible)
+            {
+                CloseGestorLotes_Click(null, null);
+                return true;
+            }
+
+            if (LotesOverlay != null && LotesOverlay.Visibility == Visibility.Visible)
+            {
+                CloseLotesModal_Click(null, null);
+                return true;
+            }
+
+            return false;
+        }
+
+        private UIElement ObtenerModalActivo()
+        {
+            if (QuickRestockOverlay != null && QuickRestockOverlay.Visibility == Visibility.Visible) return QuickRestockOverlay;
+            if (GestorLotesOverlay != null && GestorLotesOverlay.Visibility == Visibility.Visible) return GestorLotesOverlay;
+            if (LotesOverlay != null && LotesOverlay.Visibility == Visibility.Visible) return LotesOverlay;
+            return null;
+        }
+
+        private void Inventario_PreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            UIElement modal = ObtenerModalActivo();
+            if (modal != null)
+            {
+                ModalFocusHelper.ProtegerFoco(e, modal);
+            }
+        }
+
         private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
             {
-                if (QuickRestockOverlay.Visibility == Visibility.Visible)
+                if (ManejarEscape())
                 {
-                    CloseQuickRestock_Click(null, null);
-                    e.Handled = true;
-                    return;
-                }
-
-                if (GestorLotesOverlay.Visibility == Visibility.Visible)
-                {
-                    CloseGestorLotes_Click(null, null);
-                    e.Handled = true;
-                    return;
-                }
-
-                if (LotesOverlay.Visibility == Visibility.Visible)
-                {
-                    CloseLotesModal_Click(null, null);
                     e.Handled = true;
                     return;
                 }
@@ -197,11 +226,15 @@ namespace Punto_de_Venta
             bool esPremium = LicenciaService.EsPremium();
             if (BtnCargarLote != null)
             {
-                BtnCargarLote.Content = esPremium ? "📦 Cargar Lote" : "🔒 Lotes";
+                BtnCargarLote.Content = esPremium
+                    ? Punto_de_Venta.Servicios.IdiomaService.Obtener("InvLoadBatchBtn", "📦 Cargar Lote")
+                    : Punto_de_Venta.Servicios.IdiomaService.Obtener("InvLoadBatchLocked", "🔒 Lotes");
             }
             if (BtnEnlaceRapidoInventario != null)
             {
-                BtnEnlaceRapidoInventario.Content = esPremium ? "Enlace R" : "🔒 Enlace R";
+                BtnEnlaceRapidoInventario.Content = esPremium
+                    ? Punto_de_Venta.Servicios.IdiomaService.Obtener("InvQuickLinkBtn", "Enlace R")
+                    : Punto_de_Venta.Servicios.IdiomaService.Obtener("InvQuickLinkLocked", "🔒 Enlace R");
             }
             UpdateProductCount();
         }
@@ -220,6 +253,7 @@ namespace Punto_de_Venta
             LotesListBox.SelectedItem = null;
             LoteItemsBox.ItemsSource = null;
             LotesOverlay.Visibility = Visibility.Visible;
+            ModalFocusHelper.EnfocarModal(LotesOverlay);
         }
 
         private void CloseLotesModal_Click(object sender, RoutedEventArgs e)
@@ -575,6 +609,10 @@ namespace Punto_de_Venta
             {
                 ScaleWeighCheckBox.IsChecked = false;
             }
+            if (CountAsOnePieceCheckBox != null && CountAsOnePieceCheckBox.IsChecked == true)
+            {
+                CountAsOnePieceCheckBox.IsChecked = false;
+            }
         }
 
         private void ScaleWeighCheckBox_Checked(object sender, RoutedEventArgs e)
@@ -583,6 +621,23 @@ namespace Punto_de_Venta
             if (AskQuantityCheckBox != null && AskQuantityCheckBox.IsChecked == true)
             {
                 AskQuantityCheckBox.IsChecked = false;
+            }
+            if (CountAsOnePieceCheckBox != null && CountAsOnePieceCheckBox.IsChecked == true)
+            {
+                CountAsOnePieceCheckBox.IsChecked = false;
+            }
+        }
+
+        private void CountAsOnePieceCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_isUpdatingForm) return;
+            if (AskQuantityCheckBox != null && AskQuantityCheckBox.IsChecked == true)
+            {
+                AskQuantityCheckBox.IsChecked = false;
+            }
+            if (ScaleWeighCheckBox != null && ScaleWeighCheckBox.IsChecked == true)
+            {
+                ScaleWeighCheckBox.IsChecked = false;
             }
         }
 
@@ -624,6 +679,11 @@ namespace Punto_de_Venta
                 if (ScaleWeighCheckBox != null)
                 {
                     ScaleWeighCheckBox.IsChecked = _selectedProduct.SeVendePorPeso;
+                }
+
+                if (CountAsOnePieceCheckBox != null)
+                {
+                    CountAsOnePieceCheckBox.IsChecked = _selectedProduct.ContarComoUnaPieza;
                 }
             }
             finally
@@ -739,6 +799,11 @@ namespace Punto_de_Venta
                 ShowValidationError("Ya existe un producto con ese nombre.", "ProductNameBox");
                 return;
             }
+            if (HasDuplicateCode(code))
+            {
+                ShowValidationError("Ya existe un producto con ese codigo de barras.", "ProductCodeBox");
+                return;
+            }
 
             int id;
             try
@@ -762,7 +827,8 @@ namespace Punto_de_Venta
                 Precio = price,
                 Stock = stock,
                 PedirCantidadAlCobrar = AskQuantityCheckBox?.IsChecked == true,
-                SeVendePorPeso = ScaleWeighCheckBox?.IsChecked == true
+                SeVendePorPeso = ScaleWeighCheckBox?.IsChecked == true,
+                ContarComoUnaPieza = CountAsOnePieceCheckBox?.IsChecked == true
             };
 
             if (!TrySave(new[] { newProduct }))
@@ -847,7 +913,8 @@ namespace Punto_de_Venta
                 Precio = price,
                 Stock = stock,
                 PedirCantidadAlCobrar = AskQuantityCheckBox?.IsChecked == true,
-                SeVendePorPeso = ScaleWeighCheckBox?.IsChecked == true
+                SeVendePorPeso = ScaleWeighCheckBox?.IsChecked == true,
+                ContarComoUnaPieza = CountAsOnePieceCheckBox?.IsChecked == true
             };
 
             if (!TrySave(new[] { updatedProduct }))
@@ -1007,13 +1074,19 @@ namespace Punto_de_Venta
         {
             if (CantProd != null)
             {
-                CantProd.Text = LicenciaService.EsPremium()
-                    ? $"Cantidad de prod: {Products.Count}"
-                    : $"Cantidad de prod: {Products.Count} / 400";
+                string countStr = LicenciaService.EsPremium()
+                    ? $"{Products.Count}"
+                    : $"{Products.Count} / 400";
+                CantProd.Text = Punto_de_Venta.Servicios.IdiomaService.ObtenerFormato("InvCountLabel", $"Cantidad de prod: {countStr}", countStr);
             }
         }
 
-        private int GetNextId() => checked(Products.Select(product => product.Id).DefaultIfEmpty(0).Max() + 1);
+        private int GetNextId()
+        {
+            int maxLocal = checked(Products.Select(product => product.Id).DefaultIfEmpty(0).Max() + 1);
+            int maxDb = ProductoDB.ObtenerSiguienteId();
+            return Math.Max(maxLocal, maxDb);
+        }
 
         private void SetNextId()
         {
@@ -1046,6 +1119,10 @@ namespace Punto_de_Venta
                 if (ScaleWeighCheckBox != null)
                 {
                     ScaleWeighCheckBox.IsChecked = false;
+                }
+                if (CountAsOnePieceCheckBox != null)
+                {
+                    CountAsOnePieceCheckBox.IsChecked = false;
                 }
             }
             finally
@@ -1084,6 +1161,7 @@ namespace Punto_de_Venta
 
         private void QuickRestock_Click(object sender, RoutedEventArgs e)
         {
+            if (!CanWrite()) return;
             if (_selectedProduct is null || sender is not Button btn || btn.Tag is not string amountStr)
             {
                 ToastNotification.Show("Selecciona un producto para reabastecer", ToastType.Warning);
@@ -1092,7 +1170,8 @@ namespace Punto_de_Venta
 
             if (!decimal.TryParse(amountStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var addAmount)) return;
 
-            decimal.TryParse(StockBox.Text.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var currentStock);
+            decimal prevStock = _selectedProduct.Stock;
+            decimal currentStock = TryParseDecimalFlexible(StockBox.Text, out var parsedStock) ? parsedStock : prevStock;
             var newStock = currentStock + addAmount;
 
             StockBox.Text = newStock.ToString("0.###", CultureInfo.InvariantCulture);
@@ -1106,6 +1185,8 @@ namespace Punto_de_Venta
             }
             catch (Exception ex)
             {
+                _selectedProduct.Stock = prevStock;
+                StockBox.Text = prevStock.ToString("0.###", CultureInfo.InvariantCulture);
                 ToastNotification.Show($"Error al guardar reabastecimiento: {ex.Message}", ToastType.Error);
             }
         }
@@ -1233,6 +1314,13 @@ namespace Punto_de_Venta
         {
             if (string.IsNullOrWhiteSpace(nombre)) return false;
 
+            string codigoTrim = codigo?.Trim() ?? string.Empty;
+            string nombreTrim = nombre.Trim();
+            if (HasDuplicateName(nombreTrim) || HasDuplicateCode(codigoTrim))
+            {
+                return false;
+            }
+
             if (!LicenciaService.EsPremium() && Products.Count >= 400)
             {
                 return false;
@@ -1245,14 +1333,14 @@ namespace Punto_de_Venta
             }
             catch
             {
-                id = 1;
+                id = ProductoDB.ObtenerSiguienteId();
             }
 
             var newProd = new Producto
             {
                 Id = id,
-                Codigo = codigo?.Trim() ?? string.Empty,
-                Nombre = nombre.Trim(),
+                Codigo = codigoTrim,
+                Nombre = nombreTrim,
                 Precio = precio,
                 Costo = costo,
                 Stock = stock,

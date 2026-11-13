@@ -13,14 +13,17 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
+using Punto_de_Venta.Vistas;
+
 namespace Punto_de_Venta
 {
-    public partial class Configuracion : UserControl
+    public partial class Configuracion : UserControl, IManejadorEscape
     {
         #region Campos Privados
         private AppConfig _config = new();
         private bool _isTestingScale = false;
         private bool _isCargando = true;
+        private bool _actualizandoIdioma = false;
         private string _selectedColorHex = "#007AFF";
         #endregion
 
@@ -37,19 +40,23 @@ namespace Punto_de_Venta
 
             if (NavPersonalizacionBtn != null)
             {
-                NavPersonalizacionBtn.Content = esPremium ? "🎨  Personalizacion" : "🔒  Personalizacion";
+                string navPers = IdiomaService.Obtener("SettingsNavPersonalization", "🎨  Personalizacion");
+                NavPersonalizacionBtn.Content = esPremium ? navPers : navPers.Replace("🎨", "🔒");
             }
             if (NavServidorLocalBtn != null)
             {
-                NavServidorLocalBtn.Content = esPremium ? "🌐  Servidor Local" : "🔒  Servidor Local";
+                string navSrv = IdiomaService.Obtener("SettingsNavServer", "🌐  Servidor Local");
+                NavServidorLocalBtn.Content = esPremium ? navSrv : navSrv.Replace("🌐", "🔒");
             }
             if (NavWhatsAppBtn != null)
             {
-                NavWhatsAppBtn.Content = esPremium ? "📱  WhatsApp" : "🔒  WhatsApp";
+                string navWa = IdiomaService.Obtener("SettingsNavWhatsApp", "📱  WhatsApp");
+                NavWhatsAppBtn.Content = esPremium ? navWa : navWa.Replace("📱", "🔒");
             }
             if (NavSeguridadBtn != null)
             {
-                NavSeguridadBtn.Content = esPremium ? "🛡️  Caja y Seguridad" : "🔒  Caja y Seguridad";
+                string navSec = IdiomaService.Obtener("SettingsNavSecurity", "🛡️  Caja y Seguridad");
+                NavSeguridadBtn.Content = esPremium ? navSec : navSec.Replace("🛡️", "🔒");
             }
 
             if (BusinessSubtitleBox != null)
@@ -70,36 +77,38 @@ namespace Punto_de_Venta
 
             if (LblColorAcentoTitulo != null)
             {
-                LblColorAcentoTitulo.Text = esPremium ? "Color de Acento" : "Color de Acento 🔒";
+                string tituloColor = IdiomaService.Obtener("SettingsAccentTitle", "Color de Acento");
+                LblColorAcentoTitulo.Text = esPremium ? tituloColor : tituloColor + " 🔒";
             }
 
             if (LblColorAcentoDesc != null)
             {
-                LblColorAcentoDesc.Text = esPremium
-                    ? "Elige el color principal para los botones, selecciones y resaltados del sistema."
-                    : "Elige el color principal para los botones, selecciones y resaltados del sistema (Exclusivo Premium).";
+                string descColor = IdiomaService.Obtener("SettingsAccentDesc", "Elige el color principal para los botones, selecciones y resaltados del sistema.");
+                LblColorAcentoDesc.Text = esPremium ? descColor : descColor + " (Premium)";
             }
 
             if (LblPinAdminTitulo != null)
             {
-                LblPinAdminTitulo.Text = esPremium ? "Solicitar PIN de administrador" : "Solicitar PIN de administrador 🔒";
+                string tituloPin = IdiomaService.Obtener("SettingsSecurityPinTitle", "Solicitar PIN de administrador");
+                LblPinAdminTitulo.Text = esPremium ? tituloPin : tituloPin + " 🔒";
             }
 
             if (LblPinAdminDesc != null)
             {
-                LblPinAdminDesc.Text = esPremium
-                    ? "Se pedira contrasena al entrar a todos los apartados excepto Cobro."
-                    : "Se pedira contrasena al entrar a todos los apartados excepto Cobro. Requiere version Premium.";
+                string descPin = IdiomaService.Obtener("SettingsSecurityPinDesc", "Se pedira contrasena al entrar a todos los apartados excepto Cobro.");
+                LblPinAdminDesc.Text = esPremium ? descPin : descPin + " (Premium)";
             }
 
             if (BtnRespaldoDrive != null)
             {
-                BtnRespaldoDrive.Content = esPremium ? "☁️ Subir Respaldo a Google Drive" : "☁️ Subir Respaldo a Google Drive 🔒";
+                string btnDrive = IdiomaService.Obtener("SettingsDriveUploadBtn", "☁️ Subir Respaldo a Google Drive");
+                BtnRespaldoDrive.Content = esPremium ? btnDrive : btnDrive + " 🔒";
             }
 
             if (LblRespaldoAutoTitulo != null)
             {
-                LblRespaldoAutoTitulo.Text = esPremium ? "Respaldo automatico en segundo plano" : "Respaldo automatico en segundo plano 🔒";
+                string tituloAuto = IdiomaService.Obtener("SettingsDriveAuto", "Respaldo automatico en segundo plano");
+                LblRespaldoAutoTitulo.Text = esPremium ? tituloAuto : tituloAuto + " 🔒";
             }
         }
 
@@ -180,6 +189,19 @@ namespace Punto_de_Venta
 
 
             DarkModeCheckBox.IsChecked = _config.ModoOscuro;
+            if (CmbIdioma != null)
+            {
+                _actualizandoIdioma = true;
+                try
+                {
+                    string codigo = IdiomaService.NormalizarCodigo(_config.Idioma);
+                    CmbIdioma.SelectedIndex = codigo == "en" ? 1 : 0;
+                }
+                finally
+                {
+                    _actualizandoIdioma = false;
+                }
+            }
             if (CmbModoMetricas != null)
             {
                 string modo = string.Equals(_config.ModoVisualizacionMetricas, "Tablas", StringComparison.OrdinalIgnoreCase) ? "Tablas" : "Graficas";
@@ -571,12 +593,16 @@ namespace Punto_de_Venta
             }
             else if (habilitado)
             {
-                TxtEstadoServidor.Text = "Iniciando servicio...";
+                TxtEstadoServidor.Text = IdiomaService.EsIngles()
+                    ? "Starting service..."
+                    : "Iniciando servicio...";
                 TxtEstadoServidor.SetResourceReference(TextBlock.ForegroundProperty, "ThemeAccent");
             }
             else
             {
-                TxtEstadoServidor.Text = "Inactivo (Servidor local deshabilitado)";
+                TxtEstadoServidor.Text = IdiomaService.EsIngles()
+                    ? "Inactive (Local server disabled)"
+                    : "Inactivo (Servidor local deshabilitado)";
                 TxtEstadoServidor.SetResourceReference(TextBlock.ForegroundProperty, "ThemeMutedForeground");
             }
         }
@@ -725,6 +751,10 @@ namespace Punto_de_Venta
             }
         }
 
+        private void CmbIdioma_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+        }
+
         private void SaveConfig_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -755,6 +785,13 @@ namespace Punto_de_Venta
 
                 var modoOscuroSeleccionado = DarkModeCheckBox.IsChecked == true;
                 _config.ModoOscuro = modoOscuroSeleccionado;
+                if (CmbIdioma?.SelectedItem is ComboBoxItem langItem && langItem.Tag is string langCode)
+                {
+                    _config.Idioma = IdiomaService.NormalizarCodigo(langCode);
+                    IdiomaService.AplicarIdioma(_config.Idioma);
+                    ActualizarIndicadoresPremiumUI();
+                    ActualizarVistaPreviaTicket();
+                }
 
                 if (CmbModoMetricas?.SelectedItem is ComboBoxItem itemMetricas && itemMetricas.Tag != null)
                 {
@@ -866,6 +903,13 @@ namespace Punto_de_Venta
             {
                 ToastNotification.Show($"Error al guardar configuracion: {ex.Message}", ToastType.Error);
             }
+        }
+
+        public bool ManejarEscape()
+        {
+            RevertirColorSiNoSeGuardo();
+            NewPinBox?.Clear();
+            return false;
         }
 
         private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)

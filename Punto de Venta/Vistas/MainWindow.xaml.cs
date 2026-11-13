@@ -82,6 +82,9 @@ namespace Punto_de_Venta
                 if (!_isShuttingDown)
                 {
                     _isShuttingDown = true;
+                    try { _clockTimer?.Stop(); } catch { }
+                    try { _inactivityTimer?.Stop(); } catch { }
+                    try { _standbyClockTimer?.Stop(); } catch { }
                     try { _ctsAutoBackup.Cancel(); _ctsAutoBackup.Dispose(); } catch { }
 
                     try
@@ -101,6 +104,16 @@ namespace Punto_de_Venta
             UpdateClock();
             _clockTimer.Start();
             ActualizarEstadoLicenciaUI();
+            this.PreviewGotKeyboardFocus += MainWindow_PreviewGotKeyboardFocus;
+            Punto_de_Venta.Servicios.IdiomaService.IdiomaCambiado += (_, _) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    ActualizarNombreNegocioEnUI();
+                    ActualizarEstadoLicenciaUI();
+                    UpdateClock();
+                });
+            };
 
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
@@ -156,9 +169,10 @@ namespace Punto_de_Venta
 
             try
             {
-                string textoCompleto = string.IsNullOrEmpty(_vistaActualTitulo)
+                string vistaTraducida = Punto_de_Venta.Servicios.IdiomaService.TraducirTexto(_vistaActualTitulo);
+                string textoCompleto = string.IsNullOrEmpty(vistaTraducida)
                     ? _nombreNegocioActual
-                    : $"{_nombreNegocioActual} - {_vistaActualTitulo}";
+                    : $"{_nombreNegocioActual} - {vistaTraducida}";
 
                 if (TxtMiniLogo != null)
                 {
@@ -173,7 +187,7 @@ namespace Punto_de_Venta
                     tituloDash.Text = textoCompleto;
                 }
 
-                Title = $"{nombre} - Punto de Venta";
+                Title = $"{nombre} - {Punto_de_Venta.Servicios.IdiomaService.Obtener("MainSubtitleDefault", "Punto de Venta")}";
             }
             catch { }
         }
@@ -350,6 +364,7 @@ namespace Punto_de_Venta
             _vistaActualTitulo = nombreVista switch
             {
                 "CodigosBarrasWindow" => "Etiquetas",
+                "LibretaContactos" => "Libreta",
                 _ => nombreVista
             };
 
@@ -403,16 +418,18 @@ namespace Punto_de_Venta
             bool esPremium = LicenciaService.EsPremium();
 
             if (TxtTituloPromociones != null)
-                TxtTituloPromociones.Text = "Promociones";
+                TxtTituloPromociones.Text = Punto_de_Venta.Servicios.IdiomaService.Obtener("MainNavPromos", "Promociones");
 
             if (TxtTituloPrestamos != null)
-                TxtTituloPrestamos.Text = "Prestamos";
+                TxtTituloPrestamos.Text = Punto_de_Venta.Servicios.IdiomaService.Obtener("MainNavCredits", "Prestamos");
 
+            string titEtiq = Punto_de_Venta.Servicios.IdiomaService.Obtener("MainNavBarcodes", "Etiquetas");
             if (TxtTituloEtiquetas != null)
-                TxtTituloEtiquetas.Text = esPremium ? "Etiquetas" : "Etiquetas 🔒";
+                TxtTituloEtiquetas.Text = esPremium ? titEtiq : $"{titEtiq} 🔒";
 
+            string titExp = Punto_de_Venta.Servicios.IdiomaService.Obtener("MainNavExport", "Exportar");
             if (TxtTituloExportar != null)
-                TxtTituloExportar.Text = esPremium ? "Exportar" : "Exportar 🔒";
+                TxtTituloExportar.Text = esPremium ? titExp : $"{titExp} 🔒";
 
             if (_vistasCache.TryGetValue("Configuracion", out var configView) && configView is Configuracion cfg)
             {
@@ -552,9 +569,31 @@ namespace Punto_de_Venta
             }
         }
 
+        private void Libreta_Click(object sender, RoutedEventArgs e)
+        {
+            AbrirVista<LibretaContactos>();
+        }
+
+        private void MainWindow_PreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            UIElement modalActivo = null;
+            if (ExportarOverlay != null && ExportarOverlay.Visibility == Visibility.Visible) modalActivo = ExportarOverlay;
+            else if (ImportarOverlay != null && ImportarOverlay.Visibility == Visibility.Visible) modalActivo = ImportarOverlay;
+
+            if (modalActivo != null)
+            {
+                ModalFocusHelper.ProtegerFoco(e, modalActivo);
+            }
+        }
+
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (StandbyOverlay != null && StandbyOverlay.Visibility == Visibility.Visible) OcultarPantallaReposo();
+            if (StandbyOverlay != null && StandbyOverlay.Visibility == Visibility.Visible)
+            {
+                OcultarPantallaReposo();
+                e.Handled = true;
+                return;
+            }
 
             if (ExportarOverlay != null && ExportarOverlay.Visibility == Visibility.Visible)
             {
@@ -576,17 +615,32 @@ namespace Punto_de_Venta
                 return;
             }
 
-            if (ContenedorVistas.Visibility == Visibility.Visible
-                && e.Key == Key.L && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control
-                && ContenedorVistas.Content is ILimpiarSeleccion vistaConSeleccion)
-            {
-                vistaConSeleccion.LimpiarSeleccion();
-                e.Handled = true;
-                return;
-            }
-
             if (ContenedorVistas.Visibility == Visibility.Visible)
             {
+                if (e.Key == Key.Escape)
+                {
+                    if (ContenedorVistas.Content is IManejadorEscape manejador)
+                    {
+                        if (manejador.ManejarEscape())
+                        {
+                            e.Handled = true;
+                            return;
+                        }
+                    }
+
+                    RegresarAlMenu();
+                    e.Handled = true;
+                    return;
+                }
+
+                if (e.Key == Key.L && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control
+                    && ContenedorVistas.Content is ILimpiarSeleccion vistaConSeleccion)
+                {
+                    vistaConSeleccion.LimpiarSeleccion();
+                    e.Handled = true;
+                    return;
+                }
+
                 return;
             }
 
@@ -622,6 +676,10 @@ namespace Punto_de_Venta
                     break;
                 case Key.D8:
                     Promociones_Click(this, new RoutedEventArgs());
+                    e.Handled = true;
+                    break;
+                case Key.D9:
+                    Libreta_Click(this, new RoutedEventArgs());
                     e.Handled = true;
                     break;
             }
@@ -775,7 +833,7 @@ namespace Punto_de_Venta
             int id = 0;
             string codigo, nombre, categoria = "General";
             decimal costo = 0m, ganancia = 0m, precio = 0m, stock = 0m;
-            bool pedirCantidad = false, seVendePorPeso = false;
+            bool pedirCantidad = false, seVendePorPeso = false, contarComoUnaPieza = false;
 
             if (esEleventa)
             {
@@ -807,6 +865,7 @@ namespace Punto_de_Venta
                 if (partes.Length >= 8) decimal.TryParse(partes[7], NumberStyles.Any, CultureInfo.InvariantCulture, out stock);
                 if (partes.Length >= 9) bool.TryParse(partes[8], out pedirCantidad);
                 if (partes.Length >= 10) bool.TryParse(partes[9], out seVendePorPeso);
+                if (partes.Length >= 11) bool.TryParse(partes[10], out contarComoUnaPieza);
             }
             if (precio == 0m && (costo > 0m || ganancia > 0m))
             {
@@ -824,7 +883,8 @@ namespace Punto_de_Venta
                 Precio = precio,
                 Stock = stock,
                 PedirCantidadAlCobrar = pedirCantidad,
-                SeVendePorPeso = seVendePorPeso
+                SeVendePorPeso = seVendePorPeso,
+                ContarComoUnaPieza = contarComoUnaPieza
             };
         }
 

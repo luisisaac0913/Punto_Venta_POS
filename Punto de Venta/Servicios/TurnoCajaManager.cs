@@ -107,30 +107,48 @@ namespace Punto_de_Venta
         {
             using var conn = DatabaseHelper.GetConnection();
             ValidarEsquemaBD(conn);
+            using var tr = conn.BeginTransaction();
 
-            using var cmdMovimientos = conn.CreateCommand();
-            cmdMovimientos.CommandText = @"SELECT COALESCE(SUM(CASE WHEN Tipo = 'Entrada' THEN Monto ELSE 0 END), 0) AS TotalEntradas, COALESCE(SUM(CASE WHEN Tipo = 'Salida' OR Tipo = 'Gasto' THEN Monto ELSE 0 END), 0) AS TotalSalidas FROM MovimientosCaja WHERE CorteCajaId = @idTurno;";
-            cmdMovimientos.Parameters.AddWithValue("@idTurno", turnoActivo.Id);
-
-            decimal totalEntradas = 0, totalSalidas = 0;
-            using (var reader = cmdMovimientos.ExecuteReader())
+            try
             {
-                if (reader.Read()) { totalEntradas = Convert.ToDecimal(reader.GetDouble(0)); totalSalidas = Convert.ToDecimal(reader.GetDouble(1)); }
+                using var cmdMovimientos = conn.CreateCommand();
+                cmdMovimientos.Transaction = tr;
+                cmdMovimientos.CommandText = @"SELECT COALESCE(SUM(CASE WHEN Tipo = 'Entrada' THEN Monto ELSE 0 END), 0) AS TotalEntradas, COALESCE(SUM(CASE WHEN Tipo = 'Salida' OR Tipo = 'Gasto' THEN Monto ELSE 0 END), 0) AS TotalSalidas FROM MovimientosCaja WHERE CorteCajaId = @idTurno;";
+                cmdMovimientos.Parameters.AddWithValue("@idTurno", turnoActivo.Id);
+
+                decimal totalEntradas = 0, totalSalidas = 0;
+                using (var reader = cmdMovimientos.ExecuteReader())
+                {
+                    if (reader.Read()) { totalEntradas = Convert.ToDecimal(reader.GetDouble(0)); totalSalidas = Convert.ToDecimal(reader.GetDouble(1)); }
+                }
+
+                decimal totalEsperado = turnoActivo.FondoInicial + ventasEfectivo + totalEntradas - totalSalidas;
+
+                using var cmdCierre = conn.CreateCommand();
+                cmdCierre.Transaction = tr;
+                cmdCierre.CommandText = @"UPDATE CortesCaja SET FechaHoraCierre = @fechaCierre, Estado = 'Cerrado', VentasEfectivo = @ventasEfectivo, EntradasEfectivo = @entradas, SalidasEfectivo = @salidas, TotalEsperado = @esperado, TotalContado = @contado, Observaciones = @obs WHERE Id = @idTurno;";
+                cmdCierre.Parameters.AddWithValue("@fechaCierre", DateTime.Now.ToString("o", CultureInfo.InvariantCulture));
+                cmdCierre.Parameters.AddWithValue("@ventasEfectivo", Convert.ToDouble(ventasEfectivo));
+                cmdCierre.Parameters.AddWithValue("@entradas", Convert.ToDouble(totalEntradas));
+                cmdCierre.Parameters.AddWithValue("@salidas", Convert.ToDouble(totalSalidas));
+                cmdCierre.Parameters.AddWithValue("@esperado", Convert.ToDouble(totalEsperado));
+                cmdCierre.Parameters.AddWithValue("@contado", Convert.ToDouble(totalContadoFisico));
+                cmdCierre.Parameters.AddWithValue("@obs", observacionesCierre);
+                cmdCierre.Parameters.AddWithValue("@idTurno", turnoActivo.Id);
+                cmdCierre.ExecuteNonQuery();
+
+                using var cmdCerrarVentas = conn.CreateCommand();
+                cmdCerrarVentas.Transaction = tr;
+                cmdCerrarVentas.CommandText = "UPDATE Ventas SET Estado = 'Cerrada' WHERE Estado = 'Abierta';";
+                cmdCerrarVentas.ExecuteNonQuery();
+
+                tr.Commit();
             }
-
-            decimal totalEsperado = turnoActivo.FondoInicial + ventasEfectivo + totalEntradas - totalSalidas;
-
-            using var cmdCierre = conn.CreateCommand();
-            cmdCierre.CommandText = @"UPDATE CortesCaja SET FechaHoraCierre = @fechaCierre, Estado = 'Cerrado', VentasEfectivo = @ventasEfectivo, EntradasEfectivo = @entradas, SalidasEfectivo = @salidas, TotalEsperado = @esperado, TotalContado = @contado, Observaciones = @obs WHERE Id = @idTurno;";
-            cmdCierre.Parameters.AddWithValue("@fechaCierre", DateTime.Now.ToString("o", CultureInfo.InvariantCulture));
-            cmdCierre.Parameters.AddWithValue("@ventasEfectivo", Convert.ToDouble(ventasEfectivo));
-            cmdCierre.Parameters.AddWithValue("@entradas", Convert.ToDouble(totalEntradas));
-            cmdCierre.Parameters.AddWithValue("@salidas", Convert.ToDouble(totalSalidas));
-            cmdCierre.Parameters.AddWithValue("@esperado", Convert.ToDouble(totalEsperado));
-            cmdCierre.Parameters.AddWithValue("@contado", Convert.ToDouble(totalContadoFisico));
-            cmdCierre.Parameters.AddWithValue("@obs", observacionesCierre);
-            cmdCierre.Parameters.AddWithValue("@idTurno", turnoActivo.Id);
-            cmdCierre.ExecuteNonQuery();
+            catch
+            {
+                tr.Rollback();
+                throw;
+            }
         }
 
         public static CorteCaja AbrirTurno(decimal fondoInicial, string concepto = "Fondo de apertura")

@@ -18,5 +18,6 @@ namespace Punto_de_Venta.Modelos
         public bool EsStockBajo => Stock > 0 && Stock <= 3;
         public bool PedirCantidadAlCobrar { get; set; } = false;
         public bool SeVendePorPeso { get; set; }
+        public bool ContarComoUnaPieza { get; set; } = false;
     }
 }

@@ -11,7 +11,7 @@ using System.Windows.Input;
 
 namespace Punto_de_Venta
 {
-    public partial class Promociones : UserControl, ILimpiarSeleccion
+    public partial class Promociones : UserControl, ILimpiarSeleccion, IManejadorEscape
     {
         public ObservableCollection<Promocion> ListaPromociones { get; } = new ObservableCollection<Promocion>();
         private Promocion _promocionEnEdicion = null;
@@ -50,6 +50,11 @@ namespace Punto_de_Venta
             }
         }
         private void UserControl_Loaded(object sender, RoutedEventArgs e) => FocusSearch();
+        public bool ManejarEscape()
+        {
+            return false;
+        }
+
         private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)

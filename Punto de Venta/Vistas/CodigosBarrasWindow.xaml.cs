@@ -13,9 +13,11 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
+using Punto_de_Venta.Vistas;
+
 namespace Punto_de_Venta
 {
-    public partial class CodigosBarrasWindow : UserControl, ILimpiarSeleccion
+    public partial class CodigosBarrasWindow : UserControl, ILimpiarSeleccion, IManejadorEscape
     {
         private List<Producto> _catalogo = new();
         public ObservableCollection<Producto> ResultadosBusqueda { get; set; } = new();
@@ -78,6 +80,11 @@ namespace Punto_de_Venta
             {
                 mainWindow.RegresarAlMenu();
             }
+        }
+
+        public bool ManejarEscape()
+        {
+            return false;
         }
 
         private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)

@@ -72,6 +72,8 @@ namespace Punto_de_Venta.Servicios
             }
         }
 
+        private static readonly SemaphoreSlim _serialLock = new(1, 1);
+
         public static async Task<(bool Exito, decimal Peso, string Error)> ObtenerPesoAsync()
         {
             var config = AppConfig.Load();
@@ -80,65 +82,73 @@ namespace Punto_de_Venta.Servicios
             {
                 return (false, 0m, "La bascula esta desactivada en la configuracion.");
             }
-            return await Task.Run(() =>
+            await _serialLock.WaitAsync();
+            try
             {
-                var puerto = config.BasculaPuerto;
-                var baudRate = config.BasculaBaudRate;
-                var esModoContinuo = config.BasculaProtocolo.Contains("Continuo", StringComparison.OrdinalIgnoreCase);
-
-                if (string.IsNullOrWhiteSpace(puerto))
+                return await Task.Run(() =>
                 {
-                    return (false, 0m, "No se ha configurado un puerto COM para la bascula.");
-                }
+                    var puerto = config.BasculaPuerto;
+                    var baudRate = config.BasculaBaudRate;
+                    var esModoContinuo = config.BasculaProtocolo.Contains("Continuo", StringComparison.OrdinalIgnoreCase);
 
-                SerialPort? port = null;
-                try
-                {
-                    port = new SerialPort(puerto, baudRate, Parity.None, 8, StopBits.One)
+                    if (string.IsNullOrWhiteSpace(puerto))
                     {
-                        ReadTimeout = 1000,
-                        WriteTimeout = 1000
-                    };
-
-                    port.Open();
-                    port.DiscardInBuffer();
-
-                    if (!esModoContinuo)
-                    {
-                        port.Write("P\r");
+                        return (false, 0m, "No se ha configurado un puerto COM para la bascula.");
                     }
 
-                    Thread.Sleep(200);
-
-                    var respuesta = port.ReadExisting();
-                    if (string.IsNullOrWhiteSpace(respuesta))
+                    SerialPort? port = null;
+                    try
                     {
-                        try { respuesta = port.ReadLine(); } catch { }
-                    }
+                        port = new SerialPort(puerto, baudRate, Parity.None, 8, StopBits.One)
+                        {
+                            ReadTimeout = 1000,
+                            WriteTimeout = 1000
+                        };
 
-                    port.Close();
+                        port.Open();
+                        port.DiscardInBuffer();
 
-                    if (TryParsePeso(respuesta, out var peso))
-                    {
-                        return (true, peso, string.Empty);
-                    }
+                        if (!esModoContinuo)
+                        {
+                            port.Write("P\r");
+                        }
 
-                    return (false, 0m, string.IsNullOrWhiteSpace(respuesta)
-                        ? "Sin respuesta de la bascula."
-                        : $"Trama no reconocida: '{respuesta.Trim()}'.");
-                }
-                catch (Exception ex)
-                {
-                    return (false, 0m, ex.Message);
-                }
-                finally
-                {
-                    if (port != null && port.IsOpen)
-                    {
+                        Thread.Sleep(200);
+
+                        var respuesta = port.ReadExisting();
+                        if (string.IsNullOrWhiteSpace(respuesta))
+                        {
+                            try { respuesta = port.ReadLine(); } catch { }
+                        }
+
                         port.Close();
+
+                        if (TryParsePeso(respuesta, out var peso))
+                        {
+                            return (true, peso, string.Empty);
+                        }
+
+                        return (false, 0m, string.IsNullOrWhiteSpace(respuesta)
+                            ? "Sin respuesta de la bascula."
+                            : $"Trama no reconocida: '{respuesta.Trim()}'.");
                     }
-                }
-            });
+                    catch (Exception ex)
+                    {
+                        return (false, 0m, ex.Message);
+                    }
+                    finally
+                    {
+                        if (port != null && port.IsOpen)
+                        {
+                            port.Close();
+                        }
+                    }
+                });
+            }
+            finally
+            {
+                _serialLock.Release();
+            }
         }
         public static bool TryParsePeso(string respuesta, out decimal peso)
         {

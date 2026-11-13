@@ -29,15 +29,15 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <TextBlock Text="🔗 Enlace Rapido de Codigos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
+            <TextBlock Text="{DynamicResource QuickLinkTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
 
             <StackPanel Grid.Row="1">
-                <TextBlock Text="1. Escanea el codigo fisico" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
+                <TextBlock Text="{DynamicResource QuickLinkStep1}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
                 <Border Style="{StaticResource FluentInputContainerStyle}" Height="36" Padding="10,0">
                     <TextBox x:Name="TxtCodigo" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="13" VerticalContentAlignment="Center" KeyDown="TxtCodigo_KeyDown" />
                 </Border>
 
-                <TextBlock Text="2. Busca y selecciona el producto" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,14,0,4" />
+                <TextBlock Text="{DynamicResource QuickLinkStep2}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,14,0,4" />
                 <Border Style="{StaticResource FluentInputContainerStyle}" Height="36" Padding="10,0">
                     <TextBox x:Name="TxtBusqueda" Style="{StaticResource EmbeddedTextBoxStyle}" FontSize="13" VerticalContentAlignment="Center" TextChanged="TxtBusqueda_TextChanged" KeyDown="TxtBusqueda_KeyDown" />
                 </Border>
@@ -48,7 +48,7 @@
             </StackPanel>
 
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-                <Button Content="Cancelar" Width="90" Height="36" Margin="0,0,10,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="BtnCancelar_Click">
+                <Button Content="{DynamicResource CommonCancel}" Width="90" Height="36" Margin="0,0,10,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="BtnCancelar_Click">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="CanBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
@@ -66,7 +66,7 @@
                     </Button.Template>
                 </Button>
 
-                <Button Content="Enlazar" Width="100" Height="36" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="BtnEnlazar_Click">
+                <Button Content="{DynamicResource QuickLinkBtn}" Width="100" Height="36" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="BtnEnlazar_Click">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="EnlBorder" Background="{TemplateBinding Background}" CornerRadius="4">

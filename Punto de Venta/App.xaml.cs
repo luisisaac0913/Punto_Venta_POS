@@ -105,6 +105,7 @@ namespace Punto_de_Venta
             try
             {
                 config = AppConfig.Load();
+                IdiomaService.AplicarIdioma(config.Idioma);
                 SetDarkMode(config.ModoOscuro);
                 CambiarColorAcento(config.ColorAcentoHex);
             }

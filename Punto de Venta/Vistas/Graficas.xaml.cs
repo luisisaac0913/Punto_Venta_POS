@@ -25,9 +25,11 @@ using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 using Brushes = System.Windows.Media.Brushes;
 using System.Windows.Threading;
 
+using Punto_de_Venta.Vistas;
+
 namespace Punto_de_Venta
 {
-    public partial class Graficas : UserControl, INotifyPropertyChanged
+    public partial class Graficas : UserControl, INotifyPropertyChanged, IManejadorEscape
     {
         #region Campos Privados
         private readonly DispatcherTimer _clockTimer;
@@ -72,6 +74,7 @@ namespace Punto_de_Venta
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => ClockText.Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
             _clockTimer.Start();
+            this.PreviewGotKeyboardFocus += Graficas_PreviewGotKeyboardFocus;
 
             Unloaded += (_, _) => _clockTimer.Stop();
 
@@ -136,32 +139,57 @@ namespace Punto_de_Venta
             DayButton.Focus();
         }
 
-        private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
+        public bool ManejarEscape()
         {
-            if (e.IsRepeat) return;
-
             if (HelpOverlay != null && HelpOverlay.Visibility == Visibility.Visible)
             {
-                if (e.Key == Key.Escape)
-                {
-                    HelpOverlay.Visibility = Visibility.Collapsed;
-                    e.Handled = true;
-                }
-                return;
+                HelpOverlay.Visibility = Visibility.Collapsed;
+                return true;
             }
 
             if (MovimientosOverlay != null && MovimientosOverlay.Visibility == Visibility.Visible)
             {
-                if (e.Key == Key.Escape)
-                {
-                    MovimientosOverlay.Visibility = Visibility.Collapsed;
-                    e.Handled = true;
-                }
-                return;
+                MovimientosOverlay.Visibility = Visibility.Collapsed;
+                return true;
             }
+
+            if (CustomPeriodContainer != null && CustomPeriodContainer.Visibility == Visibility.Visible)
+            {
+                RestoreNormalPeriods();
+                return true;
+            }
+
+            return false;
+        }
+
+        private UIElement ObtenerModalActivo()
+        {
+            if (HelpOverlay != null && HelpOverlay.Visibility == Visibility.Visible) return HelpOverlay;
+            if (MovimientosOverlay != null && MovimientosOverlay.Visibility == Visibility.Visible) return MovimientosOverlay;
+            return null;
+        }
+
+        private void Graficas_PreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            UIElement modal = ObtenerModalActivo();
+            if (modal != null)
+            {
+                ModalFocusHelper.ProtegerFoco(e, modal);
+            }
+        }
+
+        private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.IsRepeat) return;
 
             if (e.Key == Key.Escape)
             {
+                if (ManejarEscape())
+                {
+                    e.Handled = true;
+                    return;
+                }
+
                 this.Visibility = Visibility.Collapsed;
                 if (Application.Current.MainWindow is MainWindow mainWindow)
                 {
@@ -450,7 +478,7 @@ namespace Punto_de_Venta
             var ventasPorProducto = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
             foreach (var s in sales)
             {
-                if (s.Productos.Count > 0) { foreach (var p in s.Productos) ventasPorProducto[p.Nombre] = ventasPorProducto.GetValueOrDefault(p.Nombre) + p.Cantidad; }
+                if (s.Productos.Count > 0) { foreach (var p in s.Productos) { decimal cantRot = p.ContarComoUnaPieza || p.SeVendePorPeso || p.Cantidad % 1m != 0m ? 1m : p.Cantidad; ventasPorProducto[p.Nombre] = ventasPorProducto.GetValueOrDefault(p.Nombre) + cantRot; } }
                 else { foreach (var (name, qty) in ParseLegacySummary(s.ProductosResumen)) ventasPorProducto[name] = ventasPorProducto.GetValueOrDefault(name) + qty; }
             }
             var rotacionList = new List<(string Nombre, decimal Vendido, decimal Stock)>();
@@ -478,7 +506,7 @@ namespace Punto_de_Venta
 
             foreach (var s in sales)
             {
-                if (s.Productos.Count > 0) { foreach (var p in s.Productos) { var cat = !string.IsNullOrWhiteSpace(p.Categoria) && p.Categoria != "N/A" ? p.Categoria.Trim() : (_catalog.FirstOrDefault(c => c.Id == p.Id)?.Categoria ?? "General"); dict[cat] = dict.GetValueOrDefault(cat) + p.Cantidad; } }
+                if (s.Productos.Count > 0) { foreach (var p in s.Productos) { var cat = !string.IsNullOrWhiteSpace(p.Categoria) && p.Categoria != "N/A" ? p.Categoria.Trim() : (_catalog.FirstOrDefault(c => c.Id == p.Id)?.Categoria ?? "General"); decimal piezasCat = p.ContarComoUnaPieza || p.SeVendePorPeso || p.Cantidad % 1m != 0m ? 1m : p.Cantidad; dict[cat] = dict.GetValueOrDefault(cat) + piezasCat; } }
                 else { foreach (var (name, qty) in ParseLegacySummary(s.ProductosResumen)) { var cat = _catalog.FirstOrDefault(c => string.Equals(c.Nombre, name, StringComparison.OrdinalIgnoreCase))?.Categoria ?? "General"; dict[cat] = dict.GetValueOrDefault(cat) + qty; } }
             }
 
@@ -666,7 +694,8 @@ namespace Punto_de_Venta
                     foreach (var p in s.Productos)
                     {
                         var cat = !string.IsNullOrWhiteSpace(p.Categoria) && p.Categoria != "N/A" ? p.Categoria.Trim() : (_catalog.FirstOrDefault(c => c.Id == p.Id)?.Categoria ?? "General");
-                        dictPiezas[cat] = dictPiezas.GetValueOrDefault(cat) + p.Cantidad;
+                        decimal piezasItem = p.ContarComoUnaPieza || p.SeVendePorPeso || p.Cantidad % 1m != 0m ? 1m : p.Cantidad;
+                        dictPiezas[cat] = dictPiezas.GetValueOrDefault(cat) + piezasItem;
                         dictIngresos[cat] = dictIngresos.GetValueOrDefault(cat) + (p.Precio * p.Cantidad);
                     }
                 }
@@ -766,8 +795,9 @@ namespace Punto_de_Venta
                 foreach (var p in s.Productos)
                 {
                     var cur = dict.GetValueOrDefault(p.Nombre);
+                    decimal cantRent = p.ContarComoUnaPieza || p.SeVendePorPeso || p.Cantidad % 1m != 0m ? 1m : p.Cantidad;
                     dict[p.Nombre] = (
-                        cur.Cantidad + p.Cantidad,
+                        cur.Cantidad + cantRent,
                         cur.Ganancia + (p.Ganancia * p.Cantidad),
                         cur.VentaTotal + (p.Precio * p.Cantidad)
                     );
@@ -805,7 +835,7 @@ namespace Punto_de_Venta
             {
                 if (s.Productos.Count > 0)
                 {
-                    foreach (var p in s.Productos) ventasPorProducto[p.Nombre] = ventasPorProducto.GetValueOrDefault(p.Nombre) + p.Cantidad;
+                    foreach (var p in s.Productos) { decimal cantRot = p.ContarComoUnaPieza || p.SeVendePorPeso || p.Cantidad % 1m != 0m ? 1m : p.Cantidad; ventasPorProducto[p.Nombre] = ventasPorProducto.GetValueOrDefault(p.Nombre) + cantRot; }
                 }
                 else
                 {

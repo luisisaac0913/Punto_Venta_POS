@@ -1,4 +1,4 @@
-<UserControl x:Class="Punto_de_Venta.Inventario"
+﻿<UserControl x:Class="Punto_de_Venta.Inventario"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              MinWidth="1000" MinHeight="640"
@@ -179,20 +179,20 @@
                                 <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" Margin="0,0,10,0" />
                                 <Grid Grid.Column="1">
                                     <TextBox x:Name="SearchBox" Style="{StaticResource EmbeddedTextBoxStyle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" CaretBrush="{DynamicResource ThemeAccent}" TextChanged="SearchBox_TextChanged" />
-                                    <TextBlock x:Name="SearchPlaceholder" Text="id, codigo o nombre..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
+                                    <TextBlock x:Name="SearchPlaceholder" Text="{DynamicResource InvSearchPlaceholder}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
                                 </Grid>
                             </Grid>
                         </Border>
 
-                        <Button x:Name="BtnCargarLote" Grid.Column="2" Content="📦 Cargar Lote" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Height="40" Padding="12,0" Click="OpenLotesModal_Click" ToolTip="Ingresar mercancia masiva por proveedor" />
+                        <Button x:Name="BtnCargarLote" Grid.Column="2" Content="{DynamicResource InvLoadBatchBtn}" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Height="40" Padding="12,0" Click="OpenLotesModal_Click" ToolTip="Ingresar mercancia masiva por proveedor" />
 
-                        <Button Grid.Column="4" Content="ReStock rapido" Style="{StaticResource PrimaryAddButtonStyle}" Height="40" Padding="12,0" Click="OpenQuickRestockModal_Click" ToolTip="Escanear y reabastecer a gran velocidad" />
+                        <Button Grid.Column="4" Content="{DynamicResource InvQuickRestockBtn}" Style="{StaticResource PrimaryAddButtonStyle}" Height="40" Padding="12,0" Click="OpenQuickRestockModal_Click" ToolTip="Escanear y reabastecer a gran velocidad" />
 
                         <Border Grid.Column="6" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="3" Height="40">
                             <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="FilterAllRadio" Content="Todos" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="All" />
-                                <RadioButton x:Name="FilterLowRadio" Content="Stock Bajo" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="Low" />
-                                <RadioButton x:Name="FilterOutRadio" Content="Agotados" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="Out" />
+                                <RadioButton x:Name="FilterAllRadio" Content="{DynamicResource InvFilterAll}" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="All" />
+                                <RadioButton x:Name="FilterLowRadio" Content="{DynamicResource InvFilterLow}" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="Low" />
+                                <RadioButton x:Name="FilterOutRadio" Content="{DynamicResource InvFilterOut}" Style="{StaticResource SegmentTabStyle}" Click="FilterStock_Click" Tag="Out" />
                             </StackPanel>
                         </Border>
 
@@ -254,10 +254,25 @@
                                     </Style>
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50" />
-                                    <DataGridTextColumn Header="CODIGO" Binding="{Binding Codigo}" Width="120" />
-                                    <DataGridTextColumn Header="NOMBRE" Binding="{Binding Nombre}" Width="1.2*" />
-                                    <DataGridTemplateColumn Header="STOCK" Width="100">
+                                    <DataGridTextColumn Binding="{Binding Id}" Width="50">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{DynamicResource PosColId}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Codigo}" Width="120">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{DynamicResource InvColCode}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Nombre}" Width="1.2*">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{DynamicResource PosColName}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTemplateColumn Width="100">
+                                        <DataGridTemplateColumn.Header>
+                                            <TextBlock Text="{DynamicResource InvColStock}" />
+                                        </DataGridTemplateColumn.Header>
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Border CornerRadius="4" Padding="8,3" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -296,10 +311,25 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="CATEGORIA" Binding="{Binding Categoria}" Width="0.9*" />
-                                    <DataGridTextColumn Header="COSTO" Binding="{Binding Costo, StringFormat={}{0:C2}}" Width="85" />
-                                    <DataGridTextColumn Header="GANANCIA" Binding="{Binding Ganancia, StringFormat={}{0:C2}}" Width="95" />
-                                    <DataGridTextColumn Header="PRECIO" Binding="{Binding Precio, StringFormat={}{0:C2}}" Width="105">
+                                    <DataGridTextColumn Binding="{Binding Categoria}" Width="0.9*">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{DynamicResource InvColCategory}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Costo, StringFormat={}{0:C2}}" Width="85">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{DynamicResource InvColCost}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Ganancia, StringFormat={}{0:C2}}" Width="95">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{DynamicResource InvColMargin}" />
+                                        </DataGridTextColumn.Header>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Binding="{Binding Precio, StringFormat={}{0:C2}}" Width="105">
+                                        <DataGridTextColumn.Header>
+                                            <TextBlock Text="{DynamicResource InvColPrice}" />
+                                        </DataGridTextColumn.Header>
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="FontWeight" Value="Bold" />
@@ -315,7 +345,7 @@
                         <StackPanel>
                             <Border Style="{StaticResource ProductCardStyle}" Padding="20">
                                 <StackPanel>
-                                    <TextBlock Text="Detalles del Producto" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
+                                    <TextBlock Text="{DynamicResource InvDetailsTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
 
                                     <Grid Margin="0,0,0,10">
                                         <Grid.ColumnDefinitions>
@@ -328,12 +358,12 @@
                                             <TextBox x:Name="ProductIdBox" Style="{StaticResource FormTextBoxStyle}" IsReadOnly="True" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Codigo" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                            <TextBlock Text="{DynamicResource InvCodeLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                             <TextBox x:Name="ProductCodeBox" Style="{StaticResource FormTextBoxStyle}" KeyDown="ProductCodeBox_KeyDown" />
                                         </StackPanel>
                                     </Grid>
 
-                                    <TextBlock Text="Nombre" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                    <TextBlock Text="{DynamicResource InvNameLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                     <TextBox x:Name="ProductNameBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,10" KeyDown="ProductNameBox_KeyDown" />
 
                                     <Grid Margin="0,0,0,10">
@@ -343,16 +373,16 @@
                                             <ColumnDefinition Width="1*" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0">
-                                            <TextBlock Text="Categoria" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                            <TextBlock Text="{DynamicResource InvCategoryLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                             <TextBox x:Name="ProductCategoryBox" Style="{StaticResource FormTextBoxStyle}" KeyDown="ProductCategoryBox_KeyDown" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Cantidad" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="2,0,0,4" />
+                                            <TextBlock Text="{DynamicResource InvStockLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="2,0,0,4" />
                                             <TextBox x:Name="StockBox" Style="{StaticResource FormTextBoxStyle}" Text="0" HorizontalContentAlignment="Center" KeyDown="StockBox_KeyDown" />
                                         </StackPanel>
                                     </Grid>
 
-                                    <TextBlock Text="Reabastecimiento Rapido" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,6" />
+                                    <TextBlock Text="{DynamicResource InvQuickRestockLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,6" />
                                     <Grid Margin="0,0,0,12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -376,17 +406,18 @@
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0">
-                                            <TextBlock Text="Costo" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                            <TextBlock Text="{DynamicResource InvCostLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                             <TextBox x:Name="ProductCostBox" Style="{StaticResource FormTextBoxStyle}" TextChanged="CostOrMargin_TextChanged" KeyDown="ProductCostBox_KeyDown" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="Ganancia" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                            <TextBlock Text="{DynamicResource InvMarginLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                             <TextBox x:Name="ProductMarginBox" Style="{StaticResource FormTextBoxStyle}" TextChanged="CostOrMargin_TextChanged" KeyDown="ProductMarginBox_KeyDown" />
                                         </StackPanel>
                                     </Grid>
                                     <StackPanel Margin="2,0,0,14">
-                                        <CheckBox x:Name="AskQuantityCheckBox" Content="Pedir piezas manual al cobrar" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,8" />
-                                        <CheckBox x:Name="ScaleWeighCheckBox" Content="Pesable en Bascula" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <CheckBox x:Name="AskQuantityCheckBox" Content="{DynamicResource InvChkAskQty}" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,8" />
+                                        <CheckBox x:Name="ScaleWeighCheckBox" Content="{DynamicResource InvChkScale}" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,8" />
+                                        <CheckBox x:Name="CountAsOnePieceCheckBox" Content="{DynamicResource InvChkCountOne}" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" />
                                     </StackPanel>
 
                                     <Grid>
@@ -400,29 +431,29 @@
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
 
-                                        <Button x:Name="BtnEnlaceRapidoInventario" Grid.Column="6" Content="Enlace R" Style="{StaticResource PillButtonStyle}" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" Click="BtnEnlaceRapido_Click" />
-                                        <Button Grid.Column="0" Content="AÑADIR" Style="{StaticResource PrimaryAddButtonStyle}" Click="AddButton_Click" />
-                                        <Button x:Name="DeleteButton" Grid.Column="2" Content="BORRAR" Style="{StaticResource DangerDeleteButtonStyle}" IsEnabled="False" Click="DeleteButton_Click" />
-                                        <Button x:Name="ModifyButton" Grid.Column="4" Content="MODIF." Style="{StaticResource PillButtonStyle}" IsEnabled="False" Click="ModifyButton_Click" />
+                                        <Button x:Name="BtnEnlaceRapidoInventario" Grid.Column="6" Content="{DynamicResource InvQuickLinkBtn}" Style="{StaticResource PillButtonStyle}" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" Click="BtnEnlaceRapido_Click" />
+                                        <Button Grid.Column="0" Content="{DynamicResource InvAddBtn}" Style="{StaticResource PrimaryAddButtonStyle}" Click="AddButton_Click" />
+                                        <Button x:Name="DeleteButton" Grid.Column="2" Content="{DynamicResource InvDeleteBtn}" Style="{StaticResource DangerDeleteButtonStyle}" IsEnabled="False" Click="DeleteButton_Click" />
+                                        <Button x:Name="ModifyButton" Grid.Column="4" Content="{DynamicResource InvModifyBtn}" Style="{StaticResource PillButtonStyle}" IsEnabled="False" Click="ModifyButton_Click" />
                                     </Grid>
                                 </StackPanel>
                             </Border>
-                            <Button Content="Limpiar Seleccion" Style="{StaticResource PillButtonStyle}" Margin="0,10,0,0" Click="ClearSelectionButton_Click" />
+                            <Button Content="{DynamicResource InvClearBtn}" Style="{StaticResource PillButtonStyle}" Margin="0,10,0,0" Click="ClearSelectionButton_Click" />
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
-            <Grid x:Name="QuickRestockOverlay" Background="#66000000" Visibility="Collapsed" Panel.ZIndex="100">
+            <Grid x:Name="QuickRestockOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" Panel.ZIndex="100">
                 <Border Width="460" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                     <StackPanel>
-                        <TextBlock Text="⚡ ReStock Rapido" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                        <TextBlock Text="Escanea el codigo de barras y añade la cantidad surtida:" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,16" />
+                        <TextBlock Text="{DynamicResource PosQuickRestockTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                        <TextBlock Text="{DynamicResource InvQrSubtitle}" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,16" />
 
-                        <TextBlock Text="Codigo del Producto (Escanea aqui)" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                        <TextBlock Text="{DynamicResource InvQrCodeLabel}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                         <TextBox x:Name="QrScanCodeBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,12" KeyDown="QrScanCodeBox_KeyDown" />
 
                         <TextBlock x:Name="QrFoundProductLabel" Text="" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" Margin="2,-6,0,10" MinHeight="16" />
 
-                        <TextBlock Text="Cantidad a Añadir (+)" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                        <TextBlock Text="{DynamicResource InvQrAmountLabel}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                         <TextBox x:Name="QrAddAmountBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,14" KeyDown="QrAddAmountBox_KeyDown" />
 
                         <TextBlock x:Name="QrStatusMessage" Text="" FontSize="12" Foreground="{StaticResource SystemRed}" MinHeight="16" Margin="0,0,0,12" />
@@ -433,13 +464,13 @@
                                 <ColumnDefinition Width="10" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Button Content="CERRAR (Esc)" Style="{StaticResource PillButtonStyle}" Click="CloseQuickRestock_Click" />
-                            <Button Grid.Column="2" Content="AÑADIR STOCK" Style="{StaticResource PrimaryAddButtonStyle}" Click="ConfirmQuickRestock_Click" />
+                            <Button Content="{DynamicResource InvCloseEsc}" Style="{StaticResource PillButtonStyle}" Click="CloseQuickRestock_Click" />
+                            <Button Grid.Column="2" Content="{DynamicResource InvAddStockBtn}" Style="{StaticResource PrimaryAddButtonStyle}" Click="ConfirmQuickRestock_Click" />
                         </Grid>
                     </StackPanel>
                 </Border>
             </Grid>
-            <Grid x:Name="LotesOverlay" Background="#66000000" Visibility="Collapsed" Panel.ZIndex="110">
+            <Grid x:Name="LotesOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" Panel.ZIndex="110">
                 <Border Width="680" Height="460" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -449,8 +480,8 @@
                         </Grid.RowDefinitions>
                         <Grid Grid.Row="0" Margin="0,0,0,16">
                             <StackPanel>
-                                <TextBlock Text="📦 Carga de Lotes Frecuentes" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                                <TextBlock Text="Selecciona un pedido pre-configurado para abastecer el stock automaticamente." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" />
+                                <TextBlock Text="{DynamicResource InvBatchTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                                <TextBlock Text="{DynamicResource InvBatchSub}" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" />
                             </StackPanel>
                         </Grid>
                         <Grid Grid.Row="1" Margin="0,0,0,18">
@@ -503,7 +534,7 @@
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
-                                    <TextBlock Text="Contenido del Lote:" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,10" />
+                                    <TextBlock Text="{DynamicResource InvBatchContent}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,10" />
 
                                     <ListBox x:Name="LoteItemsBox" Grid.Row="1" Background="Transparent" BorderThickness="0" IsHitTestVisible="False">
                                         <ListBox.ItemTemplate>
@@ -534,14 +565,14 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <Button Grid.Column="0" Content="CERRAR (Esc)" Style="{StaticResource PillButtonStyle}" Click="CloseLotesModal_Click" />
-                            <Button Grid.Column="2" Content="⚙️ CREAR NUEVO LOTE" Style="{StaticResource PillButtonStyle}" Foreground="{DynamicResource ThemeAccent}" Click="OpenGestorLotes_Click" />
-                            <Button Grid.Column="4" Content="CONFIRMAR INGRESO" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Padding="20,0" Click="ApplyLote_Click" />
+                            <Button Grid.Column="0" Content="{DynamicResource InvCloseEsc}" Style="{StaticResource PillButtonStyle}" Click="CloseLotesModal_Click" />
+                            <Button Grid.Column="2" Content="{DynamicResource InvBatchCreateBtn}" Style="{StaticResource PillButtonStyle}" Foreground="{DynamicResource ThemeAccent}" Click="OpenGestorLotes_Click" />
+                            <Button Grid.Column="4" Content="{DynamicResource InvBatchConfirmBtn}" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Padding="20,0" Click="ApplyLote_Click" />
                         </Grid>
                     </Grid>
                 </Border>
             </Grid>
-            <Grid x:Name="GestorLotesOverlay" Background="#66000000" Visibility="Collapsed" Panel.ZIndex="120">
+            <Grid x:Name="GestorLotesOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" Panel.ZIndex="120">
                 <Border Width="820" Height="580" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="26" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -551,8 +582,8 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Margin="0,0,0,16">
-                            <TextBlock Text="⚙️ Diseñador de Lotes" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                            <TextBlock Text="Crea un paquete de abastecimiento asignandole un nombre, proveedor y los productos que incluye." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock Text="{DynamicResource InvBatchDesignTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                            <TextBlock Text="{DynamicResource InvBatchDesignSub}" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" />
 
                             <Grid Margin="0,14,0,0">
                                 <Grid.ColumnDefinitions>
@@ -561,11 +592,11 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Nombre del Lote (Ej. Surtido Coca-Cola)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                    <TextBlock Text="{DynamicResource InvBatchNameLabel}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                     <TextBox x:Name="NuevoLoteNombreBox" Style="{StaticResource FormTextBoxStyle}" KeyDown="NuevoLoteNombreBox_KeyDown" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Proveedor" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                    <TextBlock Text="{DynamicResource InvBatchSupplierLabel}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                     <TextBox x:Name="NuevoLoteProveedorBox" Style="{StaticResource FormTextBoxStyle}" KeyDown="NuevoLoteProveedorBox_KeyDown" />
                                 </StackPanel>
                             </Grid>
@@ -580,17 +611,17 @@
 
                             <Border Grid.Column="0" Background="{DynamicResource ThemeInputBackground}" CornerRadius="4" Padding="14">
                                 <StackPanel>
-                                    <TextBlock Text="Agregar Producto" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
+                                    <TextBlock Text="{DynamicResource InvBatchAddProdTitle}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
 
-                                    <TextBlock Text="Codigo (Escanea o escribe + Enter)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                    <TextBlock Text="{DynamicResource InvBatchCodeHint}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                     <TextBox x:Name="GestorLoteCodigoBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,10" KeyDown="GestorLoteCodigoBox_KeyDown" />
 
-                                    <TextBlock x:Name="GestorLoteProductoEncontrado" Text="Esperando codigo..." FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="2,-4,0,10" MinHeight="18" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="GestorLoteProductoEncontrado" Text="{DynamicResource InvBatchWaitCode}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="2,-4,0,10" MinHeight="18" TextWrapping="Wrap" />
 
-                                    <TextBlock Text="Cantidad predeterminada a sumar" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                    <TextBlock Text="{DynamicResource InvBatchDefaultQty}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                     <TextBox x:Name="GestorLoteCantidadBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,14" Text="1" KeyDown="GestorLoteCantidadBox_KeyDown" />
 
-                                    <Button Content="AÑADIR AL LOTE" Style="{StaticResource PrimaryAddButtonStyle}" Click="AddProductToNewLote_Click" />
+                                    <Button Content="{DynamicResource InvBatchAddToBtn}" Style="{StaticResource PrimaryAddButtonStyle}" Click="AddProductToNewLote_Click" />
                                 </StackPanel>
                             </Border>
 
@@ -600,7 +631,7 @@
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
-                                    <TextBlock Text="Contenido del Lote:" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,10" />
+                                    <TextBlock Text="{DynamicResource InvBatchContent}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,10" />
 
                                     <ListBox x:Name="NuevoLoteItemsBox" Grid.Row="1" ItemsSource="{Binding NuevoLoteItems}" Background="Transparent" BorderThickness="0">
                                         <ListBox.ItemTemplate>
@@ -627,8 +658,8 @@
                                 <ColumnDefinition Width="10" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Button Content="CANCELAR (Esc)" Style="{StaticResource PillButtonStyle}" Click="CloseGestorLotes_Click" />
-                            <Button Grid.Column="2" Content="GUARDAR LOTE" Style="{StaticResource PrimaryAddButtonStyle}" Click="SaveNewLote_Click" />
+                            <Button Content="{DynamicResource PosCancelEsc}" Style="{StaticResource PillButtonStyle}" Click="CloseGestorLotes_Click" />
+                            <Button Grid.Column="2" Content="{DynamicResource InvBatchSaveBtn}" Style="{StaticResource PrimaryAddButtonStyle}" Click="SaveNewLote_Click" />
                         </Grid>
                     </Grid>
                 </Border>

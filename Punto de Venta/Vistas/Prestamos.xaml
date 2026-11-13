@@ -1,4 +1,4 @@
-<UserControl x:Class="Punto_de_Venta.Prestamos"
+﻿<UserControl x:Class="Punto_de_Venta.Prestamos"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              MinWidth="1000" MinHeight="640"
@@ -186,19 +186,19 @@
                 </Grid.ColumnDefinitions>
                 <Border Grid.Column="0" Style="{StaticResource LoanCardStyle}" Padding="16,12">
                     <StackPanel>
-                        <TextBlock Text="DINERO POR COBRAR" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                        <TextBlock Text="{DynamicResource CreditsReceivable}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
                         <TextBlock x:Name="KpiDeudaTotal" Text="$0.00" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" Margin="0,4,0,0" />
                     </StackPanel>
                 </Border>
                 <Border Grid.Column="2" Style="{StaticResource LoanCardStyle}" Padding="16,12">
                     <StackPanel>
-                        <TextBlock Text="CAPITAL RECUPERADO" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                        <TextBlock Text="{DynamicResource CreditsRecovered}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
                         <TextBlock x:Name="KpiTotalRecuperado" Text="$0.00" FontSize="22" FontWeight="Bold" Foreground="{StaticResource SystemGreen}" Margin="0,4,0,0" />
                     </StackPanel>
                 </Border>
                 <Border Grid.Column="4" Style="{StaticResource LoanCardStyle}" Padding="16,12">
                     <StackPanel>
-                        <TextBlock Text="CLIENTES CON DEUDA" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                        <TextBlock Text="{DynamicResource CreditsClientsCount}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
                         <TextBlock x:Name="KpiClientesActivos" Text="0" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,4,0,0" />
                     </StackPanel>
                 </Border>
@@ -220,7 +220,7 @@
                     <Border Grid.Row="0" Style="{StaticResource LoanCardStyle}" Padding="20,18">
                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <StackPanel>
-                                <TextBlock Text="Ficha del Cliente" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
+                                <TextBlock Text="{DynamicResource CreditsCardTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,14" />
 
                                 <Grid Margin="0,0,0,10">
                                     <Grid.ColumnDefinitions>
@@ -233,20 +233,20 @@
                                         <TextBox x:Name="DebtorIdBox" Style="{StaticResource LoanTextBoxStyle}" IsReadOnly="True" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Telefono / WhatsApp" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                        <TextBlock Text="{DynamicResource CreditsPhoneLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                         <TextBox x:Name="DebtorPhoneBox" Style="{StaticResource LoanTextBoxStyle}" KeyDown="DebtorField_KeyDown" />
                                     </StackPanel>
                                 </Grid>
-                                <TextBlock Text="Nombre" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                <TextBlock Text="{DynamicResource InvNameLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <TextBox x:Name="DebtorNameBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,10" KeyDown="DebtorField_KeyDown" />
-                                <TextBlock Text="Concepto" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                <TextBlock Text="{DynamicResource CreditsConceptLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <TextBox x:Name="ConceptBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,10" KeyDown="DebtorField_KeyDown" />
-                                <TextBlock Text="Deuda / Monto Total" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                <TextBlock Text="{DynamicResource CreditsTotalDebt}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <TextBox x:Name="AmountBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,14" KeyDown="DebtorField_KeyDown" />
 
                                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,12">
                                     <StackPanel>
-                                        <TextBlock Text="Registrar Pago" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="2,0,0,8" />
+                                        <TextBlock Text="{DynamicResource CreditsPayLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="2,0,0,8" />
                                         <Grid Margin="0,0,0,8">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -255,9 +255,9 @@
                                                 <ColumnDefinition Width="6" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
-                                            <RadioButton x:Name="RbAbonoEfectivo" Grid.Column="0" GroupName="MetodoAbono" Content="💵 Efectivo" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Height="30" Padding="4,0" FontSize="11" />
-                                            <RadioButton x:Name="RbAbonoTarjeta" Grid.Column="2" GroupName="MetodoAbono" Content="💳 Tarjeta" Style="{StaticResource SegmentTabStyle}" Height="30" Padding="4,0" FontSize="11" />
-                                            <RadioButton x:Name="RbAbonoTransferencia" Grid.Column="4" GroupName="MetodoAbono" Content="🏦 Transf." Style="{StaticResource SegmentTabStyle}" Height="30" Padding="4,0" FontSize="11" />
+                                            <RadioButton x:Name="RbAbonoEfectivo" Grid.Column="0" GroupName="MetodoAbono" Content="{DynamicResource CreditsPayCash}" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Height="30" Padding="4,0" FontSize="11" />
+                                            <RadioButton x:Name="RbAbonoTarjeta" Grid.Column="2" GroupName="MetodoAbono" Content="{DynamicResource CreditsPayCard}" Style="{StaticResource SegmentTabStyle}" Height="30" Padding="4,0" FontSize="11" />
+                                            <RadioButton x:Name="RbAbonoTransferencia" Grid.Column="4" GroupName="MetodoAbono" Content="{DynamicResource CreditsPayTransfer}" Style="{StaticResource SegmentTabStyle}" Height="30" Padding="4,0" FontSize="11" />
                                         </Grid>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -268,8 +268,8 @@
                                                 <ColumnDefinition Width="85" />
                                             </Grid.ColumnDefinitions>
                                             <TextBox x:Name="PaymentAmountBox" Grid.Column="0" Style="{StaticResource LoanTextBoxStyle}" KeyDown="PaymentAmountBox_KeyDown" Background="{DynamicResource ThemeSurfaceBackground}" />
-                                            <Button x:Name="PayButton" Grid.Column="2" Content="ABONAR" Style="{StaticResource SuccessPayButtonStyle}" IsEnabled="False" Click="PayButton_Click" />
-                                            <Button x:Name="LiquidateButton" Grid.Column="4" Content="LIQUIDAR" Style="{StaticResource SuccessPayButtonStyle}" Background="#DBEAFE" Foreground="#1D4ED8" IsEnabled="False" Click="LiquidateButton_Click" ToolTip="Pagar el total restante automaticamente" />
+                                            <Button x:Name="PayButton" Grid.Column="2" Content="{DynamicResource CreditsApplyPay}" Style="{StaticResource SuccessPayButtonStyle}" IsEnabled="False" Click="PayButton_Click" />
+                                            <Button x:Name="LiquidateButton" Grid.Column="4" Content="{DynamicResource CreditsSettle}" Style="{StaticResource SuccessPayButtonStyle}" Background="#DBEAFE" Foreground="#1D4ED8" IsEnabled="False" Click="LiquidateButton_Click" ToolTip="Pagar el total restante automaticamente" />
                                         </Grid>
                                     </StackPanel>
                                 </Border>
@@ -287,16 +287,16 @@
                                         <ColumnDefinition Width="8" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Button Grid.Row="0" Grid.Column="0" Content="NUEVO FIADO" Style="{StaticResource PrimaryAddButtonStyle}" Click="AddButton_Click" />
-                                    <Button x:Name="ModifyButton" Grid.Row="0" Grid.Column="2" Content="MODIFICAR" Style="{StaticResource LoanButtonStyle}" IsEnabled="False" Click="ModifyButton_Click" />
-                                    <Button x:Name="ViewHistoryButton" Grid.Row="2" Grid.Column="0" Content="📜 HISTORIAL" Style="{StaticResource LoanButtonStyle}" IsEnabled="False" Click="ViewHistoryButton_Click" />
-                                    <Button x:Name="DeleteButton" Grid.Row="2" Grid.Column="2" Content="BORRAR" Style="{StaticResource DangerDeleteButtonStyle}" IsEnabled="False" Click="DeleteButton_Click" />
-                                    <Button x:Name="WhatsAppButton" Grid.Row="4" Grid.ColumnSpan="3" Content="📨 Enviar recordatorio" Style="{StaticResource WhatsAppButtonStyle}" IsEnabled="False" Click="WhatsAppButton_Click" />
+                                    <Button Grid.Row="0" Grid.Column="0" Content="{DynamicResource CreditsNewBtn}" Style="{StaticResource PrimaryAddButtonStyle}" Click="AddButton_Click" />
+                                    <Button x:Name="ModifyButton" Grid.Row="0" Grid.Column="2" Content="{DynamicResource CreditsModifyBtn}" Style="{StaticResource LoanButtonStyle}" IsEnabled="False" Click="ModifyButton_Click" />
+                                    <Button x:Name="ViewHistoryButton" Grid.Row="2" Grid.Column="0" Content="{DynamicResource CreditsHistoryBtn}" Style="{StaticResource LoanButtonStyle}" IsEnabled="False" Click="ViewHistoryButton_Click" />
+                                    <Button x:Name="DeleteButton" Grid.Row="2" Grid.Column="2" Content="{DynamicResource CreditsDeleteBtn}" Style="{StaticResource DangerDeleteButtonStyle}" IsEnabled="False" Click="DeleteButton_Click" />
+                                    <Button x:Name="WhatsAppButton" Grid.Row="4" Grid.ColumnSpan="3" Content="{DynamicResource CreditsReminderBtn}" Style="{StaticResource WhatsAppButtonStyle}" IsEnabled="False" Click="WhatsAppButton_Click" />
                                 </Grid>
                             </StackPanel>
                         </ScrollViewer>
                     </Border>
-                    <Button Grid.Row="2" Content="Limpiar Seleccion" Style="{StaticResource LoanButtonStyle}" Click="ClearSelectionButton_Click" />
+                    <Button Grid.Row="2" Content="{DynamicResource InvClearBtn}" Style="{StaticResource LoanButtonStyle}" Click="ClearSelectionButton_Click" />
                 </Grid>
 
                 <Grid Grid.Column="2">
@@ -322,15 +322,15 @@
                                 <TextBlock Grid.Column="0" Text="🔍" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" Margin="0,0,10,0" />
                                 <Grid Grid.Column="1">
                                     <TextBox x:Name="SearchBox" Style="{StaticResource EmbeddedTextBoxStyle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" VerticalContentAlignment="Center" CaretBrush="{DynamicResource ThemeAccent}" TextChanged="SearchBox_TextChanged" AutomationProperties.Name="Buscar deudor por ID o nombre" />
-                                    <TextBlock x:Name="SearchPlaceholder" Text="Buscar por cliente o concepto..." FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
+                                    <TextBlock x:Name="SearchPlaceholder" Text="{DynamicResource CreditsSearchPlaceholder}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" IsHitTestVisible="False" />
                                 </Grid>
                             </Grid>
                         </Border>
                         <Border Grid.Column="2" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="3" Height="40">
                             <StackPanel Orientation="Horizontal">
-                                <RadioButton Content="Todos" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Click="FilterDebtors_Click" Tag="All" />
-                                <RadioButton Content="Con Deuda" Style="{StaticResource SegmentTabStyle}" Click="FilterDebtors_Click" Tag="Pending" />
-                                <RadioButton Content="Liquidados" Style="{StaticResource SegmentTabStyle}" Click="FilterDebtors_Click" Tag="Settled" />
+                                <RadioButton Content="{DynamicResource InvFilterAll}" IsChecked="True" Style="{StaticResource SegmentTabStyle}" Click="FilterDebtors_Click" Tag="All" />
+                                <RadioButton Content="{DynamicResource CreditsWithDebt}" Style="{StaticResource SegmentTabStyle}" Click="FilterDebtors_Click" Tag="Pending" />
+                                <RadioButton Content="{DynamicResource CreditsSettled}" Style="{StaticResource SegmentTabStyle}" Click="FilterDebtors_Click" Tag="Settled" />
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="4" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14,0" Height="40" VerticalAlignment="Center">
@@ -392,15 +392,25 @@
                                 </Style>
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50" />
-                                <DataGridTextColumn Header="CLIENTE" Binding="{Binding Nombre}" Width="1.1*">
+                                <DataGridTextColumn Binding="{Binding Id}" Width="50">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="{DynamicResource PosColId}" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding Nombre}" Width="1.1*">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="{DynamicResource CreditsColClient}" />
+                                    </DataGridTextColumn.Header>
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="SemiBold" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="ESTADO DE PAGO" Width="160">
+                                <DataGridTemplateColumn Width="160">
+                                    <DataGridTemplateColumn.Header>
+                                        <TextBlock Text="{DynamicResource CreditsColStatus}" />
+                                    </DataGridTemplateColumn.Header>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Grid HorizontalAlignment="Stretch" Margin="6,0">
@@ -412,7 +422,7 @@
                                                         BorderBrush="#402ECC71" 
                                                         BorderThickness="1" 
                                                         Visibility="Collapsed">
-                                                    <TextBlock Text="Liquidado" FontSize="11" FontWeight="Bold" Foreground="#2ECC71" />
+                                                    <TextBlock Text="{DynamicResource CreditsSettledTag}" FontSize="11" FontWeight="Bold" Foreground="#2ECC71" />
                                                 </Border>
                                                 <StackPanel x:Name="ActiveProgressPanel" VerticalAlignment="Center">
                                                     <Grid Margin="0,0,0,3">
@@ -445,9 +455,20 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="TELEFONO" Binding="{Binding Telefono}" Width="105" />
-                                <DataGridTextColumn Header="CONCEPTO" Binding="{Binding Concepto}" Width="1.4*" />
-                                <DataGridTextColumn Header="DEUDA RESTANTE" Binding="{Binding SaldoRestante, StringFormat={}{0:C2}}" Width="1.1*">
+                                <DataGridTextColumn Binding="{Binding Telefono}" Width="105">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="{DynamicResource CreditsColPhone}" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding Concepto}" Width="1.4*">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="{DynamicResource CreditsColConcept}" />
+                                    </DataGridTextColumn.Header>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding SaldoRestante, StringFormat={}{0:C2}}" Width="1.1*">
+                                    <DataGridTextColumn.Header>
+                                        <TextBlock Text="{DynamicResource CreditsColRemaining}" />
+                                    </DataGridTextColumn.Header>
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="Bold" />
@@ -459,7 +480,7 @@
                     </Border>
                 </Grid>
             </Grid>
-            <Grid x:Name="HistorialOverlay" Grid.RowSpan="3" Panel.ZIndex="100" Background="#66000000" Visibility="Collapsed" MouseDown="HistorialOverlay_MouseDown">
+            <Grid x:Name="HistorialOverlay" Grid.RowSpan="3" Panel.ZIndex="100" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" MouseDown="HistorialOverlay_MouseDown">
                 <Border Width="600" MaxHeight="580" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="26" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -472,7 +493,7 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <StackPanel Grid.Row="0">
-                            <TextBlock x:Name="HistoryClientName" Text="Historial de Pagos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                            <TextBlock x:Name="HistoryClientName" Text="{DynamicResource CreditsHistoryTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
                             <TextBlock x:Name="HistorySummaryText" Text="Original: $0.00 | Total Abonado: $0.00 | Pendiente: $0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
                         </StackPanel>
                         <Grid Grid.Row="2">
@@ -481,8 +502,8 @@
                                 <ColumnDefinition Width="10" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Button x:Name="TabDeudasBtn" Grid.Column="0" Content="Productos/Deuda" Height="36" Style="{StaticResource PrimaryAddButtonStyle}" Click="TabDeudas_Click" />
-                            <Button x:Name="TabAbonosBtn" Grid.Column="2" Content="Abonos Recibidos" Height="36" Style="{StaticResource LoanButtonStyle}" Click="TabAbonos_Click" />
+                            <Button x:Name="TabDeudasBtn" Grid.Column="0" Content="{DynamicResource CreditsTabProducts}" Height="36" Style="{StaticResource PrimaryAddButtonStyle}" Click="TabDeudas_Click" />
+                            <Button x:Name="TabAbonosBtn" Grid.Column="2" Content="{DynamicResource CreditsTabPayments}" Height="36" Style="{StaticResource LoanButtonStyle}" Click="TabAbonos_Click" />
                         </Grid>
                         <Border Grid.Row="4" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="10">
                             <Grid>
@@ -491,7 +512,7 @@
                                 </ScrollViewer>
                                 <ScrollViewer x:Name="PanelAbonosView" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
                                     <StackPanel>
-                                        <TextBlock x:Name="NoAbonosMessage" Text="Este cliente aun no registra abonos." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,20" Visibility="Collapsed" />
+                                        <TextBlock x:Name="NoAbonosMessage" Text="{DynamicResource CreditsNoPayments}" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,20" Visibility="Collapsed" />
                                         <ItemsControl x:Name="AbonosListControl">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
@@ -503,7 +524,7 @@
                                                             </Grid.ColumnDefinitions>
                                                             <StackPanel VerticalAlignment="Center">
                                                                 <TextBlock Text="{Binding Fecha, StringFormat={}{0:dd/MM/yyyy hh:mm tt}}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                                                <TextBlock Text="Abono a cuenta" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
+                                                                <TextBlock Text="{DynamicResource CreditsPaymentToAccount}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
                                                             </StackPanel>
                                                             <TextBlock Grid.Column="1" Text="{Binding Monto, StringFormat={}{0:C2}}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource SystemGreen}" VerticalAlignment="Center" />
                                                         </Grid>
@@ -523,11 +544,11 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="140" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="Monto:" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="0" Text="{DynamicResource CreditsAmountColon}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
                             <Border Grid.Column="2" Height="36" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14,0">
                                 <TextBlock x:Name="HistoryMontoTotalText" Text="$0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
-                            <Button Grid.Column="4" Content="🖨️ IMPRIMIR RECIBO" Height="36" Style="{StaticResource PrimaryAddButtonStyle}" Click="PrintStatementButton_Click" ToolTip="Imprimir el estado de cuenta actual del cliente" Margin="0,0,10,0" />
+                            <Button Grid.Column="4" Content="{DynamicResource CreditsPrintReceipt}" Height="36" Style="{StaticResource PrimaryAddButtonStyle}" Click="PrintStatementButton_Click" ToolTip="Imprimir el estado de cuenta actual del cliente" Margin="0,0,10,0" />
                         </Grid>
                     </Grid>
                 </Border>

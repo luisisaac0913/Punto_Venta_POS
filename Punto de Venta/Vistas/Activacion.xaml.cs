@@ -12,9 +12,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
+using Punto_de_Venta.Vistas;
+
 namespace Punto_de_Venta
 {
-    public partial class Activacion : UserControl
+    public partial class Activacion : UserControl, IManejadorEscape
     {
         private const string AzureFunctionVerificarBaseUrl = "https://chipandchapa-d5bsach3emeka6h0.mexicocentral-01.azurewebsites.net/api/verificar/";
         private const string AzureFunctionGenerarPagoUrl = "https://chipandchapa-d5bsach3emeka6h0.mexicocentral-01.azurewebsites.net/api/crear-preferencia";
@@ -70,13 +72,53 @@ namespace Punto_de_Venta
             Loaded += Activacion_Loaded;
             Unloaded += Activacion_Unloaded;
             PreviewKeyDown += Activacion_PreviewKeyDown;
+            this.PreviewGotKeyboardFocus += Activacion_PreviewGotKeyboardFocus;
+        }
+
+        public bool ManejarEscape()
+        {
+            if (OverlayVideoAcreditado != null && OverlayVideoAcreditado.Visibility == Visibility.Visible)
+            {
+                CerrarOverlayVideo();
+                return true;
+            }
+            DetenerPolling();
+            return false;
+        }
+
+        private void CerrarOverlayVideo()
+        {
+            _videoYaReproducido = true;
+            _activacionEnProceso = false;
+            try
+            {
+                VideoAcreditado.Stop();
+                VideoAcreditado.Close();
+                VideoAcreditado.Source = null;
+            }
+            catch { }
+            OverlayVideoAcreditado.Visibility = Visibility.Collapsed;
+            ActualizarEstadoVisual();
+        }
+
+        private void Activacion_PreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            if (OverlayVideoAcreditado != null && OverlayVideoAcreditado.Visibility == Visibility.Visible)
+            {
+                ModalFocusHelper.ProtegerFoco(e, OverlayVideoAcreditado);
+            }
         }
 
         private void Activacion_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
             {
-                DetenerPolling();
+                if (ManejarEscape())
+                {
+                    e.Handled = true;
+                    return;
+                }
+
                 var mainWindow = Window.GetWindow(this) as MainWindow ?? Application.Current.MainWindow as MainWindow;
                 mainWindow?.RegresarAlMenu();
                 e.Handled = true;
@@ -171,7 +213,7 @@ namespace Punto_de_Venta
                 var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
 
                 string responseString = string.Empty;
-                string ultimoError = string.Empty;
+                var errores = new System.Collections.Generic.List<string>();
 
                 try
                 {
@@ -183,12 +225,12 @@ namespace Punto_de_Venta
                     else
                     {
                         string bodyError = await response.Content.ReadAsStringAsync().ConfigureAwait(true);
-                        ultimoError = $"HTTP {(int)response.StatusCode}: {bodyError}";
+                        errores.Add($"[SocketsHttp] HTTP {(int)response.StatusCode} ({response.StatusCode}): {bodyError}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    ultimoError = ex.InnerException != null ? $"{ex.Message} ({ex.InnerException.Message})" : ex.Message;
+                    errores.Add($"[SocketsHttp] {FormatearExcepcionCompleta(ex)}");
                 }
 
                 if (string.IsNullOrWhiteSpace(responseString))
@@ -205,15 +247,12 @@ namespace Punto_de_Venta
                         else
                         {
                             string bodyError = await responseFallback.Content.ReadAsStringAsync().ConfigureAwait(true);
-                            ultimoError = $"HTTP {(int)responseFallback.StatusCode}: {bodyError}";
+                            errores.Add($"[HttpHandler] HTTP {(int)responseFallback.StatusCode} ({responseFallback.StatusCode}): {bodyError}");
                         }
                     }
                     catch (Exception ex)
                     {
-                        if (string.IsNullOrWhiteSpace(ultimoError))
-                        {
-                            ultimoError = ex.InnerException != null ? $"{ex.Message} ({ex.InnerException.Message})" : ex.Message;
-                        }
+                        errores.Add($"[HttpHandler] {FormatearExcepcionCompleta(ex)}");
                     }
                 }
 
@@ -222,22 +261,23 @@ namespace Punto_de_Venta
                     try
                     {
                         responseString = await EjecutarPostConCurlAsync(AzureFunctionGenerarPagoUrl, jsonBody).ConfigureAwait(true);
+                        if (string.IsNullOrWhiteSpace(responseString))
+                        {
+                            errores.Add("[Curl] Respuesta vacia sin codigo de error.");
+                        }
                     }
                     catch (Exception ex)
                     {
-                        if (string.IsNullOrWhiteSpace(ultimoError))
-                        {
-                            ultimoError = ex.Message;
-                        }
+                        errores.Add($"[Curl] {FormatearExcepcionCompleta(ex)}");
                     }
                 }
 
                 if (string.IsNullOrWhiteSpace(responseString))
                 {
-                    string detalleFinal = string.IsNullOrWhiteSpace(ultimoError)
+                    string detalleFinal = errores.Count == 0
                         ? "El servidor no devolvio respuesta."
-                        : ultimoError;
-                    throw new InvalidOperationException($"El servidor no pudo generar el enlace de pago. {detalleFinal}");
+                        : string.Join("\n", errores);
+                    throw new InvalidOperationException($"No se pudo generar el enlace de pago:\n{detalleFinal}");
                 }
 
                 var data = JObject.Parse(responseString);
@@ -258,12 +298,10 @@ namespace Punto_de_Venta
             }
             catch (Exception ex)
             {
-                string mensajeDetalle = ex.InnerException != null
-                    ? $"{ex.Message} ({ex.InnerException.Message})"
-                    : ex.Message;
+                string mensajeDetalle = FormatearExcepcionCompleta(ex);
 
                 CustomMessageBox.Show(
-                    $"Error al procesar la solicitud: {mensajeDetalle}",
+                    $"Error al procesar la solicitud:\n{mensajeDetalle}",
                     "Fallo de Conexion",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
@@ -369,29 +407,52 @@ namespace Punto_de_Venta
             return false;
         }
 
+        private static string FormatearExcepcionCompleta(Exception ex)
+        {
+            var sb = new StringBuilder();
+            Exception? actual = ex;
+            int nivel = 0;
+            while (actual != null && nivel < 6)
+            {
+                if (nivel > 0) sb.Append(" -> ");
+                sb.Append($"{actual.GetType().Name}: {actual.Message}");
+                if (actual is HttpRequestException httpEx && httpEx.StatusCode.HasValue)
+                {
+                    sb.Append($" [Status {(int)httpEx.StatusCode.Value}]");
+                }
+                actual = actual.InnerException;
+                nivel++;
+            }
+            return sb.ToString();
+        }
+
         private static async Task<string> EjecutarPostConCurlAsync(string url, string jsonBody)
         {
-            try
+            var psi = new ProcessStartInfo
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "curl.exe",
-                    Arguments = $"-s -k -X POST -H \"Content-Type: application/json\" -H \"Accept: application/json\" -d \"{jsonBody.Replace("\"", "\\\"")}\" \"{url}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-                using var proc = Process.Start(psi);
-                if (proc == null) return string.Empty;
-                string output = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-                await proc.WaitForExitAsync().ConfigureAwait(false);
-                return output;
-            }
-            catch
+                FileName = "curl.exe",
+                Arguments = $"-sS -k -X POST -H \"Content-Type: application/json\" -H \"Accept: application/json\" -d \"{jsonBody.Replace("\"", "\\\"")}\" \"{url}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi) ?? throw new InvalidOperationException("No se pudo iniciar curl.exe");
+            Task<string> outTask = proc.StandardOutput.ReadToEndAsync();
+            Task<string> errTask = proc.StandardError.ReadToEndAsync();
+            await proc.WaitForExitAsync().ConfigureAwait(false);
+            string output = await outTask.ConfigureAwait(false);
+            string errorOutput = await errTask.ConfigureAwait(false);
+
+            if (proc.ExitCode != 0)
             {
-                return string.Empty;
+                throw new InvalidOperationException($"ExitCode {proc.ExitCode}: {(string.IsNullOrWhiteSpace(errorOutput) ? output : errorOutput).Trim()}");
             }
+            if (string.IsNullOrWhiteSpace(output) && !string.IsNullOrWhiteSpace(errorOutput))
+            {
+                throw new InvalidOperationException(errorOutput.Trim());
+            }
+            return output;
         }
 
         private static async Task<string> EjecutarGetConCurlAsync(string url)

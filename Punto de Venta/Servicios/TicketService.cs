@@ -31,12 +31,22 @@ namespace Punto_de_Venta.Servicios
                 if (!string.IsNullOrWhiteSpace(config.GiroNegocio)) sb.AppendLine(CentrarTexto(config.GiroNegocio.Trim(), ancho));
                 if (!string.IsNullOrWhiteSpace(config.DireccionNegocio)) sb.AppendLine(CentrarTexto(config.DireccionNegocio.Trim(), ancho));
             }
+            bool en = IdiomaService.EsIngles();
             sb.AppendLine(new string('-', ancho));
-            sb.AppendLine($"Folio: #{venta.Id}");
-            sb.AppendLine($"Fecha: {venta.FechaHora:dd/MM/yyyy hh:mm tt}");
-            sb.AppendLine($"Metodo: {venta.MetodoPago}");
+            sb.AppendLine($"{(en ? "Receipt" : "Folio")}: #{venta.Id}");
+            sb.AppendLine($"{(en ? "Date" : "Fecha")}: {venta.FechaHora:dd/MM/yyyy hh:mm tt}");
+            string metodo = en ? IdiomaService.TraducirTexto(venta.MetodoPago) : venta.MetodoPago;
+            if (en && string.Equals(metodo, "Efectivo", StringComparison.OrdinalIgnoreCase)) metodo = "Cash";
+            else if (en && string.Equals(metodo, "Tarjeta", StringComparison.OrdinalIgnoreCase)) metodo = "Card";
+            else if (en && string.Equals(metodo, "Transferencia", StringComparison.OrdinalIgnoreCase)) metodo = "Transfer";
+            else if (en && string.Equals(metodo, "Mixto", StringComparison.OrdinalIgnoreCase)) metodo = "Mixed";
+            else if (en && string.Equals(metodo, "Fiado", StringComparison.OrdinalIgnoreCase)) metodo = "Credit";
+            sb.AppendLine($"{(en ? "Method" : "Metodo")}: {metodo}");
             sb.AppendLine(new string('-', ancho));
-            sb.AppendLine(ancho == 42 ? "CANT  DESCRIPCION            PRECIO   IMPORTE" : "CANT DESCRIPCION       PRECIO IMPORTE");
+            if (en)
+                sb.AppendLine(ancho == 42 ? "QTY   DESCRIPTION              PRICE  AMOUNT" : "QTY  DESCRIPTION      PRICE AMOUNT");
+            else
+                sb.AppendLine(ancho == 42 ? "CANT  DESCRIPCION            PRECIO   IMPORTE" : "CANT DESCRIPCION       PRECIO IMPORTE");
             sb.AppendLine(new string('-', ancho));
             foreach (var item in items)
             {
@@ -57,25 +67,26 @@ namespace Punto_de_Venta.Servicios
             sb.AppendLine(AlinearDerecha($"TOTAL: {venta.Total.ToString("C2", culture)}", ancho));
             if (venta.MetodoPago == "Fiado" || venta.Estado == "Fiado")
             {
-                sb.AppendLine(AlinearDerecha("CUENTA POR COBRAR (FIADO)", ancho));
+                sb.AppendLine(AlinearDerecha(en ? "ACCOUNTS RECEIVABLE (CREDIT)" : "CUENTA POR COBRAR (FIADO)", ancho));
             }
             else if (venta.MetodoPago == "Mixto")
             {
-                sb.AppendLine(AlinearDerecha("PAGO MIXTO DESGLOSADO", ancho));
-                if (venta.PagoEfectivo > 0) sb.AppendLine(AlinearDerecha($"Efectivo: {venta.PagoEfectivo.ToString("C2", culture)}", ancho));
-                if (venta.PagoTarjeta > 0) sb.AppendLine(AlinearDerecha($"Tarjeta: {venta.PagoTarjeta.ToString("C2", culture)}", ancho));
+                sb.AppendLine(AlinearDerecha(en ? "MIXED PAYMENT BREAKDOWN" : "PAGO MIXTO DESGLOSADO", ancho));
+                if (venta.PagoEfectivo > 0) sb.AppendLine(AlinearDerecha($"{(en ? "Cash" : "Efectivo")}: {venta.PagoEfectivo.ToString("C2", culture)}", ancho));
+                if (venta.PagoTarjeta > 0) sb.AppendLine(AlinearDerecha($"{(en ? "Card" : "Tarjeta")}: {venta.PagoTarjeta.ToString("C2", culture)}", ancho));
                 if (venta.PagoTransferencia > 0) sb.AppendLine(AlinearDerecha($"Transfer.: {venta.PagoTransferencia.ToString("C2", culture)}", ancho));
-                sb.AppendLine(AlinearDerecha($"CAMBIO: {cambio.ToString("C2", culture)}", ancho));
+                sb.AppendLine(AlinearDerecha($"{(en ? "CHANGE" : "CAMBIO")}: {cambio.ToString("C2", culture)}", ancho));
             }
             else
             {
-                sb.AppendLine(AlinearDerecha($"PAGO CON: {pagoCon.ToString("C2", culture)}", ancho));
-                sb.AppendLine(AlinearDerecha($"CAMBIO: {cambio.ToString("C2", culture)}", ancho));
+                sb.AppendLine(AlinearDerecha($"{(en ? "PAID WITH" : "PAGO CON")}: {pagoCon.ToString("C2", culture)}", ancho));
+                sb.AppendLine(AlinearDerecha($"{(en ? "CHANGE" : "CAMBIO")}: {cambio.ToString("C2", culture)}", ancho));
             }
             sb.AppendLine(new string('-', ancho));
+            string defaultFooter = en ? "THANK YOU FOR YOUR PURCHASE\nCome back soon" : "GRACIAS POR SU COMPRA\nVuelva pronto";
             string pieTicket = LicenciaService.EsPremium()
-                ? (string.IsNullOrWhiteSpace(config.MensajePie) ? "GRACIAS POR SU COMPRA\nVuelva pronto" : config.MensajePie)
-                : "GRACIAS POR SU COMPRA\nVuelva pronto";
+                ? (string.IsNullOrWhiteSpace(config.MensajePie) ? defaultFooter : config.MensajePie)
+                : defaultFooter;
 
             foreach (var linea in pieTicket.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None))
             {
@@ -114,11 +125,12 @@ namespace Punto_de_Venta.Servicios
         }
         public static string GenerarTicketMuestra(AppConfig config)
         {
-            var ventaPrueba = new Venta { Id = 101, FechaHora = DateTime.Now, Total = 45.00m, MetodoPago = "Efectivo" };
+            bool en = IdiomaService.EsIngles();
+            var ventaPrueba = new Venta { Id = 101, FechaHora = DateTime.Now, Total = 45.00m, MetodoPago = en ? "Cash" : "Efectivo" };
             var itemsPrueba = new List<DetalleVenta>
             {
-                new() { Nombre = "Refresco Coca 600", Cantidad = 1, Precio = 18.00m },
-                new() { Nombre = "Galletas Chokis", Cantidad = 2, Precio = 17.00m }
+                new() { Nombre = en ? "Cola Soda 600ml" : "Refresco Coca 600", Cantidad = 1, Precio = 18.00m },
+                new() { Nombre = en ? "Chokis Cookies" : "Galletas Chokis", Cantidad = 2, Precio = 17.00m }
             };
             return GenerarTextoTicket(ventaPrueba, itemsPrueba, 50.00m, 5.00m, config);
         }

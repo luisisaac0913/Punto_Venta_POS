@@ -97,7 +97,7 @@ namespace Punto_de_Venta
                     break;
             }
 
-            MessageText.Text = message;
+            MessageText.Text = Punto_de_Venta.Servicios.IdiomaService.TraducirTexto(message);
             _timer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(2.3)

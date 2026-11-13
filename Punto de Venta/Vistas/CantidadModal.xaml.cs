@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Effects;
@@ -7,7 +9,7 @@ namespace Punto_de_Venta
     public partial class CantidadModal : Window
     {
         private BlurEffect? _blurEffect;
-        public int CantidadResult { get; private set; } = 1;
+        public decimal CantidadResult { get; private set; } = 1m;
         public bool Confirmado { get; private set; }
         public CantidadModal(string nombreProducto)
         {
@@ -59,7 +61,8 @@ namespace Punto_de_Venta
 
         private void Confirmar()
         {
-            if (int.TryParse(QuantityBox.Text.Trim(), out var cant) && cant > 0)
+            var raw = QuantityBox.Text.Trim().Replace(',', '.');
+            if (decimal.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var cant) && cant > 0m)
             {
                 CantidadResult = cant;
                 Confirmado = true;

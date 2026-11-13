@@ -17,9 +17,11 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
 
+using Punto_de_Venta.Vistas;
+
 namespace Punto_de_Venta
 {
-    public partial class Prestamos : UserControl, ILimpiarSeleccion
+    public partial class Prestamos : UserControl, ILimpiarSeleccion, IManejadorEscape
     {
         private readonly DispatcherTimer _clockTimer;
         private Deudor? _selectedDebtor;
@@ -55,6 +57,7 @@ namespace Punto_de_Venta
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => ClockText.Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
             _clockTimer.Start();
+            this.PreviewGotKeyboardFocus += Prestamos_PreviewGotKeyboardFocus;
             Unloaded += (_, _) => _clockTimer.Stop();
         }
         private void CargarDeudoresDesdeBaseDatos()
@@ -100,19 +103,36 @@ namespace Punto_de_Venta
             }
             FocusSearch();
         }
+
+        public bool ManejarEscape()
+        {
+            if (HistorialOverlay != null && HistorialOverlay.Visibility == Visibility.Visible)
+            {
+                HistorialOverlay.Visibility = Visibility.Collapsed;
+                FocusSearch();
+                return true;
+            }
+            return false;
+        }
+
+        private void Prestamos_PreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            if (HistorialOverlay != null && HistorialOverlay.Visibility == Visibility.Visible)
+            {
+                ModalFocusHelper.ProtegerFoco(e, HistorialOverlay);
+            }
+        }
+
         private void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (HistorialOverlay.Visibility == Visibility.Visible)
-            {
-                if (e.Key == Key.Escape)
-                {
-                    HistorialOverlay.Visibility = Visibility.Collapsed;
-                    e.Handled = true;
-                }
-                return;
-            }
             if (e.Key == Key.Escape)
             {
+                if (ManejarEscape())
+                {
+                    e.Handled = true;
+                    return;
+                }
+
                 this.Visibility = Visibility.Collapsed;
                 if (Application.Current.MainWindow is MainWindow mainWindow)
                 {

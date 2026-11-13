@@ -1,4 +1,4 @@
-<UserControl x:Class="Punto_de_Venta.Graficas"
+﻿<UserControl x:Class="Punto_de_Venta.Graficas"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
@@ -112,7 +112,7 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                        <TextBlock Text="Graficas" Visibility="Collapsed" />
+                        <TextBlock Text="{DynamicResource ChartsTitle}" Visibility="Collapsed" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -127,7 +127,7 @@
                                     <Border x:Name="ExpBorder" Background="#1597a7" 
                                             CornerRadius="4" 
                                             BorderThickness="0">
-                                        <TextBlock Text="📥 Exportar a PDF" 
+                                        <TextBlock Text="{DynamicResource ChartsExportPdf}" 
                                                    Foreground="White" 
                                                    FontWeight="SemiBold" 
                                                    FontSize="13" 
@@ -163,7 +163,7 @@
                                     <TextBlock Text="a" VerticalAlignment="Center" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0" />
                                     <DatePicker x:Name="EndDatePicker" Width="105" Margin="4,0" BorderThickness="0" Background="Transparent" Foreground="{DynamicResource ThemeTextForeground}" />
 
-                                    <Button Content="Aplicar" Margin="4,0,0,0" Padding="12,0" Height="28" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="Bold" Cursor="Hand" Click="ApplyCustomDate_Click">
+                                    <Button Content="{DynamicResource ChartsApply}" Margin="4,0,0,0" Padding="12,0" Height="28" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="Bold" Cursor="Hand" Click="ApplyCustomDate_Click">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border x:Name="AppBorder" Background="{TemplateBinding Background}" CornerRadius="4">
@@ -193,7 +193,7 @@
                             </Border>
                         </Grid>
 
-                        <Button Content="Ayuda" Height="36" Padding="14,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Margin="10,0,10,0" Click="HelpButton_Click">
+                        <Button Content="{DynamicResource ChartsHelp}" Height="36" Padding="14,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Margin="10,0,10,0" Click="HelpButton_Click">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="HBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
@@ -234,7 +234,7 @@
 
                     <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="14,12">
                         <StackPanel>
-                            <TextBlock Text="VENTA TOTAL" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock Text="{DynamicResource ChartsTotalSales}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
                             <TextBlock x:Name="KpiVentaTotal" Text="$0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,4,0,2" />
                             <TextBlock x:Name="KpiTransacciones" Text="0 ventas" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
                         </StackPanel>
@@ -242,15 +242,15 @@
 
                     <Border Grid.Column="2" Style="{StaticResource CardStyle}" Padding="14,12">
                         <StackPanel>
-                            <TextBlock Text="COSTO (INVERSION)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock Text="{DynamicResource ChartsCost}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
                             <TextBlock x:Name="KpiCostoTotal" Text="$0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,2" />
-                            <TextBlock Text="Mercancia vendida" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock Text="{DynamicResource ChartsSoldGoods}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
                         </StackPanel>
                     </Border>
 
                     <Border Grid.Column="4" Style="{StaticResource CardStyle}" Padding="14,12">
                         <StackPanel>
-                            <TextBlock Text="GANANCIA BRUTA" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock Text="{DynamicResource ChartsGrossProfit}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
                             <TextBlock x:Name="KpiGananciaNeta" Text="$0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SystemGreen}" Margin="0,4,0,2" />
                             <TextBlock x:Name="KpiMargenPorcentaje" Text="Margen: 0%" FontSize="12" Foreground="{StaticResource SystemGreen}" />
                         </StackPanel>
@@ -258,15 +258,15 @@
 
                     <Border Grid.Column="6" Style="{StaticResource CardStyle}" Padding="14,12">
                         <StackPanel>
-                            <TextBlock Text="GASTOS DE CAJA" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock Text="{DynamicResource ChartsCashExpenses}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
                             <TextBlock x:Name="KpiGastosTotal" Text="$0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="#EF4444" Margin="0,4,0,2" />
-                            <TextBlock Text="Retiros y salidas" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock Text="{DynamicResource ChartsWithdrawals}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
                         </StackPanel>
                     </Border>
 
                     <Border Grid.Column="8" Style="{StaticResource CardStyle}" Padding="14,12">
                         <StackPanel>
-                            <TextBlock Text="BALANCE NETO" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock Text="{DynamicResource ChartsNetBalance}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
                             <TextBlock x:Name="KpiBalanceNeto" Text="$0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" Margin="0,4,0,2" />
                             <TextBlock x:Name="KpiTicketPromedio" Text="Ticket: $0.00" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
                         </StackPanel>
@@ -274,9 +274,9 @@
 
                     <Border Grid.Column="10" Style="{StaticResource CardStyle}" Padding="14,12">
                         <StackPanel>
-                            <TextBlock Text="GANANCIA ESPERADA" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock Text="{DynamicResource ChartsExpectedProfit}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
                             <TextBlock x:Name="InversionTotal" Text="$0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,4,0,2" />
-                            <TextBlock x:Name="InversionTotalProductos" Text="Mercancia surtida" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" />
+                            <TextBlock x:Name="InversionTotalProductos" Text="{DynamicResource ChartsStockedGoods}" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" />
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -292,15 +292,15 @@
 
                     <Border Grid.Column="0" Style="{StaticResource CardStyle}" Padding="12,14">
                         <StackPanel>
-                            <TextBlock Text="VISTAS" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="8,0,0,10" />
-                            <Button x:Name="NavFinanzasBtn" Content="📊  Finanzas" Style="{StaticResource SidebarButtonStyle}" Click="NavFinanzas_Click" />
-                            <Button x:Name="NavMetodosBtn" Content="💳  Metodos de Pago" Style="{StaticResource SidebarButtonStyle}" Click="NavMetodos_Click" />
-                            <Button x:Name="NavCategoriasBtn" Content="🏷 Categorias" Style="{StaticResource SidebarButtonStyle}" Click="NavCategorias_Click" />
-                            <Button x:Name="NavHorasBtn" Content="⏰  Horas Pico" Style="{StaticResource SidebarButtonStyle}" Click="NavHorasBtn_Click" />
-                            <Button x:Name="NavRotacionBtn" Content="📦  Vel. Rotacion" Style="{StaticResource SidebarButtonStyle}" Click="NavRotacionBtn_Click" />
-                            <Button x:Name="NavRentabilidadBtn" Content="💎  Rentabilidad Top" Style="{StaticResource SidebarButtonStyle}" Click="NavRentabilidadBtn_Click" />
-                            <Button x:Name="NavParetoBtn" Content="🎯  Analisis ABC" Style="{StaticResource SidebarButtonStyle}" Click="NavParetoBtn_Click" />
-                            <Button x:Name="NavCortesBtn" Content="🧾  Cortes de Caja" Style="{StaticResource SidebarButtonStyle}" Click="NavCortesBtn_Click" />
+                            <TextBlock Text="{DynamicResource ChartsViewsHeader}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="8,0,0,10" />
+                            <Button x:Name="NavFinanzasBtn" Content="{DynamicResource ChartsNavFinance}" Style="{StaticResource SidebarButtonStyle}" Click="NavFinanzas_Click" />
+                            <Button x:Name="NavMetodosBtn" Content="{DynamicResource ChartsNavMethods}" Style="{StaticResource SidebarButtonStyle}" Click="NavMetodos_Click" />
+                            <Button x:Name="NavCategoriasBtn" Content="{DynamicResource ChartsNavCategories}" Style="{StaticResource SidebarButtonStyle}" Click="NavCategorias_Click" />
+                            <Button x:Name="NavHorasBtn" Content="{DynamicResource ChartsNavPeakHours}" Style="{StaticResource SidebarButtonStyle}" Click="NavHorasBtn_Click" />
+                            <Button x:Name="NavRotacionBtn" Content="{DynamicResource ChartsNavTurnover}" Style="{StaticResource SidebarButtonStyle}" Click="NavRotacionBtn_Click" />
+                            <Button x:Name="NavRentabilidadBtn" Content="{DynamicResource ChartsNavTopProfit}" Style="{StaticResource SidebarButtonStyle}" Click="NavRentabilidadBtn_Click" />
+                            <Button x:Name="NavParetoBtn" Content="{DynamicResource ChartsNavAbc}" Style="{StaticResource SidebarButtonStyle}" Click="NavParetoBtn_Click" />
+                            <Button x:Name="NavCortesBtn" Content="{DynamicResource ChartsNavShifts}" Style="{StaticResource SidebarButtonStyle}" Click="NavCortesBtn_Click" />
                         </StackPanel>
                     </Border>
 
@@ -330,10 +330,10 @@
                                             <ColumnDefinition Width="150" />
                                             <ColumnDefinition Width="130" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Concepto / Elemento" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
-                                        <TextBlock Grid.Column="1" Text="Valor Principal" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,0,16,0" />
-                                        <TextBlock Grid.Column="2" Text="Valor Secundario" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,0,16,0" />
-                                        <TextBlock Grid.Column="3" Text="Porcentaje / Estado" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" />
+                                        <TextBlock Text="{DynamicResource ChartsColItem}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                                        <TextBlock Grid.Column="1" Text="{DynamicResource ChartsColPrimary}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,0,16,0" />
+                                        <TextBlock Grid.Column="2" Text="{DynamicResource ChartsColSecondary}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,0,16,0" />
+                                        <TextBlock Grid.Column="3" Text="{DynamicResource ChartsColPercent}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" />
                                     </Grid>
                                 </Border>
 
@@ -369,9 +369,9 @@
                                     CornerRadius="8" Padding="24" VerticalAlignment="Center" HorizontalAlignment="Center">
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock Text="🔒" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,10" />
-                                    <TextBlock Text="Grafica Exclusiva de Version Premium" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
-                                    <TextBlock Text="Desbloquea el analisis visual de utilidades, gastos, horas pico y rentabilidad por producto." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="380" Margin="0,0,0,16" />
-                                    <Button Content="Desbloquear con Premium" Height="36" Padding="20,0" Background="{DynamicResource ThemeAccent}" Foreground="White" FontWeight="Bold" FontSize="12" BorderThickness="0" Cursor="Hand" Click="BtnDesbloquearPremium_Click">
+                                    <TextBlock Text="{DynamicResource ChartsPremiumTitle}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                                    <TextBlock Text="{DynamicResource ChartsPremiumDesc}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="380" Margin="0,0,0,16" />
+                                    <Button Content="{DynamicResource ChartsUnlockBtn}" Height="36" Padding="20,0" Background="{DynamicResource ThemeAccent}" Foreground="White" FontWeight="Bold" FontSize="12" BorderThickness="0" Cursor="Hand" Click="BtnDesbloquearPremium_Click">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border x:Name="PremBorder" Background="{TemplateBinding Background}" CornerRadius="4">
@@ -405,9 +405,9 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="110" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Fecha y Hora" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
-                                        <TextBlock Grid.Column="1" Text="Esperado" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,0,16,0" />
-                                        <TextBlock Grid.Column="2" Text="Contado" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,0,16,0" />
+                                        <TextBlock Text="{DynamicResource ChartsColDateTime}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                                        <TextBlock Grid.Column="1" Text="{DynamicResource ChartsColExpected}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,0,16,0" />
+                                        <TextBlock Grid.Column="2" Text="{DynamicResource ChartsColCounted}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" Margin="0,0,16,0" />
                                         <TextBlock Grid.Column="3" Text="Diferencia" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Right" />
                                     </Grid>
                                 </Border>
@@ -477,7 +477,7 @@
                     </Border>
                 </Grid>
 
-                <Grid x:Name="HelpOverlay" Grid.RowSpan="3" Panel.ZIndex="100" Background="#66000000" Visibility="Collapsed" MouseDown="HelpOverlay_MouseDown">
+                <Grid x:Name="HelpOverlay" Grid.RowSpan="3" Panel.ZIndex="100" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" MouseDown="HelpOverlay_MouseDown">
                     <Border Width="640" MaxHeight="600" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="28,24" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -556,7 +556,7 @@
                     </Border>
                 </Grid>
 
-                <Grid x:Name="MovimientosOverlay" Grid.RowSpan="3" Panel.ZIndex="999" Background="#66000000" Visibility="Collapsed">
+                <Grid x:Name="MovimientosOverlay" Grid.RowSpan="3" Panel.ZIndex="999" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle">
                     <Border Width="620" MaxHeight="500" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
                         <Grid>
                             <Grid.RowDefinitions>
