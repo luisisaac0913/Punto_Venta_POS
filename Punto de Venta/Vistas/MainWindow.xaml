@@ -4,14 +4,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Icon="pack://application:,,,/Imagenes/CHC_icono.ico"
         Width="1280" Height="720"
-        WindowStyle="None"
-        AllowsTransparency="True"
         MinWidth="960" MinHeight="600"
         WindowStartupLocation="CenterScreen"
-        Background="Transparent"
+        Background="{DynamicResource ThemeWindowBackground}"
         UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="ClearType">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" />
+    </WindowChrome.WindowChrome>
 
     <Window.Resources>
         <StreamGeometry x:Key="IconCobro">M 8,19 A 1,1 0 1 0 8,21 A 1,1 0 1 0 8,19 Z M 19,19 A 1,1 0 1 0 19,21 A 1,1 0 1 0 19,19 Z M 2.05,2.05 L 4.05,2.05 L 6.71,14.47 A 2,2 0 0 0 8.71,16.05 L 18.49,16.05 A 2,2 0 0 0 20.44,14.48 L 22.09,7.05 L 5.12,7.05</StreamGeometry>
@@ -88,12 +91,15 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="HeroBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}" Effect="{StaticResource FluentCardShadow}">
-                            <Grid>
-                                <Ellipse Width="240" Height="240" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-80,-80,0" Fill="#15FFFFFF" IsHitTestVisible="False"/>
-                                <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-                            </Grid>
-                        </Border>
+                        <Grid>
+                            <Border Background="{TemplateBinding Background}" CornerRadius="8" Effect="{StaticResource FluentCardShadow}" IsHitTestVisible="False" />
+                            <Border x:Name="HeroBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                <Grid>
+                                    <Ellipse Width="240" Height="240" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-80,-80,0" Fill="#15FFFFFF" IsHitTestVisible="False"/>
+                                    <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                                </Grid>
+                            </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="HeroBorder" Property="Opacity" Value="0.95" />
@@ -119,9 +125,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="CardBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}" Effect="{StaticResource FluentCardShadow}">
-                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-                        </Border>
+                        <Grid>
+                            <Border Background="{TemplateBinding Background}" CornerRadius="8" Effect="{StaticResource FluentCardShadow}" IsHitTestVisible="False" />
+                            <Border x:Name="CardBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                            </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource ThemeInputBackground}" />
@@ -174,9 +183,7 @@
 
     <Border Background="{DynamicResource ThemeWindowBackground}"
             BorderBrush="{DynamicResource ThemeBorder}"
-            BorderThickness="1"
-            CornerRadius="8"
-            ClipToBounds="True">
+            BorderThickness="1">
 
         <Grid>
 
@@ -407,11 +414,12 @@
                     <ContentControl x:Name="ContenedorVistas" Margin="0" Visibility="Collapsed" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
 
                     <Grid x:Name="ExportarOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" Panel.ZIndex="10" MouseDown="ExportarOverlay_MouseDown" PreviewKeyDown="ExportarOverlay_PreviewKeyDown">
-                        <Border Width="760" Height="410" MaxWidth="900" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
+                        <Border Width="760" Height="470" MaxWidth="900" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,20">
                                     <TextBlock Text="{DynamicResource MainExportHeader}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" HorizontalAlignment="Center" Margin="0,0,0,4" />
@@ -457,11 +465,24 @@
                                         </StackPanel>
                                     </Button>
                                 </UniformGrid>
+                                <Border Grid.Row="2" Margin="0,16,0,0" Padding="12,10" CornerRadius="6" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1">
+                                    <DockPanel LastChildFill="False">
+                                        <TextBlock Text="{DynamicResource MainExportDataLabel}" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,8,0" />
+                                        <ComboBox x:Name="CmbFormatoTabla" Width="115" Height="32" Margin="0,0,10,0" VerticalContentAlignment="Center" FontSize="12">
+                                            <ComboBoxItem Content="Excel (.xlsx)" Tag="xlsx" IsSelected="True" />
+                                            <ComboBoxItem Content="CSV" Tag="csv" />
+                                        </ComboBox>
+                                        <Button Content="{DynamicResource MainExportProducts}" Height="32" Padding="12,0" Margin="0,0,8,0" Click="ExportarProductosCsv_Click" Style="{StaticResource FluentButtonSecondary}" FontSize="12" />
+                                        <Button Content="{DynamicResource MainExportSales}" Height="32" Padding="12,0" Margin="0,0,8,0" Click="ExportarVentasCsv_Click" Style="{StaticResource FluentButtonSecondary}" FontSize="12" />
+                                        <Button Content="{DynamicResource MainExportShifts}" Height="32" Padding="12,0" Margin="0,0,8,0" Click="ExportarCortesCsv_Click" Style="{StaticResource FluentButtonSecondary}" FontSize="12" />
+                                        <Button Content="{DynamicResource MainExportCredits}" Height="32" Padding="12,0" Click="ExportarPrestamosCsv_Click" Style="{StaticResource FluentButtonSecondary}" FontSize="12" />
+                                    </DockPanel>
+                                </Border>
                             </Grid>
                         </Border>
                     </Grid>
                     <Grid x:Name="ImportarOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" Panel.ZIndex="10" MouseDown="ImportarOverlay_MouseDown">
-                        <Border Width="650" Height="420" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="32" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
+                        <Border Width="650" Height="420" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="32" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -486,7 +507,170 @@
                                     </StackPanel>
                                 </Border>
 
-                                <Button Grid.Row="2" Content="{DynamicResource MainImportBtn}" Height="40" Background="{DynamicResource ThemeAccent}" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="EjecutarImportacion_Click" Margin="0,20,0,0" Style="{StaticResource FluentButtonPrimary}" />
+                                <Grid Grid.Row="2" Margin="0,20,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Content="{DynamicResource MainImportTemplateBtn}" Height="40" Padding="18,0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="DescargarPlantillaImportacion_Click" Style="{StaticResource FluentButtonSecondary}" />
+                                    <Button Grid.Column="2" Content="{DynamicResource MainImportBtn}" Height="40" Background="{DynamicResource ThemeAccent}" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="EjecutarImportacion_Click" Style="{StaticResource FluentButtonPrimary}" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                    <Grid x:Name="ImportarPreviewOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" Panel.ZIndex="15" MouseDown="ImportarPreviewOverlay_MouseDown" PreviewKeyDown="ImportarPreviewOverlay_PreviewKeyDown">
+                        <Border Width="940" MaxWidth="1040" Height="600" MaxHeight="660" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0" Margin="0,0,0,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{DynamicResource MainPreviewTitle}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" />
+                                        <TextBlock x:Name="TxtPreviewArchivoNombre" Text="archivo.xlsx" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="{DynamicResource MainPreviewModeLabel}" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,8,0" />
+                                        <ComboBox x:Name="CmbModoImportacion" Width="260" Height="34" SelectionChanged="CmbModoImportacion_SelectionChanged" VerticalContentAlignment="Center">
+                                            <ComboBoxItem Content="{DynamicResource MainPreviewModeCreateUpdate}" Tag="CrearYActualizar" IsSelected="True" />
+                                            <ComboBoxItem Content="{DynamicResource MainPreviewModeOnlyNew}" Tag="SoloNuevos" />
+                                            <ComboBoxItem Content="{DynamicResource MainPreviewModeAddStock}" Tag="SumarStockYCrear" />
+                                        </ComboBox>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Grid.Row="1" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6" Padding="14,10" Margin="0,0,0,12">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock x:Name="TxtResumenNuevos" Text="Nuevos: 0" FontSize="13" FontWeight="Bold" Foreground="#10B981" Margin="0,0,20,0" />
+                                        <TextBlock x:Name="TxtResumenActualizar" Text="Actualizar: 0" FontSize="13" FontWeight="Bold" Foreground="#3B82F6" Margin="0,0,20,0" />
+                                        <TextBlock x:Name="TxtResumenOmitidos" Text="Omitidos: 0" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,20,0" />
+                                        <TextBlock x:Name="TxtResumenRechazados" Text="Rechazados: 0" FontSize="13" FontWeight="Bold" Foreground="#EF4444" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Row="2" Style="{StaticResource ProductCardStyle}" Padding="0" ClipToBounds="True">
+                                    <DataGrid x:Name="GridImportPreview"
+                                              AutoGenerateColumns="False"
+                                              IsReadOnly="True"
+                                              CanUserAddRows="False"
+                                              CanUserDeleteRows="False"
+                                              CanUserReorderColumns="False"
+                                              CanUserResizeRows="False"
+                                              HeadersVisibility="Column"
+                                              GridLinesVisibility="Horizontal"
+                                              HorizontalGridLinesBrush="{DynamicResource ThemeBorder}"
+                                              BorderThickness="0"
+                                              Background="Transparent"
+                                              FontFamily="Segoe UI Variable, Segoe UI"
+                                              FontSize="13"
+                                              RowHeight="38"
+                                              SelectionUnit="FullRow"
+                                              SelectionMode="Single"
+                                              EnableRowVirtualization="True"
+                                              ScrollViewer.CanContentScroll="True"
+                                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                        <DataGrid.ColumnHeaderStyle>
+                                            <Style TargetType="DataGridColumnHeader">
+                                                <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource ThemeMutedForeground}" />
+                                                <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+                                                <Setter Property="FontSize" Value="12" />
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                                <Setter Property="Padding" Value="12,10" />
+                                                <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
+                                                <Setter Property="BorderThickness" Value="0,0,0,1" />
+                                            </Style>
+                                        </DataGrid.ColumnHeaderStyle>
+                                        <DataGrid.CellStyle>
+                                            <Style TargetType="DataGridCell">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=DataGridRow}}" />
+                                                <Setter Property="BorderThickness" Value="0" />
+                                                <Setter Property="Padding" Value="12,4" />
+                                                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="DataGridCell">
+                                                            <Border Background="{TemplateBinding Background}" BorderThickness="0" Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter VerticalAlignment="Center" />
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </DataGrid.CellStyle>
+                                        <DataGrid.RowStyle>
+                                            <Style TargetType="DataGridRow">
+                                                <Setter Property="Background" Value="{DynamicResource ThemeSurfaceBackground}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource ThemeTextForeground}" />
+                                                <Setter Property="BorderThickness" Value="0" />
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+                                                    </Trigger>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource ThemeAccent}" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </DataGrid.RowStyle>
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Binding="{Binding NumeroFila}" Width="55">
+                                                <DataGridTextColumn.Header>
+                                                    <TextBlock Text="{DynamicResource MainPreviewColRow}" />
+                                                </DataGridTextColumn.Header>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Binding="{Binding Estado}" Width="105">
+                                                <DataGridTextColumn.Header>
+                                                    <TextBlock Text="{DynamicResource MainPreviewColStatus}" />
+                                                </DataGridTextColumn.Header>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Binding="{Binding Codigo}" Width="120">
+                                                <DataGridTextColumn.Header>
+                                                    <TextBlock Text="{DynamicResource MainPreviewColCode}" />
+                                                </DataGridTextColumn.Header>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Binding="{Binding Nombre}" Width="210">
+                                                <DataGridTextColumn.Header>
+                                                    <TextBlock Text="{DynamicResource MainPreviewColName}" />
+                                                </DataGridTextColumn.Header>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Binding="{Binding Precio, StringFormat=C2}" Width="90">
+                                                <DataGridTextColumn.Header>
+                                                    <TextBlock Text="{DynamicResource MainPreviewColPrice}" />
+                                                </DataGridTextColumn.Header>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Binding="{Binding Stock, StringFormat=0.###}" Width="75">
+                                                <DataGridTextColumn.Header>
+                                                    <TextBlock Text="{DynamicResource MainPreviewColStock}" />
+                                                </DataGridTextColumn.Header>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Binding="{Binding Detalle}" Width="*">
+                                                <DataGridTextColumn.Header>
+                                                    <TextBlock Text="{DynamicResource MainPreviewColDetail}" />
+                                                </DataGridTextColumn.Header>
+                                            </DataGridTextColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Border>
+
+                                <DockPanel Grid.Row="3" Margin="0,16,0,0" LastChildFill="False">
+                                    <Button x:Name="BtnExportarErrores" Content="{DynamicResource MainPreviewExportErrors}" Height="36" Padding="14,0" Click="BtnExportarErrores_Click" Style="{StaticResource FluentButtonSecondary}" Visibility="Collapsed" />
+                                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+                                        <Button Content="{DynamicResource MainPreviewCancel}" Height="36" Padding="18,0" Margin="0,0,10,0" Click="BtnCancelarPreview_Click" Style="{StaticResource FluentButtonSecondary}" />
+                                        <Button x:Name="BtnConfirmarImportacion" Content="{DynamicResource MainPreviewConfirm}" Height="36" Padding="20,0" Click="BtnConfirmarImportacion_Click" Style="{StaticResource FluentButtonPrimary}" Background="{DynamicResource ThemeAccent}" Foreground="White" FontWeight="Bold" />
+                                    </StackPanel>
+                                </DockPanel>
                             </Grid>
                         </Border>
                     </Grid>

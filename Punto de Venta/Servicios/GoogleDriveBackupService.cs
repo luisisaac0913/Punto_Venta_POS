@@ -21,8 +21,8 @@ namespace Punto_de_Venta.Servicios
 
         public static async Task<bool> RespaldarEnDriveAsync(IProgress<int>? progreso, bool modoSilencioso = false)
         {
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            string sourceFolder = Path.Combine(appData, "POS_DataStorage");
+            string sourceFolder = Punto_de_Venta.Datos.DatabaseHelper.DbFolder;
+            string dbPath = Punto_de_Venta.Datos.DatabaseHelper.DbPath;
 
             if (!Directory.Exists(sourceFolder))
             {
@@ -30,18 +30,10 @@ namespace Punto_de_Venta.Servicios
             }
 
             string tempZipPath = Path.Combine(Path.GetTempPath(), $"POS_Backup_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}.zip");
+            string tempDbSnapshot = Path.Combine(Path.GetTempPath(), $"POS_DriveDb_{Guid.NewGuid():N}.db");
 
             try
             {
-                try
-                {
-                    using var conn = Punto_de_Venta.Datos.DatabaseHelper.GetConnection();
-                    using var walCmd = conn.CreateCommand();
-                    walCmd.CommandText = "PRAGMA wal_checkpoint(TRUNCATE);";
-                    walCmd.ExecuteNonQuery();
-                }
-                catch { }
-
                 await Task.Run(() =>
                 {
                     if (File.Exists(tempZipPath))
@@ -49,8 +41,38 @@ namespace Punto_de_Venta.Servicios
                         File.Delete(tempZipPath);
                     }
 
+                    bool tieneDbSnapshot = false;
+                    if (File.Exists(dbPath))
+                    {
+                        using (var sourceConn = Punto_de_Venta.Datos.DatabaseHelper.GetConnection())
+                        using (var destConn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={tempDbSnapshot}"))
+                        {
+                            destConn.Open();
+                            sourceConn.BackupDatabase(destConn);
+                        }
+                        Microsoft.Data.Sqlite.SqliteConnection.ClearPool(new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={tempDbSnapshot}"));
+                        tieneDbSnapshot = File.Exists(tempDbSnapshot);
+                        if (!tieneDbSnapshot)
+                        {
+                            throw new InvalidOperationException("No se pudo generar la copia consistente de la base de datos.");
+                        }
+                    }
+
                     var dirInfo = new DirectoryInfo(sourceFolder);
                     using var zipArchive = ZipFile.Open(tempZipPath, ZipArchiveMode.Create);
+
+                    if (tieneDbSnapshot)
+                    {
+                        string dbEntryName = Path.GetRelativePath(sourceFolder, dbPath).Replace('\\', '/');
+                        if (dbEntryName.StartsWith("..", StringComparison.Ordinal))
+                        {
+                            dbEntryName = Path.GetFileName(dbPath);
+                        }
+                        using var dbStream = new FileStream(tempDbSnapshot, FileMode.Open, FileAccess.Read, FileShare.Read);
+                        var dbEntry = zipArchive.CreateEntry(dbEntryName, CompressionLevel.Optimal);
+                        using var dbEntryStream = dbEntry.Open();
+                        dbStream.CopyTo(dbEntryStream);
+                    }
 
                     foreach (var fileInfo in dirInfo.EnumerateFiles("*", SearchOption.AllDirectories))
                     {
@@ -62,7 +84,10 @@ namespace Punto_de_Venta.Servicios
                             relativePath.StartsWith("GoogleDriveTokenStore", StringComparison.OrdinalIgnoreCase) ||
                             relativePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
                             relativePath.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase) ||
-                            relativePath.EndsWith(".key", StringComparison.OrdinalIgnoreCase))
+                            relativePath.EndsWith(".key", StringComparison.OrdinalIgnoreCase) ||
+                            relativePath.EndsWith(".db", StringComparison.OrdinalIgnoreCase) ||
+                            relativePath.EndsWith(".db-wal", StringComparison.OrdinalIgnoreCase) ||
+                            relativePath.EndsWith(".db-shm", StringComparison.OrdinalIgnoreCase))
                         {
                             continue;
                         }
@@ -90,52 +115,12 @@ namespace Punto_de_Venta.Servicios
 
                 progreso?.Report(5);
 
-                string tokenStorePath = Path.Combine(sourceFolder, "GoogleDriveTokenStore_Secure");
-                var dpapiStore = new DpapiDataStore(tokenStorePath);
-
-                if (modoSilencioso)
+                string sourceFolderDrive = Punto_de_Venta.Datos.DatabaseHelper.DbFolder;
+                var driveService = await CrearDriveServiceAsync(sourceFolderDrive, modoSilencioso);
+                if (driveService == null)
                 {
-                    if (!dpapiStore.TieneTokenValido("user"))
-                    {
-                        System.Diagnostics.Debug.WriteLine("[GoogleDriveBackup] Modo silencioso: Sin token previo descifrable. Respaldo omitido.");
-                        return false;
-                    }
+                    return false;
                 }
-
-                UserCredential credential;
-                var assembly = Assembly.GetExecutingAssembly();
-                using (Stream? stream = assembly.GetManifestResourceStream("Punto_de_Venta.credentials.json"))
-                {
-                    if (stream == null)
-                    {
-                        throw new FileNotFoundException("No se encontro 'credentials.json' incrustado en el proyecto.");
-                    }
-
-                    using var authCts = modoSilencioso ? new CancellationTokenSource(TimeSpan.FromSeconds(15)) : null;
-                    var tokenCancel = authCts?.Token ?? CancellationToken.None;
-
-                    try
-                    {
-                        credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                            GoogleClientSecrets.FromStream(stream).Secrets,
-                            Scopes,
-                            "user",
-                            tokenCancel,
-                            dpapiStore
-                        );
-                    }
-                    catch (OperationCanceledException) when (modoSilencioso)
-                    {
-                        System.Diagnostics.Debug.WriteLine("[GoogleDriveBackup] Modo silencioso: La autorizacion requeria interaccion de usuario. Omitido de forma segura.");
-                        return false;
-                    }
-                }
-
-                var driveService = new DriveService(new BaseClientService.Initializer
-                {
-                    HttpClientInitializer = credential,
-                    ApplicationName = ApplicationName
-                });
                 string? folderId = await ObtenerOCrearCarpetaDriveAsync(driveService, BackupFolderName);
 
                 var fileMetadata = new Google.Apis.Drive.v3.Data.File
@@ -198,6 +183,10 @@ namespace Punto_de_Venta.Servicios
             }
             finally
             {
+                if (File.Exists(tempDbSnapshot))
+                {
+                    try { File.Delete(tempDbSnapshot); } catch { }
+                }
                 if (File.Exists(tempZipPath))
                 {
                     try
@@ -416,6 +405,115 @@ namespace Punto_de_Venta.Servicios
             {
                 System.Diagnostics.Debug.WriteLine($"[GoogleDriveBackup] Error limpiando respaldos en Drive: {ex.Message}");
             }
+        }
+
+        private static async Task<DriveService?> CrearDriveServiceAsync(string sourceFolder, bool modoSilencioso)
+        {
+            string tokenStorePath = Path.Combine(sourceFolder, "GoogleDriveTokenStore_Secure");
+            var dpapiStore = new DpapiDataStore(tokenStorePath);
+
+            if (modoSilencioso && !dpapiStore.TieneTokenValido("user"))
+            {
+                System.Diagnostics.Debug.WriteLine("[GoogleDriveBackup] Modo silencioso: Sin token previo descifrable. Respaldo omitido.");
+                return null;
+            }
+
+            UserCredential credential;
+            var assembly = Assembly.GetExecutingAssembly();
+            using (Stream? stream = assembly.GetManifestResourceStream("Punto_de_Venta.credentials.json"))
+            {
+                if (stream == null)
+                {
+                    throw new FileNotFoundException("No se encontro 'credentials.json' incrustado en el proyecto.");
+                }
+
+                using var authCts = modoSilencioso ? new CancellationTokenSource(TimeSpan.FromSeconds(15)) : null;
+                var tokenCancel = authCts?.Token ?? CancellationToken.None;
+
+                try
+                {
+                    credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                        GoogleClientSecrets.FromStream(stream).Secrets,
+                        Scopes,
+                        "user",
+                        tokenCancel,
+                        dpapiStore
+                    );
+                }
+                catch (OperationCanceledException) when (modoSilencioso)
+                {
+                    System.Diagnostics.Debug.WriteLine("[GoogleDriveBackup] Modo silencioso: La autorizacion requeria interaccion de usuario. Omitido de forma segura.");
+                    return null;
+                }
+            }
+
+            return new DriveService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = ApplicationName
+            });
+        }
+
+        public static async Task<List<BackupService.RespaldoItem>> ListarRespaldosDriveAsync()
+        {
+            var lista = new List<BackupService.RespaldoItem>();
+            string sourceFolder = Punto_de_Venta.Datos.DatabaseHelper.DbFolder;
+            var driveService = await CrearDriveServiceAsync(sourceFolder, modoSilencioso: false);
+            if (driveService == null) return lista;
+
+            var folderReq = driveService.Files.List();
+            folderReq.Q = $"mimeType = 'application/vnd.google-apps.folder' and name = '{BackupFolderName}' and trashed = false";
+            folderReq.Spaces = "drive";
+            folderReq.Fields = "files(id, name)";
+            var folderRes = await folderReq.ExecuteAsync();
+            string? folderId = folderRes.Files?.FirstOrDefault()?.Id;
+            if (string.IsNullOrEmpty(folderId)) return lista;
+
+            var listReq = driveService.Files.List();
+            listReq.Q = $"'{folderId}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false";
+            listReq.Spaces = "drive";
+            listReq.Fields = "files(id, name, createdTime, size)";
+            listReq.OrderBy = "createdTime desc";
+            listReq.PageSize = 30;
+            var filesRes = await listReq.ExecuteAsync();
+
+            if (filesRes.Files != null)
+            {
+                foreach (var f in filesRes.Files)
+                {
+                    if (string.IsNullOrEmpty(f.Name) || !f.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) continue;
+                    lista.Add(new BackupService.RespaldoItem
+                    {
+                        Nombre = f.Name,
+                        Origen = "Google Drive",
+                        Fecha = f.CreatedTimeDateTimeOffset?.LocalDateTime ?? DateTime.Now,
+                        DriveFileId = f.Id ?? string.Empty,
+                        TamanoBytes = f.Size ?? 0
+                    });
+                }
+            }
+
+            return lista;
+        }
+
+        public static async Task<string> DescargarRespaldoDriveAsync(string fileId)
+        {
+            if (string.IsNullOrWhiteSpace(fileId))
+            {
+                throw new ArgumentException("ID de archivo de Drive invalido.");
+            }
+
+            string sourceFolder = Punto_de_Venta.Datos.DatabaseHelper.DbFolder;
+            var driveService = await CrearDriveServiceAsync(sourceFolder, modoSilencioso: false)
+                ?? throw new InvalidOperationException("No se pudo conectar con Google Drive.");
+
+            string tempZip = Path.Combine(Path.GetTempPath(), $"POS_DriveRestore_{Guid.NewGuid():N}.zip");
+            var request = driveService.Files.Get(fileId);
+            using (var fs = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await request.DownloadAsync(fs);
+            }
+            return tempZip;
         }
     }
 }

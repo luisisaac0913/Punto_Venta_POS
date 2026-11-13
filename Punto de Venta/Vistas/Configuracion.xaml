@@ -800,6 +800,25 @@
                                                       Checked="ChkRespaldoAuto_Changed" 
                                                       Unchecked="ChkRespaldoAuto_Changed"/>
                                         </Grid>
+
+                                        <Border Height="1" Background="{DynamicResource ThemeBorder}" Margin="0,12,0,12"/>
+
+                                        <StackPanel>
+                                            <TextBlock Text="{DynamicResource SettingsRestoreTitle}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                                            <TextBlock Text="{DynamicResource SettingsRestoreDesc}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,10" TextWrapping="Wrap" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="8" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="8" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <ComboBox x:Name="CmbCopiasDisponibles" Grid.Column="0" Height="36" VerticalContentAlignment="Center" FontSize="12" DisplayMemberPath="DisplayTexto" />
+                                                <Button x:Name="BtnCargarCopias" Grid.Column="2" Content="{DynamicResource SettingsRestoreSearchBtn}" Height="36" Padding="14,0" Click="BtnCargarCopias_Click" Style="{StaticResource FluentButtonSecondary}" />
+                                                <Button x:Name="BtnRestaurarCopia" Grid.Column="4" Content="{DynamicResource SettingsRestoreConfirmBtn}" Height="36" Padding="14,0" Click="BtnRestaurarCopia_Click" Style="{StaticResource FluentButtonPrimary}" Background="{DynamicResource ThemeAccent}" Foreground="White" FontWeight="Bold" />
+                                            </Grid>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

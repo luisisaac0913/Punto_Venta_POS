@@ -386,6 +386,22 @@ namespace Punto_de_Venta.Servicios
 
             if (!string.IsNullOrWhiteSpace(json))
             {
+                bool jsonValido = false;
+                try
+                {
+                    JObject.Parse(json);
+                    jsonValido = true;
+                }
+                catch
+                {
+                    jsonValido = false;
+                }
+
+                if (!jsonValido)
+                {
+                    return null;
+                }
+
                 bool pagado = InterpretarRespuestaPagado(json);
                 if (pagado)
                 {
@@ -412,7 +428,7 @@ namespace Punto_de_Venta.Servicios
                 var psi = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "curl.exe",
-                    Arguments = $"-s -k -H \"Accept: application/json\" \"{url}\"",
+                    Arguments = $"-s -f --connect-timeout 8 --max-time 15 -k -H \"Accept: application/json\" \"{url}\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -422,7 +438,7 @@ namespace Punto_de_Venta.Servicios
                 if (proc == null) return string.Empty;
                 string output = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
                 await proc.WaitForExitAsync().ConfigureAwait(false);
-                return output;
+                return proc.ExitCode == 0 ? output : string.Empty;
             }
             catch
             {

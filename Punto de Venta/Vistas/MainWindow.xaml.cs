@@ -86,6 +86,14 @@ namespace Punto_de_Venta
                     try { _inactivityTimer?.Stop(); } catch { }
                     try { _standbyClockTimer?.Stop(); } catch { }
                     try { _ctsAutoBackup.Cancel(); _ctsAutoBackup.Dispose(); } catch { }
+                    try
+                    {
+                        if (_vistasCache.TryGetValue("Activacion", out var vistaAct) && vistaAct is Activacion actView)
+                        {
+                            actView.DetenerActivacionPendiente();
+                        }
+                    }
+                    catch { }
 
                     try
                     {
@@ -117,17 +125,24 @@ namespace Punto_de_Venta
 
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
-                bool? estadoNube = await LicenciaService.VerificarEnNubeAsync().ConfigureAwait(false);
-                if (estadoNube.HasValue)
+                try
                 {
-                    Dispatcher.Invoke(() =>
+                    bool? estadoNube = await LicenciaService.VerificarEnNubeAsync().ConfigureAwait(false);
+                    if (estadoNube.HasValue && !_isShuttingDown)
                     {
-                        ActualizarEstadoLicenciaUI();
-                        if (_vistasCache.TryGetValue("Activacion", out var actView) && actView is Activacion act)
+                        Dispatcher.Invoke(() =>
                         {
-                            act.ActualizarEstadoVisual();
-                        }
-                    });
+                            if (_isShuttingDown) return;
+                            ActualizarEstadoLicenciaUI();
+                            if (_vistasCache.TryGetValue("Activacion", out var actView) && actView is Activacion act)
+                            {
+                                act.ActualizarEstadoVisual();
+                            }
+                        });
+                    }
+                }
+                catch
+                {
                 }
             });
         }
@@ -577,7 +592,8 @@ namespace Punto_de_Venta
         private void MainWindow_PreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
             UIElement modalActivo = null;
-            if (ExportarOverlay != null && ExportarOverlay.Visibility == Visibility.Visible) modalActivo = ExportarOverlay;
+            if (ImportarPreviewOverlay != null && ImportarPreviewOverlay.Visibility == Visibility.Visible) modalActivo = ImportarPreviewOverlay;
+            else if (ExportarOverlay != null && ExportarOverlay.Visibility == Visibility.Visible) modalActivo = ExportarOverlay;
             else if (ImportarOverlay != null && ImportarOverlay.Visibility == Visibility.Visible) modalActivo = ImportarOverlay;
 
             if (modalActivo != null)
@@ -592,6 +608,16 @@ namespace Punto_de_Venta
             {
                 OcultarPantallaReposo();
                 e.Handled = true;
+                return;
+            }
+
+            if (ImportarPreviewOverlay != null && ImportarPreviewOverlay.Visibility == Visibility.Visible)
+            {
+                if (e.Key == Key.Escape)
+                {
+                    CerrarImportarPreview();
+                    e.Handled = true;
+                }
                 return;
             }
 
@@ -720,11 +746,46 @@ namespace Punto_de_Venta
             if (FindName("ImportarOverlay") is Grid overlay) overlay.Visibility = Visibility.Collapsed;
         }
 
+        private void DescargarPlantillaImportacion_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Guardar plantilla de productos",
+                Filter = "Archivo Excel (*.xlsx)|*.xlsx|Archivo CSV (*.csv)|*.csv",
+                DefaultExt = ".xlsx",
+                AddExtension = true,
+                FileName = "Plantilla_Productos.xlsx"
+            };
+
+            if (dialog.ShowDialog(this) != true) return;
+
+            try
+            {
+                if (string.Equals(Path.GetExtension(dialog.FileName), ".xlsx", StringComparison.OrdinalIgnoreCase))
+                {
+                    ImportarExportarService.GenerarPlantillaProductosXlsx(dialog.FileName);
+                }
+                else
+                {
+                    ImportarExportarService.GenerarPlantillaProductosCsv(dialog.FileName);
+                }
+                ToastNotification.Show("Plantilla guardada exitosamente.", ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"No se pudo guardar la plantilla: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private string _archivoImportacionActual = string.Empty;
+        private ResultadoPreviewImportacion _previewImportacionActual = new();
+        private bool _previewImportacionInicializado = false;
+
         private void EjecutarImportacion_Click(object sender, RoutedEventArgs e)
         {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
-                Filter = "Archivos CSV (*.csv)|*.csv|Todos los archivos (*.*)|*.*",
+                Filter = "Archivos Excel y CSV (*.xlsx;*.csv)|*.xlsx;*.csv|Archivo Excel (*.xlsx)|*.xlsx|Archivos CSV (*.csv)|*.csv|Todos los archivos (*.*)|*.*",
                 Title = "Seleccionar lista de productos para importar a SQLite"
             };
 
@@ -732,174 +793,136 @@ namespace Punto_de_Venta
 
             try
             {
-                var lineasNuevas = File.ReadAllLines(openFileDialog.FileName, Encoding.UTF8);
+                _archivoImportacionActual = openFileDialog.FileName;
+                TxtPreviewArchivoNombre.Text = Path.GetFileName(_archivoImportacionActual);
+                _previewImportacionInicializado = false;
+                CmbModoImportacion.SelectedIndex = 0;
+                _previewImportacionInicializado = true;
 
-                if (lineasNuevas.Length == 0)
+                RecalcularPreviewImportacion();
+
+                if (FindName("ImportarPreviewOverlay") is Grid overlay)
                 {
-                    ToastNotification.Show("El archivo seleccionado esta vacio.", ToastType.Warning);
-                    return;
-                }
-
-                string encabezado = lineasNuevas[0].ToLowerInvariant();
-                bool esFormatoEleventa = encabezado.Contains("descripcion") || encabezado.Contains("precio venta") || encabezado.Contains("departamento");
-
-                var productosExistentes = ProductoDB.Load();
-                var catalogoPorId = productosExistentes.ToDictionary(p => p.Id);
-
-                int maxId = catalogoPorId.Keys.DefaultIfEmpty(0).Max();
-                int importadosCount = 0;
-                int omitidosCount = 0;
-                bool esPrimeraLinea = true;
-
-                foreach (var linea in lineasNuevas)
-                {
-                    if (string.IsNullOrWhiteSpace(linea)) continue;
-
-                    if (esPrimeraLinea)
-                    {
-                        esPrimeraLinea = false;
-                        continue;
-                    }
-
-                    var prod = ParsearLineaProducto(linea, esFormatoEleventa);
-                    if (prod == null)
-                    {
-                        omitidosCount++;
-                        continue;
-                    }
-
-                    if (prod.Id <= 0 || !catalogoPorId.ContainsKey(prod.Id))
-                    {
-                        var existentePorCodigo = catalogoPorId.Values.FirstOrDefault(p => !string.IsNullOrEmpty(p.Codigo) && p.Codigo == prod.Codigo);
-
-                        if (existentePorCodigo != null)
-                        {
-                            prod.Id = existentePorCodigo.Id;
-                            catalogoPorId[prod.Id] = prod;
-                        }
-                        else
-                        {
-                            maxId++;
-                            prod.Id = maxId;
-                            catalogoPorId[prod.Id] = prod;
-                        }
-                    }
-                    else
-                    {
-                        catalogoPorId[prod.Id] = prod;
-                    }
-                    importadosCount++;
-                }
-
-                if (importadosCount > 0)
-                {
-                    ProductoDB.Save(catalogoPorId.Values);
-                    CerrarImportar();
-
-                    if (omitidosCount > 0)
-                    {
-                        ToastNotification.Show($"Se importaron {importadosCount} productos. Se omitieron {omitidosCount} filas con formato incorrecto.", ToastType.Info);
-                    }
-                    else
-                    {
-                        ToastNotification.Show($"Se importaron y guardaron {importadosCount} productos exitosamente.", ToastType.Success);
-                    }
-                }
-                else
-                {
-                    ToastNotification.Show("No se detectó ningún producto válido. Verifica que el archivo sea un CSV correcto.", ToastType.Warning);
+                    overlay.Visibility = Visibility.Visible;
+                    overlay.Focus();
                 }
             }
             catch (Exception ex)
             {
-                ToastNotification.Show($"Error crítico al leer el archivo: {ex.Message}", ToastType.Error);
+                ToastNotification.Show($"Error al leer el archivo: {ex.Message}", ToastType.Error);
             }
         }
 
-        private static Producto? ParsearLineaProducto(string linea, bool esEleventa)
+        private ModoImportacion ObtenerModoImportacionSeleccionado()
         {
-            var partes = linea.Split(',');
-            if (partes.Length < 4)
+            if (CmbModoImportacion.SelectedItem is ComboBoxItem item && item.Tag is string tag)
             {
-                partes = linea.Split(';');
-                if (partes.Length < 4) return null;
-            }
-
-            for (int i = 0; i < partes.Length; i++)
-            {
-                partes[i] = partes[i].Trim(' ', '"');
-            }
-
-            int id = 0;
-            string codigo, nombre, categoria = "General";
-            decimal costo = 0m, ganancia = 0m, precio = 0m, stock = 0m;
-            bool pedirCantidad = false, seVendePorPeso = false, contarComoUnaPieza = false;
-
-            if (esEleventa)
-            {
-                codigo = partes[0];
-                nombre = partes[1];
-                if (string.IsNullOrWhiteSpace(nombre)) return null;
-
-                costo = partes.Length > 2 ? ParseDecimalFlexible(partes[2]) : 0m;
-                precio = partes.Length > 3 ? ParseDecimalFlexible(partes[3]) : 0m;
-                ganancia = precio - costo; 
-                categoria = partes.Length > 5 && !string.IsNullOrWhiteSpace(partes[5]) ? partes[5] : "General";
-                stock = partes.Length > 6 ? ParseDecimalFlexible(partes[6]) : 0m;
-            }
-            else
-            {
-                int.TryParse(partes[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out id);
-                codigo = partes[1];
-                nombre = partes[2];
-
-                if (string.IsNullOrWhiteSpace(nombre)) return null;
-
-                if (partes.Length >= 7)
+                return tag switch
                 {
-                    categoria = string.IsNullOrWhiteSpace(partes[3]) ? "General" : partes[3];
-                    costo = ParseDecimalFlexible(partes[4]);
-                    ganancia = ParseDecimalFlexible(partes[5]);
-                    precio = ParseDecimalFlexible(partes[6]);
-                }
-                if (partes.Length >= 8) decimal.TryParse(partes[7], NumberStyles.Any, CultureInfo.InvariantCulture, out stock);
-                if (partes.Length >= 9) bool.TryParse(partes[8], out pedirCantidad);
-                if (partes.Length >= 10) bool.TryParse(partes[9], out seVendePorPeso);
-                if (partes.Length >= 11) bool.TryParse(partes[10], out contarComoUnaPieza);
+                    "SoloNuevos" => ModoImportacion.SoloNuevos,
+                    "SumarStockYCrear" => ModoImportacion.SumarStockYCrear,
+                    _ => ModoImportacion.CrearYActualizar
+                };
             }
-            if (precio == 0m && (costo > 0m || ganancia > 0m))
-            {
-                precio = costo + ganancia;
-            }
-
-            return new Producto
-            {
-                Id = id,
-                Codigo = codigo,
-                Nombre = nombre,
-                Categoria = categoria,
-                Costo = costo,
-                Ganancia = ganancia,
-                Precio = precio,
-                Stock = stock,
-                PedirCantidadAlCobrar = pedirCantidad,
-                SeVendePorPeso = seVendePorPeso,
-                ContarComoUnaPieza = contarComoUnaPieza
-            };
+            return ModoImportacion.CrearYActualizar;
         }
 
-        private static decimal ParseDecimalFlexible(string text)
+        private void RecalcularPreviewImportacion()
         {
-            const NumberStyles styles = NumberStyles.Number | NumberStyles.AllowDecimalPoint;
+            if (!_previewImportacionInicializado || string.IsNullOrWhiteSpace(_archivoImportacionActual)) return;
 
-            text = text.Replace("$", "").Trim();
-
-            if (decimal.TryParse(text, styles, CultureInfo.InvariantCulture, out var val) ||
-                decimal.TryParse(text, styles, CultureInfo.GetCultureInfo("es-MX"), out val))
+            try
             {
-                return val;
+                _previewImportacionActual = ImportarExportarService.PrevisualizarImportacion(_archivoImportacionActual, LicenciaService.EsPremium(), ObtenerModoImportacionSeleccionado());
+                GridImportPreview.ItemsSource = _previewImportacionActual.Filas;
+
+                TxtResumenNuevos.Text = $"Nuevos: {_previewImportacionActual.Creados}";
+                TxtResumenActualizar.Text = $"Actualizar: {_previewImportacionActual.Actualizados}";
+                TxtResumenOmitidos.Text = $"Omitidos: {_previewImportacionActual.Omitidos}";
+                TxtResumenRechazados.Text = $"Rechazados: {_previewImportacionActual.Rechazados}";
+
+                BtnExportarErrores.Visibility = _previewImportacionActual.Errores.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+                BtnConfirmarImportacion.IsEnabled = _previewImportacionActual.ProductosParaGuardar.Count > 0;
             }
-            return 0m;
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"Error al analizar archivo: {ex.Message}", ToastType.Error);
+                BtnConfirmarImportacion.IsEnabled = false;
+            }
+        }
+
+        private void CmbModoImportacion_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            RecalcularPreviewImportacion();
+        }
+
+        private void BtnExportarErrores_Click(object sender, RoutedEventArgs e)
+        {
+            if (_previewImportacionActual.Errores.Count == 0) return;
+
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Guardar reporte de errores de importacion",
+                Filter = "Archivo de texto (*.txt)|*.txt",
+                DefaultExt = ".txt",
+                AddExtension = true,
+                FileName = $"Errores_Importacion_{DateTime.Now:yyyyMMdd_HHmm}.txt"
+            };
+
+            if (dialog.ShowDialog(this) != true) return;
+
+            try
+            {
+                File.WriteAllLines(dialog.FileName, _previewImportacionActual.Errores, new UTF8Encoding(true));
+                ToastNotification.Show("Reporte de errores guardado.", ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"No se pudo guardar el reporte: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void BtnConfirmarImportacion_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var res = ImportarExportarService.ConfirmarImportacion(_previewImportacionActual);
+                CerrarImportarPreview();
+                CerrarImportar();
+                ToastNotification.Show($"Importacion lista: {res.Creados} nuevos, {res.Actualizados} actualizados, {res.Rechazados} rechazados.", res.Rechazados > 0 ? ToastType.Info : ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show($"Error al guardar en base de datos: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void BtnCancelarPreview_Click(object sender, RoutedEventArgs e)
+        {
+            CerrarImportarPreview();
+        }
+
+        private void ImportarPreviewOverlay_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (FindName("ImportarPreviewOverlay") is Grid overlay && ReferenceEquals(e.OriginalSource, overlay))
+            {
+                CerrarImportarPreview();
+            }
+        }
+
+        private void ImportarPreviewOverlay_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                CerrarImportarPreview();
+                e.Handled = true;
+            }
+        }
+
+        private void CerrarImportarPreview()
+        {
+            if (FindName("ImportarPreviewOverlay") is Grid overlay) overlay.Visibility = Visibility.Collapsed;
+            GridImportPreview.ItemsSource = null;
         }
         #endregion
 
@@ -1014,6 +1037,108 @@ namespace Punto_de_Venta
             try
             {
                 ExportarPdf("Libreta_Deudores.pdf", path => GenerarPdfPrestamos(PrestamoDB.Load(), path));
+            }
+            catch (Exception exception)
+            {
+                MostrarErrorExportacion(exception);
+            }
+        }
+
+        private bool UsarFormatoExcel()
+        {
+            return CmbFormatoTabla?.SelectedItem is ComboBoxItem item &&
+                   string.Equals(item.Tag?.ToString(), "xlsx", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void ExportarTabla(string baseName, Action<string> generateXlsxAction, Action<string> generateCsvAction)
+        {
+            bool esExcel = UsarFormatoExcel();
+            string ext = esExcel ? ".xlsx" : ".csv";
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = esExcel ? "Guardar archivo Excel (.xlsx)" : "Guardar archivo CSV",
+                Filter = esExcel ? "Archivo Excel (*.xlsx)|*.xlsx" : "Archivo CSV (*.csv)|*.csv",
+                DefaultExt = ext,
+                AddExtension = true,
+                FileName = $"{baseName}{ext}"
+            };
+
+            try
+            {
+                if (dialog.ShowDialog(this) == true)
+                {
+                    if (esExcel) generateXlsxAction(dialog.FileName);
+                    else generateCsvAction(dialog.FileName);
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dialog.FileName) { UseShellExecute = true });
+                    ToastNotification.Show(esExcel ? "Archivo Excel exportado exitosamente" : "Archivo CSV exportado exitosamente", ToastType.Success);
+                }
+            }
+            catch (Exception exception)
+            {
+                MostrarErrorExportacion(exception);
+            }
+            finally
+            {
+                CerrarExportar();
+            }
+        }
+
+        private void ExportarProductosCsv_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var prods = ProductoDB.Load();
+                ExportarTabla(
+                    $"Catalogo_Productos_{DateTime.Now:yyyy-MM-dd}",
+                    path => ImportarExportarService.ExportarProductosXlsx(prods, path),
+                    path => ImportarExportarService.ExportarProductosCsv(prods, path));
+            }
+            catch (Exception exception)
+            {
+                MostrarErrorExportacion(exception);
+            }
+        }
+
+        private void ExportarVentasCsv_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var sales = VentaDB.Load();
+                ExportarTabla(
+                    $"Ventas_{DateTime.Now:yyyy-MM-dd}",
+                    path => ImportarExportarService.ExportarVentasXlsx(sales, path),
+                    path => ImportarExportarService.ExportarVentasCsv(sales, path));
+            }
+            catch (Exception exception)
+            {
+                MostrarErrorExportacion(exception);
+            }
+        }
+
+        private void ExportarCortesCsv_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                ExportarTabla(
+                    $"Cortes_Caja_{DateTime.Now:yyyy-MM-dd}",
+                    ImportarExportarService.ExportarCortesXlsx,
+                    ImportarExportarService.ExportarCortesCsv);
+            }
+            catch (Exception exception)
+            {
+                MostrarErrorExportacion(exception);
+            }
+        }
+
+        private void ExportarPrestamosCsv_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var debtors = PrestamoDB.Load();
+                ExportarTabla(
+                    $"Prestamos_{DateTime.Now:yyyy-MM-dd}",
+                    path => ImportarExportarService.ExportarPrestamosXlsx(debtors, path),
+                    path => ImportarExportarService.ExportarPrestamosCsv(debtors, path));
             }
             catch (Exception exception)
             {

@@ -98,6 +98,14 @@ namespace Punto_de_Venta.Datos
             return Convert.ToInt32(cmd.ExecuteScalar() ?? 1);
         }
 
+        internal static int ObtenerSiguienteIdInternal(SqliteConnection conn, SqliteTransaction tr)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.Transaction = tr;
+            cmd.CommandText = "SELECT COALESCE(MAX(Id), 0) + 1 FROM Ventas;";
+            return Convert.ToInt32(cmd.ExecuteScalar() ?? 1);
+        }
+
         public static void Insert(Venta sale)
         {
             using var conn = DatabaseHelper.GetConnection();
@@ -121,7 +129,7 @@ namespace Punto_de_Venta.Datos
             try
             {
                 InsertInternal(conn, tr, sale);
-                ActualizarStockInternal(conn, tr, productosModificados);
+                DescontarStockInternal(conn, tr, sale.Productos);
                 tr.Commit();
             }
             catch
@@ -139,7 +147,7 @@ namespace Punto_de_Venta.Datos
             {
                 PrestamoDB.SaveInternal(conn, tr, debtors);
                 InsertInternal(conn, tr, sale);
-                ActualizarStockInternal(conn, tr, productosModificados);
+                DescontarStockInternal(conn, tr, sale.Productos);
                 tr.Commit();
             }
             catch
@@ -173,6 +181,23 @@ namespace Punto_de_Venta.Datos
             }
         }
 
+        private static void DescontarStockInternal(SqliteConnection conn, SqliteTransaction tr, IEnumerable<DetalleVenta> vendidos)
+        {
+            using var updateProd = conn.CreateCommand();
+            updateProd.Transaction = tr;
+            updateProd.CommandText = "UPDATE Productos SET Stock = MAX(0, Stock - @cantidad) WHERE Id = @id;";
+            var pId = updateProd.Parameters.Add("@id", SqliteType.Integer);
+            var pCant = updateProd.Parameters.Add("@cantidad", SqliteType.Real);
+
+            foreach (var item in vendidos)
+            {
+                if (item.ProductoId <= 0 || item.Cantidad <= 0) continue;
+                pId.Value = item.ProductoId;
+                pCant.Value = Convert.ToDouble(item.Cantidad);
+                updateProd.ExecuteNonQuery();
+            }
+        }
+
         private static void ActualizarStockInternal(SqliteConnection conn, SqliteTransaction tr, IEnumerable<Producto> productosModificados)
         {
             using var updateProd = conn.CreateCommand();
@@ -199,7 +224,7 @@ namespace Punto_de_Venta.Datos
             cmd.ExecuteNonQuery();
         }
 
-        private static void InsertInternal(SqliteConnection conn, SqliteTransaction tr, Venta sale)
+        internal static void InsertInternal(SqliteConnection conn, SqliteTransaction tr, Venta sale)
         {
             string metodoGuardar = sale.MetodoPago ?? "Efectivo";
             if (metodoGuardar == "Mixto")

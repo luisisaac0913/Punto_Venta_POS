@@ -62,6 +62,8 @@ namespace Punto_de_Venta
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => { ClockText.Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US")); };
             _clockTimer.Start();
+            Unloaded += (_, _) => _clockTimer.Stop();
+            Loaded += (_, _) => { if (!_clockTimer.IsEnabled) _clockTimer.Start(); };
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -674,8 +676,6 @@ namespace Punto_de_Venta
             }
 
             var totalEnCajon = fondo + cashSales + entradas - salidas;
-
-            if (totalEnCajon == 0 && cashSales == 0 && entradas == 0 && salidas == 0 && fondo == 0) { ToastNotification.Show("El turno esta en ceros. No hay ventas ni movimientos.", ToastType.Info); return; }
 
             var modalCiego = new CorteCiegoModal(totalEnCajon) { Owner = Application.Current.MainWindow };
             modalCiego.ShowDialog();

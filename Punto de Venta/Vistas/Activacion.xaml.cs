@@ -56,6 +56,8 @@ namespace Punto_de_Venta
         private string _hwid = string.Empty;
         private string _initPointUrl = string.Empty;
         private CancellationTokenSource? _pollingCts;
+        private CancellationTokenSource? _pagoCts;
+        private bool _pagoEnCurso = false;
         private bool _estaPollingActivo = false;
         private bool _animacionAcreditadoFinalizada = false;
         private bool _activacionEnProceso = false;
@@ -138,6 +140,8 @@ namespace Punto_de_Venta
                     bool eraPremium = LicenciaService.EsPremium();
                     bool? estadoNube = await LicenciaService.VerificarEnNubeAsync().ConfigureAwait(true);
 
+                    if (!IsLoaded) return;
+
                     if (estadoNube == true && !eraPremium)
                     {
                         CompletarActivacionExitosa();
@@ -155,9 +159,33 @@ namespace Punto_de_Venta
             }
         }
 
+        public void DetenerActivacionPendiente()
+        {
+            CancelarPagoEnCurso();
+            DetenerPolling();
+        }
+
         private void Activacion_Unloaded(object sender, RoutedEventArgs e)
         {
-            DetenerPolling();
+            DetenerActivacionPendiente();
+            PanelEspera.Visibility = Visibility.Collapsed;
+            PanelPago.Visibility = Visibility.Visible;
+            BtnPagarMercadoPago.IsEnabled = true;
+        }
+
+        private void CancelarPagoEnCurso()
+        {
+            _pagoEnCurso = false;
+            if (_pagoCts != null)
+            {
+                try
+                {
+                    _pagoCts.Cancel();
+                    _pagoCts.Dispose();
+                }
+                catch { }
+                _pagoCts = null;
+            }
         }
 
         public void ActualizarEstadoVisual()
@@ -178,6 +206,12 @@ namespace Punto_de_Venta
 
         private async void BtnPagarMercadoPago_Click(object sender, RoutedEventArgs e)
         {
+            if (_pagoEnCurso) return;
+
+            CancelarPagoEnCurso();
+            _pagoCts = new CancellationTokenSource();
+            var ct = _pagoCts.Token;
+            _pagoEnCurso = true;
             BtnPagarMercadoPago.IsEnabled = false;
 
             try
@@ -192,7 +226,9 @@ namespace Punto_de_Venta
                 TxtEstadoEspera.Text = "Verificando estatus previo en el servidor...";
                 BtnReabrirLink.Visibility = Visibility.Collapsed;
 
-                bool yaPagado = await ConsultarEstatusPagoAsync().ConfigureAwait(true);
+                bool yaPagado = await ConsultarEstatusPagoAsync(ct).ConfigureAwait(true);
+                if (ct.IsCancellationRequested || !IsLoaded) return;
+
                 if (yaPagado)
                 {
                     CompletarActivacionExitosa();
@@ -217,21 +253,27 @@ namespace Punto_de_Venta
 
                 try
                 {
-                    using var response = await _httpClient.PostAsync(AzureFunctionGenerarPagoUrl, content).ConfigureAwait(true);
+                    using var response = await _httpClient.PostAsync(AzureFunctionGenerarPagoUrl, content, ct).ConfigureAwait(true);
                     if (response.IsSuccessStatusCode)
                     {
-                        responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(true);
+                        responseString = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(true);
                     }
                     else
                     {
-                        string bodyError = await response.Content.ReadAsStringAsync().ConfigureAwait(true);
+                        string bodyError = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(true);
                         errores.Add($"[SocketsHttp] HTTP {(int)response.StatusCode} ({response.StatusCode}): {bodyError}");
                     }
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    return;
                 }
                 catch (Exception ex)
                 {
                     errores.Add($"[SocketsHttp] {FormatearExcepcionCompleta(ex)}");
                 }
+
+                if (ct.IsCancellationRequested || !IsLoaded) return;
 
                 if (string.IsNullOrWhiteSpace(responseString))
                 {
@@ -239,16 +281,20 @@ namespace Punto_de_Venta
                     {
                         using var fallbackClient = CrearHttpClientFallback(15);
                         using var fallbackContent = new StringContent(jsonBody, Encoding.UTF8, "application/json");
-                        using var responseFallback = await fallbackClient.PostAsync(AzureFunctionGenerarPagoUrl, fallbackContent).ConfigureAwait(true);
+                        using var responseFallback = await fallbackClient.PostAsync(AzureFunctionGenerarPagoUrl, fallbackContent, ct).ConfigureAwait(true);
                         if (responseFallback.IsSuccessStatusCode)
                         {
-                            responseString = await responseFallback.Content.ReadAsStringAsync().ConfigureAwait(true);
+                            responseString = await responseFallback.Content.ReadAsStringAsync(ct).ConfigureAwait(true);
                         }
                         else
                         {
-                            string bodyError = await responseFallback.Content.ReadAsStringAsync().ConfigureAwait(true);
+                            string bodyError = await responseFallback.Content.ReadAsStringAsync(ct).ConfigureAwait(true);
                             errores.Add($"[HttpHandler] HTTP {(int)responseFallback.StatusCode} ({responseFallback.StatusCode}): {bodyError}");
                         }
+                    }
+                    catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                    {
+                        return;
                     }
                     catch (Exception ex)
                     {
@@ -256,21 +302,29 @@ namespace Punto_de_Venta
                     }
                 }
 
+                if (ct.IsCancellationRequested || !IsLoaded) return;
+
                 if (string.IsNullOrWhiteSpace(responseString))
                 {
                     try
                     {
-                        responseString = await EjecutarPostConCurlAsync(AzureFunctionGenerarPagoUrl, jsonBody).ConfigureAwait(true);
+                        responseString = await EjecutarPostConCurlAsync(AzureFunctionGenerarPagoUrl, jsonBody, ct).ConfigureAwait(true);
                         if (string.IsNullOrWhiteSpace(responseString))
                         {
                             errores.Add("[Curl] Respuesta vacia sin codigo de error.");
                         }
+                    }
+                    catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                    {
+                        return;
                     }
                     catch (Exception ex)
                     {
                         errores.Add($"[Curl] {FormatearExcepcionCompleta(ex)}");
                     }
                 }
+
+                if (ct.IsCancellationRequested || !IsLoaded) return;
 
                 if (string.IsNullOrWhiteSpace(responseString))
                 {
@@ -282,10 +336,11 @@ namespace Punto_de_Venta
 
                 var data = JObject.Parse(responseString);
 
-                _initPointUrl = data["init_point"]?.ToString() ?? string.Empty;
+                _initPointUrl = data["init_point"]?.ToString()?.Trim() ?? string.Empty;
 
-                if (string.IsNullOrWhiteSpace(_initPointUrl))
+                if (!EsUrlPagoValida(_initPointUrl))
                 {
+                    _initPointUrl = string.Empty;
                     string mensajeServidor = data["error"]?.ToString() ?? data["message"]?.ToString() ?? responseString;
                     throw new InvalidOperationException($"La respuesta del servidor no contiene un enlace valido: {mensajeServidor}");
                 }
@@ -296,8 +351,13 @@ namespace Punto_de_Venta
                 AbrirEnlaceEnNavegador(_initPointUrl);
                 IniciarPollingVerificacion();
             }
+            catch (OperationCanceledException)
+            {
+            }
             catch (Exception ex)
             {
+                if (ct.IsCancellationRequested || !IsLoaded) return;
+
                 string mensajeDetalle = FormatearExcepcionCompleta(ex);
 
                 CustomMessageBox.Show(
@@ -311,10 +371,25 @@ namespace Punto_de_Venta
                 BtnPagarMercadoPago.IsEnabled = true;
                 BtnReabrirLink.Visibility = Visibility.Visible;
             }
+            finally
+            {
+                _pagoEnCurso = false;
+            }
+        }
+
+        private static bool EsUrlPagoValida(string url)
+        {
+            return Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps;
         }
 
         private void AbrirEnlaceEnNavegador(string url)
         {
+            if (!EsUrlPagoValida(url))
+            {
+                ToastNotification.Show("El enlace de pago no es una URL HTTPS valida.", ToastType.Error);
+                return;
+            }
+
             try
             {
                 Process.Start(new ProcessStartInfo
@@ -426,12 +501,12 @@ namespace Punto_de_Venta
             return sb.ToString();
         }
 
-        private static async Task<string> EjecutarPostConCurlAsync(string url, string jsonBody)
+        private static async Task<string> EjecutarPostConCurlAsync(string url, string jsonBody, CancellationToken cancellationToken = default)
         {
             var psi = new ProcessStartInfo
             {
                 FileName = "curl.exe",
-                Arguments = $"-sS -k -X POST -H \"Content-Type: application/json\" -H \"Accept: application/json\" -d \"{jsonBody.Replace("\"", "\\\"")}\" \"{url}\"",
+                Arguments = $"-sS --connect-timeout 8 --max-time 15 -k -X POST -H \"Content-Type: application/json\" -H \"Accept: application/json\" -d \"{jsonBody.Replace("\"", "\\\"")}\" \"{url}\"",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -440,7 +515,7 @@ namespace Punto_de_Venta
             using var proc = Process.Start(psi) ?? throw new InvalidOperationException("No se pudo iniciar curl.exe");
             Task<string> outTask = proc.StandardOutput.ReadToEndAsync();
             Task<string> errTask = proc.StandardError.ReadToEndAsync();
-            await proc.WaitForExitAsync().ConfigureAwait(false);
+            await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
             string output = await outTask.ConfigureAwait(false);
             string errorOutput = await errTask.ConfigureAwait(false);
 
@@ -455,14 +530,14 @@ namespace Punto_de_Venta
             return output;
         }
 
-        private static async Task<string> EjecutarGetConCurlAsync(string url)
+        private static async Task<string> EjecutarGetConCurlAsync(string url, CancellationToken cancellationToken = default)
         {
             try
             {
                 var psi = new ProcessStartInfo
                 {
                     FileName = "curl.exe",
-                    Arguments = $"-s -k -H \"Accept: application/json\" \"{url}\"",
+                    Arguments = $"-s -f --connect-timeout 8 --max-time 15 -k -H \"Accept: application/json\" \"{url}\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -471,8 +546,8 @@ namespace Punto_de_Venta
                 using var proc = Process.Start(psi);
                 if (proc == null) return string.Empty;
                 string output = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-                await proc.WaitForExitAsync().ConfigureAwait(false);
-                return output;
+                await proc.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+                return proc.ExitCode == 0 ? output : string.Empty;
             }
             catch
             {
@@ -512,6 +587,7 @@ namespace Punto_de_Venta
                             _estaPollingActivo = false;
                             await Dispatcher.InvokeAsync(() =>
                             {
+                                if (cancellationToken.IsCancellationRequested || !IsLoaded) return;
                                 CompletarActivacionExitosa();
                             });
                             break;
@@ -675,6 +751,7 @@ namespace Punto_de_Venta
 
         private void BtnCancelarEspera_Click(object sender, RoutedEventArgs e)
         {
+            CancelarPagoEnCurso();
             DetenerPolling();
             PanelEspera.Visibility = Visibility.Collapsed;
             PanelPago.Visibility = Visibility.Visible;

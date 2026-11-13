@@ -1,0 +1,94 @@
+<Window x:Class="Punto_de_Venta.Vistas.ActualizacionModal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Actualizacion"
+        Width="440"
+        SizeToContent="Height"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource ThemeSurfaceBackground}"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <Border Background="{DynamicResource ThemeSurfaceBackground}"
+            BorderBrush="{DynamicResource ThemeBorder}"
+            BorderThickness="1"
+            Padding="24">
+        <StackPanel>
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="{DynamicResource UpdateTitle}"
+                           FontFamily="Segoe UI Variable, Segoe UI"
+                           FontSize="17"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource ThemeTextForeground}"
+                           VerticalAlignment="Center" />
+                <Border Grid.Column="1"
+                        Background="{DynamicResource ThemeAccent}"
+                        CornerRadius="12"
+                        Padding="10,4"
+                        VerticalAlignment="Center">
+                    <TextBlock x:Name="TxtSegundosBadge"
+                               Text="15s"
+                               FontFamily="Segoe UI Variable, Segoe UI"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               Foreground="White" />
+                </Border>
+            </Grid>
+
+            <TextBlock x:Name="TxtSubtitulo"
+                       Text=""
+                       FontFamily="Segoe UI Variable, Segoe UI"
+                       FontSize="13"
+                       Foreground="{DynamicResource ThemeMutedForeground}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8" />
+
+            <TextBlock x:Name="TxtContador"
+                       Text=""
+                       FontFamily="Segoe UI Variable, Segoe UI"
+                       FontSize="14"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource ThemeTextForeground}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,14" />
+
+            <ProgressBar x:Name="BarraTiempo"
+                         Minimum="0"
+                         Maximum="15"
+                         Value="15"
+                         Height="6"
+                         Foreground="{DynamicResource ThemeAccent}"
+                         Background="{DynamicResource ThemeInputBackground}"
+                         BorderThickness="0"
+                         Margin="0,0,0,18" />
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0"
+                        Content="{DynamicResource UpdateLaterBtn}"
+                        Style="{StaticResource FluentButtonSecondary}"
+                        Click="BtnAlCerrar_Click" />
+                <Button Grid.Column="2"
+                        Content="{DynamicResource UpdateNowBtn}"
+                        Style="{StaticResource FluentButtonPrimary}"
+                        Click="BtnActualizarAhora_Click" />
+            </Grid>
+        </StackPanel>
+    </Border>
+</Window>
+
