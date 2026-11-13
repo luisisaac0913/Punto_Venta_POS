@@ -24,31 +24,36 @@ namespace Punto_de_Venta
             using var tr = conn.BeginTransaction();
             try
             {
-                using (var insertMovCmd = conn.CreateCommand())
-                {
-                    insertMovCmd.Transaction = tr;
-                    insertMovCmd.CommandText = @"INSERT INTO MovimientosCaja (FechaHora, Tipo, Monto, Concepto, CorteCajaId) VALUES (@fecha, @tipo, @monto, @concepto, @corteId);";
-                    insertMovCmd.Parameters.AddWithValue("@fecha", DateTime.Now.ToString("o", CultureInfo.InvariantCulture));
-                    insertMovCmd.Parameters.AddWithValue("@tipo", tipo);
-                    insertMovCmd.Parameters.AddWithValue("@monto", Convert.ToDouble(monto));
-                    insertMovCmd.Parameters.AddWithValue("@concepto", concepto);
-                    insertMovCmd.Parameters.AddWithValue("@corteId", turnoActivo.Id);
-                    insertMovCmd.ExecuteNonQuery();
-                }
-
-                using (var updateCorteCmd = conn.CreateCommand())
-                {
-                    updateCorteCmd.Transaction = tr;
-                    if (tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase)) updateCorteCmd.CommandText = @"UPDATE CortesCaja SET EntradasEfectivo = EntradasEfectivo + @monto, TotalEsperado = TotalEsperado + @monto WHERE Id = @id;";
-                    else if (tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase)) updateCorteCmd.CommandText = @"UPDATE CortesCaja SET SalidasEfectivo = SalidasEfectivo + @monto, TotalEsperado = TotalEsperado - @monto WHERE Id = @id;";
-
-                    updateCorteCmd.Parameters.AddWithValue("@monto", Convert.ToDouble(monto));
-                    updateCorteCmd.Parameters.AddWithValue("@id", turnoActivo.Id);
-                    if (!string.IsNullOrEmpty(updateCorteCmd.CommandText)) updateCorteCmd.ExecuteNonQuery();
-                }
+                RegistrarMovimientoEnTransaccion(conn, tr, turnoActivo.Id, tipo, monto, concepto);
                 tr.Commit();
             }
             catch { tr.Rollback(); throw; }
+        }
+
+        internal static void RegistrarMovimientoEnTransaccion(SqliteConnection conn, SqliteTransaction tr, int corteId, string tipo, decimal monto, string concepto)
+        {
+            using (var insertMovCmd = conn.CreateCommand())
+            {
+                insertMovCmd.Transaction = tr;
+                insertMovCmd.CommandText = @"INSERT INTO MovimientosCaja (FechaHora, Tipo, Monto, Concepto, CorteCajaId) VALUES (@fecha, @tipo, @monto, @concepto, @corteId);";
+                insertMovCmd.Parameters.AddWithValue("@fecha", DateTime.Now.ToString("o", CultureInfo.InvariantCulture));
+                insertMovCmd.Parameters.AddWithValue("@tipo", tipo);
+                insertMovCmd.Parameters.AddWithValue("@monto", Convert.ToDouble(monto));
+                insertMovCmd.Parameters.AddWithValue("@concepto", concepto);
+                insertMovCmd.Parameters.AddWithValue("@corteId", corteId);
+                insertMovCmd.ExecuteNonQuery();
+            }
+
+            using (var updateCorteCmd = conn.CreateCommand())
+            {
+                updateCorteCmd.Transaction = tr;
+                if (tipo.Equals("Entrada", StringComparison.OrdinalIgnoreCase)) updateCorteCmd.CommandText = @"UPDATE CortesCaja SET EntradasEfectivo = EntradasEfectivo + @monto, TotalEsperado = TotalEsperado + @monto WHERE Id = @id;";
+                else if (tipo.Equals("Salida", StringComparison.OrdinalIgnoreCase) || tipo.Equals("Gasto", StringComparison.OrdinalIgnoreCase)) updateCorteCmd.CommandText = @"UPDATE CortesCaja SET SalidasEfectivo = SalidasEfectivo + @monto, TotalEsperado = TotalEsperado - @monto WHERE Id = @id;";
+
+                updateCorteCmd.Parameters.AddWithValue("@monto", Convert.ToDouble(monto));
+                updateCorteCmd.Parameters.AddWithValue("@id", corteId);
+                if (!string.IsNullOrEmpty(updateCorteCmd.CommandText)) updateCorteCmd.ExecuteNonQuery();
+            }
         }
 
         public static CorteCaja ObtenerTurnoActivo()
@@ -126,7 +131,7 @@ namespace Punto_de_Venta
 
                 using var cmdCierre = conn.CreateCommand();
                 cmdCierre.Transaction = tr;
-                cmdCierre.CommandText = @"UPDATE CortesCaja SET FechaHoraCierre = @fechaCierre, Estado = 'Cerrado', VentasEfectivo = @ventasEfectivo, EntradasEfectivo = @entradas, SalidasEfectivo = @salidas, TotalEsperado = @esperado, TotalContado = @contado, Observaciones = @obs WHERE Id = @idTurno;";
+                cmdCierre.CommandText = @"UPDATE CortesCaja SET FechaHoraCierre = @fechaCierre, Estado = 'Cerrado', VentasEfectivo = @ventasEfectivo, EntradasEfectivo = @entradas, SalidasEfectivo = @salidas, TotalEsperado = @esperado, TotalContado = @contado, Observaciones = @obs WHERE Id = @idTurno AND Estado = 'Abierto';";
                 cmdCierre.Parameters.AddWithValue("@fechaCierre", DateTime.Now.ToString("o", CultureInfo.InvariantCulture));
                 cmdCierre.Parameters.AddWithValue("@ventasEfectivo", Convert.ToDouble(ventasEfectivo));
                 cmdCierre.Parameters.AddWithValue("@entradas", Convert.ToDouble(totalEntradas));

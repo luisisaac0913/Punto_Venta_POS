@@ -160,7 +160,7 @@
                         </Border>
                     </Grid>
 
-                    <Button Grid.Row="2" Style="{StaticResource FluentButtonPrimary}" Height="36" Click="BtnNuevaNota_Click" ToolTip="Crear nueva nota (Ctrl+N)">
+                    <Button Grid.Row="2" Style="{StaticResource FluentButtonPrimary}" Height="36" Click="BtnNuevaNota_Click" ToolTip="{DynamicResource NotebookNewTip}">
                         <TextBlock Text="{DynamicResource NotebookNewBtn}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" />
                     </Button>
 
@@ -247,10 +247,10 @@
                             <TextBox x:Name="TxtTitulo" Grid.Column="0" Height="38" Padding="10,0" VerticalContentAlignment="Center" FontFamily="Segoe UI Variable, Segoe UI" FontSize="16" FontWeight="Bold" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" TextChanged="CamposEditados_TextChanged" />
 
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0">
-                                <Button Style="{StaticResource ActionButtonStyle}" Margin="0,0,6,0" Click="BtnGuardar_Click" ToolTip="Guardar cambios (Ctrl+S)">
+                                <Button Style="{StaticResource ActionButtonStyle}" Margin="0,0,6,0" Click="BtnGuardar_Click" ToolTip="{DynamicResource NotebookSaveTip}">
                                     <TextBlock Text="{DynamicResource NotebookSaveBtn}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" />
                                 </Button>
-                                <Button Style="{StaticResource DeleteButtonStyle}" Click="BtnEliminar_Click" ToolTip="Eliminar esta nota">
+                                <Button Style="{StaticResource DeleteButtonStyle}" Click="BtnEliminar_Click" ToolTip="{DynamicResource NotebookDeleteTip}">
                                     <TextBlock Text="{DynamicResource NotebookDeleteBtn}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" />
                                 </Button>
                             </StackPanel>
@@ -279,11 +279,11 @@
                                 </TextBlock.Style>
                             </TextBlock>
 
-                            <Button Grid.Column="2" x:Name="BtnCopiarTel" Style="{StaticResource ActionButtonStyle}" Click="BtnCopiarTel_Click" ToolTip="Copiar telefono al portapapeles">
+                            <Button Grid.Column="2" x:Name="BtnCopiarTel" Style="{StaticResource ActionButtonStyle}" Click="BtnCopiarTel_Click" ToolTip="{DynamicResource NotebookCopyPhoneTip}">
                                 <TextBlock Text="{DynamicResource NotebookCopyPhone}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" />
                             </Button>
 
-                            <Button Grid.Column="4" x:Name="BtnWhatsApp" Style="{StaticResource WhatsAppButtonStyle}" Click="BtnWhatsApp_Click" ToolTip="Abrir chat en WhatsApp">
+                            <Button Grid.Column="4" x:Name="BtnWhatsApp" Style="{StaticResource WhatsAppButtonStyle}" Click="BtnWhatsApp_Click" ToolTip="{DynamicResource NotebookWhatsAppTip}">
                                 <TextBlock Text="💬 WhatsApp" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" />
                             </Button>
                         </Grid>

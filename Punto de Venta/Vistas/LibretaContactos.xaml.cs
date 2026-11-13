@@ -1,5 +1,6 @@
 using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
+using Punto_de_Venta.Servicios;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -34,6 +35,16 @@ namespace Punto_de_Venta.Vistas
                 Interval = TimeSpan.FromMilliseconds(700)
             };
             _timerAutoGuardar.Tick += TimerAutoGuardar_Tick;
+            IdiomaService.IdiomaCambiado += OnIdiomaCambiado;
+        }
+
+        private void OnIdiomaCambiado(object? sender, EventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                CargarNotasDesdeBaseDatos();
+                ActualizarContadorTexto();
+            });
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -97,7 +108,7 @@ namespace Punto_de_Venta.Vistas
             }
             catch (Exception ex)
             {
-                ToastNotification.Show($"Error al cargar libreta: {ex.Message}", ToastType.Error);
+                ToastNotification.Show(IdiomaService.ObtenerFormato("NotebookLoadError", "Error al cargar libreta: {0}", ex.Message), ToastType.Error);
             }
             finally
             {
@@ -138,7 +149,9 @@ namespace Punto_de_Venta.Vistas
         private void ActualizarContadorNotas()
         {
             int total = _notas.Count;
-            TxtTotalNotas.Text = total == 1 ? "1 registro" : $"{total} registros";
+            TxtTotalNotas.Text = total == 1
+                ? IdiomaService.Obtener("NotebookRegSingular", "1 registro")
+                : IdiomaService.ObtenerFormato("NotebookRegPlural", "{0} registros", total);
         }
 
         private void ListaNotas_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -177,7 +190,7 @@ namespace Punto_de_Venta.Vistas
                 TxtTitulo.Text = nota.Titulo;
                 TxtTelefono.Text = nota.Telefono;
                 TxtContenido.Text = nota.Contenido;
-                TxtEstadoGuardado.Text = "Guardado";
+                TxtEstadoGuardado.Text = IdiomaService.Obtener("NotebookSaved", "Guardado");
                 ActualizarContadorTexto();
             }
             finally
@@ -190,7 +203,7 @@ namespace Punto_de_Venta.Vistas
         {
             if (_cargandoDatos || _notaSeleccionada == null) return;
 
-            TxtEstadoGuardado.Text = "Guardando...";
+            TxtEstadoGuardado.Text = IdiomaService.Obtener("NotebookSaving", "Guardando...");
             ActualizarContadorTexto();
 
             _timerAutoGuardar?.Stop();
@@ -209,7 +222,7 @@ namespace Punto_de_Venta.Vistas
             int caracteres = texto.Length;
             int lineas = TxtContenido?.LineCount ?? 0;
             if (lineas <= 1 && string.IsNullOrEmpty(texto)) lineas = 0;
-            TxtContador.Text = $"{caracteres} caracteres | {lineas} lineas";
+            TxtContador.Text = IdiomaService.ObtenerFormato("NotebookCounterFormat", "{0} caracteres | {1} lineas", caracteres, lineas);
         }
 
         private void GuardarNotaActualSilencioso()
@@ -233,16 +246,16 @@ namespace Punto_de_Venta.Vistas
                 try
                 {
                     LibretaDB.Guardar(_notaSeleccionada);
-                    TxtEstadoGuardado.Text = "Guardado";
+                    TxtEstadoGuardado.Text = IdiomaService.Obtener("NotebookSaved", "Guardado");
                 }
                 catch
                 {
-                    TxtEstadoGuardado.Text = "Error al guardar";
+                    TxtEstadoGuardado.Text = IdiomaService.Obtener("NotebookSaveError", "Error al guardar");
                 }
             }
             else
             {
-                TxtEstadoGuardado.Text = "Guardado";
+                TxtEstadoGuardado.Text = IdiomaService.Obtener("NotebookSaved", "Guardado");
             }
         }
 
@@ -252,7 +265,7 @@ namespace Punto_de_Venta.Vistas
 
             var nueva = new NotaContacto
             {
-                Titulo = "Nueva Nota",
+                Titulo = IdiomaService.Obtener("NotebookNewNoteTitle", "Nueva Nota"),
                 Telefono = string.Empty,
                 Contenido = string.Empty,
                 FechaModificacion = DateTime.Now,
@@ -268,11 +281,11 @@ namespace Punto_de_Venta.Vistas
                 MostrarEditor(true);
                 TxtTitulo.Focus();
                 TxtTitulo.SelectAll();
-                ToastNotification.Show("Nueva nota creada", ToastType.Info);
+                ToastNotification.Show(IdiomaService.Obtener("NotebookCreatedToast", "Nueva nota creada"), ToastType.Info);
             }
             catch (Exception ex)
             {
-                ToastNotification.Show($"Error al crear nota: {ex.Message}", ToastType.Error);
+                ToastNotification.Show(IdiomaService.ObtenerFormato("NotebookCreateError", "Error al crear nota: {0}", ex.Message), ToastType.Error);
             }
         }
 
@@ -280,7 +293,7 @@ namespace Punto_de_Venta.Vistas
         {
             if (_notaSeleccionada == null) return;
             GuardarNotaActualSilencioso();
-            ToastNotification.Show("Nota guardada correctamente", ToastType.Success);
+            ToastNotification.Show(IdiomaService.Obtener("NotebookSavedToast", "Nota guardada correctamente"), ToastType.Success);
         }
 
         private void BtnEliminar_Click(object sender, RoutedEventArgs e)
@@ -290,8 +303,8 @@ namespace Punto_de_Venta.Vistas
             string nombre = _notaSeleccionada.TituloDisplay;
             var confirmacion = CustomMessageBox.Show(
                 Window.GetWindow(this),
-                $"Deseas eliminar la nota '{nombre}' de tu libreta?",
-                "Confirmar Eliminacion",
+                IdiomaService.ObtenerFormato("NotebookDeleteConfirmMsg", "Deseas eliminar la nota '{0}' de tu libreta?", nombre),
+                IdiomaService.Obtener("NotebookDeleteConfirmTitle", "Confirmar Eliminacion"),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
@@ -313,11 +326,11 @@ namespace Punto_de_Venta.Vistas
                     MostrarEditor(false);
                 }
 
-                ToastNotification.Show("Nota eliminada correctamente", ToastType.Success);
+                ToastNotification.Show(IdiomaService.Obtener("NotebookDeletedToast", "Nota eliminada correctamente"), ToastType.Success);
             }
             catch (Exception ex)
             {
-                ToastNotification.Show($"Error al eliminar nota: {ex.Message}", ToastType.Error);
+                ToastNotification.Show(IdiomaService.ObtenerFormato("NotebookDeleteError", "Error al eliminar nota: {0}", ex.Message), ToastType.Error);
             }
         }
 
@@ -326,18 +339,18 @@ namespace Punto_de_Venta.Vistas
             string tel = TxtTelefono.Text.Trim();
             if (string.IsNullOrWhiteSpace(tel))
             {
-                ToastNotification.Show("No hay telefono registrado en esta nota", ToastType.Warning);
+                ToastNotification.Show(IdiomaService.Obtener("NotebookNoPhoneWarn", "No hay telefono registrado en esta nota"), ToastType.Warning);
                 return;
             }
 
             try
             {
                 Clipboard.SetText(tel);
-                ToastNotification.Show($"Telefono '{tel}' copiado al portapapeles", ToastType.Success);
+                ToastNotification.Show(IdiomaService.ObtenerFormato("NotebookPhoneCopied", "Telefono '{0}' copiado al portapapeles", tel), ToastType.Success);
             }
             catch
             {
-                ToastNotification.Show("No se pudo copiar al portapapeles", ToastType.Error);
+                ToastNotification.Show(IdiomaService.Obtener("NotebookCopyError", "No se pudo copiar al portapapeles"), ToastType.Error);
             }
         }
 
@@ -348,7 +361,7 @@ namespace Punto_de_Venta.Vistas
 
             if (digitos.Length < 10)
             {
-                ToastNotification.Show("Ingresa un numero telefonico de al menos 10 digitos", ToastType.Warning);
+                ToastNotification.Show(IdiomaService.Obtener("NotebookPhoneInvalid", "Ingresa un numero telefonico de al menos 10 digitos"), ToastType.Warning);
                 TxtTelefono.Focus();
                 return;
             }
@@ -366,11 +379,11 @@ namespace Punto_de_Venta.Vistas
                     FileName = url,
                     UseShellExecute = true
                 });
-                ToastNotification.Show("Abriendo chat de WhatsApp...", ToastType.Success);
+                ToastNotification.Show(IdiomaService.Obtener("NotebookWhatsAppOpening", "Abriendo chat de WhatsApp..."), ToastType.Success);
             }
             catch (Exception ex)
             {
-                ToastNotification.Show($"Error al abrir WhatsApp: {ex.Message}", ToastType.Error);
+                ToastNotification.Show(IdiomaService.ObtenerFormato("NotebookWhatsAppError", "Error al abrir WhatsApp: {0}", ex.Message), ToastType.Error);
             }
         }
 

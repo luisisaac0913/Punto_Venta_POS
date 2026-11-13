@@ -457,17 +457,15 @@ namespace Punto_de_Venta
             var updatedDebtors = Debtors.Select(debtor => debtor.Id == oldDebtor.Id ? updatedDebtor : debtor).ToList();
             try
             {
-                PrestamoDB.Save(updatedDebtors);
                 bool esEfectivo = RbAbonoEfectivo?.IsChecked != false;
                 string metodoTexto = esEfectivo ? "efectivo" : (RbAbonoTarjeta?.IsChecked == true ? "tarjeta" : "transferencia");
                 string tipoMov = esEfectivo ? "Entrada" : "Abono";
                 bool esTarjeta = RbAbonoTarjeta?.IsChecked == true;
                 string metodoPagoVenta = esEfectivo ? "Efectivo" : (esTarjeta ? "Tarjeta" : "Transferencia");
-                TurnoCajaManager.RegistrarMovimientoEfectivo(tipoMov, payment, $"Abono de {updatedDebtor.Nombre} de {payment.ToString("C2", culture)} en {metodoTexto}");
-                int nextVentaId = VentaDB.ObtenerSiguienteId();
-                VentaDB.Insert(new Venta
+
+                var ventaAbono = new Venta
                 {
-                    Id = nextVentaId,
+                    Id = 0,
                     FechaHora = DateTime.Now,
                     Total = payment,
                     PagoCon = payment,
@@ -477,8 +475,15 @@ namespace Punto_de_Venta
                     PagoEfectivo = esEfectivo ? payment : 0m,
                     PagoTarjeta = esTarjeta ? payment : 0m,
                     PagoTransferencia = (!esEfectivo && !esTarjeta) ? payment : 0m,
-                    Productos = [new DetalleVenta { Id = 0, VentaId = nextVentaId, Nombre = $"Abono de {updatedDebtor.Nombre}", Cantidad = 1m, Costo = 0m, Ganancia = 0m, Precio = payment, Categoria = "Abono" }]
-                });
+                    Productos = [new DetalleVenta { Id = 0, VentaId = 0, Nombre = $"Abono de {updatedDebtor.Nombre}", Cantidad = 1m, Costo = 0m, Ganancia = 0m, Precio = payment, Categoria = "Abono" }]
+                };
+
+                PrestamoDB.RegistrarAbonoAtomico(
+                    updatedDebtors,
+                    tipoMov,
+                    payment,
+                    $"Abono de {updatedDebtor.Nombre} de {payment.ToString("C2", culture)} en {metodoTexto}",
+                    ventaAbono);
                 ReplaceDebtor(oldDebtor, updatedDebtor);
                 SelectDebtor(updatedDebtor);
                 UpdateDashboardKPIs();

@@ -1,3 +1,4 @@
+using Punto_de_Venta.Servicios;
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -95,7 +96,7 @@ namespace Punto_de_Venta.Modelos
             }
         }
 
-        public string TituloDisplay => string.IsNullOrWhiteSpace(Titulo) ? "Sin titulo" : Titulo;
+        public string TituloDisplay => string.IsNullOrWhiteSpace(Titulo) ? IdiomaService.Obtener("NotebookUntitled", "Sin titulo") : Titulo;
 
         public bool TieneTelefono => !string.IsNullOrWhiteSpace(Telefono);
 
@@ -103,9 +104,9 @@ namespace Punto_de_Venta.Modelos
         {
             get
             {
-                if (string.IsNullOrWhiteSpace(Contenido)) return "Sin contenido";
+                if (string.IsNullOrWhiteSpace(Contenido)) return IdiomaService.Obtener("NotebookNoContent", "Sin contenido");
                 string[] lineas = Contenido.Trim().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                if (lineas.Length == 0) return "Sin contenido";
+                if (lineas.Length == 0) return IdiomaService.Obtener("NotebookNoContent", "Sin contenido");
                 string primeraLinea = lineas[0];
                 return primeraLinea.Length > 60 ? primeraLinea.Substring(0, 57) + "..." : primeraLinea;
             }

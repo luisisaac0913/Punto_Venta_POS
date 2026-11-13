@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Punto_de_Venta.Modelos;
+using Punto_de_Venta.Servicios;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -40,18 +41,37 @@ namespace Punto_de_Venta.Datos
                 });
             }
 
+            const string defaultTituloEs = "Notas Rapidas y Contactos";
+            const string defaultTituloEn = "Quick Notes and Contacts";
+            string tituloBienvenida = IdiomaService.Obtener("NotebookWelcomeTitle", defaultTituloEs);
+            string contenidoBienvenida = IdiomaService.Obtener(
+                "NotebookWelcomeContent",
+                "Bienvenido a tu libreta.\n\nEste espacio es libre para anotar lo que necesites para tu negocio:\n- Contactos de proveedores y repartidores\n- Pedidos especiales de clientes\n- Servicios de mantenimiento o emergencia\n- Recordatorios y notas del dia\n\nPuedes agregar nuevos registros con el boton '+ Nueva Nota' o buscar cualquier dato desde la barra superior.");
+
             if (lista.Count == 0)
             {
                 var bienvenida = new NotaContacto
                 {
-                    Titulo = "Notas Rapidas y Contactos",
+                    Titulo = tituloBienvenida,
                     Telefono = "",
-                    Contenido = "Bienvenido a tu libreta.\n\nEste espacio es libre para anotar lo que necesites para tu negocio:\n- Contactos de proveedores y repartidores\n- Pedidos especiales de clientes\n- Servicios de mantenimiento o emergencia\n- Recordatorios y notas del dia\n\nPuedes agregar nuevos registros con el boton '+ Nueva Nota' o buscar cualquier dato desde la barra superior.",
+                    Contenido = contenidoBienvenida,
                     FechaModificacion = DateTime.Now,
                     EsFijado = true
                 };
                 Guardar(bienvenida);
                 lista.Add(bienvenida);
+            }
+            else
+            {
+                foreach (var nota in lista)
+                {
+                    if ((nota.Titulo == defaultTituloEs || nota.Titulo == defaultTituloEn) &&
+                        (nota.Contenido.StartsWith("Bienvenido a tu libreta.") || nota.Contenido.StartsWith("Welcome to your notebook.")))
+                    {
+                        nota.Titulo = tituloBienvenida;
+                        nota.Contenido = contenidoBienvenida;
+                    }
+                }
             }
 
             return lista;

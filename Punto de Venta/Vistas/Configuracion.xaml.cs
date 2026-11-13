@@ -742,8 +742,15 @@ namespace Punto_de_Venta
                     return;
                 }
 
-                BackupService.GenerarRespaldo("Manual", ruta);
-                ToastNotification.Show("Respaldo manual generado exitosamente", ToastType.Success);
+                bool generado = BackupService.GenerarRespaldo("Manual", ruta);
+                if (generado)
+                {
+                    ToastNotification.Show("Respaldo manual generado exitosamente", ToastType.Success);
+                }
+                else
+                {
+                    ToastNotification.Show("No se pudo generar el respaldo manual. Verifica la ruta o permisos.", ToastType.Error);
+                }
             }
             catch (Exception ex)
             {
@@ -999,7 +1006,7 @@ namespace Punto_de_Venta
             finally
             {
                 BtnRespaldoDrive.IsEnabled = true;
-                BtnRespaldoDrive.Content = "☁️ Subir Respaldo a Google Drive";
+                BtnRespaldoDrive.Content = IdiomaService.Obtener("SettingsDriveUploadBtn", "☁️ Subir Respaldo a Google Drive");
                 await Task.Delay(2000);
                 PanelProgresoDrive.Visibility = Visibility.Collapsed;
             }
@@ -1018,7 +1025,117 @@ namespace Punto_de_Venta
             {
                 TxtUltimoRespaldoDrive.ToolTip = "Sin respaldos registrados todavia";
             }
-            
+
+            if (CmbCopiasDisponibles != null && CmbCopiasDisponibles.Items.Count == 0)
+            {
+                var locales = BackupService.ListarRespaldosLocales(BackupFolderBox?.Text?.Trim());
+                CmbCopiasDisponibles.ItemsSource = locales;
+                if (locales.Count > 0) CmbCopiasDisponibles.SelectedIndex = 0;
+            }
+        }
+
+        private async void BtnCargarCopias_Click(object sender, RoutedEventArgs e)
+        {
+            BtnCargarCopias.IsEnabled = false;
+            BtnCargarCopias.Content = IdiomaService.Obtener("SettingsRestoreSearching", "Buscando...");
+            try
+            {
+                var copias = BackupService.ListarRespaldosLocales(BackupFolderBox?.Text?.Trim());
+
+                if (LicenciaService.EsPremium())
+                {
+                    try
+                    {
+                        var driveCopias = await GoogleDriveBackupService.ListarRespaldosDriveAsync();
+                        copias.AddRange(driveCopias);
+                    }
+                    catch (Exception exDrive)
+                    {
+                        ToastNotification.Show(IdiomaService.ObtenerFormato("SettingsRestoreDriveWarn", "No se pudieron listar copias de Drive: {0}", exDrive.Message), ToastType.Warning);
+                    }
+                }
+
+                var ordenadas = copias.OrderByDescending(c => c.Fecha).ToList();
+                CmbCopiasDisponibles.ItemsSource = ordenadas;
+                if (ordenadas.Count > 0)
+                {
+                    CmbCopiasDisponibles.SelectedIndex = 0;
+                    ToastNotification.Show(IdiomaService.ObtenerFormato("SettingsRestoreFoundCount", "Se encontraron {0} copias de seguridad.", ordenadas.Count), ToastType.Success);
+                }
+                else
+                {
+                    ToastNotification.Show(IdiomaService.Obtener("SettingsRestoreNoneFound", "No se encontraron copias de seguridad disponibles."), ToastType.Info);
+                }
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show(IdiomaService.ObtenerFormato("SettingsRestoreSearchErr", "Error al buscar copias: {0}", ex.Message), ToastType.Error);
+            }
+            finally
+            {
+                BtnCargarCopias.IsEnabled = true;
+                BtnCargarCopias.Content = IdiomaService.Obtener("SettingsRestoreSearchBtn", "Buscar Copias");
+            }
+        }
+
+        private async void BtnRestaurarCopia_Click(object sender, RoutedEventArgs e)
+        {
+            if (CmbCopiasDisponibles.SelectedItem is not BackupService.RespaldoItem seleccion)
+            {
+                ToastNotification.Show(IdiomaService.Obtener("SettingsRestoreSelectFirst", "Selecciona primero una copia de seguridad de la lista."), ToastType.Warning);
+                return;
+            }
+
+            BtnRestaurarCopia.IsEnabled = false;
+            BtnRestaurarCopia.Content = IdiomaService.Obtener("SettingsRestoreWorking", "Restaurando...");
+            string tempDescargado = string.Empty;
+
+            try
+            {
+                string rutaZip = seleccion.RutaLocal;
+                if (seleccion.Origen == "Google Drive")
+                {
+                    tempDescargado = await GoogleDriveBackupService.DescargarRespaldoDriveAsync(seleccion.DriveFileId);
+                    rutaZip = tempDescargado;
+                }
+
+                var diff = await Task.Run(() => BackupService.AnalizarDiferenciasZip(rutaZip));
+
+                string mensajeConfirm = IdiomaService.ObtenerFormato(
+                    "SettingsRestoreConfirmMsg",
+                    "Se restaurara la copia:\n{0}\n\nCambios en productos:\n- Se eliminaran: {1} productos actuales\n- Se agregaran: {2} productos del respaldo\n(Total actual: {3} -> Respaldo: {4})\n\nSe creara un respaldo preventivo antes de reemplazar los datos actuales. Deseas continuar?",
+                    seleccion.DisplayTexto,
+                    diff.ProductosAEliminar,
+                    diff.ProductosAAgregar,
+                    diff.ProductosActuales,
+                    diff.ProductosEnRespaldo);
+
+                var confirm = CustomMessageBox.Show(
+                    Window.GetWindow(this) ?? Application.Current.MainWindow,
+                    mensajeConfirm,
+                    IdiomaService.Obtener("SettingsRestoreConfirmTitle", "Confirmar Restauracion"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (confirm != MessageBoxResult.Yes) return;
+
+                await Task.Run(() => BackupService.RestaurarDesdeZip(rutaZip));
+
+                ToastNotification.Show(IdiomaService.Obtener("SettingsRestoreSuccess", "Respaldo restaurado exitosamente. Reinicia la aplicacion para recargar todas las vistas."), ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                ToastNotification.Show(IdiomaService.ObtenerFormato("SettingsRestoreError", "Error al restaurar respaldo: {0}", ex.Message), ToastType.Error);
+            }
+            finally
+            {
+                if (!string.IsNullOrEmpty(tempDescargado) && File.Exists(tempDescargado))
+                {
+                    try { File.Delete(tempDescargado); } catch { }
+                }
+                BtnRestaurarCopia.IsEnabled = true;
+                BtnRestaurarCopia.Content = IdiomaService.Obtener("SettingsRestoreConfirmBtn", "Restaurar Seleccionada");
+            }
         }
         #endregion
 

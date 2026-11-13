@@ -443,7 +443,7 @@
                     </ScrollViewer>
                 </Grid>
             <Grid x:Name="QuickRestockOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" Panel.ZIndex="100">
-                <Border Width="460" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
+                <Border Width="460" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel>
                         <TextBlock Text="{DynamicResource PosQuickRestockTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
                         <TextBlock Text="{DynamicResource InvQrSubtitle}" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,16" />
@@ -471,7 +471,7 @@
                 </Border>
             </Grid>
             <Grid x:Name="LotesOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" Panel.ZIndex="110">
-                <Border Width="680" Height="460" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
+                <Border Width="680" Height="460" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -573,7 +573,7 @@
                 </Border>
             </Grid>
             <Grid x:Name="GestorLotesOverlay" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" Panel.ZIndex="120">
-                <Border Width="820" Height="580" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="26" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
+                <Border Width="820" Height="580" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="26" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />

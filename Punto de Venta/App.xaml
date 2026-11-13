@@ -38,7 +38,6 @@
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Effect" Value="{StaticResource FluentShadow}" />
         </Style>
 
         <Style x:Key="FluentCard" TargetType="Border" BasedOn="{StaticResource FluentCardStyle}" />
@@ -51,7 +50,6 @@
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorder}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Effect" Value="{StaticResource FluentModalShadow}" />
         </Style>
 
         <Style x:Key="FluentButtonPrimary" TargetType="Button">

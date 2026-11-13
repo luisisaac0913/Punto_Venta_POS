@@ -478,7 +478,7 @@
                 </Grid>
 
                 <Grid x:Name="HelpOverlay" Grid.RowSpan="3" Panel.ZIndex="100" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle" MouseDown="HelpOverlay_MouseDown">
-                    <Border Width="640" MaxHeight="600" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="28,24" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
+                    <Border Width="640" MaxHeight="600" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="28,24" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -557,7 +557,7 @@
                 </Grid>
 
                 <Grid x:Name="MovimientosOverlay" Grid.RowSpan="3" Panel.ZIndex="999" Background="#66000000" Visibility="Collapsed" Focusable="True" KeyboardNavigation.TabNavigation="Cycle" KeyboardNavigation.DirectionalNavigation="Cycle" KeyboardNavigation.ControlTabNavigation="Cycle">
-                    <Border Width="620" MaxHeight="500" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center" Effect="{StaticResource FluentModalShadow}">
+                    <Border Width="620" MaxHeight="500" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="20" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />

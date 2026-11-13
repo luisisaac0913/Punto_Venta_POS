@@ -28,6 +28,8 @@ namespace Punto_de_Venta.Vistas
         private bool _procesandoPago = false;
         private List<Producto> _catalog = new();
         private List<Promocion> _promocionesCargadas = new();
+        private Dictionary<int, List<Promocion>> _promosPorProducto = new();
+        private List<Promocion> _combosCargados = new();
         private readonly DispatcherTimer _clockTimer;
         private int _saleNumber;
         private bool _purchaseFeedbackVisible;
@@ -561,6 +563,28 @@ namespace Punto_de_Venta.Vistas
             catch
             {
                 _promocionesCargadas = new();
+            }
+
+            _promosPorProducto = new();
+            _combosCargados = new();
+
+            foreach (var promo in _promocionesCargadas)
+            {
+                if (!promo.EstaVigente()) continue;
+
+                if (promo.Tipo == TipoPromocion.Combo)
+                {
+                    _combosCargados.Add(promo);
+                }
+                else
+                {
+                    if (!_promosPorProducto.TryGetValue(promo.ProductoIdPrincipal, out var lista))
+                    {
+                        lista = new List<Promocion>();
+                        _promosPorProducto[promo.ProductoIdPrincipal] = lista;
+                    }
+                    lista.Add(promo);
+                }
             }
         }
 
@@ -1897,17 +1921,24 @@ namespace Punto_de_Venta.Vistas
             if (RbMixto.IsChecked == true)
             {
                 paymentMethod = "Mixto";
-                decimal.TryParse(MixedCashBox.Text, NumberStyles.Number, culture, out pEfectivo);
-                decimal.TryParse(MixedCardBox.Text, NumberStyles.Number, culture, out pTarjeta);
-                decimal.TryParse(MixedTransferBox.Text, NumberStyles.Number, culture, out pTransf);
+                decimal.TryParse((MixedCashBox.Text ?? string.Empty).Trim().Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out pEfectivo);
+                decimal.TryParse((MixedCardBox.Text ?? string.Empty).Trim().Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out pTarjeta);
+                decimal.TryParse((MixedTransferBox.Text ?? string.Empty).Trim().Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out pTransf);
+                if (pEfectivo < 0m || pTarjeta < 0m || pTransf < 0m)
+                {
+                    ((TextBlock)FindName("PaymentMessage")).Text = "Los montos de pago no pueden ser negativos.";
+                    ToastNotification.Show("No se permiten montos negativos en pago mixto", ToastType.Warning);
+                    return;
+                }
                 amountReceived = pEfectivo + pTarjeta + pTransf;
             }
             else
             {
                 paymentMethod = RbTarjeta.IsChecked == true ? "Tarjeta" : (RbTransferencia.IsChecked == true ? "Transferencia" : "Efectivo");
-                if (!decimal.TryParse(CashReceivedBox.Text, NumberStyles.Number, culture, out amountReceived))
+                string textoRecibido = (CashReceivedBox.Text ?? string.Empty).Trim().Replace(',', '.');
+                if (!decimal.TryParse(textoRecibido, NumberStyles.Number, CultureInfo.InvariantCulture, out amountReceived))
                 {
-                    decimal.TryParse(CashReceivedBox.Text, NumberStyles.Number, CultureInfo.GetCultureInfo("en-US"), out amountReceived);
+                    decimal.TryParse(CashReceivedBox.Text, NumberStyles.Number, culture, out amountReceived);
                 }
 
                 if (paymentMethod == "Efectivo") pEfectivo = amountReceived;
@@ -2295,8 +2326,12 @@ namespace Punto_de_Venta.Vistas
         {
             if (Cart == null || Cart.Count == 0) return 0m;
             var subtotalBruto = Cart.Sum(item => item.Subtotal);
-            var promociones = _promocionesCargadas ?? new();
-            var resultadoPromo = PromocionEngine.Evaluar(Cart, promociones);
+            var resultadoPromo = PromocionEngine.EvaluarIndexado(Cart, _promosPorProducto, _combosCargados);
+            return CalcularTotalNeto(subtotalBruto, resultadoPromo);
+        }
+
+        private static decimal CalcularTotalNeto(decimal subtotalBruto, ResultadoPromocion resultadoPromo)
+        {
             var totalConDescuento = Math.Max(0m, subtotalBruto - resultadoPromo.DescuentoTotal);
             return Math.Round(totalConDescuento, 0, MidpointRounding.AwayFromZero);
         }
@@ -2309,9 +2344,8 @@ namespace Punto_de_Venta.Vistas
             var culture = CultureInfo.GetCultureInfo("es-MX");
             var itemCount = Cart.Count;
             var subtotalBruto = Cart.Sum(item => item.Subtotal);
-            var promociones = _promocionesCargadas ?? new();
-            var resultadoPromo = PromocionEngine.Evaluar(Cart, promociones);
-            var totalNetoRedondeado = ObtenerTotalNetoVenta();
+            var resultadoPromo = PromocionEngine.EvaluarIndexado(Cart, _promosPorProducto, _combosCargados);
+            var totalNetoRedondeado = CalcularTotalNeto(subtotalBruto, resultadoPromo);
             ((TextBlock)FindName("ProductCountText")).Text = itemCount.ToString(culture);
             ((TextBlock)FindName("TotalText")).Text = totalNetoRedondeado.ToString("C2", culture);
             ((TextBlock)FindName("SaleNumberText")).Text = $"#{_saleNumber}";

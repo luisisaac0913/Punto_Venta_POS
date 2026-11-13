@@ -82,6 +82,36 @@ namespace Punto_de_Venta.Datos
             }
         }
 
+        public static void RegistrarAbonoAtomico(IEnumerable<Deudor> debtors, string tipoMovimiento, decimal monto, string conceptoMovimiento, Venta ventaAbono)
+        {
+            var turnoActivo = Punto_de_Venta.TurnoCajaManager.ObtenerTurnoActivo();
+            if (turnoActivo == null)
+            {
+                throw new InvalidOperationException("No se pueden registrar movimientos. La caja esta cerrada.");
+            }
+
+            using var conn = DatabaseHelper.GetConnection();
+            using var tr = conn.BeginTransaction();
+            try
+            {
+                SaveInternal(conn, tr, debtors);
+                Punto_de_Venta.TurnoCajaManager.RegistrarMovimientoEnTransaccion(conn, tr, turnoActivo.Id, tipoMovimiento, monto, conceptoMovimiento);
+                int nextVentaId = VentaDB.ObtenerSiguienteIdInternal(conn, tr);
+                ventaAbono.Id = nextVentaId;
+                foreach (var prod in ventaAbono.Productos)
+                {
+                    prod.VentaId = nextVentaId;
+                }
+                VentaDB.InsertInternal(conn, tr, ventaAbono);
+                tr.Commit();
+            }
+            catch
+            {
+                tr.Rollback();
+                throw;
+            }
+        }
+
         internal static void SaveInternal(SqliteConnection conn, SqliteTransaction tr, IEnumerable<Deudor> debtors)
         {
             using var insertDeudor = conn.CreateCommand();

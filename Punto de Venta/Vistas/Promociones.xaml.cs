@@ -298,6 +298,16 @@ namespace Punto_de_Venta
                     PrecioEspecialBox.Focus();
                     return;
                 }
+                if (tipo == TipoPromocion.Mayoreo)
+                {
+                    var prodPrincipal = ProductoDB.BuscarPorCodigoOId(pId1.ToString());
+                    if (prodPrincipal != null && precioEsp >= prodPrincipal.Precio)
+                    {
+                        ToastNotification.Show($"En Mayoreo el precio especial unitario debe ser menor al precio normal ({prodPrincipal.Precio:C2})", ToastType.Warning);
+                        PrecioEspecialBox.Focus();
+                        return;
+                    }
+                }
                 promocion.CantidadMinima = cant;
                 promocion.PrecioEspecial = precioEsp;
 

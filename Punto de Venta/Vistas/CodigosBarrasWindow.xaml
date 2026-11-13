@@ -5,7 +5,10 @@
              Focusable="True"
              IsVisibleChanged="UserControl_IsVisibleChanged"
              Loaded="UserControl_Loaded"
-             PreviewKeyDown="UserControl_PreviewKeyDown">
+             PreviewKeyDown="UserControl_PreviewKeyDown"
+             UseLayoutRounding="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
 
     <UserControl.Resources>
         <Style x:Key="ActionButtonStyle" TargetType="Button">
@@ -48,8 +51,8 @@
         </Grid.RowDefinitions>
 
         <Grid Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="Generador de Etiquetas" Visibility="Collapsed" />
-            <Button Content="✕ Volver" HorizontalAlignment="Right" VerticalAlignment="Center" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderThickness="1" BorderBrush="{DynamicResource ThemeBorder}" Padding="14,6" Height="34" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="BtnClose_Click">
+            <TextBlock Text="{DynamicResource BarcodeTitle}" Visibility="Collapsed" />
+            <Button Content="{DynamicResource BarcodeBack}" HorizontalAlignment="Right" VerticalAlignment="Center" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderThickness="1" BorderBrush="{DynamicResource ThemeBorder}" Padding="14,6" Height="34" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="BtnClose_Click">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="CloseBtnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
@@ -81,7 +84,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Effect="{StaticResource FluentShadow}">
+                <Border Grid.Row="0" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="18">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -89,7 +92,7 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Text="1. Buscar Producto" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,12" />
+                        <TextBlock Text="{DynamicResource BarcodeStep1}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,12" />
 
                         <Border Grid.Row="1" Height="40" Style="{StaticResource FluentInputContainerStyle}" Padding="10,0" Margin="0,0,0,14">
                             <Grid>
@@ -141,7 +144,7 @@
                         </Border>
                     </Grid>
                 </Border>
-                <Border Grid.Row="2" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Effect="{StaticResource FluentShadow}">
+                <Border Grid.Row="2" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="18">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -150,7 +153,7 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="Cant. de etiquetas" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,6" />
+                            <TextBlock Text="{DynamicResource BarcodeQtyLabel}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,6" />
                             <Border Height="40" Style="{StaticResource FluentInputContainerStyle}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -164,7 +167,7 @@
                                 </Grid>
                             </Border>
                         </StackPanel>
-                        <Button Grid.Column="2" Content="ANADIR A COLA" Style="{StaticResource ActionButtonStyle}" Click="AddToList_Click" VerticalAlignment="Bottom" Height="40" />
+                        <Button Grid.Column="2" Content="{DynamicResource BarcodeAddQueue}" Style="{StaticResource ActionButtonStyle}" Click="AddToList_Click" VerticalAlignment="Bottom" Height="40" />
                     </Grid>
                 </Border>
             </Grid>
@@ -176,7 +179,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Effect="{StaticResource FluentShadow}">
+                <Border Grid.Row="0" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="18">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -185,8 +188,8 @@
                         </Grid.RowDefinitions>
 
                         <Grid Grid.Row="0" Margin="0,0,0,10">
-                            <TextBlock Text="2. Cola de Impresion" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
-                            <Button Content="Limpiar lista" HorizontalAlignment="Right" VerticalAlignment="Center" Background="Transparent" Foreground="#E74C3C" BorderThickness="0" Cursor="Hand" FontWeight="SemiBold" FontSize="12" Click="ClearQueue_Click" />
+                            <TextBlock Text="{DynamicResource BarcodeStep2}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
+                            <Button Content="{DynamicResource BarcodeClearQueue}" HorizontalAlignment="Right" VerticalAlignment="Center" Background="Transparent" Foreground="#E74C3C" BorderThickness="0" Cursor="Hand" FontWeight="SemiBold" FontSize="12" Click="ClearQueue_Click" />
                         </Grid>
 
                         <Border Grid.Row="1" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" ClipToBounds="True" Margin="0,0,0,14">
@@ -236,11 +239,11 @@
                             </DataGrid>
                         </Border>
 
-                        <Button Grid.Row="2" Content="GENERAR PLANTILLA A4" Style="{StaticResource ActionButtonStyle}" Click="GeneratePreview_Click" Height="40" Background="#34C759" />
+                        <Button Grid.Row="2" Content="{DynamicResource BarcodeGenerateBtn}" Style="{StaticResource ActionButtonStyle}" Click="GeneratePreview_Click" Height="40" Background="#34C759" />
                     </Grid>
                 </Border>
 
-                <Border Grid.Row="2" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="18" Effect="{StaticResource FluentShadow}">
+                <Border Grid.Row="2" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="18">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -249,19 +252,19 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Text="3. Vista Previa" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
+                        <TextBlock Grid.Row="0" Text="{DynamicResource BarcodeStep3}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
 
                         <Border Grid.Row="1" Background="#E5E5EA" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" ClipToBounds="True">
                             <Grid>
                                 <DocumentViewer x:Name="DocViewer" Background="Transparent" />
                                 <StackPanel x:Name="DocPlaceholder" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
                                     <TextBlock Text="📄" FontSize="44" HorizontalAlignment="Center" Margin="0,0,0,8" Opacity="0.5" />
-                                    <TextBlock Text="Agrega productos y presiona Generar" Foreground="#8E8E93" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{DynamicResource BarcodePlaceholder}" Foreground="#8E8E93" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" />
                                 </StackPanel>
                             </Grid>
                         </Border>
 
-                        <Button Grid.Row="3" Content="IMPRIMIR ETIQUETAS" Height="44" Style="{StaticResource ActionButtonStyle}" Click="PrintDocument_Click" />
+                        <Button Grid.Row="3" Content="{DynamicResource BarcodePrintBtn}" Height="44" Style="{StaticResource ActionButtonStyle}" Click="PrintDocument_Click" />
                     </Grid>
                 </Border>
             </Grid>
