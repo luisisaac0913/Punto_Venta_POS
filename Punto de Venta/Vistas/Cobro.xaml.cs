@@ -1272,13 +1272,13 @@ namespace Punto_de_Venta.Vistas
 
         private UIElement ObtenerModalActivo()
         {
-            if (VentasEnEsperaOverlay != null && VentasEnEsperaOverlay.Visibility == Visibility.Visible) return VentasEnEsperaOverlay;
-            if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible) return PaymentOverlay;
-            if (ScaleOverlay != null && ScaleOverlay.Visibility == Visibility.Visible) return ScaleOverlay;
             if (QuickRestockOverlay != null && QuickRestockOverlay.Visibility == Visibility.Visible) return QuickRestockOverlay;
             if (CreditOverlay != null && CreditOverlay.Visibility == Visibility.Visible) return CreditOverlay;
-            if (CashMovementOverlay != null && CashMovementOverlay.Visibility == Visibility.Visible) return CashMovementOverlay;
+            if (ScaleOverlay != null && ScaleOverlay.Visibility == Visibility.Visible) return ScaleOverlay;
             if (QuickAddOverlay != null && QuickAddOverlay.Visibility == Visibility.Visible) return QuickAddOverlay;
+            if (CashMovementOverlay != null && CashMovementOverlay.Visibility == Visibility.Visible) return CashMovementOverlay;
+            if (VentasEnEsperaOverlay != null && VentasEnEsperaOverlay.Visibility == Visibility.Visible) return VentasEnEsperaOverlay;
+            if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible) return PaymentOverlay;
             return null;
         }
 
@@ -1293,23 +1293,6 @@ namespace Punto_de_Venta.Vistas
 
         private bool CerrarModalActivo()
         {
-            if (VentasEnEsperaOverlay != null && VentasEnEsperaOverlay.Visibility == Visibility.Visible)
-            {
-                CloseVentasEnEspera();
-                return true;
-            }
-
-            if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible)
-            {
-                PaymentOverlay.Visibility = Visibility.Collapsed;
-                FocusSearch();
-                return true;
-            }
-            if (ScaleOverlay != null && ScaleOverlay.Visibility == Visibility.Visible)
-            {
-                CancelScale_Click(this, new RoutedEventArgs());
-                return true;
-            }
             if (QuickRestockOverlay != null && QuickRestockOverlay.Visibility == Visibility.Visible)
             {
                 CloseQuickRestock();
@@ -1320,14 +1303,30 @@ namespace Punto_de_Venta.Vistas
                 CloseCreditOverlay();
                 return true;
             }
-            if (CashMovementOverlay != null && CashMovementOverlay.Visibility == Visibility.Visible)
+            if (ScaleOverlay != null && ScaleOverlay.Visibility == Visibility.Visible)
             {
-                CloseCashMovement();
+                CancelScale_Click(this, new RoutedEventArgs());
                 return true;
             }
             if (QuickAddOverlay != null && QuickAddOverlay.Visibility == Visibility.Visible)
             {
                 CloseQuickAdd();
+                return true;
+            }
+            if (CashMovementOverlay != null && CashMovementOverlay.Visibility == Visibility.Visible)
+            {
+                CloseCashMovement();
+                return true;
+            }
+            if (VentasEnEsperaOverlay != null && VentasEnEsperaOverlay.Visibility == Visibility.Visible)
+            {
+                CloseVentasEnEspera();
+                return true;
+            }
+            if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible)
+            {
+                PaymentOverlay.Visibility = Visibility.Collapsed;
+                FocusSearch();
                 return true;
             }
 
@@ -1383,8 +1382,23 @@ namespace Punto_de_Venta.Vistas
 
             if (CreditOverlay.Visibility == Visibility.Visible)
             {
-                if (e.Key == Key.Escape) { CloseCreditOverlay(); e.Handled = true; }
-                else if (e.Key == Key.Enter) { ConfirmCreditProcess(); e.Handled = true; }
+                if (e.Key == Key.Escape)
+                {
+                    if (DebtorSuggestionsBox != null && DebtorSuggestionsBox.Visibility == Visibility.Visible)
+                    {
+                        DebtorSuggestionsBox.Visibility = Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        CloseCreditOverlay();
+                    }
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Enter && DebtorSuggestionsList?.IsKeyboardFocusWithin != true)
+                {
+                    ConfirmCreditProcess();
+                    e.Handled = true;
+                }
                 return;
             }
 
@@ -1568,13 +1582,36 @@ namespace Punto_de_Venta.Vistas
         #endregion
 
         #region Movimientos de Caja y Fiados
+        private List<string> _sugerenciasDeudores = [];
+        private bool _actualizandoNombreDeudor = false;
+
         private void CashMovementButton_Click(object sender, RoutedEventArgs e) => OpenCashMovement();
         private void CreditButton_Click(object sender, RoutedEventArgs e) => StartCreditProcess();
 
         private void StartCreditProcess()
         {
             CreditValidationMessage.Text = string.Empty;
+            _actualizandoNombreDeudor = true;
             DebtorNameBox.Clear();
+            _actualizandoNombreDeudor = false;
+            if (DebtorSuggestionsBox != null) DebtorSuggestionsBox.Visibility = Visibility.Collapsed;
+            if (DebtorSuggestionsList != null) DebtorSuggestionsList.ItemsSource = null;
+
+            try
+            {
+                _sugerenciasDeudores = PrestamoDB.Load()
+                    .Select(d => d.Nombre?.Trim())
+                    .Where(n => !string.IsNullOrWhiteSpace(n))
+                    .Select(n => n!)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+            catch
+            {
+                _sugerenciasDeudores = [];
+            }
+
             CreditOverlay.Visibility = Visibility.Visible;
             Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
             {
@@ -1585,6 +1622,7 @@ namespace Punto_de_Venta.Vistas
 
         private void CloseCreditOverlay()
         {
+            if (DebtorSuggestionsBox != null) DebtorSuggestionsBox.Visibility = Visibility.Collapsed;
             CreditOverlay.Visibility = Visibility.Collapsed;
             if (RbMixto.IsChecked == true)
             {
@@ -1600,6 +1638,75 @@ namespace Punto_de_Venta.Vistas
         }
 
         private void CancelCredit_Click(object sender, RoutedEventArgs e) => CloseCreditOverlay();
+
+        private void DebtorNameBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_actualizandoNombreDeudor || DebtorSuggestionsBox == null || DebtorSuggestionsList == null) return;
+
+            string query = DebtorNameBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(query) || _sugerenciasDeudores.Count == 0)
+            {
+                DebtorSuggestionsBox.Visibility = Visibility.Collapsed;
+                DebtorSuggestionsList.ItemsSource = null;
+                return;
+            }
+
+            var coincidencias = _sugerenciasDeudores
+                .Where(n => n.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .Take(6)
+                .ToList();
+
+            if (coincidencias.Count == 0 || (coincidencias.Count == 1 && string.Equals(coincidencias[0], query, StringComparison.OrdinalIgnoreCase)))
+            {
+                DebtorSuggestionsBox.Visibility = Visibility.Collapsed;
+                DebtorSuggestionsList.ItemsSource = null;
+                return;
+            }
+
+            DebtorSuggestionsList.ItemsSource = coincidencias;
+            DebtorSuggestionsBox.Visibility = Visibility.Visible;
+        }
+
+        private void DebtorNameBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Down && DebtorSuggestionsBox?.Visibility == Visibility.Visible && DebtorSuggestionsList?.Items.Count > 0)
+            {
+                DebtorSuggestionsList.SelectedIndex = 0;
+                DebtorSuggestionsList.Focus();
+                e.Handled = true;
+            }
+        }
+
+        private void DebtorSuggestionsList_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            SeleccionarSugerenciaDeudor();
+        }
+
+        private void DebtorSuggestionsList_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                SeleccionarSugerenciaDeudor();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                if (DebtorSuggestionsBox != null) DebtorSuggestionsBox.Visibility = Visibility.Collapsed;
+                DebtorNameBox.Focus();
+                e.Handled = true;
+            }
+        }
+
+        private void SeleccionarSugerenciaDeudor()
+        {
+            if (DebtorSuggestionsList?.SelectedItem is not string seleccionado) return;
+            _actualizandoNombreDeudor = true;
+            DebtorNameBox.Text = seleccionado;
+            DebtorNameBox.CaretIndex = seleccionado.Length;
+            _actualizandoNombreDeudor = false;
+            if (DebtorSuggestionsBox != null) DebtorSuggestionsBox.Visibility = Visibility.Collapsed;
+            DebtorNameBox.Focus();
+        }
 
         private void DebtorNameBox_KeyDown(object sender, KeyEventArgs e)
         {

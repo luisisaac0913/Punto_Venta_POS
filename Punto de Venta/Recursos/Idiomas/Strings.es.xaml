@@ -256,7 +256,7 @@
     <sys:String x:Key="SettingsHelpWebDesc">Descarga de actualizaciones, manuales, novedades y licencias.</sys:String>
     <sys:String x:Key="SettingsHelpOpenWebBtn">Visitar sitio web</sys:String>
     <sys:String x:Key="SettingsHelpCopyBtn">Copiar</sys:String>
-    <sys:String x:Key="SettingsHelpVersion">Version 1.0.16 (Produccion) • Licencia Oficial Activa</sys:String>
+    <sys:String x:Key="SettingsHelpVersion">Version 1.0.18 (Produccion) • Licencia Oficial Activa</sys:String>
     <sys:String x:Key="PosHoldTooltip">Ver ventas en espera o pausar venta actual (F2)</sys:String>
     <sys:String x:Key="PosScaleStatusTooltip">Estado de la bascula</sys:String>
     <sys:String x:Key="PosPrinterStatusTooltip">Estado de la impresora termica</sys:String>
