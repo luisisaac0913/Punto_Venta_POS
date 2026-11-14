@@ -64,6 +64,79 @@ namespace Punto_de_Venta.Datos
             return list;
         }
 
+        public static List<CorteCaja> LoadPorRangoFechas(DateTime inicio, DateTime fin)
+        {
+            var list = new List<CorteCaja>();
+            DateTime inicioDia = inicio.Date;
+            DateTime finExclusivo = fin.Date.AddDays(1);
+            string inicioIso = inicioDia.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            string finIso = finExclusivo.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+            using var conn = DatabaseHelper.GetConnection();
+            TurnoCajaManager.ValidarEsquemaBD(conn);
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT Id, FechaHora, FondoInicial, VentasEfectivo, EntradasEfectivo, SalidasEfectivo, TotalEsperado, TotalContado, Observaciones, COALESCE(Estado, 'Cerrado'), FechaHoraCierre 
+                FROM CortesCaja 
+                WHERE (FechaHora >= @inicioIso AND FechaHora < @finIso)
+                   OR Estado = 'Abierto'
+                   OR substr(FechaHora, 5, 1) != '-'
+                ORDER BY Id ASC;";
+            cmd.Parameters.AddWithValue("@inicioIso", inicioIso);
+            cmd.Parameters.AddWithValue("@finIso", finIso);
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                var id = reader.GetInt32(0);
+                var fechaStr = reader.GetString(1);
+                var estado = reader.IsDBNull(9) ? "Cerrado" : reader.GetString(9);
+
+                if (!DateTime.TryParse(fechaStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fecha))
+                {
+                    DateTime.TryParse(fechaStr, CultureInfo.GetCultureInfo("es-MX"), DateTimeStyles.None, out fecha);
+                }
+
+                if (!string.Equals(estado, "Abierto", StringComparison.OrdinalIgnoreCase) &&
+                    (fecha < inicioDia || fecha >= finExclusivo))
+                {
+                    continue;
+                }
+
+                var fondo = Convert.ToDecimal(reader.GetDouble(2));
+                var ventas = Convert.ToDecimal(reader.GetDouble(3));
+                var entradas = Convert.ToDecimal(reader.GetDouble(4));
+                var salidas = Convert.ToDecimal(reader.GetDouble(5));
+                var esperado = Convert.ToDecimal(reader.GetDouble(6));
+                var contado = Convert.ToDecimal(reader.GetDouble(7));
+                var notas = reader.IsDBNull(8) ? string.Empty : reader.GetString(8);
+                var fechaCierreStr = reader.IsDBNull(10) ? null : reader.GetString(10);
+
+                DateTime? fechaCierre = null;
+                if (!string.IsNullOrEmpty(fechaCierreStr) && DateTime.TryParse(fechaCierreStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fCierre))
+                {
+                    fechaCierre = fCierre;
+                }
+
+                list.Add(new CorteCaja
+                {
+                    Id = id,
+                    FechaHora = fecha,
+                    FechaHoraCierre = fechaCierre,
+                    Estado = estado,
+                    FondoInicial = fondo,
+                    VentasEfectivo = ventas,
+                    EntradasEfectivo = entradas,
+                    SalidasEfectivo = salidas,
+                    TotalEsperado = esperado,
+                    TotalContado = contado,
+                    Observaciones = notas
+                });
+            }
+
+            return list;
+        }
+
         public static void Save(IEnumerable<CorteCaja> cortes)
         {
             using var conn = DatabaseHelper.GetConnection();

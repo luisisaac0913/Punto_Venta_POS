@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -184,26 +185,92 @@ namespace Punto_de_Venta.Servicios
             return "127.0.0.1";
         }
 
+        private static string ObtenerOPersistirPasswordCertificado(string certDir)
+        {
+            string keyPath = Path.Combine(certDir, "servidor_ssl.key");
+            try
+            {
+                if (File.Exists(keyPath))
+                {
+                    byte[] cifrado = File.ReadAllBytes(keyPath);
+                    byte[] plano = ProtectedData.Unprotect(cifrado, null, DataProtectionScope.CurrentUser);
+                    string pwd = System.Text.Encoding.UTF8.GetString(plano);
+                    if (!string.IsNullOrWhiteSpace(pwd)) return pwd;
+                }
+
+                string nuevoPwd = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+                byte[] nuevoCifrado = ProtectedData.Protect(System.Text.Encoding.UTF8.GetBytes(nuevoPwd), null, DataProtectionScope.CurrentUser);
+                File.WriteAllBytes(keyPath, nuevoCifrado);
+                return nuevoPwd;
+            }
+            catch
+            {
+                return "ChipAndChapaSecureCert2026";
+            }
+        }
+
+        private static bool EsOrigenLocalPermitido(string? origin)
+        {
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+            if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
+
+            string host = uri.Host;
+            if (string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(host, "::1", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            try
+            {
+                if (string.Equals(host, Dns.GetHostName(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+            }
+
+            if (IPAddress.TryParse(host, out var ip) && ip.AddressFamily == AddressFamily.InterNetwork)
+            {
+                byte[] b = ip.GetAddressBytes();
+                // Redes privadas RFC 1918: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 y loopback 127.0.0.0/8
+                if (b[0] == 10 || b[0] == 127) return true;
+                if (b[0] == 192 && b[1] == 168) return true;
+                if (b[0] == 172 && b[1] >= 16 && b[1] <= 31) return true;
+            }
+
+            return false;
+        }
+
         private static X509Certificate2 ObtenerOCrearCertificado()
         {
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            var certDir = Path.Combine(appData, "PuntoDeVenta");
+            var certDir = Environment.GetEnvironmentVariable("POS_CERT_FOLDER") is { Length: > 0 } customCertDir
+                ? customCertDir
+                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PuntoDeVenta");
             Directory.CreateDirectory(certDir);
             var certPath = Path.Combine(certDir, "servidor_ssl.pfx");
-            const string certPassword = "ChipAndChapaSecureCert2026";
+            const string legacyCertPassword = "ChipAndChapaSecureCert2026";
+            string certPassword = ObtenerOPersistirPasswordCertificado(certDir);
 
             if (File.Exists(certPath))
             {
-                try
+                foreach (string pwdIntento in new[] { certPassword, legacyCertPassword })
                 {
-                    var certCargado = new X509Certificate2(certPath, certPassword, X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
-                    if (certCargado.NotAfter > DateTime.Now.AddDays(30))
+                    try
                     {
-                        return certCargado;
+                        var certCargado = new X509Certificate2(certPath, pwdIntento, X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
+                        if (certCargado.NotAfter > DateTime.Now.AddDays(30))
+                        {
+                            return certCargado;
+                        }
+                        certCargado.Dispose();
                     }
-                }
-                catch
-                {
+                    catch
+                    {
+                    }
                 }
             }
 
@@ -286,7 +353,7 @@ namespace Punto_de_Venta.Servicios
             }
         }
 
-        public async Task IniciarAsync()
+        public async Task IniciarAsync(int httpPort = 5000, int httpsPort = 5001)
         {
             try
             {
@@ -295,8 +362,8 @@ namespace Punto_de_Venta.Servicios
 
                 builder.WebHost.ConfigureKestrel(options =>
                 {
-                    options.ListenAnyIP(5000);
-                    options.ListenAnyIP(5001, listenOptions =>
+                    options.ListenAnyIP(httpPort);
+                    options.ListenAnyIP(httpsPort, listenOptions =>
                     {
                         listenOptions.UseHttps(cert);
                     });
@@ -322,10 +389,19 @@ namespace Punto_de_Venta.Servicios
                     });
                 builder.Services.AddAuthorization();
                 builder.Services.AddCors();
+                if (Environment.GetEnvironmentVariable("POS_CERT_FOLDER") is { Length: > 0 } customCertFolder)
+                {
+                    var dpDir = Directory.CreateDirectory(Path.Combine(customCertFolder, "dataprotection-keys"));
+                    builder.Services.AddDataProtection().PersistKeysToFileSystem(dpDir);
+                }
 
                 _app = builder.Build();
 
-                _app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+                _app.UseCors(x => x
+                    .SetIsOriginAllowed(EsOrigenLocalPermitido)
+                    .WithMethods("GET", "POST")
+                    .AllowAnyHeader()
+                    .AllowCredentials());
 
                 _app.Use(async (ctx, next) =>
                 {
@@ -333,7 +409,7 @@ namespace Punto_de_Venta.Servicios
                     {
                         var host = ctx.Request.Host.Host;
                         var query = ctx.Request.QueryString.HasValue ? ctx.Request.QueryString.Value : "";
-                        var httpsUrl = $"https://{host}:5001{ctx.Request.Path}{query}";
+                        var httpsUrl = $"https://{host}:{httpsPort}{ctx.Request.Path}{query}";
                         ctx.Response.Redirect(httpsUrl, permanent: false);
                         return;
                     }
@@ -401,14 +477,15 @@ namespace Punto_de_Venta.Servicios
                         </body>
                         </html>";
                     return Results.Content(html, "text/html");
-                });
+                }).AllowAnonymous();
 
                 _app.MapPost("/login", async (HttpContext ctx) =>
                 {
                     var form = await ctx.Request.ReadFormAsync();
                     string? pinIngresado = form["pin"];
+                    var configActual = AppConfig.Load();
 
-                    if (pinIngresado == "1234")
+                    if (!string.IsNullOrWhiteSpace(pinIngresado) && configActual.ValidarPin(pinIngresado.Trim()))
                     {
                         var claims = new[] { new Claim(ClaimTypes.Name, "EmpleadoCaja") };
                         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -419,7 +496,7 @@ namespace Punto_de_Venta.Servicios
                     }
 
                     return Results.Redirect("/login?error=1");
-                });
+                }).AllowAnonymous();
 
                 _app.MapGet("/", () =>
                 {
@@ -753,6 +830,10 @@ namespace Punto_de_Venta.Servicios
                                     mostrarStatus('Buscando...', null);
                                     fetch('/api/inventario/lista?q=' + encodeURIComponent(q))
                                         .then(async r => {
+                                            if (r.status === 401) {
+                                                window.location.href = '/login';
+                                                throw new Error('Sesion expirada');
+                                            }
                                             const data = await r.json();
                                             if (!r.ok || (data && data.ok === false)) {
                                                 throw new Error(data && data.mensaje ? data.mensaje : 'Error ' + r.status);
@@ -775,9 +856,14 @@ namespace Punto_de_Venta.Servicios
 
                                 function renderizarLista(items) {
                                     const container = document.getElementById('listaContainer');
-                                    container.innerHTML = '';
+                                    container.textContent = '';
                                     if (!items || items.length === 0) {
-                                        container.innerHTML = ""<div style='color:#888888; padding:20px; text-align:center;'>No se encontraron productos</div>"";
+                                        const emptyDiv = document.createElement('div');
+                                        emptyDiv.style.color = '#888888';
+                                        emptyDiv.style.padding = '20px';
+                                        emptyDiv.style.textAlign = 'center';
+                                        emptyDiv.textContent = 'No se encontraron productos';
+                                        container.appendChild(emptyDiv);
                                         return;
                                     }
 
@@ -785,12 +871,37 @@ namespace Punto_de_Venta.Servicios
                                         const div = document.createElement('div');
                                         div.className = 'item-row';
                                         div.onclick = () => { abrirDetalle(p); };
-                                        div.innerHTML = ""<div style='font-size:15px; font-weight:bold; margin-bottom:4px;'>"" + (p.nombre || 'Sin nombre') + ""</div>"" +
-                                            ""<div style='font-size:12px; color:#555555; margin-bottom:4px;'>Codigo: "" + (p.codigo || 'N/A') + "" | Categoria: "" + (p.categoria || 'General') + ""</div>"" +
-                                            ""<div style='font-size:14px; font-weight:bold; display:flex; justify-content:space-between;'>"" +
-                                            ""<span>Precio: $"" + Number(p.precio || 0).toFixed(2) + ""</span>"" +
-                                            ""<span>Stock: "" + (p.stock ?? 0) + ""</span>"" +
-                                            ""</div>"";
+
+                                        const titleDiv = document.createElement('div');
+                                        titleDiv.style.fontSize = '15px';
+                                        titleDiv.style.fontWeight = 'bold';
+                                        titleDiv.style.marginBottom = '4px';
+                                        titleDiv.textContent = p.nombre || 'Sin nombre';
+
+                                        const metaDiv = document.createElement('div');
+                                        metaDiv.style.fontSize = '12px';
+                                        metaDiv.style.color = '#555555';
+                                        metaDiv.style.marginBottom = '4px';
+                                        metaDiv.textContent = 'Codigo: ' + (p.codigo || 'N/A') + ' | Categoria: ' + (p.categoria || 'General');
+
+                                        const bottomDiv = document.createElement('div');
+                                        bottomDiv.style.fontSize = '14px';
+                                        bottomDiv.style.fontWeight = 'bold';
+                                        bottomDiv.style.display = 'flex';
+                                        bottomDiv.style.justifyContent = 'space-between';
+
+                                        const priceSpan = document.createElement('span');
+                                        priceSpan.textContent = 'Precio: $' + Number(p.precio || 0).toFixed(2);
+
+                                        const stockSpan = document.createElement('span');
+                                        stockSpan.textContent = 'Stock: ' + (p.stock ?? 0);
+
+                                        bottomDiv.appendChild(priceSpan);
+                                        bottomDiv.appendChild(stockSpan);
+
+                                        div.appendChild(titleDiv);
+                                        div.appendChild(metaDiv);
+                                        div.appendChild(bottomDiv);
                                         container.appendChild(div);
                                     });
                                 }
@@ -802,6 +913,10 @@ namespace Punto_de_Venta.Servicios
 
                                     fetch('/api/producto?codigo=' + encodeURIComponent(codigo))
                                         .then(async r => {
+                                            if (r.status === 401) {
+                                                window.location.href = '/login';
+                                                throw new Error('Sesion expirada');
+                                            }
                                             const data = await r.json();
                                             if (r.ok && data.ok) return data;
                                             throw new Error(data && data.mensaje ? data.mensaje : 'No registrado');
@@ -898,7 +1013,7 @@ namespace Punto_de_Venta.Servicios
                                             cantidad: cant
                                         })
                                     })
-                                    .then(r => r.json())
+                                    .then(r => { if (r.status === 401) { window.location.href = '/login'; throw new Error('Sesion expirada'); } return r.json(); })
                                     .then(res => {
                                         if (res.ok) {
                                             currentProduct.stock = res.stock;
@@ -921,7 +1036,7 @@ namespace Punto_de_Venta.Servicios
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ codigo: currentProduct.codigo })
                                     })
-                                    .then(r => r.json())
+                                    .then(r => { if (r.status === 401) { window.location.href = '/login'; throw new Error('Sesion expirada'); } return r.json(); })
                                     .then(res => {
                                         if (res.ok) {
                                             mostrarStatus('Producto seleccionado en el Inventario de la PC', true);
@@ -941,7 +1056,7 @@ namespace Punto_de_Venta.Servicios
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ codigo: currentCode })
                                     })
-                                    .then(r => r.json())
+                                    .then(r => { if (r.status === 401) { window.location.href = '/login'; throw new Error('Sesion expirada'); } return r.json(); })
                                     .then(res => {
                                         if (res.ok) {
                                             mostrarStatus('Codigo cargado en el formulario de la PC', true);
@@ -979,7 +1094,7 @@ namespace Punto_de_Venta.Servicios
                                             categoria: categoria
                                         })
                                     })
-                                    .then(r => r.json())
+                                    .then(r => { if (r.status === 401) { window.location.href = '/login'; throw new Error('Sesion expirada'); } return r.json(); })
                                     .then(res => {
                                         if (res.ok) {
                                             mostrarStatus(res.mensaje, true);
@@ -1010,7 +1125,7 @@ namespace Punto_de_Venta.Servicios
                         </body>
                         </html>";
                     return Results.Content(html, "text/html");
-                }).AllowAnonymous();
+                }).RequireAuthorization();
 
                 _app.MapGet("/api/inventario/lista", (HttpContext ctx) =>
                 {
@@ -1043,7 +1158,7 @@ namespace Punto_de_Venta.Servicios
                             Productos = new List<ProductoMovilDto>()
                         }, statusCode: 500);
                     }
-                }).AllowAnonymous();
+                }).RequireAuthorization();
 
                 _app.MapGet("/api/producto", (HttpContext ctx) =>
                 {
@@ -1071,7 +1186,7 @@ namespace Punto_de_Venta.Servicios
                         Stock = producto.Stock,
                         Cantidad = producto.Stock
                     });
-                }).AllowAnonymous();
+                }).RequireAuthorization();
 
                 _app.MapGet("/api/producto/{**codigo}", (string codigo) =>
                 {
@@ -1093,7 +1208,7 @@ namespace Punto_de_Venta.Servicios
                         Stock = producto.Stock,
                         Cantidad = producto.Stock
                     });
-                }).AllowAnonymous();
+                }).RequireAuthorization();
 
                 _app.MapPost("/api/producto/actualizar", async (HttpContext ctx) =>
                 {
@@ -1149,7 +1264,7 @@ namespace Punto_de_Venta.Servicios
                     {
                         return Results.Json(new EstadoOperacionResponse { Ok = false, Mensaje = "Error en base de datos: " + ex.Message }, statusCode: 500);
                     }
-                }).AllowAnonymous();
+                }).RequireAuthorization();
 
                 _app.MapPost("/api/inventario/seleccionar", async (HttpContext ctx) =>
                 {
@@ -1174,7 +1289,7 @@ namespace Punto_de_Venta.Servicios
                     }
 
                     return Results.Ok(new EstadoOperacionResponse { Ok = seleccionado, Mensaje = seleccionado ? "Producto seleccionado en PC" : "No se pudo seleccionar" });
-                }).AllowAnonymous();
+                }).RequireAuthorization();
 
                 _app.MapPost("/api/inventario/nuevo", async (HttpContext ctx) =>
                 {
@@ -1196,7 +1311,7 @@ namespace Punto_de_Venta.Servicios
                     }
 
                     return Results.Ok(new EstadoOperacionResponse { Ok = abierto, Mensaje = abierto ? "Codigo enviado al formulario en PC" : "No se pudo enviar" });
-                }).AllowAnonymous();
+                }).RequireAuthorization();
 
                 _app.MapPost("/api/inventario/crear", async (HttpContext ctx) =>
                 {
@@ -1207,26 +1322,57 @@ namespace Punto_de_Venta.Servicios
                     }
 
                     bool creado = false;
+                    bool manejadoPorUi = false;
                     if (Application.Current?.Dispatcher != null)
                     {
-                        creado = await Application.Current.Dispatcher.InvokeAsync(() =>
+                        var resultadoUi = await Application.Current.Dispatcher.InvokeAsync(() =>
                         {
                             if (Application.Current.MainWindow is MainWindow mw)
                             {
-                                return mw.CrearProductoEnInventarioDesdeMovil(
+                                return (true, mw.CrearProductoEnInventarioDesdeMovil(
                                     req.Codigo ?? string.Empty,
                                     req.Nombre,
                                     req.Precio,
                                     req.Costo,
                                     req.Stock,
-                                    req.Categoria ?? "General");
+                                    req.Categoria ?? "General"));
                             }
-                            return false;
+                            return (false, false);
                         });
+                        manejadoPorUi = resultadoUi.Item1;
+                        creado = resultadoUi.Item2;
+                    }
+
+                    if (!manejadoPorUi)
+                    {
+                        string codigoTrim = req.Codigo?.Trim() ?? string.Empty;
+                        string nombreTrim = req.Nombre.Trim();
+                        var existentes = ProductoDB.Load();
+                        bool nombreDuplicado = existentes.Any(p => string.Equals(p.Nombre?.Trim(), nombreTrim, StringComparison.OrdinalIgnoreCase));
+                        bool codigoDuplicado = !string.IsNullOrEmpty(codigoTrim) &&
+                            existentes.Any(p => string.Equals(p.Codigo?.Trim(), codigoTrim, StringComparison.OrdinalIgnoreCase));
+                        bool excedeLimiteFree = !LicenciaService.EsPremium() && existentes.Count >= 400;
+
+                        if (!nombreDuplicado && !codigoDuplicado && !excedeLimiteFree)
+                        {
+                            var nuevoProd = new Modelos.Producto
+                            {
+                                Id = ProductoDB.ObtenerSiguienteId(),
+                                Codigo = codigoTrim,
+                                Nombre = nombreTrim,
+                                Precio = req.Precio,
+                                Costo = req.Costo,
+                                Stock = req.Stock,
+                                Categoria = string.IsNullOrWhiteSpace(req.Categoria) ? "General" : req.Categoria.Trim(),
+                                Ganancia = Math.Max(0, req.Precio - req.Costo)
+                            };
+                            ProductoDB.Save(new[] { nuevoProd });
+                            creado = true;
+                        }
                     }
 
                     return Results.Ok(new EstadoOperacionResponse { Ok = creado, Mensaje = creado ? "Producto registrado con exito" : "No se pudo registrar el producto" });
-                }).AllowAnonymous();
+                }).RequireAuthorization();
 
                 await _app.StartAsync();
                 EstaCorriendo = true;

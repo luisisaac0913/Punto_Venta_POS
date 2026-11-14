@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Punto_de_Venta.Servicios;
 using System;
 using System.IO;
 
@@ -16,9 +17,12 @@ namespace Punto_de_Venta.Datos
         {
             get
             {
-                string subDb = Path.Combine(DbFolder, "BaseDatos", "pos_data.db");
+                string dbName = Environment.GetEnvironmentVariable("POS_DB_NAME") is { Length: > 0 } customDbName
+                    ? customDbName
+                    : "pos_data.db";
+                string subDb = Path.Combine(DbFolder, "BaseDatos", dbName);
                 if (File.Exists(subDb)) return subDb;
-                return Path.Combine(DbFolder, "pos_data.db");
+                return Path.Combine(DbFolder, dbName);
             }
         }
         public static string ConnectionString => new SqliteConnectionStringBuilder
@@ -40,6 +44,9 @@ namespace Punto_de_Venta.Datos
             }
 
             string[] queries = {
+                "ALTER TABLE Ventas ADD COLUMN ProductosResumen TEXT NOT NULL DEFAULT '';",
+                "ALTER TABLE Ventas ADD COLUMN CantidadTotal REAL NOT NULL DEFAULT 0;",
+                "ALTER TABLE Ventas ADD COLUMN MetodoPago TEXT NOT NULL DEFAULT 'Efectivo';",
                 "ALTER TABLE Ventas ADD COLUMN PagoEfectivo REAL DEFAULT 0;",
                 "ALTER TABLE Ventas ADD COLUMN PagoTarjeta REAL DEFAULT 0;",
                 "ALTER TABLE Ventas ADD COLUMN PagoTransferencia REAL DEFAULT 0;",
@@ -64,8 +71,13 @@ namespace Punto_de_Venta.Datos
                     cmd.CommandText = query;
                     cmd.ExecuteNonQuery();
                 }
-                catch
+                catch (SqliteException sqlEx) when (sqlEx.Message.Contains("duplicate column", StringComparison.OrdinalIgnoreCase))
                 {
+                    // Columna ya existente en el esquema de la tienda
+                }
+                catch (Exception ex)
+                {
+                    PosLogger.Warn("DatabaseHelper.ActualizarEsquemaVentas", $"Aviso aplicando migracion '{query}': {ex.Message}");
                 }
             }
 
@@ -84,8 +96,9 @@ namespace Punto_de_Venta.Datos
                     cleanCmd.CommandText = cleanQuery;
                     cleanCmd.ExecuteNonQuery();
                 }
-                catch
+                catch (Exception ex)
                 {
+                    PosLogger.Error("DatabaseHelper.Saneamiento", ex, cleanQuery);
                 }
             }
         }

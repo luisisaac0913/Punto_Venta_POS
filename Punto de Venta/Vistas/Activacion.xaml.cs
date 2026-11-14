@@ -30,7 +30,7 @@ namespace Punto_de_Venta
                 Proxy = null,
                 SslOptions = new System.Net.Security.SslClientAuthenticationOptions
                 {
-                    RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+                    EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13
                 }
             };
             var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
@@ -45,7 +45,7 @@ namespace Punto_de_Venta
             {
                 UseProxy = false,
                 Proxy = null,
-                ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+                SslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13
             };
             var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
             client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) POS/1.0");
@@ -129,33 +129,39 @@ namespace Punto_de_Venta
 
         private async void Activacion_Loaded(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                await CargarActivacionInicialAsync();
+            }
+            catch (Exception ex)
+            {
+                PosLogger.Warn("Activacion.Activacion_Loaded", ex);
+            }
+        }
+
+        private async Task CargarActivacionInicialAsync()
+        {
             Focus();
             Keyboard.Focus(this);
             ActualizarEstadoVisual();
 
-            try
+            if (!string.IsNullOrWhiteSpace(_hwid))
             {
-                if (!string.IsNullOrWhiteSpace(_hwid))
+                bool eraPremium = LicenciaService.EsPremium();
+                bool? estadoNube = await LicenciaService.VerificarEnNubeAsync().ConfigureAwait(true);
+
+                if (!IsLoaded) return;
+
+                if (estadoNube == true && !eraPremium)
                 {
-                    bool eraPremium = LicenciaService.EsPremium();
-                    bool? estadoNube = await LicenciaService.VerificarEnNubeAsync().ConfigureAwait(true);
-
-                    if (!IsLoaded) return;
-
-                    if (estadoNube == true && !eraPremium)
-                    {
-                        CompletarActivacionExitosa();
-                    }
-                    else if (estadoNube == false)
-                    {
-                        ActualizarEstadoVisual();
-                        var mainWindow = Window.GetWindow(this) as MainWindow ?? Application.Current.MainWindow as MainWindow;
-                        mainWindow?.ActualizarEstadoLicenciaUI();
-                    }
+                    CompletarActivacionExitosa();
                 }
-            }
-            catch
-            {
+                else if (estadoNube == false)
+                {
+                    ActualizarEstadoVisual();
+                    var mainWindow = Window.GetWindow(this) as MainWindow ?? Application.Current.MainWindow as MainWindow;
+                    mainWindow?.ActualizarEstadoLicenciaUI();
+                }
             }
         }
 
@@ -206,6 +212,18 @@ namespace Punto_de_Venta
 
         private async void BtnPagarMercadoPago_Click(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                await ProcesarPagoMercadoPagoAsync();
+            }
+            catch (Exception ex)
+            {
+                PosLogger.Error("Activacion.BtnPagarMercadoPago_Click", ex);
+            }
+        }
+
+        private async Task ProcesarPagoMercadoPagoAsync()
+        {
             if (_pagoEnCurso) return;
 
             CancelarPagoEnCurso();
@@ -245,7 +263,7 @@ namespace Punto_de_Venta
                 }
 
                 TxtEstadoEspera.Text = "Generando enlace de pago seguro...";
-                string jsonBody = $"{{\"hwid\":\"{_hwid}\"}}";
+                string jsonBody = System.Text.Json.JsonSerializer.Serialize(new { hwid = _hwid });
                 var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
 
                 string responseString = string.Empty;
@@ -356,6 +374,7 @@ namespace Punto_de_Venta
             }
             catch (Exception ex)
             {
+                PosLogger.Error("Activacion.ProcesarPagoMercadoPagoAsync", ex);
                 if (ct.IsCancellationRequested || !IsLoaded) return;
 
                 string mensajeDetalle = FormatearExcepcionCompleta(ex);
@@ -506,7 +525,7 @@ namespace Punto_de_Venta
             var psi = new ProcessStartInfo
             {
                 FileName = "curl.exe",
-                Arguments = $"-sS --connect-timeout 8 --max-time 15 -k -X POST -H \"Content-Type: application/json\" -H \"Accept: application/json\" -d \"{jsonBody.Replace("\"", "\\\"")}\" \"{url}\"",
+                Arguments = $"-sS --connect-timeout 8 --max-time 15 --tlsv1.2 -X POST -H \"Content-Type: application/json\" -H \"Accept: application/json\" -d \"{jsonBody.Replace("\"", "\\\"")}\" \"{url}\"",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -537,7 +556,7 @@ namespace Punto_de_Venta
                 var psi = new ProcessStartInfo
                 {
                     FileName = "curl.exe",
-                    Arguments = $"-s -f --connect-timeout 8 --max-time 15 -k -H \"Accept: application/json\" \"{url}\"",
+                    Arguments = $"-s -f --connect-timeout 8 --max-time 15 --tlsv1.2 -H \"Accept: application/json\" \"{url}\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,

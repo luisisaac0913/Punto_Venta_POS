@@ -71,11 +71,15 @@ namespace Punto_de_Venta
             if ((bool)e.NewValue)
             {
                 ActualizarIndicadoresPremiumUI();
-                RecargarDatosDesdeBD();
-                VerificarTurnoPendienteDeDiasAnteriores();
-                FocusSearch();
-                this.Focus();
-                Keyboard.Focus(this);
+                this.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+                {
+                    if (!IsVisible) return;
+                    RecargarDatosDesdeBD();
+                    VerificarTurnoPendienteDeDiasAnteriores();
+                    FocusSearch();
+                    this.Focus();
+                    Keyboard.Focus(this);
+                }));
             }
         }
 
@@ -90,8 +94,9 @@ namespace Punto_de_Venta
                     ToastNotification.Show($"Atencion: Tienes un turno pendiente por cerrar del dia {fechaStr}.", ToastType.Warning);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                PosLogger.Warn("Ventas.VerificarTurnoPendiente", ex.Message);
             }
         }
 
@@ -122,9 +127,17 @@ namespace Punto_de_Venta
             {
                 Sales.Clear();
                 _loadFailed = false;
-                try { _catalog = ProductoDB.Load(); } catch { _catalog = []; }
-                CargarMovimientosCaja();
-                var rawSales = VentaDB.Load();
+                try { _catalog = ProductoDB.Load(); }
+                catch (Exception exCat) { PosLogger.Warn("Ventas.RecargarCatalogo", exCat.Message); _catalog = []; }
+
+                CorteCaja? turnoActivo = null;
+                try { turnoActivo = TurnoCajaManager.ObtenerTurnoActivo(); }
+                catch (Exception exTurno) { PosLogger.Warn("Ventas.ObtenerTurnoActivo", exTurno.Message); }
+
+                CargarMovimientosCaja(turnoActivo?.Id);
+                var rawSales = VentaDB.LoadPorRangoFechas(_filtroInicio, _filtroFin, limiteMaximo: 5000, incluirAbiertas: true);
+                int nextSyntheticId = (rawSales.Count > 0 ? rawSales.Max(s => s.Id) : 0) + 1;
+
                 foreach (var mov in _movimientos.Where(m => m.Concepto != null && m.Concepto.StartsWith("Abono de ", StringComparison.OrdinalIgnoreCase)))
                 {
                     if (!rawSales.Any(s => string.Equals(s.Estado, "Abono", StringComparison.OrdinalIgnoreCase) && s.Total == mov.Monto && Math.Abs((s.FechaHora - mov.FechaHora).TotalMinutes) < 2))
@@ -132,7 +145,7 @@ namespace Punto_de_Venta
                         bool esTarj = mov.Concepto.EndsWith("en tarjeta", StringComparison.OrdinalIgnoreCase);
                         bool esTransf = mov.Concepto.EndsWith("en transferencia", StringComparison.OrdinalIgnoreCase);
                         bool esEfec = !esTarj && !esTransf;
-                        int nextId = VentaDB.ObtenerSiguienteId();
+                        int nextId = nextSyntheticId++;
                         var nueva = new Venta
                         {
                             Id = nextId,
@@ -162,14 +175,15 @@ namespace Punto_de_Venta
             catch (Exception exception)
             {
                 _loadFailed = true;
+                PosLogger.Error("Ventas.RecargarDatosDesdeBD", exception);
                 CustomMessageBox.Show(Application.Current.MainWindow, exception.Message, "No se pudo cargar el historial", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void CargarMovimientosCaja()
+        private void CargarMovimientosCaja(int? corteActivoId = null)
         {
-            try { _movimientos = MovimientoCajaDB.Load() ?? []; }
-            catch { _movimientos = []; }
+            try { _movimientos = MovimientoCajaDB.LoadPorRangoFechas(_filtroInicio, _filtroFin, corteActivoId) ?? []; }
+            catch (Exception ex) { PosLogger.Warn("Ventas.CargarMovimientosCaja", ex.Message); _movimientos = []; }
         }
 
         public void BtnPeriodo_Click(object sender, RoutedEventArgs e)
@@ -186,8 +200,7 @@ namespace Punto_de_Venta
                 ActualizarRangoPeriodo(periodo);
                 ActualizarEstiloBotonesPeriodo();
                 CustomDatePanel.Visibility = periodo == "Custom" ? Visibility.Visible : Visibility.Collapsed;
-                SalesView.Refresh();
-                RefreshMetrics();
+                RecargarDatosDesdeBD();
             }
         }
 
@@ -197,8 +210,13 @@ namespace Punto_de_Venta
             {
                 _filtroInicio = DatePickerDesde.SelectedDate?.Date ?? DateTime.Today;
                 _filtroFin = (DatePickerHasta.SelectedDate?.Date ?? DateTime.Today).AddDays(1).AddTicks(-1);
-                SalesView.Refresh();
-                RefreshMetrics();
+                if (_filtroInicio > _filtroFin)
+                {
+                    var temp = _filtroInicio;
+                    _filtroInicio = _filtroFin.Date;
+                    _filtroFin = temp.Date.AddDays(1).AddTicks(-1);
+                }
+                RecargarDatosDesdeBD();
             }
         }
 
@@ -646,7 +664,7 @@ namespace Punto_de_Venta
             decimal entradas = 0m;
             decimal salidas = 0m;
 
-            decimal cashSales = VentaDB.Load()
+            decimal cashSales = VentaDB.LoadPorRangoFechas(turnoActivo.FechaHora.Date, DateTime.Today.AddDays(1), limiteMaximo: 5000, incluirAbiertas: true)
                 .Where(s => s.Estado.Equals("Abierta", StringComparison.OrdinalIgnoreCase) &&
                             (s.CorteCajaId == null || s.CorteCajaId <= 0 || s.CorteCajaId == turnoActivo.Id))
                 .Sum(s =>

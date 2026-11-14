@@ -108,10 +108,11 @@ namespace Punto_de_Venta.Vistas
                 CargarPromocionesDesdeDb();
                 CargarVentasEnEsperaDesdeDb();
                 RefreshSuggestions();
-                ActualizarEstadoHardwareAsync();
+                _ = ActualizarEstadoHardwareAsync();
             }
             catch (Exception exception)
             {
+                PosLogger.Error("Cobro.UserControl_Loaded", exception);
                 _catalog = new();
                 if (FindName("SuggestionsPopup") is Popup popup) popup.IsOpen = false;
                 ToastNotification.Show($"No se pudo cargar el catalogo: {exception.Message}", ToastType.Error);
@@ -187,7 +188,7 @@ namespace Punto_de_Venta.Vistas
                 }
                 CargarPromocionesDesdeDb();
                 CargarVentasEnEsperaDesdeDb();
-                ActualizarEstadoHardwareAsync();
+                _ = ActualizarEstadoHardwareAsync();
 
                 this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                 {
@@ -239,7 +240,7 @@ namespace Punto_de_Venta.Vistas
             TotalScaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, animY);
         }
 
-        private async void ActualizarEstadoHardwareAsync()
+        private async Task ActualizarEstadoHardwareAsync()
         {
             try
             {
@@ -274,27 +275,28 @@ namespace Punto_de_Venta.Vistas
                 bool impresionHabilitada = TicketService.EsImpresoraConfiguradaValida(nombreImpresora)
                     && (config.PreguntarAntesDeImprimir || config.ImprimirTicketAutomatico);
                 bool impresoraValida = false;
+                bool impresoraConAdvertencia = false;
+                string mensajeEstadoImpresora = string.Empty;
 
                 if (impresionHabilitada)
                 {
-                    await Task.Run(() =>
-                    {
-                        foreach (string printer in PrinterSettings.InstalledPrinters)
-                        {
-                            if (string.Equals(printer, nombreImpresora, StringComparison.OrdinalIgnoreCase))
-                            {
-                                impresoraValida = true;
-                                break;
-                            }
-                        }
-                    });
+                    var estadoCola = await Task.Run(() => TicketService.VerificarEstadoImpresora(nombreImpresora));
+                    impresoraValida = estadoCola.Instalada;
+                    impresoraConAdvertencia = estadoCola.TieneAdvertenciaCola;
+                    mensajeEstadoImpresora = estadoCola.MensajeEstado;
                 }
 
-                if (impresoraValida)
+                if (impresoraValida && !impresoraConAdvertencia)
                 {
                     DotPrinterStatus.Fill = new SolidColorBrush(Color.FromRgb(46, 204, 113));
                     StatusPrinterBadge.Opacity = 1.0;
                     StatusPrinterBadge.ToolTip = $"Impresora lista: {nombreImpresora}";
+                }
+                else if (impresoraValida && impresoraConAdvertencia)
+                {
+                    DotPrinterStatus.Fill = new SolidColorBrush(Color.FromRgb(243, 156, 18));
+                    StatusPrinterBadge.Opacity = 1.0;
+                    StatusPrinterBadge.ToolTip = mensajeEstadoImpresora;
                 }
                 else
                 {
@@ -302,15 +304,20 @@ namespace Punto_de_Venta.Vistas
                     StatusPrinterBadge.Opacity = 0.5;
                     StatusPrinterBadge.ToolTip = !impresionHabilitada
                         ? "Impresora desactivada en ajustes"
-                        : $"Impresora no encontrada: {nombreImpresora}";
+                        : (string.IsNullOrWhiteSpace(mensajeEstadoImpresora) ? $"Impresora no encontrada: {nombreImpresora}" : mensajeEstadoImpresora);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                DotScaleStatus.Fill = new SolidColorBrush(Color.FromRgb(142, 142, 147));
-                StatusScaleBadge.Opacity = 0.5;
-                DotPrinterStatus.Fill = new SolidColorBrush(Color.FromRgb(142, 142, 147));
-                StatusPrinterBadge.Opacity = 0.5;
+                PosLogger.Warn("Cobro.ActualizarEstadoHardwareAsync", ex.Message);
+                try
+                {
+                    DotScaleStatus.Fill = new SolidColorBrush(Color.FromRgb(142, 142, 147));
+                    StatusScaleBadge.Opacity = 0.5;
+                    DotPrinterStatus.Fill = new SolidColorBrush(Color.FromRgb(142, 142, 147));
+                    StatusPrinterBadge.Opacity = 0.5;
+                }
+                catch { }
             }
         }
         public void ActualizarIndicadoresPremiumUI()
@@ -333,65 +340,78 @@ namespace Punto_de_Venta.Vistas
 
         #region Modulo de Pesaje con Bascula (F8)
 
-        private async void AbrirModalPesaje()
+        private void AbrirModalPesaje()
         {
-            var cartGrid = (DataGrid)FindName("CartGrid");
-            _itemEnPesaje = cartGrid.SelectedItem as ItemCarrito ?? Cart.LastOrDefault();
+            _ = AbrirModalPesajeAsync();
+        }
 
-            if (_itemEnPesaje == null)
+        private async Task AbrirModalPesajeAsync()
+        {
+            try
             {
-                var searchBox = (TextBox)FindName("SearchBox");
-                var query = searchBox.Text.Trim();
-                if (!string.IsNullOrEmpty(query))
-                {
-                    var match = _catalog.FirstOrDefault(p =>
-                        string.Equals(p.Codigo, query, StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(p.Nombre, query, StringComparison.OrdinalIgnoreCase));
+                var cartGrid = (DataGrid)FindName("CartGrid");
+                _itemEnPesaje = cartGrid.SelectedItem as ItemCarrito ?? Cart.LastOrDefault();
 
-                    if (match != null)
+                if (_itemEnPesaje == null)
+                {
+                    var searchBox = (TextBox)FindName("SearchBox");
+                    var query = searchBox.Text.Trim();
+                    if (!string.IsNullOrEmpty(query))
                     {
-                        AddProduct(match);
-                        _itemEnPesaje = Cart.LastOrDefault();
+                        var match = _catalog.FirstOrDefault(p =>
+                            string.Equals(p.Codigo, query, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(p.Nombre, query, StringComparison.OrdinalIgnoreCase));
+
+                        if (match != null)
+                        {
+                            AddProduct(match);
+                            _itemEnPesaje = Cart.LastOrDefault();
+                        }
                     }
                 }
+
+                if (_itemEnPesaje == null)
+                {
+                    ToastNotification.Show("Añade o selecciona un producto para pesar", ToastType.Warning);
+                    FocusSearch();
+                    return;
+                }
+
+                ScaleProductNameText.Text = $"{_itemEnPesaje.Nombre}";
+                ScalePricePerKgText.Text = $"{_itemEnPesaje.Precio.ToString("C2", CultureInfo.GetCultureInfo("es-MX"))} / kg";
+
+                var config = AppConfig.Load();
+                bool abrirEnModoPrecio = config.BasculaModoPrecio;
+
+                if (abrirEnModoPrecio)
+                {
+                    TabModoPrecio.IsChecked = true;
+                }
+                else
+                {
+                    TabModoPeso.IsChecked = true;
+                    ScaleValueInput.Text = _itemEnPesaje.Cantidad > 0 ? _itemEnPesaje.Cantidad.ToString("0.000", CultureInfo.InvariantCulture) : "0.000";
+                }
+
+                ActualizarCalculoPesaje();
+
+                ScaleOverlay.Visibility = Visibility.Visible;
+                ScaleValueInput.Focus();
+                ScaleValueInput.SelectAll();
+
+                if (!abrirEnModoPrecio)
+                {
+                    await ConsultarBasculaAsync();
+                }
+                else
+                {
+                    ScaleStatusText.Text = "Modo inverso activo: Escribe el monto en pesos.";
+                }
             }
-
-            if (_itemEnPesaje == null)
+            catch (Exception ex)
             {
-                ToastNotification.Show("Añade o selecciona un producto para pesar", ToastType.Warning);
-                FocusSearch();
-                return;
-            }
-
-            ScaleProductNameText.Text = $"{_itemEnPesaje.Nombre}";
-            ScalePricePerKgText.Text = $"{_itemEnPesaje.Precio.ToString("C2", CultureInfo.GetCultureInfo("es-MX"))} / kg";
-
-            var config = AppConfig.Load();
-            bool abrirEnModoPrecio = config.BasculaModoPrecio;
-
-            if (abrirEnModoPrecio)
-            {
-                TabModoPrecio.IsChecked = true;
-            }
-            else
-            {
-                TabModoPeso.IsChecked = true;
-                ScaleValueInput.Text = _itemEnPesaje.Cantidad > 0 ? _itemEnPesaje.Cantidad.ToString("0.000", CultureInfo.InvariantCulture) : "0.000";
-            }
-
-            ActualizarCalculoPesaje();
-
-            ScaleOverlay.Visibility = Visibility.Visible;
-            ScaleValueInput.Focus();
-            ScaleValueInput.SelectAll();
-
-            if (!abrirEnModoPrecio)
-            {
-                await ConsultarBasculaAsync();
-            }
-            else
-            {
-                ScaleStatusText.Text = "Modo inverso activo: Escribe el monto en pesos.";
+                PosLogger.Error("Cobro.AbrirModalPesajeAsync", ex);
+                ToastNotification.Show($"Error al abrir modal de pesaje: {ex.Message}", ToastType.Error);
             }
         }
 
@@ -485,8 +505,15 @@ namespace Punto_de_Venta.Vistas
 
         private async void RereadScale_Click(object sender, RoutedEventArgs e)
         {
-            TabModoPeso.IsChecked = true;
-            await ConsultarBasculaAsync();
+            try
+            {
+                TabModoPeso.IsChecked = true;
+                await ConsultarBasculaAsync();
+            }
+            catch (Exception ex)
+            {
+                PosLogger.Error("Cobro.RereadScale_Click", ex);
+            }
         }
 
         private void CancelScale_Click(object sender, RoutedEventArgs e)
@@ -1370,6 +1397,18 @@ namespace Punto_de_Venta.Vistas
 
         private async void UserControl_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            try
+            {
+                await ProcesarPreviewKeyDownAsync(e);
+            }
+            catch (Exception ex)
+            {
+                PosLogger.Error("Cobro.UserControl_PreviewKeyDown", ex);
+            }
+        }
+
+        private async Task ProcesarPreviewKeyDownAsync(KeyEventArgs e)
+        {
             if (e.IsRepeat) return;
             if (_procesandoPago) { e.Handled = true; return; }
 
@@ -2021,7 +2060,18 @@ namespace Punto_de_Venta.Vistas
             }
         }
 
-        private async void FinalizeButton_Click(object sender, RoutedEventArgs e) => await FinalizePaymentAsync();
+        private async void FinalizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await FinalizePaymentAsync();
+            }
+            catch (Exception ex)
+            {
+                PosLogger.Error("Cobro.FinalizeButton_Click", ex);
+                ToastNotification.Show($"Error inesperado al finalizar cobro: {ex.Message}", ToastType.Error);
+            }
+        }
 
         private async Task FinalizePaymentAsync()
         {
@@ -2153,29 +2203,68 @@ namespace Punto_de_Venta.Vistas
                 {
                     if (paymentMethod == "Efectivo" || (paymentMethod == "Mixto" && pEfectivo > 0))
                     {
-                        CajonService.AbrirCajon();
+                        try
+                        {
+                            bool cajonAbierto = CajonService.AbrirCajon(out string errorCajon, config.ImpresoraSeleccionada);
+                            if (!cajonAbierto && RawPrinterHelper.EsImpresoraFisicaValida(config.ImpresoraSeleccionada))
+                            {
+                                string msgCajon = string.IsNullOrWhiteSpace(errorCajon)
+                                    ? "No se pudo abrir el cajon de dinero."
+                                    : $"Cajon: {errorCajon}";
+                                ToastNotification.Show(msgCajon, ToastType.Warning);
+                            }
+                        }
+                        catch (Exception exCajon)
+                        {
+                            PosLogger.Error("Cobro.FinalizePaymentAsync.AbrirCajon", exCajon);
+                            ToastNotification.Show("No se pudo enviar el pulso al cajon de dinero.", ToastType.Warning);
+                        }
                     }
 
-                    TicketService.GuardarCopiaDigital(sale, sale.Productos, amountReceived, change, config);
+                    try
+                    {
+                        TicketService.GuardarCopiaDigital(sale, sale.Productos, amountReceived, change, config);
+                    }
+                    catch (Exception exCopia)
+                    {
+                        PosLogger.Warn("Cobro.FinalizePaymentAsync.GuardarCopiaDigital", exCopia);
+                    }
 
                     if (imprimir)
                     {
-                        bool impreso = TicketService.ImprimirFisico(sale, sale.Productos, amountReceived, change, config);
-                        if (!impreso && TicketService.EsImpresoraConfiguradaValida(config.ImpresoraSeleccionada))
+                        try
                         {
-                            Dispatcher.Invoke(() => ToastNotification.Show("No se pudo imprimir el ticket en la impresora configurada.", ToastType.Warning));
+                            bool impreso = TicketService.ImprimirFisico(sale, sale.Productos, amountReceived, change, config, out string detalleImpresion);
+                            if (!impreso && TicketService.EsImpresoraConfiguradaValida(config.ImpresoraSeleccionada))
+                            {
+                                string msgTicket = string.IsNullOrWhiteSpace(detalleImpresion)
+                                    ? "No se pudo imprimir el ticket en la impresora configurada."
+                                    : $"No se pudo imprimir el ticket: {detalleImpresion}";
+                                ToastNotification.Show(msgTicket, ToastType.Warning);
+                            }
+                            else if (impreso && !string.IsNullOrWhiteSpace(detalleImpresion))
+                            {
+                                ToastNotification.Show($"⚠️ {detalleImpresion}", ToastType.Warning);
+                            }
+                        }
+                        catch (Exception exPrint)
+                        {
+                            PosLogger.Error("Cobro.FinalizePaymentAsync.ImprimirFisico", exPrint);
+                            ToastNotification.Show($"Error al enviar ticket a la impresora: {exPrint.Message}", ToastType.Warning);
                         }
                     }
                 });
             }
-            catch (OverflowException)
+            catch (OverflowException exOv)
             {
+                PosLogger.Error("Cobro.FinalizePaymentAsync.Overflow", exOv);
                 ((TextBlock)FindName("PaymentMessage")).Text = "No se puede asignar un folio nuevo a la venta.";
                 ToastNotification.Show("No se puede asignar folio a la venta", ToastType.Error);
             }
             catch (Exception exception)
             {
-                _catalog = ProductoDB.Load();
+                PosLogger.Error("Cobro.FinalizePaymentAsync", exception);
+                try { _catalog = ProductoDB.Load(); } catch { }
                 ((TextBlock)FindName("PaymentMessage")).Text = $"Error critico en BD: {exception.Message}";
                 ToastNotification.Show($"Error critico al guardar venta en base de datos: {exception.Message}", ToastType.Error);
             }

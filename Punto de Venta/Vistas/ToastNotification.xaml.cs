@@ -112,84 +112,148 @@ namespace Punto_de_Venta
 
         public static void Show(string message, ToastType type = ToastType.Success)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            var app = Application.Current;
+            var dispatcher = app?.Dispatcher;
+            if (dispatcher == null || dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
             {
-                Window? activeWindow = null;
-                if (Application.Current != null)
+                return;
+            }
+
+            void MostrarEnUI()
+            {
+                if (dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
                 {
-                    foreach (Window win in Application.Current.Windows)
-                    {
-                        if (win.IsActive && win is not ToastNotification && win.IsVisible)
-                        {
-                            activeWindow = win;
-                            break;
-                        }
-                    }
-                    if (activeWindow == null && Application.Current.MainWindow != null && Application.Current.MainWindow.IsVisible)
-                    {
-                        activeWindow = Application.Current.MainWindow;
-                    }
+                    return;
                 }
 
-                double workLeft = SystemParameters.WorkArea.Left;
-                double workTop = SystemParameters.WorkArea.Top;
-                double workWidth = SystemParameters.WorkArea.Width;
-                double workHeight = SystemParameters.WorkArea.Height;
-
-                if (activeWindow != null && activeWindow.IsLoaded)
+                try
                 {
-                    try
+                    Window? activeWindow = null;
+                    if (Application.Current != null)
                     {
-                        var helper = new WindowInteropHelper(activeWindow);
-                        if (helper.Handle != IntPtr.Zero)
+                        foreach (Window win in Application.Current.Windows)
                         {
-                            IntPtr hMonitor = MonitorFromWindow(helper.Handle, MONITOR_DEFAULTTONEAREST);
-                            if (hMonitor != IntPtr.Zero)
+                            if (win.IsActive && win is not ToastNotification && win.IsVisible)
                             {
-                                var mi = new MONITORINFO();
-                                mi.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
-                                if (GetMonitorInfo(hMonitor, ref mi))
+                                activeWindow = win;
+                                break;
+                            }
+                        }
+                        if (activeWindow == null && Application.Current.MainWindow != null && Application.Current.MainWindow.IsVisible)
+                        {
+                            activeWindow = Application.Current.MainWindow;
+                        }
+                    }
+
+                    double workLeft = SystemParameters.WorkArea.Left;
+                    double workTop = SystemParameters.WorkArea.Top;
+                    double workWidth = SystemParameters.WorkArea.Width;
+                    double workHeight = SystemParameters.WorkArea.Height;
+
+                    if (activeWindow != null && activeWindow.IsLoaded)
+                    {
+                        try
+                        {
+                            var helper = new WindowInteropHelper(activeWindow);
+                            if (helper.Handle != IntPtr.Zero)
+                            {
+                                IntPtr hMonitor = MonitorFromWindow(helper.Handle, MONITOR_DEFAULTTONEAREST);
+                                if (hMonitor != IntPtr.Zero)
                                 {
-                                    var source = PresentationSource.FromVisual(activeWindow);
-                                    if (source?.CompositionTarget != null)
+                                    var mi = new MONITORINFO();
+                                    mi.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+                                    if (GetMonitorInfo(hMonitor, ref mi))
                                     {
-                                        Matrix matrix = source.CompositionTarget.TransformFromDevice;
-                                        Point p1 = matrix.Transform(new Point(mi.rcWork.Left, mi.rcWork.Top));
-                                        Point p2 = matrix.Transform(new Point(mi.rcWork.Right, mi.rcWork.Bottom));
-                                        workLeft = p1.X;
-                                        workTop = p1.Y;
-                                        workWidth = Math.Max(100, p2.X - p1.X);
-                                        workHeight = Math.Max(100, p2.Y - p1.Y);
-                                    }
-                                    else
-                                    {
-                                        workLeft = mi.rcWork.Left;
-                                        workTop = mi.rcWork.Top;
-                                        workWidth = Math.Max(100, mi.rcWork.Right - mi.rcWork.Left);
-                                        workHeight = Math.Max(100, mi.rcWork.Bottom - mi.rcWork.Top);
+                                        var source = PresentationSource.FromVisual(activeWindow);
+                                        if (source?.CompositionTarget != null)
+                                        {
+                                            Matrix matrix = source.CompositionTarget.TransformFromDevice;
+                                            Point p1 = matrix.Transform(new Point(mi.rcWork.Left, mi.rcWork.Top));
+                                            Point p2 = matrix.Transform(new Point(mi.rcWork.Right, mi.rcWork.Bottom));
+                                            workLeft = p1.X;
+                                            workTop = p1.Y;
+                                            workWidth = Math.Max(100, p2.X - p1.X);
+                                            workHeight = Math.Max(100, p2.Y - p1.Y);
+                                        }
+                                        else
+                                        {
+                                            workLeft = mi.rcWork.Left;
+                                            workTop = mi.rcWork.Top;
+                                            workWidth = Math.Max(100, mi.rcWork.Right - mi.rcWork.Left);
+                                            workHeight = Math.Max(100, mi.rcWork.Bottom - mi.rcWork.Top);
+                                        }
                                     }
                                 }
                             }
                         }
+                        catch
+                        {
+                            workLeft = SystemParameters.WorkArea.Left;
+                            workTop = SystemParameters.WorkArea.Top;
+                            workWidth = SystemParameters.WorkArea.Width;
+                            workHeight = SystemParameters.WorkArea.Height;
+                        }
                     }
-                    catch
-                    {
-                        workLeft = SystemParameters.WorkArea.Left;
-                        workTop = SystemParameters.WorkArea.Top;
-                        workWidth = SystemParameters.WorkArea.Width;
-                        workHeight = SystemParameters.WorkArea.Height;
-                    }
-                }
 
-                _currentToast?.Close();
-                _currentToast = new ToastNotification(message, type);
-                _currentToast.PosicionarYAnimar(workLeft, workTop, workWidth, workHeight);
-                _currentToast.Show();
-                if (type == ToastType.Error || type == ToastType.Warning)
-                {
-                    ReproducirSonidoError();
+                    try { _currentToast?.Close(); } catch { }
+                    _currentToast = new ToastNotification(message, type);
+                    _currentToast.PosicionarYAnimar(workLeft, workTop, workWidth, workHeight);
+                    _currentToast.Show();
+                    if (type == ToastType.Error || type == ToastType.Warning)
+                    {
+                        ReproducirSonidoError();
+                    }
                 }
-            });
+                catch
+                {
+                }
+            }
+
+            if (dispatcher.CheckAccess())
+            {
+                MostrarEnUI();
+            }
+            else
+            {
+                _ = dispatcher.InvokeAsync(MostrarEnUI, DispatcherPriority.Normal);
+            }
+        }
+
+        public static void LiberarRecursos()
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            void Limpiar()
+            {
+                try
+                {
+                    _currentToast?._timer.Stop();
+                    _currentToast?.Close();
+                    _currentToast = null;
+                }
+                catch { }
+
+                try
+                {
+                    if (_errorPlayer != null)
+                    {
+                        _errorPlayer.Stop();
+                        _errorPlayer.Close();
+                        _errorPlayer = null;
+                    }
+                    _errorSoundLoaded = false;
+                    _errorSoundPath = null;
+                }
+                catch { }
+            }
+
+            if (dispatcher == null || dispatcher.CheckAccess())
+            {
+                Limpiar();
+            }
+            else if (!dispatcher.HasShutdownStarted && !dispatcher.HasShutdownFinished)
+            {
+                _ = dispatcher.InvokeAsync(Limpiar, DispatcherPriority.Send);
+            }
         }
 
         private static MediaPlayer CrearReproductorError()

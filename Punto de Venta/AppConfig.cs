@@ -1,4 +1,5 @@
 using Punto_de_Venta.Datos;
+using Punto_de_Venta.Servicios;
 using System;
 using System.IO;
 using System.Security.Cryptography;
@@ -28,6 +29,10 @@ namespace Punto_de_Venta
         public bool BasculaHabilitada { get; set; } = false;
         public string BasculaPuerto { get; set; } = "COM1";
         public int BasculaBaudRate { get; set; } = 9600;
+        public int BasculaDataBits { get; set; } = 8;
+        public string BasculaParity { get; set; } = "None";
+        public string BasculaStopBits { get; set; } = "One";
+        public string BasculaNewLine { get; set; } = "\r\n";
         public string BasculaProtocolo { get; set; } = "Torrey / Rhino (Peticion P)"; 
         public bool BasculaModoPrecio { get; set; } = false;
         public bool ContarMonedasIndividualmente { get; set; } = false;
@@ -52,8 +57,9 @@ namespace Punto_de_Venta
                 byte[] plano = ProtectedData.Unprotect(cifrado, null, DataProtectionScope.CurrentUser);
                 return Encoding.UTF8.GetString(plano);
             }
-            catch
+            catch (Exception ex)
             {
+                PosLogger.Error("AppConfig.ObtenerGeminiApiKey", ex);
                 return string.Empty;
             }
         }
@@ -76,9 +82,7 @@ namespace Punto_de_Venta
         {
             get
             {
-                string baseDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "POS_DataStorage");
+                string baseDir = Datos.DatabaseHelper.DbFolder;
                 string subConfig = Path.Combine(baseDir, "Configuracion", "config.json");
                 if (File.Exists(subConfig)) return subConfig;
                 return Path.Combine(baseDir, "config.json");
@@ -143,15 +147,19 @@ namespace Punto_de_Venta
                                         }
                                     }
                                 }
-                                catch { }
+                                catch (Exception exDoc)
+                                {
+                                    PosLogger.Warn("AppConfig.Load.FallbackNombre", exDoc.Message);
+                                }
                             }
                             _cachedConfig = config;
                             return config;
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    PosLogger.Error("AppConfig.Load", ex);
                     if (_cachedConfig != null) return _cachedConfig;
                     if (File.Exists(ConfigPath)) return new AppConfig();
                 }
@@ -174,20 +182,94 @@ namespace Punto_de_Venta
                     _cachedConfig = this;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                PosLogger.Error("AppConfig.Save", ex);
+            }
         }
+
+        private const string DefaultPinLegacySha256 = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
+        private const string Pbkdf2Prefix = "PBKDF2$";
+        private const int Pbkdf2Iterations = 100_000;
 
         public bool ValidarPin(string pinIngresado)
         {
             if (string.IsNullOrEmpty(pinIngresado)) return false;
-            var hashIngresado = CalcularSha256(pinIngresado);
-            return string.Equals(PinAdminHash, hashIngresado, StringComparison.OrdinalIgnoreCase);
+
+            string hashAlmacenado = string.IsNullOrWhiteSpace(PinAdminHash)
+                ? DefaultPinLegacySha256
+                : PinAdminHash.Trim();
+
+            if (hashAlmacenado.StartsWith(Pbkdf2Prefix, StringComparison.Ordinal))
+            {
+                return VerificarPinPbkdf2(pinIngresado, hashAlmacenado);
+            }
+
+            // Retrocompatibilidad con hashes SHA-256 sin sal (incluyendo el PIN por defecto "1234")
+            string hashLegacyCalculado = CalcularSha256(pinIngresado);
+            byte[] bytesEsperados = Encoding.UTF8.GetBytes(hashAlmacenado.ToLowerInvariant());
+            byte[] bytesCalculados = Encoding.UTF8.GetBytes(hashLegacyCalculado.ToLowerInvariant());
+
+            if (bytesEsperados.Length == bytesCalculados.Length &&
+                CryptographicOperations.FixedTimeEquals(bytesEsperados, bytesCalculados))
+            {
+                try
+                {
+                    PinAdminHash = GenerarHashPinPbkdf2(pinIngresado);
+                    Save();
+                }
+                catch
+                {
+                }
+                return true;
+            }
+
+            return false;
         }
 
         public void EstablecerNuevoPin(string nuevoPin)
         {
-            PinAdminHash = CalcularSha256(nuevoPin);
+            PinAdminHash = GenerarHashPinPbkdf2(nuevoPin);
             Save();
+        }
+
+        public static string GenerarHashPinPbkdf2(string pin)
+        {
+            byte[] salt = RandomNumberGenerator.GetBytes(16);
+            byte[] subkey = Rfc2898DeriveBytes.Pbkdf2(
+                Encoding.UTF8.GetBytes(pin),
+                salt,
+                Pbkdf2Iterations,
+                HashAlgorithmName.SHA256,
+                32);
+            return $"{Pbkdf2Prefix}{Pbkdf2Iterations}${Convert.ToBase64String(salt)}${Convert.ToBase64String(subkey)}";
+        }
+
+        private static bool VerificarPinPbkdf2(string pinIngresado, string hashFormateado)
+        {
+            try
+            {
+                string[] partes = hashFormateado.Split('$');
+                if (partes.Length != 4) return false;
+                if (!int.TryParse(partes[1], out int iteraciones) || iteraciones < 10_000) return false;
+
+                byte[] salt = Convert.FromBase64String(partes[2]);
+                byte[] esperado = Convert.FromBase64String(partes[3]);
+                if (salt.Length < 8 || esperado.Length < 16) return false;
+
+                byte[] calculado = Rfc2898DeriveBytes.Pbkdf2(
+                    Encoding.UTF8.GetBytes(pinIngresado),
+                    salt,
+                    iteraciones,
+                    HashAlgorithmName.SHA256,
+                    esperado.Length);
+
+                return CryptographicOperations.FixedTimeEquals(esperado, calculado);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public static string CalcularSha256(string texto)

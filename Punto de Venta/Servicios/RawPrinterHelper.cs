@@ -81,11 +81,19 @@ namespace Punto_de_Venta.Servicios
                                     try
                                     {
                                         success = WritePrinter(hPrinter, pUnmanagedBytes, bytes.Length, out _);
+                                        if (!success)
+                                        {
+                                            PosLogger.Warn("RawPrinterHelper.WritePrinter", $"Fallo al enviar RAW a '{szPrinterName}'. Win32Error={Marshal.GetLastWin32Error()}");
+                                        }
                                     }
                                     finally
                                     {
                                         EndPagePrinter(hPrinter);
                                     }
+                                }
+                                else
+                                {
+                                    PosLogger.Warn("RawPrinterHelper.StartPagePrinter", $"No se pudo iniciar pagina RAW en '{szPrinterName}'. Win32Error={Marshal.GetLastWin32Error()}");
                                 }
                             }
                             finally
@@ -93,11 +101,19 @@ namespace Punto_de_Venta.Servicios
                                 EndDocPrinter(hPrinter);
                             }
                         }
+                        else
+                        {
+                            PosLogger.Warn("RawPrinterHelper.StartDocPrinter", $"No se pudo iniciar documento RAW '{docName}' en '{szPrinterName}'. Win32Error={Marshal.GetLastWin32Error()}");
+                        }
                     }
                     finally
                     {
                         ClosePrinter(hPrinter);
                     }
+                }
+                else
+                {
+                    PosLogger.Warn("RawPrinterHelper.OpenPrinter", $"No se pudo abrir la impresora '{szPrinterName}'. Win32Error={Marshal.GetLastWin32Error()}");
                 }
 
                 return success;

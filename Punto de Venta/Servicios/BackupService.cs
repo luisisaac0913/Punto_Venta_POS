@@ -41,8 +41,9 @@ namespace Punto_de_Venta.Servicios
                     var config = AppConfig.Load();
                     rutaPersonalizada = config.RutaRespaldos;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    PosLogger.Warn("BackupService.ObtenerCarpetaRespaldos", ex.Message);
                     rutaPersonalizada = null;
                 }
             }
@@ -56,8 +57,9 @@ namespace Punto_de_Venta.Servicios
                     }
                     return rutaPersonalizada;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    PosLogger.Warn("BackupService.CrearCarpetaPersonalizada", $"No se pudo usar '{rutaPersonalizada}': {ex.Message}");
                 }
             }
 
@@ -94,7 +96,10 @@ namespace Punto_de_Venta.Servicios
                         destConn.Open();
                         sourceConn.BackupDatabase(destConn);
                     }
-                    SqliteConnection.ClearPool(new SqliteConnection($"Data Source={tempDbSnapshot}"));
+                    using (var clearConn = new SqliteConnection($"Data Source={tempDbSnapshot}"))
+                    {
+                        SqliteConnection.ClearPool(clearConn);
+                    }
                     tieneDbSnapshot = File.Exists(tempDbSnapshot);
                 }
 
@@ -148,6 +153,7 @@ namespace Punto_de_Venta.Servicios
             }
             catch (Exception ex)
             {
+                PosLogger.Error("BackupService.GenerarRespaldo", ex, $"Prefijo={prefijo}");
                 System.Diagnostics.Debug.WriteLine($"[BackupService] Error al generar respaldo: {ex.Message}");
                 return false;
             }
@@ -157,7 +163,10 @@ namespace Punto_de_Venta.Servicios
                 {
                     if (File.Exists(tempDbSnapshot)) File.Delete(tempDbSnapshot);
                 }
-                catch { }
+                catch (Exception exDel)
+                {
+                    PosLogger.Warn("BackupService.GenerarRespaldo.Cleanup", exDel.Message);
+                }
             }
         }
         public static void LimpiarRespaldosAntiguos(string carpeta)
@@ -178,8 +187,9 @@ namespace Punto_de_Venta.Servicios
                         maxRespaldos = config.MaxRespaldosLocales;
                     }
                 }
-                catch
+                catch (Exception exCfg)
                 {
+                    PosLogger.Warn("BackupService.LimpiarRespaldosAntiguos.Config", exCfg.Message);
                 }
 
                 var archivosZip = Directory.GetFiles(carpeta, "Backup_*.zip")
@@ -196,14 +206,16 @@ namespace Punto_de_Venta.Servicios
                         {
                             archivo.Delete();
                         }
-                        catch
+                        catch (Exception exFile)
                         {
+                            PosLogger.Warn("BackupService.LimpiarRespaldosAntiguos.Delete", $"{archivo.FullName}: {exFile.Message}");
                         }
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                PosLogger.Error("BackupService.LimpiarRespaldosAntiguos", ex);
             }
         }
 
@@ -286,8 +298,11 @@ namespace Punto_de_Venta.Servicios
             }
             finally
             {
-                SqliteConnection.ClearPool(new SqliteConnection($"Data Source={tempDb}"));
-                try { if (File.Exists(tempDb)) File.Delete(tempDb); } catch { }
+                using (var clearConn = new SqliteConnection($"Data Source={tempDb}"))
+                {
+                    SqliteConnection.ClearPool(clearConn);
+                }
+                try { if (File.Exists(tempDb)) File.Delete(tempDb); } catch (Exception exDel) { PosLogger.Warn("BackupService.AnalizarDiferenciasZip.Cleanup", exDel.Message); }
             }
         }
 
@@ -319,16 +334,18 @@ namespace Punto_de_Venta.Servicios
 
             string tempExtractDir = Path.Combine(Path.GetTempPath(), $"pos_restore_{Guid.NewGuid():N}");
             Directory.CreateDirectory(tempExtractDir);
+            bool servidorEstabaActivo = App.EsServidorLocalActivo();
 
             try
             {
                 using (var archive = ZipFile.OpenRead(zipPath))
                 {
+                    string fullExtractRoot = Path.GetFullPath(tempExtractDir);
                     foreach (var entry in archive.Entries)
                     {
                         if (string.IsNullOrEmpty(entry.Name)) continue;
                         string destPath = Path.GetFullPath(Path.Combine(tempExtractDir, entry.FullName));
-                        if (!destPath.StartsWith(Path.GetFullPath(tempExtractDir), StringComparison.OrdinalIgnoreCase)) continue;
+                        if (!destPath.StartsWith(fullExtractRoot, StringComparison.OrdinalIgnoreCase)) continue;
                         string? dir = Path.GetDirectoryName(destPath);
                         if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                         entry.ExtractToFile(destPath, overwrite: true);
@@ -355,9 +372,24 @@ namespace Punto_de_Venta.Servicios
                         throw new InvalidDataException($"La base de datos del respaldo fallo la verificacion de integridad: {check}");
                     }
                 }
-                SqliteConnection.ClearAllPools();
+                using (var clearTestConn = new SqliteConnection($"Data Source={dbExtraida};Mode=ReadOnly"))
+                {
+                    SqliteConnection.ClearPool(clearTestConn);
+                }
 
                 GenerarRespaldo("PreRestauracion");
+
+                if (servidorEstabaActivo)
+                {
+                    try
+                    {
+                        App.DetenerServidorLocalAsync().GetAwaiter().GetResult();
+                    }
+                    catch (Exception exSrv)
+                    {
+                        PosLogger.Warn("BackupService.RestaurarDesdeZip.DetenerServidor", exSrv.Message);
+                    }
+                }
 
                 SqliteConnection.ClearAllPools();
                 GC.Collect();
@@ -372,33 +404,109 @@ namespace Punto_de_Venta.Servicios
                     string walPath = dbDestino + suffix;
                     if (File.Exists(walPath))
                     {
-                        try { File.Delete(walPath); } catch { }
+                        try { File.Delete(walPath); }
+                        catch (Exception exWal) { PosLogger.Warn("BackupService.RestaurarDesdeZip.DeleteWal", $"{walPath}: {exWal.Message}"); }
                     }
                 }
 
                 File.Copy(dbExtraida, dbDestino, overwrite: true);
 
+                foreach (string suffix in new[] { "-wal", "-shm" })
+                {
+                    string walPath = dbDestino + suffix;
+                    if (File.Exists(walPath))
+                    {
+                        try { File.Delete(walPath); }
+                        catch (Exception exWal) { PosLogger.Warn("BackupService.RestaurarDesdeZip.DeleteWalPost", $"{walPath}: {exWal.Message}"); }
+                    }
+                }
+
+                string fullAppDataRoot = Path.GetFullPath(AppDataFolder);
                 foreach (string archivo in Directory.GetFiles(tempExtractDir, "*", SearchOption.AllDirectories))
                 {
                     string ext = Path.GetExtension(archivo).ToLowerInvariant();
                     if (ext != ".json" && ext != ".txt") continue;
                     string nombre = Path.GetFileName(archivo);
-                    if (nombre.Contains("token", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (nombre.Contains("token", StringComparison.OrdinalIgnoreCase) ||
+                        nombre.Equals("credentials.json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
 
-                    string destinoExtra = Path.Combine(AppDataFolder, nombre);
-                    try { File.Copy(archivo, destinoExtra, overwrite: true); } catch { }
+                    string relPath = Path.GetRelativePath(tempExtractDir, archivo);
+                    string normalizedRel = relPath.Replace('\\', '/');
+                    if (normalizedRel.StartsWith("Otros/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        relPath = relPath.Substring("Otros".Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                    }
+
+                    string destinoExtra = Path.GetFullPath(Path.Combine(AppDataFolder, relPath));
+                    if (!destinoExtra.StartsWith(fullAppDataRoot, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        string? destDir = Path.GetDirectoryName(destinoExtra);
+                        if (!string.IsNullOrEmpty(destDir)) Directory.CreateDirectory(destDir);
+                        File.Copy(archivo, destinoExtra, overwrite: true);
+
+                        // Si se restauro config.json en Configuracion/config.json y existe tambien en raiz (o viceversa), sincronizar ambos
+                        if (nombre.Equals("config.json", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string rootConfig = Path.Combine(AppDataFolder, "config.json");
+                            string subConfig = Path.Combine(AppDataFolder, "Configuracion", "config.json");
+                            if (!string.Equals(destinoExtra, rootConfig, StringComparison.OrdinalIgnoreCase) && File.Exists(rootConfig))
+                            {
+                                File.Copy(archivo, rootConfig, overwrite: true);
+                            }
+                            else if (!string.Equals(destinoExtra, subConfig, StringComparison.OrdinalIgnoreCase) && File.Exists(subConfig))
+                            {
+                                File.Copy(archivo, subConfig, overwrite: true);
+                            }
+                        }
+                    }
+                    catch (Exception exExtra)
+                    {
+                        PosLogger.Warn("BackupService.RestaurarDesdeZip.ExtraFile", $"{destinoExtra}: {exExtra.Message}");
+                    }
                 }
 
+                AppConfig.InvalidarCache();
                 SqliteConnection.ClearAllPools();
                 DatabaseHelper.InicializarBaseDeDatos();
             }
+            catch (Exception ex)
+            {
+                PosLogger.Error("BackupService.RestaurarDesdeZip", ex, zipPath);
+                throw;
+            }
             finally
             {
+                if (servidorEstabaActivo || AppConfig.Load(forzarLectura: true).ServidorLocalHabilitado)
+                {
+                    _ = System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await App.IniciarServidorLocalAsync();
+                        }
+                        catch (Exception exSrvStart)
+                        {
+                            PosLogger.Warn("BackupService.RestaurarDesdeZip.ReiniciarServidor", exSrvStart.Message);
+                        }
+                    });
+                }
+
                 try
                 {
                     if (Directory.Exists(tempExtractDir)) Directory.Delete(tempExtractDir, recursive: true);
                 }
-                catch { }
+                catch (Exception exClean)
+                {
+                    PosLogger.Warn("BackupService.RestaurarDesdeZip.Cleanup", exClean.Message);
+                }
             }
         }
     }

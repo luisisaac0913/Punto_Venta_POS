@@ -93,6 +93,132 @@ namespace Punto_de_Venta.Datos
             return ventas.Values.ToList();
         }
 
+        public static List<Venta> LoadPorRangoFechas(DateTime inicio, DateTime fin, int limiteMaximo = 5000, bool incluirAbiertas = true)
+        {
+            var ventas = new Dictionary<int, Venta>();
+            using var conn = DatabaseHelper.GetConnection();
+            Punto_de_Venta.TurnoCajaManager.ValidarEsquemaBD(conn);
+
+            DateTime inicioDia = inicio.Date;
+            DateTime finExclusivo = fin.Date.AddDays(1);
+            string inicioIso = inicioDia.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            string finIso = finExclusivo.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            int limite = limiteMaximo > 0 ? limiteMaximo : 5000;
+
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago,
+                           COALESCE(PagoEfectivo, 0), COALESCE(PagoTarjeta, 0), COALESCE(PagoTransferencia, 0), CorteCajaId
+                    FROM Ventas
+                    WHERE (FechaHora >= @inicioIso AND FechaHora < @finIso)
+                       OR (@incluirAbiertas = 1 AND Estado = 'Abierta')
+                       OR substr(FechaHora, 5, 1) != '-'
+                    ORDER BY Id DESC
+                    LIMIT @limite;";
+                cmd.Parameters.AddWithValue("@inicioIso", inicioIso);
+                cmd.Parameters.AddWithValue("@finIso", finIso);
+                cmd.Parameters.AddWithValue("@incluirAbiertas", incluirAbiertas ? 1 : 0);
+                cmd.Parameters.AddWithValue("@limite", limite);
+
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    var id = reader.GetInt32(0);
+                    var fechaStr = reader.GetString(1);
+                    var estado = reader.GetString(5);
+
+                    if (!DateTime.TryParse(fechaStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fecha))
+                    {
+                        DateTime.TryParse(fechaStr, CultureInfo.GetCultureInfo("es-MX"), DateTimeStyles.None, out fecha);
+                    }
+
+                    bool esAbierta = incluirAbiertas && string.Equals(estado, "Abierta", StringComparison.OrdinalIgnoreCase);
+                    if (!esAbierta && (fecha < inicioDia || fecha >= finExclusivo))
+                    {
+                        continue;
+                    }
+
+                    var total = Convert.ToDecimal(reader.GetDouble(2));
+                    var pagoCon = Convert.ToDecimal(reader.GetDouble(3));
+                    var cambio = Convert.ToDecimal(reader.GetDouble(4));
+                    var metodoPagoRaw = reader.GetString(6);
+                    var metodoPagoFinal = metodoPagoRaw;
+                    decimal pEfectivo = Convert.ToDecimal(reader.GetDouble(7));
+                    decimal pTarjeta = Convert.ToDecimal(reader.GetDouble(8));
+                    decimal pTransf = Convert.ToDecimal(reader.GetDouble(9));
+                    int? corteCajaId = reader.FieldCount > 10 && !reader.IsDBNull(10) ? reader.GetInt32(10) : null;
+                    if (metodoPagoRaw != null && metodoPagoRaw.StartsWith("Mixto|"))
+                    {
+                        metodoPagoFinal = "Mixto";
+                        var partes = metodoPagoRaw.Split('|');
+                        foreach (var parte in partes)
+                        {
+                            if (parte.StartsWith("E:")) decimal.TryParse(parte.Substring(2), NumberStyles.Any, CultureInfo.InvariantCulture, out pEfectivo);
+                            if (parte.StartsWith("T:")) decimal.TryParse(parte.Substring(2), NumberStyles.Any, CultureInfo.InvariantCulture, out pTarjeta);
+                            if (parte.StartsWith("Tr:")) decimal.TryParse(parte.Substring(3), NumberStyles.Any, CultureInfo.InvariantCulture, out pTransf);
+                        }
+                    }
+
+                    ventas[id] = new Venta
+                    {
+                        Id = id,
+                        CorteCajaId = corteCajaId,
+                        FechaHora = fecha,
+                        Total = total,
+                        PagoCon = pagoCon,
+                        Cambio = cambio,
+                        Estado = estado,
+                        MetodoPago = metodoPagoFinal,
+                        PagoEfectivo = pEfectivo,
+                        PagoTarjeta = pTarjeta,
+                        PagoTransferencia = pTransf,
+                        Productos = []
+                    };
+                }
+            }
+
+            if (ventas.Count > 0)
+            {
+                int minId = ventas.Keys.Min();
+                int maxId = ventas.Keys.Max();
+
+                using var cmdDetalle = conn.CreateCommand();
+                cmdDetalle.CommandText = @"
+                    SELECT Id, VentaId, ProductoId, Nombre, Cantidad, Costo, Ganancia, Precio, Categoria,
+                           COALESCE(SeVendePorPeso, 0), COALESCE(ContarComoUnaPieza, 0)
+                    FROM VentasDetalle
+                    WHERE VentaId BETWEEN @minId AND @maxId;";
+                cmdDetalle.Parameters.AddWithValue("@minId", minId);
+                cmdDetalle.Parameters.AddWithValue("@maxId", maxId);
+
+                using var rDet = cmdDetalle.ExecuteReader();
+                while (rDet.Read())
+                {
+                    var ventaId = rDet.GetInt32(1);
+                    if (ventas.TryGetValue(ventaId, out var venta))
+                    {
+                        venta.Productos.Add(new DetalleVenta
+                        {
+                            Id = rDet.GetInt32(2),
+                            ProductoId = rDet.GetInt32(2),
+                            VentaId = ventaId,
+                            Nombre = rDet.GetString(3),
+                            Cantidad = Convert.ToDecimal(rDet.GetDouble(4)),
+                            Costo = Convert.ToDecimal(rDet.GetDouble(5)),
+                            Ganancia = Convert.ToDecimal(rDet.GetDouble(6)),
+                            Precio = Convert.ToDecimal(rDet.GetDouble(7)),
+                            Categoria = rDet.GetString(8),
+                            SeVendePorPeso = rDet.FieldCount > 9 && rDet.GetInt32(9) == 1,
+                            ContarComoUnaPieza = rDet.FieldCount > 10 && rDet.GetInt32(10) == 1
+                        });
+                    }
+                }
+            }
+
+            return ventas.Values.OrderBy(v => v.Id).ToList();
+        }
+
         public static int ObtenerSiguienteId()
         {
             using var conn = DatabaseHelper.GetConnection();
