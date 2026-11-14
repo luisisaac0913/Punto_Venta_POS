@@ -41,6 +41,7 @@ namespace Punto_de_Venta.Datos
                 "ALTER TABLE Productos ADD COLUMN PedirCantidadAlCobrar INTEGER NOT NULL DEFAULT 0;",
                 "ALTER TABLE Productos ADD COLUMN SeVendePorPeso INTEGER NOT NULL DEFAULT 0;",
                 "ALTER TABLE Productos ADD COLUMN ContarComoUnaPieza INTEGER NOT NULL DEFAULT 0;",
+                "ALTER TABLE Productos ADD COLUMN StockMinimo REAL NOT NULL DEFAULT 5;",
                 "ALTER TABLE VentasDetalle ADD COLUMN SeVendePorPeso INTEGER NOT NULL DEFAULT 0;",
                 "ALTER TABLE VentasDetalle ADD COLUMN ContarComoUnaPieza INTEGER NOT NULL DEFAULT 0;"
             };
@@ -93,7 +94,8 @@ namespace Punto_de_Venta.Datos
                     Stock REAL NOT NULL,
                     PedirCantidadAlCobrar INTEGER NOT NULL DEFAULT 0,
                     SeVendePorPeso INTEGER NOT NULL DEFAULT 0,
-                    ContarComoUnaPieza INTEGER NOT NULL DEFAULT 0
+                    ContarComoUnaPieza INTEGER NOT NULL DEFAULT 0,
+                    StockMinimo REAL NOT NULL DEFAULT 5
                 );
                 CREATE INDEX IF NOT EXISTS IX_Productos_Codigo ON Productos(Codigo);
                 CREATE INDEX IF NOT EXISTS IX_Productos_Nombre ON Productos(Nombre);

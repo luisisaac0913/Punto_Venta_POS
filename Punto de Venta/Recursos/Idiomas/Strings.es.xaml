@@ -133,6 +133,7 @@
     <sys:String x:Key="InvMarginLabel">Ganancia</sys:String>
     <sys:String x:Key="InvPriceLabel">Precio Venta</sys:String>
     <sys:String x:Key="InvStockLabel">Existencias (Stock)</sys:String>
+    <sys:String x:Key="InvMinStockLabel">Stock Minimo</sys:String>
     <sys:String x:Key="InvChkAskQty">Pedir piezas manual al cobrar</sys:String>
     <sys:String x:Key="InvChkScale">Pesable en Bascula</sys:String>
     <sys:String x:Key="InvChkCountOne">Contar como 1pz</sys:String>

@@ -39,6 +39,36 @@ namespace Punto_de_Venta
         public string ModoVisualizacionMetricas { get; set; } = "Graficas";
         public string Idioma { get; set; } = "es";
         public bool GuiaInicioMostrada { get; set; } = false;
+        public string GeminiApiKeyCifrada { get; set; } = string.Empty;
+        public string GeminiModelo { get; set; } = "gemini-3.5-flash-lite";
+        public string GeminiProxyUrl { get; set; } = string.Empty;
+
+        public string ObtenerGeminiApiKey()
+        {
+            if (string.IsNullOrWhiteSpace(GeminiApiKeyCifrada)) return string.Empty;
+            try
+            {
+                byte[] cifrado = Convert.FromBase64String(GeminiApiKeyCifrada);
+                byte[] plano = ProtectedData.Unprotect(cifrado, null, DataProtectionScope.CurrentUser);
+                return Encoding.UTF8.GetString(plano);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        public void GuardarGeminiApiKey(string apiKeyPlana)
+        {
+            if (string.IsNullOrWhiteSpace(apiKeyPlana))
+            {
+                GeminiApiKeyCifrada = string.Empty;
+                return;
+            }
+            byte[] plano = Encoding.UTF8.GetBytes(apiKeyPlana.Trim());
+            byte[] cifrado = ProtectedData.Protect(plano, null, DataProtectionScope.CurrentUser);
+            GeminiApiKeyCifrada = Convert.ToBase64String(cifrado);
+        }
 
         public string PinAdminHash { get; set; } = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
 

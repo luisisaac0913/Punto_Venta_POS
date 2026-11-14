@@ -171,5 +171,36 @@ namespace Punto_de_Venta.Datos
                 }
             }
         }
+
+        public static bool Delete(int id)
+        {
+            using var conn = DatabaseHelper.GetConnection();
+            using var tr = conn.BeginTransaction();
+            try
+            {
+                using (var cmdAbonos = conn.CreateCommand())
+                {
+                    cmdAbonos.Transaction = tr;
+                    cmdAbonos.CommandText = "DELETE FROM Abonos WHERE DeudorId = @id;";
+                    cmdAbonos.Parameters.AddWithValue("@id", id);
+                    cmdAbonos.ExecuteNonQuery();
+                }
+                int afectados;
+                using (var cmdDeudor = conn.CreateCommand())
+                {
+                    cmdDeudor.Transaction = tr;
+                    cmdDeudor.CommandText = "DELETE FROM Deudores WHERE Id = @id;";
+                    cmdDeudor.Parameters.AddWithValue("@id", id);
+                    afectados = cmdDeudor.ExecuteNonQuery();
+                }
+                tr.Commit();
+                return afectados > 0;
+            }
+            catch
+            {
+                tr.Rollback();
+                throw;
+            }
+        }
     }
 }

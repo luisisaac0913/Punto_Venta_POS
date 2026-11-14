@@ -14,8 +14,9 @@ namespace Punto_de_Venta.Modelos
         public decimal Ganancia { get; set; }
         public decimal Precio { get; set; }
         public decimal Stock { get; set; } = 0;
+        public decimal StockMinimo { get; set; } = 5m;
         public bool EsStockAgotado => Stock <= 0;
-        public bool EsStockBajo => Stock > 0 && Stock <= 3;
+        public bool EsStockBajo => Stock > 0 && Stock <= StockMinimo;
         public bool PedirCantidadAlCobrar { get; set; } = false;
         public bool SeVendePorPeso { get; set; }
         public bool ContarComoUnaPieza { get; set; } = false;

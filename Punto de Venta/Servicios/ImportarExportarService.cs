@@ -63,36 +63,34 @@ namespace Punto_de_Venta.Servicios
             return ConfirmarImportacion(preview);
         }
 
+        public static List<List<string>> LeerFilasCrudas(string filePath)
+        {
+            if (string.Equals(Path.GetExtension(filePath), ".xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                return LeerFilasXlsx(filePath);
+            }
+
+            string contenido = LeerTextoConEncoding(filePath);
+            if (string.IsNullOrWhiteSpace(contenido))
+            {
+                return new List<List<string>>();
+            }
+
+            char delimitador = DetectarDelimitador(contenido);
+            return ParsearFilasCsv(contenido, delimitador);
+        }
+
         public static ResultadoPreviewImportacion PrevisualizarImportacion(string filePath, bool esPremium, ModoImportacion modo)
         {
             var resultado = new ResultadoPreviewImportacion();
-            List<List<string>> filas;
+            var filas = LeerFilasCrudas(filePath);
 
-            if (string.Equals(Path.GetExtension(filePath), ".xlsx", StringComparison.OrdinalIgnoreCase))
+            if (filas.Count == 0)
             {
-                filas = LeerFilasXlsx(filePath);
-                if (filas.Count == 0)
-                {
-                    resultado.Errores.Add("El libro Excel no contiene hojas o filas validas.");
-                    return resultado;
-                }
-            }
-            else
-            {
-                string contenido = LeerTextoConEncoding(filePath);
-                if (string.IsNullOrWhiteSpace(contenido))
-                {
-                    resultado.Errores.Add("El archivo esta vacio.");
-                    return resultado;
-                }
-
-                char delimitador = DetectarDelimitador(contenido);
-                filas = ParsearFilasCsv(contenido, delimitador);
-                if (filas.Count == 0)
-                {
-                    resultado.Errores.Add("No se encontraron filas validas en el archivo.");
-                    return resultado;
-                }
+                resultado.Errores.Add(string.Equals(Path.GetExtension(filePath), ".xlsx", StringComparison.OrdinalIgnoreCase)
+                    ? "El libro Excel no contiene hojas o filas validas."
+                    : "El archivo esta vacio o no contiene filas validas.");
+                return resultado;
             }
 
             var mapa = MapearEncabezados(filas[0], out bool tieneEncabezado);
@@ -100,25 +98,18 @@ namespace Punto_de_Venta.Servicios
 
             if (tieneEncabezado && !mapa.ContainsKey("nombre"))
             {
-                resultado.Errores.Add("El encabezado no contiene una columna de Nombre o Descripcion.");
+                string err = "Columnas no reconocidas automaticamente. Haz clic en '? Normalizar con IA' para mapear y limpiar este archivo.";
+                resultado.Errores.Add(err);
+                resultado.Filas.Add(new FilaImportacionPreview
+                {
+                    NumeroFila = 1,
+                    Estado = "Aviso",
+                    Detalle = err
+                });
                 return resultado;
             }
 
-            var existentes = ProductoDB.Load();
-            var porId = existentes.ToDictionary(p => p.Id);
-            var porCodigo = new Dictionary<string, Producto>(StringComparer.OrdinalIgnoreCase);
-            foreach (var p in existentes)
-            {
-                if (!string.IsNullOrWhiteSpace(p.Codigo) && !porCodigo.ContainsKey(p.Codigo.Trim()))
-                {
-                    porCodigo[p.Codigo.Trim()] = p;
-                }
-            }
-
-            int maxId = Math.Max(porId.Keys.DefaultIfEmpty(0).Max(), ProductoDB.ObtenerSiguienteId() - 1);
-            int totalEnCatalogo = existentes.Count;
-            var codigosEnArchivo = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
+            var itemsValidos = new List<(int NumFila, Producto Prod, string? Observacion)>();
             for (int i = filaInicio; i < filas.Count; i++)
             {
                 var cols = filas[i];
@@ -141,6 +132,37 @@ namespace Punto_de_Venta.Servicios
                     resultado.Filas.Add(new FilaImportacionPreview { NumeroFila = numFila, Estado = "Rechazado", Detalle = errorFila });
                     continue;
                 }
+
+                itemsValidos.Add((numFila, prod!, null));
+            }
+
+            return EvaluarProductosParaPreview(itemsValidos, esPremium, modo, resultado);
+        }
+
+        public static ResultadoPreviewImportacion EvaluarProductosParaPreview(
+            IEnumerable<(int NumFila, Producto Prod, string? Observacion)> items,
+            bool esPremium,
+            ModoImportacion modo,
+            ResultadoPreviewImportacion? resultadoExistente = null)
+        {
+            var resultado = resultadoExistente ?? new ResultadoPreviewImportacion();
+            var existentes = ProductoDB.Load();
+            var porId = existentes.ToDictionary(p => p.Id);
+            var porCodigo = new Dictionary<string, Producto>(StringComparer.OrdinalIgnoreCase);
+            foreach (var p in existentes)
+            {
+                if (!string.IsNullOrWhiteSpace(p.Codigo) && !porCodigo.ContainsKey(p.Codigo.Trim()))
+                {
+                    porCodigo[p.Codigo.Trim()] = p;
+                }
+            }
+
+            int maxId = Math.Max(porId.Keys.DefaultIfEmpty(0).Max(), ProductoDB.ObtenerSiguienteId() - 1);
+            int totalEnCatalogo = existentes.Count;
+            var codigosEnArchivo = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var (numFila, prod, observacion) in items)
+            {
 
                 string codigoNorm = prod!.Codigo.Trim();
                 if (!string.IsNullOrEmpty(codigoNorm) && !codigosEnArchivo.Add(codigoNorm))
@@ -205,6 +227,7 @@ namespace Punto_de_Venta.Servicios
                             Ganancia = destino.Ganancia,
                             Precio = destino.Precio,
                             Stock = destino.Stock + prod.Stock,
+                            StockMinimo = destino.StockMinimo,
                             PedirCantidadAlCobrar = destino.PedirCantidadAlCobrar,
                             SeVendePorPeso = destino.SeVendePorPeso,
                             ContarComoUnaPieza = destino.ContarComoUnaPieza
@@ -237,7 +260,7 @@ namespace Punto_de_Venta.Servicios
                         {
                             NumeroFila = numFila,
                             Estado = "Actualizar",
-                            Detalle = $"Actualiza ID #{prod.Id}",
+                            Detalle = string.IsNullOrWhiteSpace(observacion) ? $"Actualiza ID #{prod.Id}" : $"Actualiza ID #{prod.Id} | IA: {observacion}",
                             Codigo = prod.Codigo,
                             Nombre = prod.Nombre,
                             Categoria = prod.Categoria,
@@ -282,7 +305,7 @@ namespace Punto_de_Venta.Servicios
                     {
                         NumeroFila = numFila,
                         Estado = "Nuevo",
-                        Detalle = $"Se asignara ID #{prod.Id}",
+                        Detalle = string.IsNullOrWhiteSpace(observacion) ? $"Se asignara ID #{prod.Id}" : $"Se asignara ID #{prod.Id} | IA: {observacion}",
                         Codigo = prod.Codigo,
                         Nombre = prod.Nombre,
                         Categoria = prod.Categoria,
@@ -317,16 +340,16 @@ namespace Punto_de_Venta.Servicios
         public static void GenerarPlantillaProductosCsv(string filePath)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Id,Codigo,Nombre,Categoria,Costo,Ganancia,Precio,Stock,PedirCantidadAlCobrar,SeVendePorPeso,ContarComoUnaPieza");
-            sb.AppendLine("0,750105531088,Coca Cola 600ml,Bebidas,12.00,6.00,18.00,24,false,false,false");
-            sb.AppendLine("0,200001,Jamon de Pavo (Granel),Salchichoneria,120.00,60.00,180.00,10.5,false,true,false");
+            sb.AppendLine("Id,Codigo,Nombre,Categoria,Costo,Ganancia,Precio,Stock,PedirCantidadAlCobrar,SeVendePorPeso,ContarComoUnaPieza,StockMinimo");
+            sb.AppendLine("0,750105531088,Coca Cola 600ml,Bebidas,12.00,6.00,18.00,24,false,false,false,5");
+            sb.AppendLine("0,200001,Jamon de Pavo (Granel),Salchichoneria,120.00,60.00,180.00,10.5,false,true,false,5");
             File.WriteAllText(filePath, sb.ToString(), Utf8Bom);
         }
 
         public static void ExportarProductosCsv(IEnumerable<Producto> products, string filePath)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("Id,Codigo,Nombre,Categoria,Costo,Ganancia,Precio,Stock,PedirCantidadAlCobrar,SeVendePorPeso,ContarComoUnaPieza");
+            sb.AppendLine("Id,Codigo,Nombre,Categoria,Costo,Ganancia,Precio,Stock,PedirCantidadAlCobrar,SeVendePorPeso,ContarComoUnaPieza,StockMinimo");
             foreach (var p in products.OrderBy(x => x.Id))
             {
                 sb.AppendLine(string.Join(",",
@@ -340,7 +363,8 @@ namespace Punto_de_Venta.Servicios
                     p.Stock.ToString("0.###", CultureInfo.InvariantCulture),
                     p.PedirCantidadAlCobrar ? "true" : "false",
                     p.SeVendePorPeso ? "true" : "false",
-                    p.ContarComoUnaPieza ? "true" : "false"));
+                    p.ContarComoUnaPieza ? "true" : "false",
+                    p.StockMinimo.ToString("0.###", CultureInfo.InvariantCulture)));
             }
             File.WriteAllText(filePath, sb.ToString(), Utf8Bom);
         }
@@ -613,6 +637,13 @@ namespace Punto_de_Venta.Servicios
                     case "contar1":
                         mapa.TryAdd("contar1", i);
                         break;
+                    case "stockminimo":
+                    case "stock minimo":
+                    case "minimo":
+                    case "minstock":
+                    case "min stock":
+                        mapa.TryAdd("stockminimo", i);
+                        break;
                 }
             }
 
@@ -730,6 +761,17 @@ namespace Punto_de_Venta.Servicios
             bool porPeso = ParseBoolFlexible(Obtener("sevendeporpeso", 9));
             bool contar1 = ParseBoolFlexible(Obtener("contar1", 10));
 
+            string stockMinStr = Obtener("stockminimo", 11);
+            decimal stockMinimo = 5m;
+            if (!string.IsNullOrWhiteSpace(stockMinStr))
+            {
+                if (!TryParseDecimalEstricto(stockMinStr, out stockMinimo) || stockMinimo < 0m)
+                {
+                    error = $"Fila {numFila} ({nombre}): Stock minimo invalido '{stockMinStr}'.";
+                    return false;
+                }
+            }
+
             producto = new Producto
             {
                 Id = id,
@@ -740,6 +782,7 @@ namespace Punto_de_Venta.Servicios
                 Ganancia = ganancia,
                 Precio = precio,
                 Stock = stock,
+                StockMinimo = stockMinimo,
                 PedirCantidadAlCobrar = pedirCant,
                 SeVendePorPeso = porPeso,
                 ContarComoUnaPieza = contar1
@@ -779,9 +822,9 @@ namespace Punto_de_Venta.Servicios
         {
             var filas = new List<object[]>
             {
-                new object[] { "Id", "Codigo", "Nombre", "Categoria", "Costo", "Ganancia", "Precio", "Stock", "PedirCantidadAlCobrar", "SeVendePorPeso", "ContarComoUnaPieza" },
-                new object[] { 0, "750105531088", "Coca Cola 600ml", "Bebidas", 12.00m, 6.00m, 18.00m, 24m, "false", "false", "false" },
-                new object[] { 0, "200001", "Jamon de Pavo (Granel)", "Salchichoneria", 120.00m, 60.00m, 180.00m, 10.5m, "false", "true", "false" }
+                new object[] { "Id", "Codigo", "Nombre", "Categoria", "Costo", "Ganancia", "Precio", "Stock", "PedirCantidadAlCobrar", "SeVendePorPeso", "ContarComoUnaPieza", "StockMinimo" },
+                new object[] { 0, "750105531088", "Coca Cola 600ml", "Bebidas", 12.00m, 6.00m, 18.00m, 24m, "false", "false", "false", 5m },
+                new object[] { 0, "200001", "Jamon de Pavo (Granel)", "Salchichoneria", 120.00m, 60.00m, 180.00m, 10.5m, "false", "true", "false", 5m }
             };
             EscribirXlsx(filePath, "Productos", filas);
         }
@@ -790,7 +833,7 @@ namespace Punto_de_Venta.Servicios
         {
             var filas = new List<object[]>
             {
-                new object[] { "Id", "Codigo", "Nombre", "Categoria", "Costo", "Ganancia", "Precio", "Stock", "PedirCantidadAlCobrar", "SeVendePorPeso", "ContarComoUnaPieza" }
+                new object[] { "Id", "Codigo", "Nombre", "Categoria", "Costo", "Ganancia", "Precio", "Stock", "PedirCantidadAlCobrar", "SeVendePorPeso", "ContarComoUnaPieza", "StockMinimo" }
             };
             foreach (var p in products.OrderBy(x => x.Id))
             {
@@ -806,7 +849,8 @@ namespace Punto_de_Venta.Servicios
                     p.Stock,
                     p.PedirCantidadAlCobrar ? "true" : "false",
                     p.SeVendePorPeso ? "true" : "false",
-                    p.ContarComoUnaPieza ? "true" : "false"
+                    p.ContarComoUnaPieza ? "true" : "false",
+                    p.StockMinimo
                 });
             }
             EscribirXlsx(filePath, "Productos", filas);

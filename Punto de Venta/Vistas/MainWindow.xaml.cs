@@ -12,6 +12,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -470,6 +471,9 @@ namespace Punto_de_Venta
             if (TxtTituloExportar != null)
                 TxtTituloExportar.Text = esPremium ? titExp : $"{titExp} 🔒";
 
+            if (BtnNormalizarIA != null)
+                BtnNormalizarIA.Content = esPremium ? "✨ Normalizar con IA" : "✨ Normalizar con IA 🔒";
+
             if (_vistasCache.TryGetValue("Configuracion", out var configView) && configView is Configuracion cfg)
             {
                 cfg.ActualizarIndicadoresPremiumUI();
@@ -642,6 +646,11 @@ namespace Punto_de_Venta
                     CerrarImportarPreview();
                     e.Handled = true;
                 }
+                else if (e.Key == Key.F12)
+                {
+                    ToastNotification.Show("Cierra primero el modal actual antes de abrir el Asistente IA.", ToastType.Warning);
+                    e.Handled = true;
+                }
                 return;
             }
 
@@ -650,6 +659,11 @@ namespace Punto_de_Venta
                 if (e.Key == Key.Escape)
                 {
                     CerrarExportar();
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.F12)
+                {
+                    ToastNotification.Show("Cierra primero el modal actual antes de abrir el Asistente IA.", ToastType.Warning);
                     e.Handled = true;
                 }
                 return;
@@ -662,6 +676,26 @@ namespace Punto_de_Venta
                     CerrarImportar();
                     e.Handled = true;
                 }
+                else if (e.Key == Key.F12)
+                {
+                    ToastNotification.Show("Cierra primero el modal actual antes de abrir el Asistente IA.", ToastType.Warning);
+                    e.Handled = true;
+                }
+                return;
+            }
+
+            if (e.Key == Key.F12)
+            {
+                if (ContenedorVistas.Visibility == Visibility.Visible &&
+                    ContenedorVistas.Content is IManejadorEscape vistaConModal &&
+                    vistaConModal.TieneModalActivo)
+                {
+                    ToastNotification.Show("Cierra primero el modal actual antes de abrir el Asistente IA.", ToastType.Warning);
+                    e.Handled = true;
+                    return;
+                }
+                AbrirAsistenteIA();
+                e.Handled = true;
                 return;
             }
 
@@ -804,6 +838,9 @@ namespace Punto_de_Venta
         private string _archivoImportacionActual = string.Empty;
         private ResultadoPreviewImportacion _previewImportacionActual = new();
         private bool _previewImportacionInicializado = false;
+        private bool _normalizadoConIA = false;
+        private List<(int NumFila, Producto Prod, string? Observacion)>? _itemsNormalizadosIA;
+        private CancellationTokenSource? _normalizacionIaCts;
 
         private void EjecutarImportacion_Click(object sender, RoutedEventArgs e)
         {
@@ -818,12 +855,17 @@ namespace Punto_de_Venta
             try
             {
                 _archivoImportacionActual = openFileDialog.FileName;
+                _normalizadoConIA = false;
+                _itemsNormalizadosIA = null;
                 TxtPreviewArchivoNombre.Text = Path.GetFileName(_archivoImportacionActual);
                 _previewImportacionInicializado = false;
                 CmbModoImportacion.SelectedIndex = 0;
                 _previewImportacionInicializado = true;
 
                 RecalcularPreviewImportacion();
+
+                if (BtnNormalizarIA != null)
+                    BtnNormalizarIA.Content = LicenciaService.EsPremium() ? "✨ Normalizar con IA" : "✨ Normalizar con IA 🔒";
 
                 if (FindName("ImportarPreviewOverlay") is Grid overlay)
                 {
@@ -857,7 +899,9 @@ namespace Punto_de_Venta
 
             try
             {
-                _previewImportacionActual = ImportarExportarService.PrevisualizarImportacion(_archivoImportacionActual, LicenciaService.EsPremium(), ObtenerModoImportacionSeleccionado());
+                _previewImportacionActual = (_normalizadoConIA && _itemsNormalizadosIA != null)
+                    ? ImportarExportarService.EvaluarProductosParaPreview(_itemsNormalizadosIA, LicenciaService.EsPremium(), ObtenerModoImportacionSeleccionado())
+                    : ImportarExportarService.PrevisualizarImportacion(_archivoImportacionActual, LicenciaService.EsPremium(), ObtenerModoImportacionSeleccionado());
                 GridImportPreview.ItemsSource = _previewImportacionActual.Filas;
 
                 TxtResumenNuevos.Text = $"Nuevos: {_previewImportacionActual.Creados}";
@@ -872,6 +916,114 @@ namespace Punto_de_Venta
             {
                 ToastNotification.Show($"Error al analizar archivo: {ex.Message}", ToastType.Error);
                 BtnConfirmarImportacion.IsEnabled = false;
+            }
+        }
+
+        public void RefrescarCatalogoVistaActiva()
+        {
+            if (ContenedorVistas.Visibility != Visibility.Visible) return;
+            if (ContenedorVistas.Content is Inventario inv)
+            {
+                inv.RecargarCatalogoDesdeBD();
+            }
+            else if (ContenedorVistas.Content is Cobro cobro)
+            {
+                cobro.RecargarCatalogoDesdeBD();
+            }
+            else if (ContenedorVistas.Content is Prestamos prestamos)
+            {
+                prestamos.RecargarDesdeBD();
+            }
+            else if (ContenedorVistas.Content is Promociones promociones)
+            {
+                promociones.RecargarDesdeBD();
+            }
+        }
+
+        public void AbrirAsistenteIA()
+        {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Asistente IA (Gemini)");
+                return;
+            }
+            var modal = new AsistenteModal(this);
+            modal.ShowDialog();
+        }
+
+        private async void BtnNormalizarIA_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Normalizacion de Importaciones con IA");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(_archivoImportacionActual)) return;
+
+            if (!GeminiService.EstaConfigurada())
+            {
+                ToastNotification.Show("Configura tu API Key de Gemini en Configuracion -> Asistente IA.", ToastType.Warning);
+                return;
+            }
+
+            _normalizacionIaCts?.Cancel();
+            _normalizacionIaCts?.Dispose();
+            _normalizacionIaCts = new CancellationTokenSource();
+            var ct = _normalizacionIaCts.Token;
+
+            BtnNormalizarIA.IsEnabled = false;
+            BtnConfirmarImportacion.IsEnabled = false;
+            BtnNormalizarIA.Content = "✨ Normalizando...";
+
+            try
+            {
+                var progreso = new Progress<string>(msg =>
+                {
+                    if (!ct.IsCancellationRequested)
+                    {
+                        BtnNormalizarIA.Content = $"✨ {msg}";
+                    }
+                });
+                var (resultadoIA, itemsIA) = await NormalizadorImportacionIA.NormalizarArchivoAsync(
+                    _archivoImportacionActual,
+                    LicenciaService.EsPremium(),
+                    ObtenerModoImportacionSeleccionado(),
+                    progreso,
+                    ct);
+
+                if (ct.IsCancellationRequested || ImportarPreviewOverlay == null || ImportarPreviewOverlay.Visibility != Visibility.Visible)
+                {
+                    return;
+                }
+
+                _itemsNormalizadosIA = itemsIA;
+                _normalizadoConIA = true;
+                _previewImportacionActual = resultadoIA;
+                GridImportPreview.ItemsSource = _previewImportacionActual.Filas;
+                TxtResumenNuevos.Text = $"Nuevos: {_previewImportacionActual.Creados}";
+                TxtResumenActualizar.Text = $"Actualizar: {_previewImportacionActual.Actualizados}";
+                TxtResumenOmitidos.Text = $"Omitidos: {_previewImportacionActual.Omitidos}";
+                TxtResumenRechazados.Text = $"Rechazados: {_previewImportacionActual.Rechazados}";
+
+                BtnExportarErrores.Visibility = _previewImportacionActual.Errores.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+                BtnConfirmarImportacion.IsEnabled = _previewImportacionActual.ProductosParaGuardar.Count > 0;
+                ToastNotification.Show("Catalogo normalizado con Gemini AI.", ToastType.Success);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                if (!ct.IsCancellationRequested)
+                {
+                    ToastNotification.Show($"Error al normalizar con IA: {ex.Message}", ToastType.Error);
+                    BtnConfirmarImportacion.IsEnabled = _previewImportacionActual.ProductosParaGuardar.Count > 0;
+                }
+            }
+            finally
+            {
+                BtnNormalizarIA.Content = LicenciaService.EsPremium() ? "✨ Normalizar con IA" : "✨ Normalizar con IA 🔒";
+                BtnNormalizarIA.IsEnabled = true;
             }
         }
 
@@ -945,6 +1097,9 @@ namespace Punto_de_Venta
 
         private void CerrarImportarPreview()
         {
+            _normalizacionIaCts?.Cancel();
+            _normalizacionIaCts?.Dispose();
+            _normalizacionIaCts = null;
             if (FindName("ImportarPreviewOverlay") is Grid overlay) overlay.Visibility = Visibility.Collapsed;
             GridImportPreview.ItemsSource = null;
         }

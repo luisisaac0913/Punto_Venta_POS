@@ -152,6 +152,11 @@ namespace Punto_de_Venta.Vistas
             EmptyCartPanel.Visibility = tieneArticulos ? Visibility.Collapsed : Visibility.Visible;
         }
 
+        public void RecargarCatalogoDesdeBD()
+        {
+            try { _catalog = ProductoDB.Load(); } catch { _catalog = new(); }
+        }
+
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if ((bool)e.NewValue)
@@ -1269,6 +1274,8 @@ namespace Punto_de_Venta.Vistas
             LimpiarEventosCarrito();
             return false;
         }
+
+        public bool TieneModalActivo => ObtenerModalActivo() != null;
 
         private UIElement ObtenerModalActivo()
         {

@@ -72,7 +72,8 @@ namespace Punto_de_Venta.Datos
                 Stock = LeerDecimal(reader, 7),
                 PedirCantidadAlCobrar = LeerEntero(reader, 8) == 1,
                 SeVendePorPeso = LeerEntero(reader, 9) == 1,
-                ContarComoUnaPieza = reader.FieldCount > 10 && LeerEntero(reader, 10) == 1
+                ContarComoUnaPieza = reader.FieldCount > 10 && LeerEntero(reader, 10) == 1,
+                StockMinimo = reader.FieldCount > 11 && !reader.IsDBNull(11) ? LeerDecimal(reader, 11) : 5m
             };
         }
 
@@ -82,7 +83,7 @@ namespace Punto_de_Venta.Datos
             using var conn = DatabaseHelper.GetConnection();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, COALESCE(ContarComoUnaPieza, 0) 
+                SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, COALESCE(ContarComoUnaPieza, 0), COALESCE(StockMinimo, 5) 
                 FROM Productos 
                 ORDER BY Id ASC;";
             using var reader = cmd.ExecuteReader();
@@ -103,7 +104,7 @@ namespace Punto_de_Venta.Datos
             if (string.IsNullOrWhiteSpace(query))
             {
                 cmd.CommandText = @"
-                    SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, COALESCE(ContarComoUnaPieza, 0)
+                    SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, COALESCE(ContarComoUnaPieza, 0), COALESCE(StockMinimo, 5)
                     FROM Productos
                     ORDER BY Id ASC
                     LIMIT @limite;";
@@ -116,7 +117,7 @@ namespace Punto_de_Venta.Datos
                 int idBuscado = int.TryParse(limpio, out var parsedId) ? parsedId : -1;
 
                 cmd.CommandText = @"
-                    SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, COALESCE(ContarComoUnaPieza, 0)
+                    SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, COALESCE(ContarComoUnaPieza, 0), COALESCE(StockMinimo, 5)
                     FROM Productos
                     WHERE Codigo LIKE @like
                        OR Nombre LIKE @like
@@ -193,8 +194,8 @@ namespace Punto_de_Venta.Datos
                 using var insertar = conn.CreateCommand();
                 insertar.Transaction = transaction;
                 insertar.CommandText = @"
-                    INSERT INTO Productos (Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, ContarComoUnaPieza)
-                    VALUES (@id, @codigo, @nombre, @categoria, @costo, @ganancia, @precio, @stock, @pedirCantidad, @seVendePorPeso, @contarComoUnaPieza)
+                    INSERT INTO Productos (Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, ContarComoUnaPieza, StockMinimo)
+                    VALUES (@id, @codigo, @nombre, @categoria, @costo, @ganancia, @precio, @stock, @pedirCantidad, @seVendePorPeso, @contarComoUnaPieza, @stockMinimo)
                     ON CONFLICT(Id) DO UPDATE SET 
                         Codigo = excluded.Codigo,
                         Nombre = excluded.Nombre,
@@ -205,7 +206,8 @@ namespace Punto_de_Venta.Datos
                         Stock = excluded.Stock,
                         PedirCantidadAlCobrar = excluded.PedirCantidadAlCobrar,
                         SeVendePorPeso = excluded.SeVendePorPeso,
-                        ContarComoUnaPieza = excluded.ContarComoUnaPieza;";
+                        ContarComoUnaPieza = excluded.ContarComoUnaPieza,
+                        StockMinimo = excluded.StockMinimo;";
 
                 var pId = insertar.Parameters.Add("@id", SqliteType.Integer);
                 var pCodigo = insertar.Parameters.Add("@codigo", SqliteType.Text);
@@ -218,6 +220,7 @@ namespace Punto_de_Venta.Datos
                 var pPedir = insertar.Parameters.Add("@pedirCantidad", SqliteType.Integer);
                 var pPeso = insertar.Parameters.Add("@seVendePorPeso", SqliteType.Integer);
                 var pContar1 = insertar.Parameters.Add("@contarComoUnaPieza", SqliteType.Integer);
+                var pStockMin = insertar.Parameters.Add("@stockMinimo", SqliteType.Real);
                 foreach (var prod in products)
                 {
                     pId.Value = prod.Id;
@@ -231,6 +234,7 @@ namespace Punto_de_Venta.Datos
                     pPedir.Value = prod.PedirCantidadAlCobrar ? 1 : 0;
                     pPeso.Value = prod.SeVendePorPeso ? 1 : 0;
                     pContar1.Value = prod.ContarComoUnaPieza ? 1 : 0;
+                    pStockMin.Value = Convert.ToDouble(prod.StockMinimo);
                     insertar.ExecuteNonQuery();
                 }
                 transaction.Commit();
@@ -254,7 +258,7 @@ namespace Punto_de_Venta.Datos
             using var conn = DatabaseHelper.GetConnection();
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, COALESCE(ContarComoUnaPieza, 0) 
+                SELECT Id, Codigo, Nombre, Categoria, Costo, Ganancia, Precio, Stock, PedirCantidadAlCobrar, SeVendePorPeso, COALESCE(ContarComoUnaPieza, 0), COALESCE(StockMinimo, 5) 
                 FROM Productos 
                 WHERE TRIM(Codigo) = @limpio COLLATE NOCASE
                    OR (@sinCeros <> '' AND LTRIM(TRIM(Codigo), '0') = @sinCeros COLLATE NOCASE)

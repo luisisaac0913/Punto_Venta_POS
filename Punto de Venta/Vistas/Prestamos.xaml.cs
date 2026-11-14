@@ -78,14 +78,19 @@ namespace Punto_de_Venta
                 ToastNotification.Show($"Error al cargar la libreta: {exception.Message}", ToastType.Error);
             }
         }
+        public void RecargarDesdeBD()
+        {
+            CargarDeudoresDesdeBaseDatos();
+            UpdateDashboardKPIs();
+            SetNextId();
+            DebtorsView.Refresh();
+        }
+
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if ((bool)e.NewValue)
             {
-                CargarDeudoresDesdeBaseDatos();
-                UpdateDashboardKPIs();
-                SetNextId();
-                DebtorsView.Refresh();
+                RecargarDesdeBD();
                 this.Focus();
                 FocusSearch();
                 Keyboard.Focus(this);
@@ -103,6 +108,8 @@ namespace Punto_de_Venta
             }
             FocusSearch();
         }
+
+        public bool TieneModalActivo => HistorialOverlay != null && HistorialOverlay.Visibility == Visibility.Visible;
 
         public bool ManejarEscape()
         {

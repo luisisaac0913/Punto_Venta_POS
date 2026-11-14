@@ -178,6 +178,8 @@ namespace Punto_de_Venta
             return false;
         }
 
+        public bool TieneModalActivo => ObtenerModalActivo() != null;
+
         private UIElement ObtenerModalActivo()
         {
             if (HelpOverlay != null && HelpOverlay.Visibility == Visibility.Visible) return HelpOverlay;
