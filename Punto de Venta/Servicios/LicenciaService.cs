@@ -14,7 +14,7 @@ namespace Punto_de_Venta.Servicios
 {
     public static class LicenciaService
     {
-        private const string AzureFunctionVerificarBaseUrl = "https://chipandchapa-d5bsach3emeka6h0.mexicocentral-01.azurewebsites.net/api/verificar/";
+        private static readonly string AzureFunctionVerificarBaseUrl = "https://chipandchapa-d5bsach3emeka6h0.mexicocentral-01.azurewebsites.net/api/verificar/";
         private static readonly HttpClient _httpClient = CrearHttpClientSeguro(12);
 
         private static HttpClient CrearHttpClientSeguro(int timeoutSegundos)
@@ -57,7 +57,7 @@ namespace Punto_de_Venta.Servicios
             "POS_DataStorage",
             "licencia.key"
         );
-        private const string SALT = "POS_Premium_Vitalicio_SecureSalt_2026_v2";
+        private static readonly string SALT = "POS_Premium_Vitalicio_SecureSalt_2026_v2";
         private static string? _cachedHardwareId;
         private static bool? _isPremiumCached;
 

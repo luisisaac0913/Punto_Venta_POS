@@ -78,6 +78,7 @@
 	<Target Name="ObfuscateAssembly" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release'">
 		<Exec Command="$(Obfuscar) &quot;$(ProjectDir)obfuscar.xml&quot;" WorkingDirectory="$(TargetDir)" />
 		<Copy SourceFiles="$(TargetDir)Obfuscated\Punto de Venta.dll" DestinationFolder="$(TargetDir)" />
+		<Copy SourceFiles="$(TargetDir)Obfuscated\Punto de Venta.dll" DestinationFolder="$(IntermediateOutputPath)" />
 	</Target>
 
 	<ItemGroup>

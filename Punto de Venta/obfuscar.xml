@@ -15,7 +15,5 @@
   <Module file="$(InPath)\Punto de Venta.dll">
     <SkipType name="Punto_de_Venta.Properties.*" />
     <SkipType name="Punto_de_Venta.Modelos.*" />
-    <SkipType name="Punto_de_Venta.Servicios.*" />
-    <SkipType name="Punto_de_Venta.Datos.*" />
   </Module>
 </Obfuscator>
