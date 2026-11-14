@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -19,6 +21,9 @@ namespace Punto_de_Venta
     public partial class ToastNotification : Window
     {
         private static ToastNotification? _currentToast;
+        private static MediaPlayer? _errorPlayer;
+        private static bool _errorSoundLoaded = false;
+        private static string? _errorSoundPath;
         private readonly DispatcherTimer _timer;
 
         private const int GWL_EXSTYLE = -20;
@@ -180,7 +185,57 @@ namespace Punto_de_Venta
                 _currentToast = new ToastNotification(message, type);
                 _currentToast.PosicionarYAnimar(workLeft, workTop, workWidth, workHeight);
                 _currentToast.Show();
+                if (type == ToastType.Error || type == ToastType.Warning)
+                {
+                    ReproducirSonidoError();
+                }
             });
+        }
+
+        private static MediaPlayer CrearReproductorError()
+        {
+            var player = new MediaPlayer();
+            player.MediaFailed += (_, _) => _errorSoundLoaded = false;
+            return player;
+        }
+
+        private static string? ObtenerRutaSonidoError()
+        {
+            string dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Recursos", "Sonidos");
+            string preferido = Path.Combine(dir, "%%%%$$.mp3");
+            if (File.Exists(preferido)) return preferido;
+            if (!Directory.Exists(dir)) return null;
+
+            return Directory.EnumerateFiles(dir)
+                .FirstOrDefault(f => f.EndsWith(".mp3", StringComparison.OrdinalIgnoreCase) ||
+                                     f.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ||
+                                     f.EndsWith(".wma", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static void ReproducirSonidoError()
+        {
+            try
+            {
+                string? ruta = ObtenerRutaSonidoError();
+                if (string.IsNullOrWhiteSpace(ruta) || !File.Exists(ruta)) return;
+
+                _errorPlayer ??= CrearReproductorError();
+
+                if (!_errorSoundLoaded || !string.Equals(_errorSoundPath, ruta, StringComparison.OrdinalIgnoreCase))
+                {
+                    _errorPlayer.Open(new Uri(ruta, UriKind.Absolute));
+                    _errorSoundLoaded = true;
+                    _errorSoundPath = ruta;
+                }
+
+                _errorPlayer.Stop();
+                _errorPlayer.Position = TimeSpan.Zero;
+                _errorPlayer.Volume = 1.0;
+                _errorPlayer.Play();
+            }
+            catch
+            {
+            }
         }
 
         private void PosicionarYAnimar(double workLeft, double workTop, double workWidth, double workHeight)

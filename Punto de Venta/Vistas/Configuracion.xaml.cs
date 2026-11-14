@@ -52,6 +52,10 @@ namespace Punto_de_Venta
             {
                 NavIABtn.Content = esPremium ? "✨  Asistente IA" : "🔒  Asistente IA";
             }
+            if (!esPremium && PanelIA != null && PanelIA.Visibility == Visibility.Visible)
+            {
+                MostrarPanel(PanelImpresion, true);
+            }
 
             if (BusinessSubtitleBox != null)
             {
