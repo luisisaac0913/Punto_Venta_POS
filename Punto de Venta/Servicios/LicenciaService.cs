@@ -25,7 +25,7 @@ namespace Punto_de_Venta.Servicios
                 Proxy = null,
                 SslOptions = new System.Net.Security.SslClientAuthenticationOptions
                 {
-                    RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+                    EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13
                 }
             };
             var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
@@ -40,21 +40,19 @@ namespace Punto_de_Venta.Servicios
             {
                 UseProxy = false,
                 Proxy = null,
-                ServerCertificateCustomValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true
+                SslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13
             };
             var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeoutSegundos) };
             client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) POS/1.0");
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             return client;
         }
-        private static readonly string LicenciaPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "POS_DataStorage",
+        private static string LicenciaPath => Path.Combine(
+            Datos.DatabaseHelper.DbFolder,
             "licencia_premium.key"
         );
-        private static readonly string LegacyLicenciaPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "POS_DataStorage",
+        private static string LegacyLicenciaPath => Path.Combine(
+            Datos.DatabaseHelper.DbFolder,
             "licencia.key"
         );
         private const string SALT = "POS_Premium_Vitalicio_SecureSalt_2026_v2";
@@ -258,13 +256,73 @@ namespace Punto_de_Venta.Servicios
             }
         }
 
+        private const string LicenciaV2Prefix = "V2:";
+
+        private static string GenerarTokenLicenciaV2(string hwId)
+        {
+            string hashLegacy = GenerarHash(hwId);
+            byte[] keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes(SALT + "|HMAC_V2"));
+            byte[] hmacBytes = HMACSHA256.HashData(keyBytes, Encoding.UTF8.GetBytes(hwId + "|" + hashLegacy));
+            string hmacHex = Convert.ToHexStringLower(hmacBytes);
+
+            try
+            {
+                byte[] plainBytes = Encoding.UTF8.GetBytes($"{hwId}|{hashLegacy}|{hmacHex}");
+                byte[] protectedBytes = ProtectedData.Protect(plainBytes, keyBytes, DataProtectionScope.CurrentUser);
+                return $"{LicenciaV2Prefix}{hmacHex}:{Convert.ToBase64String(protectedBytes)}";
+            }
+            catch
+            {
+                return $"{LicenciaV2Prefix}{hmacHex}";
+            }
+        }
+
+        private static bool ValidarTokenLicenciaV2(string contenido, string hwIdActual)
+        {
+            if (!contenido.StartsWith(LicenciaV2Prefix, StringComparison.Ordinal)) return false;
+
+            string resto = contenido.Substring(LicenciaV2Prefix.Length);
+            string[] partes = resto.Split(':', 2);
+            string hmacGuardado = partes[0].Trim();
+
+            string hashLegacy = GenerarHash(hwIdActual);
+            byte[] keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes(SALT + "|HMAC_V2"));
+            byte[] hmacEsperadoBytes = HMACSHA256.HashData(keyBytes, Encoding.UTF8.GetBytes(hwIdActual + "|" + hashLegacy));
+            string hmacEsperado = Convert.ToHexStringLower(hmacEsperadoBytes);
+
+            byte[] bGuardado = Encoding.UTF8.GetBytes(hmacGuardado.ToLowerInvariant());
+            byte[] bEsperado = Encoding.UTF8.GetBytes(hmacEsperado);
+            if (bGuardado.Length != bEsperado.Length || !CryptographicOperations.FixedTimeEquals(bGuardado, bEsperado))
+            {
+                return false;
+            }
+
+            if (partes.Length == 2 && !string.IsNullOrWhiteSpace(partes[1]))
+            {
+                try
+                {
+                    byte[] protectedBytes = Convert.FromBase64String(partes[1].Trim());
+                    byte[] plainBytes = ProtectedData.Unprotect(protectedBytes, keyBytes, DataProtectionScope.CurrentUser);
+                    string plain = Encoding.UTF8.GetString(plainBytes);
+                    return plain.StartsWith(hwIdActual + "|", StringComparison.Ordinal);
+                }
+                catch
+                {
+                    // Si otro usuario de Windows en la misma PC abre el POS, el HMAC de hardware ya fue verificado arriba
+                    return true;
+                }
+            }
+
+            return true;
+        }
+
         public static void ActivarLicencia()
         {
             LimpiarLicenciaLegacy();
             string hwId = ObtenerIdentificadorHardware();
-            string hash = GenerarHash(hwId);
+            string token = GenerarTokenLicenciaV2(hwId);
             Directory.CreateDirectory(Path.GetDirectoryName(LicenciaPath)!);
-            File.WriteAllText(LicenciaPath, hash);
+            File.WriteAllText(LicenciaPath, token);
             _isPremiumCached = true;
         }
 
@@ -326,6 +384,48 @@ namespace Punto_de_Venta.Servicios
                    jsonLimpio.Contains("\"status\": \"approved\"");
         }
 
+        private static bool EsRespuestaExplicitamenteNoPagada(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return false;
+
+            try
+            {
+                var data = JObject.Parse(json);
+                if (data["pagado"] != null)
+                {
+                    if (data["pagado"]!.Type == JTokenType.Boolean)
+                    {
+                        return data["pagado"]!.Value<bool>() == false;
+                    }
+                    if (data["pagado"]!.Type == JTokenType.String)
+                    {
+                        string val = data["pagado"]!.Value<string>()?.Trim() ?? string.Empty;
+                        if (bool.TryParse(val, out bool b)) return b == false;
+                        return string.Equals(val, "no_pagado", StringComparison.OrdinalIgnoreCase) ||
+                               string.Equals(val, "unpaid", StringComparison.OrdinalIgnoreCase) ||
+                               string.Equals(val, "rejected", StringComparison.OrdinalIgnoreCase) ||
+                               string.Equals(val, "cancelled", StringComparison.OrdinalIgnoreCase);
+                    }
+                }
+
+                if (data["estatus"] != null || data["status"] != null)
+                {
+                    string? st = (data["estatus"] ?? data["status"])?.ToString()?.Trim();
+                    return string.Equals(st, "no_pagado", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(st, "pendiente", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(st, "pending", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(st, "unpaid", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(st, "rejected", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(st, "cancelled", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            catch
+            {
+            }
+
+            return false;
+        }
+
         public static async Task<bool?> VerificarEnNubeAsync()
         {
             string hwid = ObtenerIdentificadorHardware();
@@ -342,11 +442,6 @@ namespace Punto_de_Venta.Servicios
                 {
                     json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 }
-                else if (response.StatusCode == HttpStatusCode.NotFound)
-                {
-                    DesactivarLicencia();
-                    return false;
-                }
             }
             catch
             {
@@ -361,11 +456,6 @@ namespace Punto_de_Venta.Servicios
                     if (response.IsSuccessStatusCode)
                     {
                         json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    }
-                    else if (response.StatusCode == HttpStatusCode.NotFound)
-                    {
-                        DesactivarLicencia();
-                        return false;
                     }
                 }
                 catch
@@ -411,7 +501,7 @@ namespace Punto_de_Venta.Servicios
                     }
                     return true;
                 }
-                else
+                else if (EsRespuestaExplicitamenteNoPagada(json))
                 {
                     DesactivarLicencia();
                     return false;
@@ -428,7 +518,7 @@ namespace Punto_de_Venta.Servicios
                 var psi = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "curl.exe",
-                    Arguments = $"-s -f --connect-timeout 8 --max-time 15 -k -H \"Accept: application/json\" \"{url}\"",
+                    Arguments = $"-s -f --connect-timeout 8 --max-time 15 --tlsv1.2 -H \"Accept: application/json\" \"{url}\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -456,12 +546,36 @@ namespace Punto_de_Venta.Servicios
             }
             try
             {
-                string hashGuardado = File.ReadAllText(LicenciaPath).Trim();
+                string contenidoGuardado = File.ReadAllText(LicenciaPath).Trim();
                 string hwIdActual = ObtenerIdentificadorHardware();
+
+                if (contenidoGuardado.StartsWith(LicenciaV2Prefix, StringComparison.Ordinal))
+                {
+                    bool esValidaV2 = ValidarTokenLicenciaV2(contenidoGuardado, hwIdActual);
+                    _isPremiumCached = esValidaV2;
+                    return esValidaV2;
+                }
+
+                // Retrocompatibilidad con licencias existentes SHA256(hwId + SALT)
                 string hashActual = GenerarHash(hwIdActual);
-                bool esValida = hashGuardado == hashActual;
-                _isPremiumCached = esValida;
-                return esValida;
+                byte[] bGuardado = Encoding.UTF8.GetBytes(contenidoGuardado.ToLowerInvariant());
+                byte[] bEsperado = Encoding.UTF8.GetBytes(hashActual.ToLowerInvariant());
+                bool esValidaLegacy = bGuardado.Length == bEsperado.Length &&
+                                      CryptographicOperations.FixedTimeEquals(bGuardado, bEsperado);
+
+                if (esValidaLegacy)
+                {
+                    try
+                    {
+                        File.WriteAllText(LicenciaPath, GenerarTokenLicenciaV2(hwIdActual));
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                _isPremiumCached = esValidaLegacy;
+                return esValidaLegacy;
             }
             catch
             {

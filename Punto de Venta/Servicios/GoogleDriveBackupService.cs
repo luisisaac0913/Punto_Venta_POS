@@ -50,7 +50,10 @@ namespace Punto_de_Venta.Servicios
                             destConn.Open();
                             sourceConn.BackupDatabase(destConn);
                         }
-                        Microsoft.Data.Sqlite.SqliteConnection.ClearPool(new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={tempDbSnapshot}"));
+                        using (var clearConn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={tempDbSnapshot}"))
+                        {
+                            Microsoft.Data.Sqlite.SqliteConnection.ClearPool(clearConn);
+                        }
                         tieneDbSnapshot = File.Exists(tempDbSnapshot);
                         if (!tieneDbSnapshot)
                         {
@@ -116,7 +119,7 @@ namespace Punto_de_Venta.Servicios
                 progreso?.Report(5);
 
                 string sourceFolderDrive = Punto_de_Venta.Datos.DatabaseHelper.DbFolder;
-                var driveService = await CrearDriveServiceAsync(sourceFolderDrive, modoSilencioso);
+                using var driveService = await CrearDriveServiceAsync(sourceFolderDrive, modoSilencioso);
                 if (driveService == null)
                 {
                     return false;
@@ -181,11 +184,17 @@ namespace Punto_de_Venta.Servicios
 
                 return completado;
             }
+            catch (Exception ex)
+            {
+                PosLogger.Error("GoogleDriveBackupService.RespaldarEnDriveAsync", ex, $"Silencioso={modoSilencioso}");
+                throw;
+            }
             finally
             {
                 if (File.Exists(tempDbSnapshot))
                 {
-                    try { File.Delete(tempDbSnapshot); } catch { }
+                    try { File.Delete(tempDbSnapshot); }
+                    catch (Exception exSnap) { PosLogger.Warn("GoogleDriveBackupService.CleanupSnapshot", exSnap.Message); }
                 }
                 if (File.Exists(tempZipPath))
                 {
@@ -195,6 +204,7 @@ namespace Punto_de_Venta.Servicios
                     }
                     catch (Exception ex)
                     {
+                        PosLogger.Warn("GoogleDriveBackupService.CleanupZip", ex.Message);
                         System.Diagnostics.Debug.WriteLine($"[GoogleDriveBackup] No se pudo eliminar el ZIP temporal: {ex.Message}");
                     }
                 }
@@ -216,8 +226,9 @@ namespace Punto_de_Venta.Servicios
                 var store = new DpapiDataStore(tokenStorePath);
                 return store.TieneTokenValido("user");
             }
-            catch
+            catch (Exception ex)
             {
+                PosLogger.Warn("GoogleDriveBackupService.UsuarioEstaAutenticado", ex.Message);
                 return false;
             }
         }
@@ -232,6 +243,7 @@ namespace Punto_de_Venta.Servicios
             }
             catch (Exception ex)
             {
+                PosLogger.Error("GoogleDriveBackupService.RegistrarRespaldoExitoso", ex);
                 System.Diagnostics.Debug.WriteLine($"[GoogleDriveBackup] Error guardando fecha de respaldo: {ex.Message}");
             }
         }
@@ -243,8 +255,9 @@ namespace Punto_de_Venta.Servicios
                 var config = AppConfig.Load();
                 return config.UltimoRespaldoDriveFecha;
             }
-            catch
+            catch (Exception ex)
             {
+                PosLogger.Warn("GoogleDriveBackupService.ObtenerUltimaFechaRespaldo", ex.Message);
                 return null;
             }
         }
@@ -407,6 +420,65 @@ namespace Punto_de_Venta.Servicios
             }
         }
 
+        private static Stream? ObtenerStreamCredencialesOAuth(string sourceFolder)
+        {
+            string configDir = Path.Combine(sourceFolder, "Configuracion");
+            string encryptedClientPath = Path.Combine(configDir, "gdrive_client.dat");
+
+            if (File.Exists(encryptedClientPath))
+            {
+                try
+                {
+                    byte[] encBytes = File.ReadAllBytes(encryptedClientPath);
+                    byte[] plainBytes = System.Security.Cryptography.ProtectedData.Unprotect(
+                        encBytes,
+                        null,
+                        System.Security.Cryptography.DataProtectionScope.CurrentUser);
+                    return new MemoryStream(plainBytes, writable: false);
+                }
+                catch
+                {
+                }
+            }
+
+            string[] rutasCandidatas =
+            {
+                Path.Combine(configDir, "credentials.json"),
+                Path.Combine(sourceFolder, "credentials.json"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "credentials.json"),
+                Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "credentials.json"))
+            };
+
+            foreach (string ruta in rutasCandidatas)
+            {
+                try
+                {
+                    if (File.Exists(ruta))
+                    {
+                        byte[] bytes = File.ReadAllBytes(ruta);
+                        try
+                        {
+                            Directory.CreateDirectory(configDir);
+                            byte[] cifrado = System.Security.Cryptography.ProtectedData.Protect(
+                                bytes,
+                                null,
+                                System.Security.Cryptography.DataProtectionScope.CurrentUser);
+                            File.WriteAllBytes(encryptedClientPath, cifrado);
+                        }
+                        catch
+                        {
+                        }
+                        return new MemoryStream(bytes, writable: false);
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            return Assembly.GetExecutingAssembly().GetManifestResourceStream("Punto_de_Venta.credentials.json");
+        }
+
         private static async Task<DriveService?> CrearDriveServiceAsync(string sourceFolder, bool modoSilencioso)
         {
             string tokenStorePath = Path.Combine(sourceFolder, "GoogleDriveTokenStore_Secure");
@@ -419,12 +491,16 @@ namespace Punto_de_Venta.Servicios
             }
 
             UserCredential credential;
-            var assembly = Assembly.GetExecutingAssembly();
-            using (Stream? stream = assembly.GetManifestResourceStream("Punto_de_Venta.credentials.json"))
+            using (Stream? stream = ObtenerStreamCredencialesOAuth(sourceFolder))
             {
                 if (stream == null)
                 {
-                    throw new FileNotFoundException("No se encontro 'credentials.json' incrustado en el proyecto.");
+                    if (modoSilencioso)
+                    {
+                        System.Diagnostics.Debug.WriteLine("[GoogleDriveBackup] Modo silencioso: Sin archivo credentials.json local. Respaldo omitido.");
+                        return null;
+                    }
+                    throw new FileNotFoundException("No se encontro 'credentials.json' en la carpeta de configuracion del POS para conectar con Google Drive.");
                 }
 
                 using var authCts = modoSilencioso ? new CancellationTokenSource(TimeSpan.FromSeconds(15)) : null;
@@ -458,7 +534,7 @@ namespace Punto_de_Venta.Servicios
         {
             var lista = new List<BackupService.RespaldoItem>();
             string sourceFolder = Punto_de_Venta.Datos.DatabaseHelper.DbFolder;
-            var driveService = await CrearDriveServiceAsync(sourceFolder, modoSilencioso: false);
+            using var driveService = await CrearDriveServiceAsync(sourceFolder, modoSilencioso: false);
             if (driveService == null) return lista;
 
             var folderReq = driveService.Files.List();
@@ -504,7 +580,7 @@ namespace Punto_de_Venta.Servicios
             }
 
             string sourceFolder = Punto_de_Venta.Datos.DatabaseHelper.DbFolder;
-            var driveService = await CrearDriveServiceAsync(sourceFolder, modoSilencioso: false)
+            using var driveService = await CrearDriveServiceAsync(sourceFolder, modoSilencioso: false)
                 ?? throw new InvalidOperationException("No se pudo conectar con Google Drive.");
 
             string tempZip = Path.Combine(Path.GetTempPath(), $"POS_DriveRestore_{Guid.NewGuid():N}.zip");

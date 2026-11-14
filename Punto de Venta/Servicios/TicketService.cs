@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Printing;
 using System.Globalization;
 using System.IO;
+using System.Management;
 using System.Text;
 using Punto_de_Venta.Modelos;
 
@@ -12,9 +13,8 @@ namespace Punto_de_Venta.Servicios
     public static class TicketService
     {
         #region Rutas y Directorios
-        private static readonly string TicketsFolder = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "POS_DataStorage",
+        private static string TicketsFolder => Path.Combine(
+            Datos.DatabaseHelper.DbFolder,
             "Tickets"
         );
         #endregion
@@ -44,9 +44,9 @@ namespace Punto_de_Venta.Servicios
             sb.AppendLine($"{(en ? "Method" : "Metodo")}: {metodo}");
             sb.AppendLine(new string('-', ancho));
             if (en)
-                sb.AppendLine(ancho == 42 ? "QTY   DESCRIPTION              PRICE  AMOUNT" : "QTY  DESCRIPTION      PRICE AMOUNT");
+                sb.AppendLine(ancho >= 42 ? "QTY   DESCRIPTION              PRICE  AMOUNT" : "QTY  DESCRIPTION      PRICE AMOUNT");
             else
-                sb.AppendLine(ancho == 42 ? "CANT  DESCRIPCION            PRECIO   IMPORTE" : "CANT DESCRIPCION       PRECIO IMPORTE");
+                sb.AppendLine(ancho >= 42 ? "CANT  DESCRIPCION            PRECIO   IMPORTE" : "CANT DESCRIPCION       PRECIO IMPORTE");
             sb.AppendLine(new string('-', ancho));
             foreach (var item in items)
             {
@@ -92,12 +92,109 @@ namespace Punto_de_Venta.Servicios
             {
                 sb.AppendLine(CentrarTexto(linea.Trim(), ancho));
             }
-            sb.AppendLine("\n\n");
+            sb.AppendLine("\n");
             return sb.ToString();
         }
         #endregion
 
-        #region Almacenamiento e Impresion Fusica
+        #region Verificacion de Cola de Impresion de Windows
+        public static (bool Instalada, bool TieneAdvertenciaCola, string MensajeEstado) VerificarEstadoImpresora(string? printerName)
+        {
+            if (!EsImpresoraConfiguradaValida(printerName))
+            {
+                return (false, false, "No hay una impresora configurada.");
+            }
+
+            string nombreLimpio = printerName!.Trim();
+            bool encontradaEnWindows = false;
+
+            try
+            {
+                foreach (string installed in PrinterSettings.InstalledPrinters)
+                {
+                    if (string.Equals(installed, nombreLimpio, StringComparison.OrdinalIgnoreCase))
+                    {
+                        encontradaEnWindows = true;
+                        nombreLimpio = installed;
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                PosLogger.Warn("TicketService.VerificarEstadoImpresora.InstalledPrinters", ex);
+            }
+
+            if (!encontradaEnWindows)
+            {
+                return (false, true, $"La impresora '{nombreLimpio}' no se encuentra instalada en Windows.");
+            }
+
+            try
+            {
+                string escapedName = nombreLimpio.Replace("\\", "\\\\").Replace("'", "\\'");
+                var query = new ObjectQuery($"SELECT WorkOffline, PrinterStatus, DetectedErrorState, PrinterState FROM Win32_Printer WHERE Name = '{escapedName}'");
+                var options = new System.Management.EnumerationOptions
+                {
+                    Timeout = TimeSpan.FromMilliseconds(1200),
+                    ReturnImmediately = true,
+                    Rewindable = false
+                };
+
+                using var searcher = new ManagementObjectSearcher( new ManagementScope(@"\\.\root\cimv2"), query, options);
+                using var results = searcher.Get();
+
+                foreach (ManagementObject printerObj in results)
+                {
+                    using (printerObj)
+                    {
+                        bool workOffline = printerObj["WorkOffline"] is bool b && b;
+                        uint detectedError = printerObj["DetectedErrorState"] != null ? Convert.ToUInt32(printerObj["DetectedErrorState"]) : 0u;
+                        uint printerState = printerObj["PrinterState"] != null ? Convert.ToUInt32(printerObj["PrinterState"]) : 0u;
+
+                        // Sin papel (DetectedErrorState == 4 o bit 0x10 en PrinterState)
+                        if (detectedError == 4 || (printerState & 0x00000010u) != 0)
+                        {
+                            return (true, true, $"La impresora '{nombreLimpio}' reporta que no tiene papel.");
+                        }
+
+                        // Papel atascado (DetectedErrorState == 8 o bit 0x08 en PrinterState)
+                        if (detectedError == 8 || (printerState & 0x00000008u) != 0)
+                        {
+                            return (true, true, $"La impresora '{nombreLimpio}' tiene un atasco de papel.");
+                        }
+
+                        // Tapa abierta (DetectedErrorState == 6 o bit 0x800000 en PrinterState)
+                        if (detectedError == 6 || (printerState & 0x00800000u) != 0)
+                        {
+                            return (true, true, $"La tapa de la impresora '{nombreLimpio}' está abierta.");
+                        }
+
+                        // Offline / Fuera de linea
+                        if (workOffline || detectedError == 9 || (printerState & 0x00000080u) != 0 || (printerState & 0x00000400u) != 0)
+                        {
+                            return (true, true, $"La impresora '{nombreLimpio}' está fuera de línea (Offline) o desconectada.");
+                        }
+
+                        // Otro estado de error de hardware
+                        if (detectedError == 2 || detectedError == 10 || detectedError == 11 || (printerState & 0x00000002u) != 0)
+                        {
+                            return (true, true, $"La impresora '{nombreLimpio}' reporta un estado de error en la cola de Windows.");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Si el servicio WMI falla o tarda, no bloqueamos el cobro ni rompemos drivers genericos
+                PosLogger.Warn("TicketService.VerificarEstadoImpresora.WMI", ex);
+            }
+
+            return (true, false, $"Impresora lista: {nombreLimpio}");
+        }
+        #endregion
+
+        #region Almacenamiento e Impresion Fisica
         public static void GuardarCopiaDigital(Venta venta, IEnumerable<DetalleVenta> items, decimal pagoCon, decimal cambio, AppConfig config)
         {
             try
@@ -105,8 +202,12 @@ namespace Punto_de_Venta.Servicios
                 Directory.CreateDirectory(TicketsFolder);
                 File.WriteAllText(Path.Combine(TicketsFolder, $"Ticket_{venta.Id}.txt"), GenerarTextoTicket(venta, items, pagoCon, cambio, config), Encoding.UTF8);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                PosLogger.Warn("TicketService.GuardarCopiaDigital", ex);
+            }
         }
+
         public static bool EsImpresoraConfiguradaValida(string? printerName)
         {
             if (string.IsNullOrWhiteSpace(printerName)) return false;
@@ -118,12 +219,23 @@ namespace Punto_de_Venta.Servicios
 
         public static bool ImprimirFisico(Venta venta, IEnumerable<DetalleVenta> items, decimal pagoCon, decimal cambio, AppConfig config)
         {
-            if (!EsImpresoraConfiguradaValida(config.ImpresoraSeleccionada)) return false;
-            var textoTicket = GenerarTextoTicket(venta, items, pagoCon, cambio, config);
-            return ImprimirTextoFisico(config.ImpresoraSeleccionada, textoTicket, out _);
+            return ImprimirFisico(venta, items, pagoCon, cambio, config, out _);
         }
 
-        public static bool ImprimirTextoFisico(string? printerName, string textoTicket, out string error)
+        public static bool ImprimirFisico(Venta venta, IEnumerable<DetalleVenta> items, decimal pagoCon, decimal cambio, AppConfig config, out string advertenciaOError)
+        {
+            advertenciaOError = string.Empty;
+            if (!EsImpresoraConfiguradaValida(config.ImpresoraSeleccionada))
+            {
+                advertenciaOError = "No hay una impresora configurada.";
+                return false;
+            }
+
+            var textoTicket = GenerarTextoTicket(venta, items, pagoCon, cambio, config);
+            return ImprimirTextoFisico(config.ImpresoraSeleccionada, textoTicket, out advertenciaOError, config.AnchoTicketCaracteres);
+        }
+
+        public static bool ImprimirTextoFisico(string? printerName, string textoTicket, out string error, int anchoCaracteresConfig = 0)
         {
             error = string.Empty;
             if (!EsImpresoraConfiguradaValida(printerName))
@@ -132,38 +244,120 @@ namespace Punto_de_Venta.Servicios
                 return false;
             }
 
+            var estadoCola = VerificarEstadoImpresora(printerName);
+            if (!estadoCola.Instalada)
+            {
+                error = estadoCola.MensajeEstado;
+                PosLogger.Warn("TicketService.ImprimirTextoFisico", error);
+                return false;
+            }
+
+            if (estadoCola.TieneAdvertenciaCola)
+            {
+                error = estadoCola.MensajeEstado;
+                PosLogger.Warn("TicketService.ImprimirTextoFisico.AdvertenciaCola", estadoCola.MensajeEstado);
+            }
+
             try
             {
-                string[] lineas = (textoTicket ?? string.Empty).Replace("\r\n", "\n").Split('\n');
+                string textoNormalizado = (textoTicket ?? string.Empty).Replace("\r\n", "\n").Replace('\r', '\n').TrimEnd('\n');
+                string[] lineas = string.IsNullOrEmpty(textoNormalizado) ? Array.Empty<string>() : textoNormalizado.Split('\n');
                 int indiceLinea = 0;
+
+                int anchoCaracteres = anchoCaracteresConfig > 0
+                    ? anchoCaracteresConfig
+                    : (AppConfig.Load().AnchoTicketCaracteres > 0 ? AppConfig.Load().AnchoTicketCaracteres : 32);
+
+                // Ancho real de rollo en centesimas de pulgada (1 pulgada = 25.4 mm = 100 unidades):
+                // - Rollo 58mm (<= 32 cols): papel 58mm (~228), area imprimible real 48mm (~188)
+                // - Rollo 80mm (> 32 cols):  papel 80mm (~315), area imprimible real 72mm (~283)
+                bool esRollo58mm = anchoCaracteres <= 32;
+                int anchoPapelCentesimas = esRollo58mm ? 228 : 315;
+                float anchoImprimibleObjetivo = esRollo58mm ? 188f : 283f;
 
                 using var printDoc = new PrintDocument
                 {
                     PrintController = new StandardPrintController(),
-                    PrinterSettings = { PrinterName = printerName }
+                    OriginAtMargins = false,
+                    PrinterSettings = { PrinterName = printerName!.Trim() }
                 };
+
+                try
+                {
+                    printDoc.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
+
+                    // Si el driver en Windows trae Tamano Carta (850x1100) o A4 (827x1169) por defecto,
+                    // ajustamos el PaperSize al ancho real del rollo y al alto dinamico del ticket
+                    // para no recortar ni expulsar 28 cm de papel en blanco.
+                    var paperActual = printDoc.DefaultPageSettings.PaperSize;
+                    if (paperActual == null || paperActual.Width > 350 || paperActual.Height > 950)
+                    {
+                        int altoEstimadoCentesimas = Math.Max(140, (int)Math.Ceiling((lineas.Length + 3) * 14.0f));
+                        printDoc.DefaultPageSettings.PaperSize = new PaperSize("TicketPOS", anchoPapelCentesimas, altoEstimadoCentesimas);
+                    }
+                }
+                catch (Exception exPaper)
+                {
+                    PosLogger.Warn("TicketService.ImprimirTextoFisico.PaperSize", exPaper);
+                }
 
                 printDoc.PrintPage += (sender, e) =>
                 {
-                    if (e.Graphics == null)
+                    if (e.Graphics == null || lineas.Length == 0)
                     {
                         e.HasMorePages = false;
                         return;
                     }
 
-                    using var font = new Font("Consolas", 8, FontStyle.Regular);
-                    float altoLinea = font.GetHeight(e.Graphics);
-                    float y = e.MarginBounds.Top > 0 ? Math.Min(10f, e.MarginBounds.Top) : 0f;
-                    float altoMaximo = e.PageBounds.Height > 0 ? e.PageBounds.Height - 10f : 1000f;
-
-                    while (indiceLinea < lineas.Length && y + altoLinea <= altoMaximo)
+                    using var formatoTexto = new StringFormat(StringFormat.GenericTypographic)
                     {
-                        e.Graphics.DrawString(lineas[indiceLinea], font, Brushes.Black, new PointF(0, y));
-                        y += altoLinea;
-                        indiceLinea++;
+                        FormatFlags = StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap
+                    };
+
+                    float anchoPaginaDriver = e.PageBounds.Width > 40 ? e.PageBounds.Width : anchoImprimibleObjetivo;
+                    float anchoVisibleClip = e.Graphics.VisibleClipBounds.Width > 40 ? e.Graphics.VisibleClipBounds.Width : anchoPaginaDriver;
+                    float anchoDisponible = Math.Min(anchoImprimibleObjetivo, anchoVisibleClip) - 2f;
+                    if (anchoDisponible < 120f)
+                    {
+                        anchoDisponible = anchoImprimibleObjetivo;
                     }
 
-                    e.HasMorePages = indiceLinea < lineas.Length;
+                    // Seleccionamos y escalamos dinamicamente la fuente monoespaciada para que jamas se recorte a la derecha
+                    float fontSize = esRollo58mm ? 7.75f : 8.25f;
+                    string patronMedicion = new string('M', anchoCaracteres);
+                    Font font = new Font("Consolas", fontSize, FontStyle.Regular);
+                    try
+                    {
+                        while (fontSize > 5.75f)
+                        {
+                            SizeF medida = e.Graphics.MeasureString(patronMedicion, font, int.MaxValue, formatoTexto);
+                            if (medida.Width <= anchoDisponible)
+                            {
+                                break;
+                            }
+                            font.Dispose();
+                            fontSize -= 0.25f;
+                            font = new Font("Consolas", fontSize, FontStyle.Regular);
+                        }
+
+                        float altoLinea = font.GetHeight(e.Graphics) + 1.0f;
+                        float x = 1f;
+                        float y = 2f;
+                        float altoMaximo = e.PageBounds.Height > 60 ? e.PageBounds.Height - 6f : 3200f;
+
+                        while (indiceLinea < lineas.Length && y + altoLinea <= altoMaximo)
+                        {
+                            e.Graphics.DrawString(lineas[indiceLinea], font, Brushes.Black, new PointF(x, y), formatoTexto);
+                            y += altoLinea;
+                            indiceLinea++;
+                        }
+
+                        e.HasMorePages = indiceLinea < lineas.Length;
+                    }
+                    finally
+                    {
+                        font.Dispose();
+                    }
                 };
 
                 printDoc.Print();
@@ -172,9 +366,11 @@ namespace Punto_de_Venta.Servicios
             catch (Exception ex)
             {
                 error = ex.Message;
+                PosLogger.Error("TicketService.ImprimirTextoFisico", ex, $"Impresora={printerName}");
                 return false;
             }
         }
+
         public static string GenerarTicketMuestra(AppConfig config)
         {
             bool en = IdiomaService.EsIngles();

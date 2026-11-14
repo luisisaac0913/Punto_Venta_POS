@@ -46,9 +46,6 @@
 		<Content Include="Recursos\Sonidos\*">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<EmbeddedResource Include="credentials.json">
-			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</EmbeddedResource>
 		<Resource Include="CHC_icono.ico">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</Resource>

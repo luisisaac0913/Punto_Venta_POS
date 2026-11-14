@@ -3,6 +3,7 @@ using Punto_de_Venta.Modelos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -29,6 +30,7 @@ namespace Punto_de_Venta.Servicios
     public static class NormalizadorImportacionIA
     {
         private const int TamanoLote = 50;
+        private const int MaxReintentosPorLote = 3;
 
         public static async Task<(ResultadoPreviewImportacion Preview, List<(int NumFila, Producto Prod, string? Observacion)> Items)> NormalizarArchivoAsync(
             string filePath,
@@ -71,6 +73,7 @@ namespace Punto_de_Venta.Servicios
 
             string instruccionSistema = ConstruirPromptSistema(categoriasExistentes!);
             var normalizadosTotales = new List<ProductoNormalizadoIA>();
+            var filasOmitidasPorIA = new List<(int NumFila, List<string> Columnas)>();
             int totalLotes = (int)Math.Ceiling(filasConIndice.Count / (double)TamanoLote);
 
             for (int loteIdx = 0; loteIdx < totalLotes; loteIdx++)
@@ -81,20 +84,69 @@ namespace Punto_de_Venta.Servicios
                 var lote = filasConIndice.Skip(loteIdx * TamanoLote).Take(TamanoLote).ToList();
                 string promptLote = ConstruirPromptLote(encabezado, lote);
 
-                string jsonLote = await GeminiService.GenerarJsonTextoAsync(
+                var respuestaLote = await InvocarLoteConBackoffAsync(
                     instruccionSistema,
                     promptLote,
+                    loteIdx + 1,
+                    totalLotes,
+                    progreso,
                     ct).ConfigureAwait(false);
 
-                var respuestaLote = DeserializarListaFlexible(jsonLote);
-                if (respuestaLote != null)
+                // Si el modelo devolvio exactamente la misma cantidad de elementos pero olvido asignar NumeroFila en alguno,
+                // reconciliamos por posicion dentro del lote.
+                if (respuestaLote.Count == lote.Count)
                 {
-                    normalizadosTotales.AddRange(respuestaLote);
+                    for (int k = 0; k < respuestaLote.Count; k++)
+                    {
+                        if (respuestaLote[k].NumeroFila <= 0)
+                        {
+                            respuestaLote[k].NumeroFila = lote[k].NumFila;
+                        }
+                    }
+                }
+
+                var filasDevueltasEnLote = new HashSet<int>();
+                foreach (var item in respuestaLote)
+                {
+                    if (item.NumeroFila > 0 && filasDevueltasEnLote.Add(item.NumeroFila))
+                    {
+                        normalizadosTotales.Add(item);
+                    }
+                }
+
+                // Detectamos explicitamente si Gemini omitio alguna fila enviada en este lote
+                foreach (var filaOriginal in lote)
+                {
+                    if (!filasDevueltasEnLote.Contains(filaOriginal.NumFila))
+                    {
+                        filasOmitidasPorIA.Add(filaOriginal);
+                    }
                 }
             }
 
             var resultadoBase = new ResultadoPreviewImportacion();
             var itemsValidos = new List<(int NumFila, Producto Prod, string? Observacion)>();
+
+            // Registramos explicitamente cualquier fila omitida por Gemini para que nunca desaparezca en silencio
+            foreach (var (numFilaOmitida, colsOmitidas) in filasOmitidasPorIA)
+            {
+                string resumenFila = string.Join(" | ", colsOmitidas.Where(c => !string.IsNullOrWhiteSpace(c)).Take(4));
+                if (resumenFila.Length > 70)
+                {
+                    resumenFila = resumenFila.Substring(0, 67) + "...";
+                }
+
+                string msgError = $"Fila {numFilaOmitida}: omitida por la IA en la respuesta JSON (datos: '{resumenFila}').";
+                resultadoBase.Rechazados++;
+                resultadoBase.Errores.Add(msgError);
+                resultadoBase.Filas.Add(new FilaImportacionPreview
+                {
+                    NumeroFila = numFilaOmitida,
+                    Estado = "No procesado (IA)",
+                    Nombre = string.IsNullOrWhiteSpace(resumenFila) ? $"Fila #{numFilaOmitida}" : resumenFila,
+                    Detalle = "⚠️ La IA omitió esta fila en su respuesta. Revísala o impórtala manualmente."
+                });
+            }
 
             foreach (var item in normalizadosTotales)
             {
@@ -113,11 +165,58 @@ namespace Punto_de_Venta.Servicios
                     continue;
                 }
 
-                decimal precio = Math.Max(0m, Math.Round(item.Precio ?? 0m, 2));
-                decimal costo = Math.Max(0m, Math.Round(item.Costo ?? 0m, 2));
+                decimal precioRaw = item.Precio ?? 0m;
+                decimal costoRaw = item.Costo ?? 0m;
+                decimal stockRaw = item.Stock ?? 0m;
+
+                if (precioRaw <= 0m && costoRaw <= 0m)
+                {
+                    resultadoBase.Rechazados++;
+                    string err = $"Fila {item.NumeroFila} ({nombre}): precio de venta en $0.00 o ausente tras normalizar.";
+                    resultadoBase.Errores.Add(err);
+                    resultadoBase.Filas.Add(new FilaImportacionPreview
+                    {
+                        NumeroFila = item.NumeroFila,
+                        Estado = "Rechazado",
+                        Codigo = (item.Codigo ?? string.Empty).Trim(),
+                        Nombre = nombre,
+                        Categoria = string.IsNullOrWhiteSpace(item.Categoria) ? "General" : item.Categoria.Trim(),
+                        Detalle = err
+                    });
+                    continue;
+                }
+
+                var advertenciasItem = new List<string>();
+                if (!string.IsNullOrWhiteSpace(item.Observacion))
+                {
+                    advertenciasItem.Add(item.Observacion.Trim());
+                }
+
+                if (costoRaw < 0m || stockRaw < 0m)
+                {
+                    advertenciasItem.Add("⚠️ Valores negativos ajustados a 0");
+                }
+
+                decimal costo = Math.Max(0m, Math.Round(costoRaw, 2));
+                decimal precio = Math.Max(0m, Math.Round(precioRaw, 2));
+                if (precio <= 0m && costo > 0m)
+                {
+                    precio = costo;
+                    advertenciasItem.Add("⚠️ Sin precio de venta: se igualó al costo");
+                }
+
+                if (costo > precio && precio > 0m)
+                {
+                    string alertaMargen = $"⚠️ Costo (${costo:0.00}) supera Precio (${precio:0.00})";
+                    advertenciasItem.Add(alertaMargen);
+                    resultadoBase.Errores.Add($"[Aviso IA] Fila {item.NumeroFila} ({nombre}): {alertaMargen}");
+                }
+
                 decimal gananciaRaw = item.Ganancia ?? 0m;
-                decimal ganancia = gananciaRaw != 0m ? Math.Round(gananciaRaw, 2) : Math.Round(precio - costo, 2);
-                decimal stock = Math.Max(0m, Math.Round(item.Stock ?? 0m, 3));
+                decimal ganancia = (gananciaRaw != 0m && precio >= costo)
+                    ? Math.Round(gananciaRaw, 2)
+                    : Math.Round(precio - costo, 2);
+                decimal stock = Math.Max(0m, Math.Round(stockRaw, 3));
                 decimal stockMinimo = Math.Max(0m, Math.Round(item.StockMinimo ?? 5m, 3));
                 string categoria = string.IsNullOrWhiteSpace(item.Categoria) ? "General" : item.Categoria.Trim();
                 bool porPeso = item.SeVendePorPeso ?? false;
@@ -137,11 +236,90 @@ namespace Punto_de_Venta.Servicios
                     PedirCantidadAlCobrar = pedirCant && !porPeso
                 };
 
-                itemsValidos.Add((item.NumeroFila, prod, item.Observacion));
+                string? observacionConsolidada = advertenciasItem.Count > 0
+                    ? string.Join(" | ", advertenciasItem.Distinct(StringComparer.OrdinalIgnoreCase))
+                    : null;
+
+                itemsValidos.Add((item.NumeroFila, prod, observacionConsolidada));
             }
 
             var previewFinal = ImportarExportarService.EvaluarProductosParaPreview(itemsValidos, esPremium, modo, resultadoBase);
             return (previewFinal, itemsValidos);
+        }
+
+        private static async Task<List<ProductoNormalizadoIA>> InvocarLoteConBackoffAsync(
+            string instruccionSistema,
+            string promptLote,
+            int numeroLote,
+            int totalLotes,
+            IProgress<string>? progreso,
+            CancellationToken ct)
+        {
+            Exception? ultimoError = null;
+            int[] demorasMs = [1500, 3500, 7500];
+
+            for (int intento = 0; intento <= MaxReintentosPorLote; intento++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                try
+                {
+                    string jsonLote = await GeminiService.GenerarJsonTextoAsync(
+                        instruccionSistema,
+                        promptLote,
+                        ct).ConfigureAwait(false);
+
+                    var parsed = DeserializarListaFlexible(jsonLote);
+                    if (parsed != null)
+                    {
+                        return parsed;
+                    }
+
+                    throw new InvalidOperationException("Gemini devolvió un JSON sin arreglo de productos.");
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex) when (intento < MaxReintentosPorLote && EsErrorTransitorioReintentable(ex))
+                {
+                    ultimoError = ex;
+                    int esperaMs = demorasMs[Math.Min(intento, demorasMs.Length - 1)] + Random.Shared.Next(100, 450);
+                    PosLogger.Warn(
+                        "NormalizadorImportacionIA.InvocarLoteConBackoffAsync",
+                        $"Lote {numeroLote}/{totalLotes} intento {intento + 1} falló ({ex.Message}). Reintentando en {esperaMs}ms...");
+                    progreso?.Report($"Lote {numeroLote}/{totalLotes}: reintentando ({intento + 1}/{MaxReintentosPorLote})...");
+                    await Task.Delay(esperaMs, ct).ConfigureAwait(false);
+                }
+            }
+
+            throw ultimoError ?? new InvalidOperationException($"No se pudo procesar el lote {numeroLote} con Gemini.");
+        }
+
+        private static bool EsErrorTransitorioReintentable(Exception ex)
+        {
+            if (ex is HttpRequestException || ex is JsonException)
+            {
+                return true;
+            }
+
+            string msg = ex.Message ?? string.Empty;
+            if (msg.Contains("invalida", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("sin permisos", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("Premium", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("Configura tu API Key", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return msg.Contains("429", StringComparison.OrdinalIgnoreCase) ||
+                   msg.Contains("Limite de peticiones", StringComparison.OrdinalIgnoreCase) ||
+                   msg.Contains("500", StringComparison.OrdinalIgnoreCase) ||
+                   msg.Contains("502", StringComparison.OrdinalIgnoreCase) ||
+                   msg.Contains("503", StringComparison.OrdinalIgnoreCase) ||
+                   msg.Contains("504", StringComparison.OrdinalIgnoreCase) ||
+                   msg.Contains("tardo demasiado", StringComparison.OrdinalIgnoreCase) ||
+                   msg.Contains("respuesta vacia", StringComparison.OrdinalIgnoreCase);
         }
 
         private static List<ProductoNormalizadoIA>? DeserializarListaFlexible(string json)
@@ -185,12 +363,13 @@ namespace Punto_de_Venta.Servicios
             sb.AppendLine("Devuelve EXCLUSIVAMENTE un arreglo JSON de objetos con estas propiedades exactas:");
             sb.AppendLine("numeroFila (int), codigo (string), nombre (string), categoria (string), costo (decimal), precio (decimal), ganancia (decimal), stock (decimal), stockMinimo (decimal), seVendePorPeso (bool), pedirCantidadAlCobrar (bool), observacion (string).");
             sb.AppendLine("Reglas:");
-            sb.AppendLine("1. Limpia simbolos de moneda y texto en numeros (ej. '$18.50 MXN' -> 18.50).");
-            sb.AppendLine("2. Estandariza nombres a formato limpio (ej. 'COCA COLA 600ML' -> 'Coca Cola 600ml') sin inventar datos.");
-            sb.AppendLine($"3. Reutiliza estas categorias existentes cuando encajen: [{cats}]. Si ninguna encaja, asigna una categoria corta y clara.");
-            sb.AppendLine("4. Si falta ganancia, calcula precio - costo. Si falta costo, pon 0 y ganancia = precio. Si no hay columna de stock minimo, usa 5.");
-            sb.AppendLine("5. Marca seVendePorPeso=true si el producto indica venta a granel o por kilo/gramo (kg, gr, granel).");
-            sb.AppendLine("6. Si notas algo sospechoso (precio <= 0 o precio < costo), anotalo brevemente en observacion.");
+            sb.AppendLine("1. NO omitas ninguna fila recibida; devuelve exactamente un objeto por cada fila de entrada conservando su numeroFila exacto.");
+            sb.AppendLine("2. Limpia simbolos de moneda y texto en numeros (ej. '$18.50 MXN' -> 18.50).");
+            sb.AppendLine("3. Estandariza nombres a formato limpio (ej. 'COCA COLA 600ML' -> 'Coca Cola 600ml') sin inventar datos.");
+            sb.AppendLine($"4. Reutiliza estas categorias existentes cuando encajen: [{cats}]. Si ninguna encaja, asigna una categoria corta y clara.");
+            sb.AppendLine("5. Si falta ganancia, calcula precio - costo. Si falta costo, pon 0 y ganancia = precio. Si no hay columna de stock minimo, usa 5.");
+            sb.AppendLine("6. Marca seVendePorPeso=true si el producto indica venta a granel o por kilo/gramo (kg, gr, granel).");
+            sb.AppendLine("7. Si notas algo sospechoso (precio <= 0 o precio < costo), anotalo brevemente en observacion.");
             return sb.ToString();
         }
 
@@ -205,4 +384,3 @@ namespace Punto_de_Venta.Servicios
         }
     }
 }
-

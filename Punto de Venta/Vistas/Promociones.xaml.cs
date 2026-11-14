@@ -39,6 +39,8 @@ namespace Punto_de_Venta
                 TituloFormularioText.Text = LicenciaService.EsPremium() ? "Nueva Promocion" : $"Nueva Promocion ({ListaPromociones.Count}/5)";
             }
         }
+        private bool _primeraVisibilidad = true;
+
         public void RecargarDesdeBD()
         {
             CargarPromociones();
@@ -48,10 +50,20 @@ namespace Punto_de_Venta
         {
             if ((bool)e.NewValue)
             {
-                RecargarDesdeBD();
-                this.Focus();
-                FocusSearch();
-                Keyboard.Focus(this);
+                bool recargar = !_primeraVisibilidad;
+                _primeraVisibilidad = false;
+
+                this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                {
+                    if (!IsVisible) return;
+                    if (recargar)
+                    {
+                        RecargarDesdeBD();
+                    }
+                    this.Focus();
+                    FocusSearch();
+                    Keyboard.Focus(this);
+                }));
             }
         }
         private void UserControl_Loaded(object sender, RoutedEventArgs e) => FocusSearch();

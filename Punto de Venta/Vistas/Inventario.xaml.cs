@@ -97,6 +97,8 @@ namespace Punto_de_Venta
             };
         }
 
+        private bool _primeraVisibilidad = true;
+
         public void RecargarCatalogoDesdeBD()
         {
             try
@@ -109,7 +111,10 @@ namespace Punto_de_Venta
                 ProductsView.Refresh();
                 UpdateProductCount();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                PosLogger.Error("Inventario.RecargarCatalogoDesdeBD", ex);
+            }
         }
 
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -117,11 +122,20 @@ namespace Punto_de_Venta
             if ((bool)e.NewValue)
             {
                 ActualizarIndicadoresPremiumUI();
-                RecargarCatalogoDesdeBD();
+                bool recargar = !_primeraVisibilidad;
+                _primeraVisibilidad = false;
 
-                this.Focus();
-                Keyboard.Focus(this);
-                SearchBox?.Focus();
+                this.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+                {
+                    if (!IsVisible) return;
+                    if (recargar)
+                    {
+                        RecargarCatalogoDesdeBD();
+                    }
+                    this.Focus();
+                    Keyboard.Focus(this);
+                    SearchBox?.Focus();
+                }));
             }
         }
 

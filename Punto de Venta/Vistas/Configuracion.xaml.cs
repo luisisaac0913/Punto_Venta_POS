@@ -142,14 +142,23 @@ namespace Punto_de_Venta
         private async void Configuracion_Loaded(object sender, RoutedEventArgs e)
         {
             _isCargando = true;
-            ActualizarIndicadoresPremiumUI();
-            ChkRespaldoAuto.IsChecked = Properties.Settings.Default.RespaldoAutoActivo;
-            ActualizarFeedbackUltimoRespaldo();
-            CargarDatosFormulario();
-            await CargarDispositivosAsync();
-            CmbModoBascula.SelectedIndex = _config.BasculaModoPrecio ? 1 : 0;
-
-            _isCargando = false;
+            try
+            {
+                ActualizarIndicadoresPremiumUI();
+                ChkRespaldoAuto.IsChecked = Properties.Settings.Default.RespaldoAutoActivo;
+                ActualizarFeedbackUltimoRespaldo();
+                CargarDatosFormulario();
+                await CargarDispositivosAsync();
+                CmbModoBascula.SelectedIndex = _config.BasculaModoPrecio ? 1 : 0;
+            }
+            catch (Exception ex)
+            {
+                PosLogger.Error("Configuracion.Configuracion_Loaded", ex);
+            }
+            finally
+            {
+                _isCargando = false;
+            }
         }
 
         private void CargarDatosFormulario()
@@ -424,28 +433,34 @@ namespace Punto_de_Venta
                 ?? "PeticionP";
 
             _isTestingScale = true;
-            ScaleTestResultText.Text = "Conectando y leyendo bascula...";
-            ScaleTestResultText.Foreground = (Brush)FindResource("ThemeMutedForeground");
-
-            var (exito, peso, error) = await Task.Run(() =>
+            try
             {
-                bool ok = BasculaService.ProbarConexion(puerto, baudRate, out decimal p, out string err, protocolo);
-                return (ok, p, err);
-            });
+                ScaleTestResultText.Text = "Conectando y leyendo bascula...";
+                ScaleTestResultText.Foreground = (Brush)FindResource("ThemeMutedForeground");
 
-            _isTestingScale = false;
+                var (exito, peso, error) = await BasculaService.ProbarConexionAsync(puerto, baudRate, protocolo);
 
-            if (exito)
-            {
-                ScaleTestResultText.Text = $"✅ Lectura exitosa: {peso:0.000} kg";
-                ScaleTestResultText.Foreground = (Brush)FindResource("SystemGreen");
-                ToastNotification.Show($"Bascula conectada: {peso:0.000} kg", ToastType.Success);
+                if (exito)
+                {
+                    ScaleTestResultText.Text = $"✅ Lectura exitosa: {peso:0.000} kg";
+                    ScaleTestResultText.Foreground = (Brush)FindResource("SystemGreen");
+                    ToastNotification.Show($"Bascula conectada: {peso:0.000} kg", ToastType.Success);
+                }
+                else
+                {
+                    ScaleTestResultText.Text = $"❌ Fallo: {error}";
+                    ScaleTestResultText.Foreground = new SolidColorBrush(Color.FromRgb(255, 59, 48));
+                    ToastNotification.Show($"Error en bascula: {error}", ToastType.Error);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                ScaleTestResultText.Text = $"❌ Fallo: {error}";
-                ScaleTestResultText.Foreground = new SolidColorBrush(Color.FromRgb(255, 59, 48));
-                ToastNotification.Show($"Error en bascula: {error}", ToastType.Error);
+                PosLogger.Error("Configuracion.TestScale_Click", ex);
+                ToastNotification.Show($"Error inesperado al probar bascula: {ex.Message}", ToastType.Error);
+            }
+            finally
+            {
+                _isTestingScale = false;
             }
         }
 
@@ -831,6 +846,10 @@ namespace Punto_de_Venta
                 _config.BasculaProtocolo = (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString()
                     ?? (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString()
                     ?? "PeticionP";
+                if (!_config.BasculaHabilitada)
+                {
+                    BasculaService.CerrarConexionPersistente();
+                }
 
                 if (CountCoinsIndividuallyCheckBox != null)
                     _config.ContarMonedasIndividualmente = CountCoinsIndividuallyCheckBox.IsChecked == true;
@@ -890,16 +909,32 @@ namespace Punto_de_Venta
                 {
                     _ = Task.Run(async () =>
                     {
-                        await App.IniciarServidorLocalAsync();
-                        Dispatcher.Invoke(ActualizarEstadoServidorUI);
+                        try
+                        {
+                            await App.IniciarServidorLocalAsync();
+                            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+                                await Dispatcher.InvokeAsync(ActualizarEstadoServidorUI);
+                        }
+                        catch (Exception exSv)
+                        {
+                            PosLogger.Error("Configuracion.SaveConfig_Click.IniciarServidorLocal", exSv);
+                        }
                     });
                 }
                 else
                 {
                     _ = Task.Run(async () =>
                     {
-                        await App.DetenerServidorLocalAsync();
-                        Dispatcher.Invoke(ActualizarEstadoServidorUI);
+                        try
+                        {
+                            await App.DetenerServidorLocalAsync();
+                            if (!Dispatcher.HasShutdownStarted && !Dispatcher.HasShutdownFinished)
+                                await Dispatcher.InvokeAsync(ActualizarEstadoServidorUI);
+                        }
+                        catch (Exception exSv)
+                        {
+                            PosLogger.Error("Configuracion.SaveConfig_Click.DetenerServidorLocal", exSv);
+                        }
                     });
                 }
                 ActualizarEstadoServidorUI();
@@ -1072,14 +1107,22 @@ namespace Punto_de_Venta
             }
             catch (Exception ex)
             {
+                PosLogger.Error("Configuracion.BtnRespaldoDrive_Click", ex);
                 ToastNotification.Show($"Fallo al respaldar en Google Drive: {ex.Message}", ToastType.Error);
             }
             finally
             {
-                BtnRespaldoDrive.IsEnabled = true;
-                BtnRespaldoDrive.Content = IdiomaService.Obtener("SettingsDriveUploadBtn", "☁️ Subir Respaldo a Google Drive");
-                await Task.Delay(2000);
-                PanelProgresoDrive.Visibility = Visibility.Collapsed;
+                try
+                {
+                    BtnRespaldoDrive.IsEnabled = true;
+                    BtnRespaldoDrive.Content = IdiomaService.Obtener("SettingsDriveUploadBtn", "☁️ Subir Respaldo a Google Drive");
+                    await Task.Delay(2000);
+                    if (IsLoaded)
+                    {
+                        PanelProgresoDrive.Visibility = Visibility.Collapsed;
+                    }
+                }
+                catch { }
             }
         }
 
@@ -1122,6 +1165,7 @@ namespace Punto_de_Venta
                     }
                     catch (Exception exDrive)
                     {
+                        PosLogger.Warn("Configuracion.BtnCargarCopias_Click.Drive", exDrive);
                         ToastNotification.Show(IdiomaService.ObtenerFormato("SettingsRestoreDriveWarn", "No se pudieron listar copias de Drive: {0}", exDrive.Message), ToastType.Warning);
                     }
                 }
@@ -1140,6 +1184,7 @@ namespace Punto_de_Venta
             }
             catch (Exception ex)
             {
+                PosLogger.Error("Configuracion.BtnCargarCopias_Click", ex);
                 ToastNotification.Show(IdiomaService.ObtenerFormato("SettingsRestoreSearchErr", "Error al buscar copias: {0}", ex.Message), ToastType.Error);
             }
             finally
@@ -1196,6 +1241,7 @@ namespace Punto_de_Venta
             }
             catch (Exception ex)
             {
+                PosLogger.Error("Configuracion.BtnRestaurarCopia_Click", ex);
                 ToastNotification.Show(IdiomaService.ObtenerFormato("SettingsRestoreError", "Error al restaurar respaldo: {0}", ex.Message), ToastType.Error);
             }
             finally

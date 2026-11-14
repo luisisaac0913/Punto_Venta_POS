@@ -64,12 +64,10 @@ namespace Punto_de_Venta
             InitializeComponent();
             DataContext = this;
 
-            try { _catalog = ProductoDB.Load() ?? []; } catch { _catalog = []; }
-            try { _sales = VentaDB.Load().Where(s => s.Estado != "Cancelada" && s.Estado != "Abono").ToList(); foreach (var sale in _sales) HydrateSaleProfit(sale); }
-            catch (Exception ex) { _sales = []; ToastNotification.Show($"Error al cargar ventas: {ex.Message}", ToastType.Error); }
-
-            try { _cortes = CorteCajaDB.Load() ?? []; } catch { _cortes = []; }
-            try { _movimientos = MovimientoCajaDB.Load() ?? []; } catch { _movimientos = []; }
+            _catalog = [];
+            _sales = [];
+            _cortes = [];
+            _movimientos = [];
 
             _clockTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _clockTimer.Tick += (_, _) => ClockText.Text = DateTime.Now.ToString("h:mm tt", CultureInfo.GetCultureInfo("en-US"));
@@ -79,7 +77,6 @@ namespace Punto_de_Venta
             Unloaded += (_, _) => _clockTimer.Stop();
 
             ActualizarIndicadoresPremiumUI();
-            RefreshData();
         }
 
         public void ActualizarIndicadoresPremiumUI()
@@ -95,12 +92,44 @@ namespace Punto_de_Venta
                 BtnExportarPdf.Content = esPremium ? textoExportar : $"🔒 {textoExportar}";
             }
         }
+        private void ObtenerRangoPeriodoActual(out DateTime start, out DateTime end)
+        {
+            var today = DateTime.Today;
+            start = today;
+            end = today;
+            switch (_currentPeriod)
+            {
+                case Period.Day: start = today; end = today; break;
+                case Period.Week: start = today.AddDays(-6); end = today; break;
+                case Period.Month: start = new DateTime(today.Year, today.Month, 1); end = start.AddMonths(1).AddDays(-1); break;
+                case Period.Year: start = new DateTime(today.Year, 1, 1); end = today; break;
+                case Period.Custom: start = _customStart.Date; end = _customEnd.Date; break;
+            }
+        }
         private void RecargarDatosDesdeDisco()
         {
-            try { _catalog = ProductoDB.Load() ?? []; } catch { _catalog = []; }
-            try { _sales = VentaDB.Load().Where(s => s.Estado != "Cancelada" && s.Estado != "Abono").ToList(); foreach (var sale in _sales) HydrateSaleProfit(sale); } catch { _sales = []; }
-            try { _cortes = CorteCajaDB.Load() ?? []; } catch { _cortes = []; }
-            try { _movimientos = MovimientoCajaDB.Load() ?? []; } catch { _movimientos = []; }
+            ObtenerRangoPeriodoActual(out DateTime start, out DateTime end);
+            try { _catalog = ProductoDB.Load() ?? []; }
+            catch (Exception ex) { PosLogger.Warn("Graficas.CargarCatalogo", ex.Message); _catalog = []; }
+
+            try
+            {
+                _sales = VentaDB.LoadPorRangoFechas(start, end, limiteMaximo: 10000, incluirAbiertas: false)
+                    .Where(s => s.Estado != "Cancelada" && s.Estado != "Abono")
+                    .ToList();
+                foreach (var sale in _sales) HydrateSaleProfit(sale);
+            }
+            catch (Exception ex)
+            {
+                PosLogger.Error("Graficas.CargarVentas", ex);
+                _sales = [];
+            }
+
+            try { _cortes = CorteCajaDB.LoadPorRangoFechas(start, end) ?? []; }
+            catch (Exception ex) { PosLogger.Warn("Graficas.CargarCortes", ex.Message); _cortes = []; }
+
+            try { _movimientos = MovimientoCajaDB.LoadPorRangoFechas(start, end) ?? []; }
+            catch (Exception ex) { PosLogger.Warn("Graficas.CargarMovimientos", ex.Message); _movimientos = []; }
         }
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
@@ -108,6 +137,7 @@ namespace Punto_de_Venta
             {
                 this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
                 {
+                    if (!IsVisible) return;
                     this.Focus();
                     Keyboard.Focus(this);
                     ActualizarIndicadoresPremiumUI();
@@ -229,18 +259,18 @@ namespace Punto_de_Venta
             CustomPeriodContainer.Visibility = Visibility.Collapsed;
         }
 
-        private void DayButton_Click(object sender, RoutedEventArgs e) { _currentPeriod = Period.Day; RestoreNormalPeriods(); RefreshData(); }
+        private void DayButton_Click(object sender, RoutedEventArgs e) { _currentPeriod = Period.Day; RestoreNormalPeriods(); RecargarDatosDesdeDisco(); RefreshData(); }
         private void WeekButton_Click(object sender, RoutedEventArgs e)
         {
-            _currentPeriod = Period.Week; RestoreNormalPeriods(); RefreshData();
+            _currentPeriod = Period.Week; RestoreNormalPeriods(); RecargarDatosDesdeDisco(); RefreshData();
         }
         private void MonthButton_Click(object sender, RoutedEventArgs e)
         {
-            _currentPeriod = Period.Month; RestoreNormalPeriods(); RefreshData();
+            _currentPeriod = Period.Month; RestoreNormalPeriods(); RecargarDatosDesdeDisco(); RefreshData();
         }
         private void YearButton_Click(object sender, RoutedEventArgs e)
         {
-            _currentPeriod = Period.Year; RestoreNormalPeriods(); RefreshData();
+            _currentPeriod = Period.Year; RestoreNormalPeriods(); RecargarDatosDesdeDisco(); RefreshData();
         }
 
         private void CustomButton_Click(object sender, RoutedEventArgs e)
@@ -270,6 +300,7 @@ namespace Punto_de_Venta
 
                 _currentPeriod = Period.Custom;
                 RestoreNormalPeriods();
+                RecargarDatosDesdeDisco();
                 RefreshData();
             }
         }
@@ -1247,10 +1278,21 @@ namespace Punto_de_Venta
         {
             MovimientosDelTurnoList.Clear();
 
-            var movimientos = _movimientos
-                .Where(m => m.CorteCajaId == turnoId)
-                .OrderBy(m => m.FechaHora)
-                .ToList();
+            List<MovimientoCaja> movimientos;
+            try
+            {
+                movimientos = MovimientoCajaDB.LoadPorCorteCajaId(turnoId)
+                    .OrderBy(m => m.FechaHora)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                PosLogger.Warn("Graficas.AbrirHistorialMovimientos", ex.Message);
+                movimientos = _movimientos
+                    .Where(m => m.CorteCajaId == turnoId)
+                    .OrderBy(m => m.FechaHora)
+                    .ToList();
+            }
 
             foreach (var m in movimientos)
             {

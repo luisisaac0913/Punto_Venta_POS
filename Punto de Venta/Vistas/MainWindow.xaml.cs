@@ -26,6 +26,7 @@ namespace Punto_de_Venta
         public static MainWindow? InstanciaActual { get; private set; }
         private readonly DispatcherTimer _clockTimer;
         private bool _isShuttingDown;
+        private bool _backupCierreCompletado;
         private Point _lastMousePosition;
         private bool _reposoHabilitado;
         private System.Windows.Threading.DispatcherTimer _inactivityTimer;
@@ -78,51 +79,13 @@ namespace Punto_de_Venta
             };
             _clockTimer.Tick += (_, _) => UpdateClock();
 
-            Closing += (_, _) =>
-            {
-                if (!_isShuttingDown)
-                {
-                    _isShuttingDown = true;
-                    try { _clockTimer?.Stop(); } catch { }
-                    try { _inactivityTimer?.Stop(); } catch { }
-                    try { _standbyClockTimer?.Stop(); } catch { }
-                    try { _ctsAutoBackup.Cancel(); _ctsAutoBackup.Dispose(); } catch { }
-                    try
-                    {
-                        if (_vistasCache.TryGetValue("Activacion", out var vistaAct) && vistaAct is Activacion actView)
-                        {
-                            actView.DetenerActivacionPendiente();
-                        }
-                    }
-                    catch { }
-
-                    try
-                    {
-                        var cierreConfig = AppConfig.Load();
-                        BackupService.GenerarRespaldo("Cierre", cierreConfig.RutaRespaldos);
-                    }
-                    catch
-                    {
-                        BackupService.GenerarRespaldo("Cierre");
-                    }
-
-                    Application.Current.Shutdown();
-                }
-            };
+            Closing += MainWindow_Closing;
 
             UpdateClock();
             _clockTimer.Start();
             ActualizarEstadoLicenciaUI();
             this.PreviewGotKeyboardFocus += MainWindow_PreviewGotKeyboardFocus;
-            Punto_de_Venta.Servicios.IdiomaService.IdiomaCambiado += (_, _) =>
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    ActualizarNombreNegocioEnUI();
-                    ActualizarEstadoLicenciaUI();
-                    UpdateClock();
-                });
-            };
+            Punto_de_Venta.Servicios.IdiomaService.IdiomaCambiado += OnIdiomaCambiado;
 
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
@@ -131,21 +94,141 @@ namespace Punto_de_Venta
                     bool? estadoNube = await LicenciaService.VerificarEnNubeAsync().ConfigureAwait(false);
                     if (estadoNube.HasValue && !_isShuttingDown)
                     {
-                        Dispatcher.Invoke(() =>
+                        var disp = Application.Current?.Dispatcher;
+                        if (disp != null && !disp.HasShutdownStarted && !disp.HasShutdownFinished)
                         {
-                            if (_isShuttingDown) return;
-                            ActualizarEstadoLicenciaUI();
-                            if (_vistasCache.TryGetValue("Activacion", out var actView) && actView is Activacion act)
+                            _ = disp.InvokeAsync(() =>
                             {
-                                act.ActualizarEstadoVisual();
-                            }
-                        });
+                                if (_isShuttingDown) return;
+                                ActualizarEstadoLicenciaUI();
+                                if (_vistasCache.TryGetValue("Activacion", out var actView) && actView is Activacion act)
+                                {
+                                    act.ActualizarEstadoVisual();
+                                }
+                            });
+                        }
                     }
                 }
-                catch
+                catch (Exception exLic)
                 {
+                    PosLogger.Warn("MainWindow.VerificarEnNubeAsync", exLic.Message);
                 }
             });
+        }
+
+        private void OnIdiomaCambiado(object? sender, EventArgs e)
+        {
+            if (_isShuttingDown) return;
+            var disp = Dispatcher;
+            if (disp == null || disp.HasShutdownStarted || disp.HasShutdownFinished) return;
+
+            if (disp.CheckAccess())
+            {
+                ActualizarNombreNegocioEnUI();
+                ActualizarEstadoLicenciaUI();
+                UpdateClock();
+            }
+            else
+            {
+                _ = disp.InvokeAsync(() =>
+                {
+                    if (_isShuttingDown) return;
+                    ActualizarNombreNegocioEnUI();
+                    ActualizarEstadoLicenciaUI();
+                    UpdateClock();
+                });
+            }
+        }
+
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (_backupCierreCompletado)
+            {
+                return;
+            }
+
+            e.Cancel = true;
+            if (_isShuttingDown)
+            {
+                return;
+            }
+
+            _isShuttingDown = true;
+            _ = EjecutarCierreSeguroAsync();
+        }
+
+        private async System.Threading.Tasks.Task EjecutarCierreSeguroAsync()
+        {
+            try
+            {
+                try { System.Windows.Input.InputManager.Current.PreProcessInput -= Global_PreProcessInput; } catch { }
+                try { Punto_de_Venta.Servicios.IdiomaService.IdiomaCambiado -= OnIdiomaCambiado; } catch { }
+                try { this.PreviewGotKeyboardFocus -= MainWindow_PreviewGotKeyboardFocus; } catch { }
+
+                try { _clockTimer?.Stop(); } catch { }
+                try { _inactivityTimer?.Stop(); } catch { }
+                try { _standbyClockTimer?.Stop(); } catch { }
+                try { _normalizacionIaCts?.Cancel(); _normalizacionIaCts?.Dispose(); _normalizacionIaCts = null; } catch { }
+                try { _ctsAutoBackup.Cancel(); _ctsAutoBackup.Dispose(); } catch { }
+                try
+                {
+                    if (_vistasCache.TryGetValue("Activacion", out var vistaAct) && vistaAct is Activacion actView)
+                    {
+                        actView.DetenerActivacionPendiente();
+                    }
+                }
+                catch { }
+
+                ToastNotification.LiberarRecursos();
+                try { BasculaService.CerrarConexionPersistente(); } catch { }
+
+                try
+                {
+                    IsEnabled = false;
+                    Cursor = Cursors.Wait;
+                    Title = $"{_nombreNegocioActual} - Guardando respaldo y cerrando...";
+                    if (TxtMiniLogo != null)
+                    {
+                        TxtMiniLogo.Text = $"{_nombreNegocioActual} - Guardando respaldo...";
+                    }
+                }
+                catch { }
+
+                var tareaCierre = System.Threading.Tasks.Task.Run(async () =>
+                {
+                    try
+                    {
+                        await App.DetenerServidorLocalAsync().ConfigureAwait(false);
+                    }
+                    catch (Exception exSrv)
+                    {
+                        PosLogger.Warn("MainWindow.Cierre.ServidorLocal", exSrv.Message);
+                    }
+
+                    try
+                    {
+                        var cierreConfig = AppConfig.Load();
+                        BackupService.GenerarRespaldo("Cierre", cierreConfig.RutaRespaldos);
+                    }
+                    catch (Exception exBk)
+                    {
+                        PosLogger.Warn("MainWindow.Cierre.BackupRuta", exBk.Message);
+                        try { BackupService.GenerarRespaldo("Cierre"); }
+                        catch (Exception exBkFallback) { PosLogger.Error("MainWindow.Cierre.BackupFallback", exBkFallback); }
+                    }
+                });
+
+                await System.Threading.Tasks.Task.WhenAny(tareaCierre, System.Threading.Tasks.Task.Delay(6000));
+            }
+            catch (Exception ex)
+            {
+                PosLogger.Error("MainWindow.EjecutarCierreSeguroAsync", ex);
+            }
+            finally
+            {
+                _backupCierreCompletado = true;
+                Application.Current?.Shutdown();
+            }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -953,6 +1036,19 @@ namespace Punto_de_Venta
 
         private async void BtnNormalizarIA_Click(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                await NormalizarImportacionConIAAsync();
+            }
+            catch (Exception ex)
+            {
+                PosLogger.Error("MainWindow.BtnNormalizarIA_Click", ex);
+                ToastNotification.Show($"Error al normalizar con IA: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private async System.Threading.Tasks.Task NormalizarImportacionConIAAsync()
+        {
             if (!LicenciaService.EsPremium())
             {
                 LicenciaService.MostrarMensajePremium("Normalizacion de Importaciones con IA");
@@ -1014,6 +1110,7 @@ namespace Punto_de_Venta
             }
             catch (Exception ex)
             {
+                PosLogger.Error("MainWindow.NormalizarImportacionConIAAsync", ex);
                 if (!ct.IsCancellationRequested)
                 {
                     ToastNotification.Show($"Error al normalizar con IA: {ex.Message}", ToastType.Error);
@@ -1065,10 +1162,12 @@ namespace Punto_de_Venta
                 var res = ImportarExportarService.ConfirmarImportacion(_previewImportacionActual);
                 CerrarImportarPreview();
                 CerrarImportar();
+                RefrescarCatalogoVistaActiva();
                 ToastNotification.Show($"Importacion lista: {res.Creados} nuevos, {res.Actualizados} actualizados, {res.Rechazados} rechazados.", res.Rechazados > 0 ? ToastType.Info : ToastType.Success);
             }
             catch (Exception ex)
             {
+                PosLogger.Error("MainWindow.BtnConfirmarImportacion_Click", ex);
                 ToastNotification.Show($"Error al guardar en base de datos: {ex.Message}", ToastType.Error);
             }
         }
@@ -1185,11 +1284,12 @@ namespace Punto_de_Venta
             {
                 var hoy = DateTime.Today;
                 var inicioSemana = hoy.AddDays(-6);
-                var sales = VentaDB.Load().Where(sale =>
-                {
-                    var fechaLocal = sale.FechaHora.Date;
-                    return sale.Estado != "Cancelada" && sale.Estado != "Abono" && fechaLocal >= inicioSemana && fechaLocal <= hoy;
-                }).ToList();
+                var sales = VentaDB.LoadPorRangoFechas(inicioSemana, hoy, limiteMaximo: 5000, incluirAbiertas: false)
+                    .Where(sale =>
+                    {
+                        var fechaLocal = sale.FechaHora.Date;
+                        return sale.Estado != "Cancelada" && sale.Estado != "Abono" && fechaLocal >= inicioSemana && fechaLocal <= hoy;
+                    }).ToList();
 
                 ExportarPdf("Reporte_Ventas_Semanal.pdf", path => GenerarPdfVentas(sales, path));
             }
@@ -1625,6 +1725,7 @@ namespace Punto_de_Venta
                         }
                         catch (Exception ex)
                         {
+                            PosLogger.Warn("MainWindow.AutoBackupLocal", ex.Message);
                             System.Diagnostics.Debug.WriteLine($"[AutoBackup Local] Error: {ex.Message}");
                         }
 
@@ -1644,6 +1745,7 @@ namespace Punto_de_Venta
                         }
                         catch (Exception ex)
                         {
+                            PosLogger.Warn("MainWindow.AutoBackupDrive", ex.Message);
                             System.Diagnostics.Debug.WriteLine($"[AutoBackup Drive] Error: {ex.Message}");
                         }
                     }

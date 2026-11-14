@@ -78,6 +78,8 @@ namespace Punto_de_Venta
                 ToastNotification.Show($"Error al cargar la libreta: {exception.Message}", ToastType.Error);
             }
         }
+        private bool _primeraVisibilidad = true;
+
         public void RecargarDesdeBD()
         {
             CargarDeudoresDesdeBaseDatos();
@@ -90,10 +92,20 @@ namespace Punto_de_Venta
         {
             if ((bool)e.NewValue)
             {
-                RecargarDesdeBD();
-                this.Focus();
-                FocusSearch();
-                Keyboard.Focus(this);
+                bool recargar = !_primeraVisibilidad;
+                _primeraVisibilidad = false;
+
+                this.Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+                {
+                    if (!IsVisible) return;
+                    if (recargar)
+                    {
+                        RecargarDesdeBD();
+                    }
+                    this.Focus();
+                    FocusSearch();
+                    Keyboard.Focus(this);
+                }));
             }
         }
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
