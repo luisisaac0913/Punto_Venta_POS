@@ -421,10 +421,10 @@ namespace Punto_de_Venta.Servicios
 
                     string cat = ExtraerTexto(args, "categoria").Trim();
                     if (string.IsNullOrWhiteSpace(cat)) cat = "General";
-                    decimal costo = Math.Max(0m, ExtraerDecimal(args, "costo", 0m));
-                    decimal precio = Math.Max(0m, ExtraerDecimal(args, "precio", 0m));
-                    decimal stock = Math.Max(0m, ExtraerDecimal(args, "stock", 0m));
-                    decimal stockMinimo = Math.Max(0m, ExtraerDecimal(args, "stockMinimo", 5m));
+                    decimal costo = Math.Max(0m, Math.Round(ExtraerDecimal(args, "costo", 0m), 2));
+                    decimal precio = Math.Max(0m, Math.Round(ExtraerDecimal(args, "precio", 0m), 2));
+                    decimal stock = Math.Max(0m, Math.Round(ExtraerDecimal(args, "stock", 0m), 3));
+                    decimal stockMinimo = Math.Max(0m, Math.Round(ExtraerDecimal(args, "stockMinimo", 5m), 3));
                     bool porPeso = ExtraerBool(args, "seVendePorPeso", false);
 
                     bool confirmado = await ConfirmarEnPantallaAsync(

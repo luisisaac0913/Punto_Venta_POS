@@ -5,17 +5,24 @@
         Title="Asistente IA (Gemini)"
         Width="680" Height="560"
         WindowStartupLocation="CenterOwner"
-        WindowStyle="None"
-        AllowsTransparency="True"
-        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource ThemeSurfaceBackground}"
+        FontFamily="Segoe UI Variable, Segoe UI"
         UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        RenderOptions.ClearTypeHint="Enabled"
         PreviewKeyDown="Window_PreviewKeyDown">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" ResizeBorderThickness="0" GlassFrameThickness="0" CornerRadius="0" />
+    </WindowChrome.WindowChrome>
     <Border Background="{DynamicResource ThemeSurfaceBackground}"
             BorderBrush="{DynamicResource ThemeBorder}"
             BorderThickness="1"
-            CornerRadius="12"
-            Padding="22">
+            Padding="22"
+            SnapsToDevicePixels="True">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -24,7 +31,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <DockPanel Grid.Row="0" Margin="0,0,0,12">
+            <DockPanel Grid.Row="0" Margin="0,0,0,12" Background="Transparent" MouseLeftButtonDown="Header_MouseLeftButtonDown">
                 <StackPanel>
                     <TextBlock Text="✨ Asistente IA (Gemini)" FontSize="19" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
                     <TextBlock Text="Consulta o modifica inventario, ventas, prestamos y promociones." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
@@ -40,19 +47,19 @@
                 <Button Content="📒 Deudores" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaDeudores_Click" />
             </WrapPanel>
 
-            <Border Grid.Row="2" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="12">
-                <ScrollViewer x:Name="ChatScroll" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl x:Name="ChatList">
+            <Border Grid.Row="2" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="12" SnapsToDevicePixels="True">
+                <ScrollViewer x:Name="ChatScroll" VerticalScrollBarVisibility="Auto" RenderOptions.ClearTypeHint="Enabled">
+                    <ItemsControl x:Name="ChatList" RenderOptions.ClearTypeHint="Enabled">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Border Margin="0,0,0,10" Padding="12,8" CornerRadius="8"
                                         Background="{Binding Fondo}"
                                         HorizontalAlignment="{Binding Alineacion}"
-                                        MaxWidth="520">
+                                        MaxWidth="550"
+                                        SnapsToDevicePixels="True">
                                     <StackPanel>
-                                        <TextBlock Text="{Binding Autor}" FontSize="11" FontWeight="Bold" Foreground="{Binding ColorAutor}" Margin="0,0,0,3" />
-                                        <TextBlock local:TextoMarkdownHelper.Markdown="{Binding Texto}" TextWrapping="Wrap"
-                                                   Foreground="{Binding ColorTexto}" FontSize="13" />
+                                        <TextBlock Text="{Binding Autor}" FontSize="11" FontWeight="Bold" Foreground="{Binding ColorAutor}" Margin="0,0,0,4" />
+                                        <StackPanel local:TextoMarkdownHelper.Mensaje="{Binding}" />
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -68,10 +75,10 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Border Grid.Column="0" Height="40" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6">
+                <Border Grid.Column="0" Height="40" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6" SnapsToDevicePixels="True">
                     <TextBox x:Name="PromptBox" Background="Transparent" BorderThickness="0" Padding="10,0"
                              VerticalContentAlignment="Center" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}"
-                             CaretBrush="{DynamicResource ThemeAccent}" KeyDown="PromptBox_KeyDown" />
+                             CaretBrush="{DynamicResource ThemeAccent}" RenderOptions.ClearTypeHint="Enabled" KeyDown="PromptBox_KeyDown" />
                 </Border>
 
                 <Button x:Name="BtnEnviar" Grid.Column="2" Content="Enviar" Height="40" Padding="20,0"
