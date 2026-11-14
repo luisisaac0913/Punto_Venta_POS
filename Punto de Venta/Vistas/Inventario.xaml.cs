@@ -500,9 +500,9 @@ namespace Punto_de_Venta
             }
 
             var config = AppConfig.Load();
-            if (string.IsNullOrWhiteSpace(config.ImpresoraSeleccionada))
+            if (!RawPrinterHelper.EsImpresoraFisicaValida(config.ImpresoraSeleccionada))
             {
-                ToastNotification.Show("No hay una impresora configurada en Ajustes.", ToastType.Warning);
+                ToastNotification.Show("No hay una impresora termica fisica configurada en Ajustes.", ToastType.Warning);
                 return;
             }
 
@@ -520,7 +520,7 @@ namespace Punto_de_Venta
                     copias: 1
                 );
 
-                bool impreso = RawPrinterHelper.SendBytesToPrinter(config.ImpresoraSeleccionada, buffer);
+                bool impreso = RawPrinterHelper.SendBytesToPrinter(config.ImpresoraSeleccionada, buffer, "Etiqueta Codigo de Barras");
 
                 if (impreso)
                 {

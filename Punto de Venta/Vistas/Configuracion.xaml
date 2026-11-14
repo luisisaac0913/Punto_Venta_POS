@@ -403,8 +403,8 @@
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="{DynamicResource SettingsScaleProto}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                         <ComboBox x:Name="ScaleProtocolComboBox" Height="36" VerticalContentAlignment="Center" FontSize="13">
-                                            <ComboBoxItem Content="{DynamicResource SettingsProtoTorrey}" IsSelected="True" />
-                                            <ComboBoxItem Content="{DynamicResource SettingsProtoContinuous}" />
+                                            <ComboBoxItem Content="{DynamicResource SettingsProtoTorrey}" Tag="PeticionP" IsSelected="True" />
+                                            <ComboBoxItem Content="{DynamicResource SettingsProtoContinuous}" Tag="Continuo" />
                                         </ComboBox>
                                     </StackPanel>
                                 </Grid>

@@ -271,9 +271,7 @@ namespace Punto_de_Venta.Vistas
                 }
 
                 string nombreImpresora = config.ImpresoraSeleccionada?.Trim() ?? string.Empty;
-                bool impresionHabilitada = !string.IsNullOrWhiteSpace(nombreImpresora)
-                    && !nombreImpresora.StartsWith("(")
-                    && !nombreImpresora.Contains("Ninguna", StringComparison.OrdinalIgnoreCase)
+                bool impresionHabilitada = TicketService.EsImpresoraConfiguradaValida(nombreImpresora)
                     && (config.PreguntarAntesDeImprimir || config.ImprimirTicketAutomatico);
                 bool impresoraValida = false;
 
@@ -1510,7 +1508,14 @@ namespace Punto_de_Venta.Vistas
             }
             if (e.Key == Key.F5)
             {
-                CajonService.AbrirCajon();
+                _ = Task.Run(() =>
+                {
+                    bool abierto = CajonService.AbrirCajon();
+                    if (!abierto)
+                    {
+                        Dispatcher.Invoke(() => ToastNotification.Show("No se pudo abrir el cajon. Verifica la impresora termica en Ajustes.", ToastType.Warning));
+                    }
+                });
                 e.Handled = true;
                 return;
             }
@@ -1747,10 +1752,12 @@ namespace Punto_de_Venta.Vistas
                 var conceptSummary = string.Join(", ", Cart.Select(i => $"{i.Nombre} x{i.Cantidad:0.###}"));
                 var existingDebtor = debtors.Where(d => string.Equals(d.Nombre, debtorName, StringComparison.OrdinalIgnoreCase) && d.SaldoRestante > 0).OrderByDescending(d => d.Id).FirstOrDefault();
 
+                Deudor targetDebtor;
                 if (existingDebtor is not null)
                 {
                     existingDebtor.MontoOriginal += total;
                     existingDebtor.Concepto += $" | {DateTime.Now:dd/MM}: {conceptSummary}";
+                    targetDebtor = existingDebtor;
                 }
                 else
                 {
@@ -1761,20 +1768,18 @@ namespace Punto_de_Venta.Vistas
                         return;
                     }
 
-                    var nextDebtorId = debtors.Select(d => d.Id).DefaultIfEmpty(0).Max() + 1;
-                    debtors.Add(new Deudor
+                    targetDebtor = new Deudor
                     {
-                        Id = nextDebtorId,
+                        Id = 0,
                         Nombre = debtorName,
                         Concepto = $"{DateTime.Now:dd/MM}: {conceptSummary}",
                         MontoOriginal = total
-                    });
+                    };
                 }
 
-                var saleId = VentaDB.ObtenerSiguienteId();
                 var sale = new Venta
                 {
-                    Id = saleId,
+                    Id = 0,
                     FechaHora = DateTime.Now,
                     Total = total,
                     MetodoPago = "N/A",
@@ -1786,7 +1791,8 @@ namespace Punto_de_Venta.Vistas
                         return new DetalleVenta
                         {
                             Id = item.ProductoId,
-                            VentaId = saleId,
+                            ProductoId = item.ProductoId,
+                            VentaId = 0,
                             Nombre = item.Nombre,
                             Cantidad = Math.Round(item.Cantidad, 3),
                             Costo = item.Costo,
@@ -1799,18 +1805,16 @@ namespace Punto_de_Venta.Vistas
                     }).ToList()
                 };
 
-                var productosModificados = new List<Producto>();
+                VentaDB.RegistrarFiadoConStock(sale, Array.Empty<Producto>(), new[] { targetDebtor });
+
                 foreach (var cartItem in Cart)
                 {
                     var prod = _catalog.FirstOrDefault(p => p.Id == cartItem.ProductoId);
                     if (prod != null)
                     {
                         prod.Stock = (decimal)Math.Max(0m, (decimal)prod.Stock - cartItem.Cantidad);
-                        productosModificados.Add(prod);
                     }
                 }
-
-                VentaDB.RegistrarFiadoConStock(sale, productosModificados, debtors);
 
                 var config = AppConfig.Load();
                 TicketService.GuardarCopiaDigital(sale, sale.Productos, 0m, 0m, config);
@@ -2080,11 +2084,9 @@ namespace Punto_de_Venta.Vistas
             {
                 _procesandoPago = true;
 
-                int saleId = VentaDB.ObtenerSiguienteId();
-
                 var sale = new Venta
                 {
-                    Id = saleId,
+                    Id = 0,
                     FechaHora = DateTime.Now,
                     Total = total,
                     PagoCon = amountReceived,
@@ -2099,7 +2101,8 @@ namespace Punto_de_Venta.Vistas
                         return new DetalleVenta
                         {
                             Id = item.ProductoId,
-                            VentaId = saleId,
+                            ProductoId = item.ProductoId,
+                            VentaId = 0,
                             Nombre = item.Nombre,
                             Cantidad = Math.Round(item.Cantidad, 3),
                             Costo = item.Costo,
@@ -2112,21 +2115,20 @@ namespace Punto_de_Venta.Vistas
                     }).ToList()
                 };
 
-                var productosModificados = new List<Producto>();
+                await Task.Run(() =>
+                {
+                    VentaDB.RegistrarVentaConStock(sale, Array.Empty<Producto>());
+                });
+
+                int saleId = sale.Id;
                 foreach (var cartItem in Cart)
                 {
                     var prod = _catalog.FirstOrDefault(p => p.Id == cartItem.ProductoId);
                     if (prod != null)
                     {
                         prod.Stock = (decimal)Math.Max(0m, (decimal)prod.Stock - cartItem.Cantidad);
-                        productosModificados.Add(prod);
                     }
                 }
-
-                await Task.Run(() =>
-                {
-                    VentaDB.RegistrarVentaConStock(sale, productosModificados);
-                });
 
                 LimpiarEventosCarrito();
                 _saleNumber++;
@@ -2158,7 +2160,11 @@ namespace Punto_de_Venta.Vistas
 
                     if (imprimir)
                     {
-                        TicketService.ImprimirFisico(sale, sale.Productos, amountReceived, change, config);
+                        bool impreso = TicketService.ImprimirFisico(sale, sale.Productos, amountReceived, change, config);
+                        if (!impreso && TicketService.EsImpresoraConfiguradaValida(config.ImpresoraSeleccionada))
+                        {
+                            Dispatcher.Invoke(() => ToastNotification.Show("No se pudo imprimir el ticket en la impresora configurada.", ToastType.Warning));
+                        }
                     }
                 });
             }

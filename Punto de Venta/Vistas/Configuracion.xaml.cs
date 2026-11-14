@@ -247,10 +247,14 @@ namespace Punto_de_Venta
             if (ScaleBaudRateComboBox.SelectedItem == null && ScaleBaudRateComboBox.Items.Count > 0)
                 ScaleBaudRateComboBox.SelectedIndex = 0;
 
+            bool cfgEsContinuo = BasculaService.EsProtocoloContinuo(_config.BasculaProtocolo);
             foreach (ComboBoxItem item in ScaleProtocolComboBox.Items)
             {
+                var tag = item.Tag?.ToString() ?? string.Empty;
                 var content = item.Content?.ToString() ?? string.Empty;
-                if (string.Equals(content, _config.BasculaProtocolo, StringComparison.OrdinalIgnoreCase) ||
+                if ((cfgEsContinuo && string.Equals(tag, "Continuo", StringComparison.OrdinalIgnoreCase)) ||
+                    (!cfgEsContinuo && string.Equals(tag, "PeticionP", StringComparison.OrdinalIgnoreCase)) ||
+                    string.Equals(content, _config.BasculaProtocolo, StringComparison.OrdinalIgnoreCase) ||
                     content.StartsWith(_config.BasculaProtocolo ?? string.Empty, StringComparison.OrdinalIgnoreCase))
                 {
                     ScaleProtocolComboBox.SelectedItem = item;
@@ -415,13 +419,17 @@ namespace Punto_de_Venta
             if (ScaleBaudRateComboBox.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag?.ToString(), out var b))
                 baudRate = b;
 
+            var protocolo = (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString()
+                ?? (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString()
+                ?? "PeticionP";
+
             _isTestingScale = true;
             ScaleTestResultText.Text = "Conectando y leyendo bascula...";
             ScaleTestResultText.Foreground = (Brush)FindResource("ThemeMutedForeground");
 
             var (exito, peso, error) = await Task.Run(() =>
             {
-                bool ok = BasculaService.ProbarConexion(puerto, baudRate, out decimal p, out string err);
+                bool ok = BasculaService.ProbarConexion(puerto, baudRate, out decimal p, out string err, protocolo);
                 return (ok, p, err);
             });
 
@@ -820,7 +828,9 @@ namespace Punto_de_Venta
                 _config.BasculaPuerto = ScalePortComboBox.SelectedItem?.ToString() ?? "COM1";
                 if (ScaleBaudRateComboBox.SelectedItem is ComboBoxItem baudItem && int.TryParse(baudItem.Tag?.ToString(), out var baud))
                     _config.BasculaBaudRate = baud;
-                _config.BasculaProtocolo = (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Torrey / Rhino (Peticion P)";
+                _config.BasculaProtocolo = (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString()
+                    ?? (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString()
+                    ?? "PeticionP";
 
                 if (CountCoinsIndividuallyCheckBox != null)
                     _config.ContarMonedasIndividualmente = CountCoinsIndividuallyCheckBox.IsChecked == true;

@@ -272,8 +272,7 @@ namespace Punto_de_Venta
                 {
                     updatedDebtor.Telefono = phone;
                 }
-                var updatedDebtors = Debtors.Select(debtor => debtor.Id == pendingDebtor.Id ? updatedDebtor : debtor).ToList();
-                if (!TrySave(updatedDebtors))
+                if (!TrySave(new[] { updatedDebtor }))
                 {
                     return;
                 }
@@ -290,26 +289,16 @@ namespace Punto_de_Venta
                 return;
             }
 
-            int id;
-            try
-            {
-                id = GetNextId();
-            }
-            catch (OverflowException)
-            {
-                ShowStatus("No se puede asignar un ID nuevo: se alcanzo el limite numerico.", false);
-                return;
-            }
             var newDebtor = new Deudor
             {
-                Id = id,
+                Id = 0,
                 Nombre = name,
                 Telefono = phone,
                 Concepto = concept,
                 MontoOriginal = amount,
                 TotalAbonado = 0
             };
-            if (!TrySave(Debtors.Append(newDebtor)))
+            if (!TrySave(new[] { newDebtor }))
             {
                 return;
             }
@@ -390,8 +379,7 @@ namespace Punto_de_Venta
             updatedDebtor.Telefono = DebtorPhoneBox.Text.Trim();
             updatedDebtor.Concepto = concept;
             updatedDebtor.MontoOriginal = amount;
-            var updatedDebtors = Debtors.Select(debtor => debtor.Id == oldDebtor.Id ? updatedDebtor : debtor).ToList();
-            if (!TrySave(updatedDebtors))
+            if (!TrySave(new[] { updatedDebtor }))
             {
                 return;
             }
@@ -450,18 +438,15 @@ namespace Punto_de_Venta
             }
             var oldDebtor = _selectedDebtor;
             var updatedDebtor = CopyDebtor(oldDebtor);
-            var todosLosAbonos = Debtors.SelectMany(d => d.Abonos).ToList();
-            var nextAbonoId = todosLosAbonos.Count > 0 ? todosLosAbonos.Max(a => a.Id) + 1 : 1;
             var nuevoAbono = new Abono
             {
-                Id = nextAbonoId,
+                Id = 0,
                 DeudorId = updatedDebtor.Id,
                 Fecha = DateTime.Now,
                 Monto = payment
             };
             updatedDebtor.Abonos.Insert(0, nuevoAbono);
             updatedDebtor.TotalAbonado += payment;
-            var updatedDebtors = Debtors.Select(debtor => debtor.Id == oldDebtor.Id ? updatedDebtor : debtor).ToList();
             try
             {
                 bool esEfectivo = RbAbonoEfectivo?.IsChecked != false;
@@ -482,11 +467,11 @@ namespace Punto_de_Venta
                     PagoEfectivo = esEfectivo ? payment : 0m,
                     PagoTarjeta = esTarjeta ? payment : 0m,
                     PagoTransferencia = (!esEfectivo && !esTarjeta) ? payment : 0m,
-                    Productos = [new DetalleVenta { Id = 0, VentaId = 0, Nombre = $"Abono de {updatedDebtor.Nombre}", Cantidad = 1m, Costo = 0m, Ganancia = 0m, Precio = payment, Categoria = "Abono" }]
+                    Productos = [new DetalleVenta { Id = 0, ProductoId = 0, VentaId = 0, Nombre = $"Abono de {updatedDebtor.Nombre}", Cantidad = 1m, Costo = 0m, Ganancia = 0m, Precio = payment, Categoria = "Abono" }]
                 };
 
                 PrestamoDB.RegistrarAbonoAtomico(
-                    updatedDebtors,
+                    new[] { updatedDebtor },
                     tipoMov,
                     payment,
                     $"Abono de {updatedDebtor.Nombre} de {payment.ToString("C2", culture)} en {metodoTexto}",
@@ -587,7 +572,7 @@ namespace Punto_de_Venta
         {
             if (_selectedDebtor == null) return;
             var config = AppConfig.Load();
-            if (string.IsNullOrWhiteSpace(config.ImpresoraSeleccionada))
+            if (!TicketService.EsImpresoraConfiguradaValida(config.ImpresoraSeleccionada))
             {
                 ToastNotification.Show("No hay impresora configurada en Ajustes.", ToastType.Warning);
                 return;
@@ -622,12 +607,11 @@ namespace Punto_de_Venta
                 }
                 sb.AppendLine(TicketService.CentrarTexto("Guarde este recibo.", ancho));
                 sb.AppendLine("\n\n");
-                byte[] buffer = Encoding.ASCII.GetBytes(sb.ToString());
-                bool impreso = RawPrinterHelper.SendBytesToPrinter(config.ImpresoraSeleccionada, buffer);
+                bool impreso = TicketService.ImprimirTextoFisico(config.ImpresoraSeleccionada, sb.ToString(), out string errorImp);
                 if (impreso)
                     ToastNotification.Show("Estado de cuenta enviado a imprimir.", ToastType.Success);
                 else
-                    ToastNotification.Show("No se pudo conectar a la impresora.", ToastType.Error);
+                    ToastNotification.Show(string.IsNullOrWhiteSpace(errorImp) ? "No se pudo conectar a la impresora." : $"Error al imprimir: {errorImp}", ToastType.Error);
             }
             catch (Exception ex)
             {

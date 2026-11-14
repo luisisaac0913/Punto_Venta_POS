@@ -13,9 +13,10 @@ namespace Punto_de_Venta.Datos
         {
             var ventas = new Dictionary<int, Venta>();
             using var conn = DatabaseHelper.GetConnection();
+            Punto_de_Venta.TurnoCajaManager.ValidarEsquemaBD(conn);
             using (var cmd = conn.CreateCommand())
             {
-                cmd.CommandText = "SELECT Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago, COALESCE(PagoEfectivo, 0), COALESCE(PagoTarjeta, 0), COALESCE(PagoTransferencia, 0) FROM Ventas ORDER BY Id ASC;";
+                cmd.CommandText = "SELECT Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago, COALESCE(PagoEfectivo, 0), COALESCE(PagoTarjeta, 0), COALESCE(PagoTransferencia, 0), CorteCajaId FROM Ventas ORDER BY Id ASC;";
                 using var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
@@ -30,6 +31,7 @@ namespace Punto_de_Venta.Datos
                     decimal pEfectivo = Convert.ToDecimal(reader.GetDouble(7));
                     decimal pTarjeta = Convert.ToDecimal(reader.GetDouble(8));
                     decimal pTransf = Convert.ToDecimal(reader.GetDouble(9));
+                    int? corteCajaId = reader.FieldCount > 10 && !reader.IsDBNull(10) ? reader.GetInt32(10) : null;
                     if (metodoPagoRaw != null && metodoPagoRaw.StartsWith("Mixto|"))
                     {
                         metodoPagoFinal = "Mixto";
@@ -48,6 +50,7 @@ namespace Punto_de_Venta.Datos
                     ventas[id] = new Venta
                     {
                         Id = id,
+                        CorteCajaId = corteCajaId,
                         FechaHora = fecha,
                         Total = total,
                         PagoCon = pagoCon,
@@ -109,9 +112,14 @@ namespace Punto_de_Venta.Datos
         public static void Insert(Venta sale)
         {
             using var conn = DatabaseHelper.GetConnection();
+            Punto_de_Venta.TurnoCajaManager.ValidarEsquemaBD(conn);
             using var tr = conn.BeginTransaction();
             try
             {
+                if (sale.Id <= 0 || ExisteVentaIdInternal(conn, tr, sale.Id))
+                {
+                    sale.Id = ObtenerSiguienteIdInternal(conn, tr);
+                }
                 InsertInternal(conn, tr, sale);
                 tr.Commit();
             }
@@ -125,9 +133,11 @@ namespace Punto_de_Venta.Datos
         public static void RegistrarVentaConStock(Venta sale, IEnumerable<Producto> productosModificados)
         {
             using var conn = DatabaseHelper.GetConnection();
+            Punto_de_Venta.TurnoCajaManager.ValidarEsquemaBD(conn);
             using var tr = conn.BeginTransaction();
             try
             {
+                sale.Id = ObtenerSiguienteIdInternal(conn, tr);
                 InsertInternal(conn, tr, sale);
                 DescontarStockInternal(conn, tr, sale.Productos);
                 tr.Commit();
@@ -142,10 +152,12 @@ namespace Punto_de_Venta.Datos
         public static void RegistrarFiadoConStock(Venta sale, IEnumerable<Producto> productosModificados, IEnumerable<Deudor> debtors)
         {
             using var conn = DatabaseHelper.GetConnection();
+            Punto_de_Venta.TurnoCajaManager.ValidarEsquemaBD(conn);
             using var tr = conn.BeginTransaction();
             try
             {
                 PrestamoDB.SaveInternal(conn, tr, debtors);
+                sale.Id = ObtenerSiguienteIdInternal(conn, tr);
                 InsertInternal(conn, tr, sale);
                 DescontarStockInternal(conn, tr, sale.Productos);
                 tr.Commit();
@@ -163,21 +175,96 @@ namespace Punto_de_Venta.Datos
             using var tr = conn.BeginTransaction();
             try
             {
+                int filasAfectadas;
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.Transaction = tr;
-                    cmd.CommandText = "UPDATE Ventas SET Estado = 'Cancelada' WHERE Id = @id;";
+                    cmd.CommandText = "UPDATE Ventas SET Estado = 'Cancelada' WHERE Id = @id AND Estado != 'Cancelada';";
                     cmd.Parameters.AddWithValue("@id", ventaId);
-                    cmd.ExecuteNonQuery();
+                    filasAfectadas = cmd.ExecuteNonQuery();
                 }
 
-                ActualizarStockInternal(conn, tr, productosModificados);
+                if (filasAfectadas == 0)
+                {
+                    throw new InvalidOperationException("La venta ya se encuentra cancelada o no existe.");
+                }
+
+                var detalles = new List<(int ProductoId, string Nombre, decimal Cantidad)>();
+                using (var cmdDet = conn.CreateCommand())
+                {
+                    cmdDet.Transaction = tr;
+                    cmdDet.CommandText = "SELECT ProductoId, Nombre, Cantidad FROM VentasDetalle WHERE VentaId = @id;";
+                    cmdDet.Parameters.AddWithValue("@id", ventaId);
+                    using var r = cmdDet.ExecuteReader();
+                    while (r.Read())
+                    {
+                        int pId = r.IsDBNull(0) ? 0 : r.GetInt32(0);
+                        string nom = r.IsDBNull(1) ? string.Empty : r.GetString(1);
+                        decimal cant = r.IsDBNull(2) ? 0m : Convert.ToDecimal(r.GetDouble(2));
+                        if (cant > 0m)
+                        {
+                            detalles.Add((pId, nom, cant));
+                        }
+                    }
+                }
+
+                if (detalles.Count > 0)
+                {
+                    ReponerStockPorDeltaInternal(conn, tr, detalles);
+                }
+                else if (productosModificados != null)
+                {
+                    ActualizarStockInternal(conn, tr, productosModificados);
+                }
+
                 tr.Commit();
             }
             catch
             {
                 tr.Rollback();
                 throw;
+            }
+        }
+
+        private static bool ExisteVentaIdInternal(SqliteConnection conn, SqliteTransaction tr, int id)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.Transaction = tr;
+            cmd.CommandText = "SELECT 1 FROM Ventas WHERE Id = @id LIMIT 1;";
+            cmd.Parameters.AddWithValue("@id", id);
+            return cmd.ExecuteScalar() != null;
+        }
+
+        private static void ReponerStockPorDeltaInternal(SqliteConnection conn, SqliteTransaction tr, IEnumerable<(int ProductoId, string Nombre, decimal Cantidad)> devueltos)
+        {
+            using var updatePorId = conn.CreateCommand();
+            updatePorId.Transaction = tr;
+            updatePorId.CommandText = "UPDATE Productos SET Stock = Stock + @cantidad WHERE Id = @id;";
+            var pId = updatePorId.Parameters.Add("@id", SqliteType.Integer);
+            var pCantId = updatePorId.Parameters.Add("@cantidad", SqliteType.Real);
+
+            using var updatePorNombre = conn.CreateCommand();
+            updatePorNombre.Transaction = tr;
+            updatePorNombre.CommandText = "UPDATE Productos SET Stock = Stock + @cantidad WHERE UPPER(TRIM(Nombre)) = UPPER(TRIM(@nombre));";
+            var pNom = updatePorNombre.Parameters.Add("@nombre", SqliteType.Text);
+            var pCantNom = updatePorNombre.Parameters.Add("@cantidad", SqliteType.Real);
+
+            foreach (var (prodId, nombre, cantidad) in devueltos)
+            {
+                if (cantidad <= 0m) continue;
+                int actualizados = 0;
+                if (prodId > 0)
+                {
+                    pId.Value = prodId;
+                    pCantId.Value = Convert.ToDouble(cantidad);
+                    actualizados = updatePorId.ExecuteNonQuery();
+                }
+                if (actualizados == 0 && !string.IsNullOrWhiteSpace(nombre))
+                {
+                    pNom.Value = nombre.Trim();
+                    pCantNom.Value = Convert.ToDouble(cantidad);
+                    updatePorNombre.ExecuteNonQuery();
+                }
             }
         }
 
@@ -191,8 +278,9 @@ namespace Punto_de_Venta.Datos
 
             foreach (var item in vendidos)
             {
-                if (item.ProductoId <= 0 || item.Cantidad <= 0) continue;
-                pId.Value = item.ProductoId;
+                int prodId = item.ProductoId > 0 ? item.ProductoId : item.Id;
+                if (prodId <= 0 || item.Cantidad <= 0) continue;
+                pId.Value = prodId;
                 pCant.Value = Convert.ToDouble(item.Cantidad);
                 updateProd.ExecuteNonQuery();
             }
@@ -226,6 +314,26 @@ namespace Punto_de_Venta.Datos
 
         internal static void InsertInternal(SqliteConnection conn, SqliteTransaction tr, Venta sale)
         {
+            if (sale.Id <= 0)
+            {
+                sale.Id = ObtenerSiguienteIdInternal(conn, tr);
+            }
+
+            string estadoGuardar = sale.Estado ?? "Abierta";
+            if ((sale.CorteCajaId == null || sale.CorteCajaId <= 0) &&
+                (string.Equals(estadoGuardar, "Abierta", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(estadoGuardar, "Abono", StringComparison.OrdinalIgnoreCase)))
+            {
+                using var cmdTurno = conn.CreateCommand();
+                cmdTurno.Transaction = tr;
+                cmdTurno.CommandText = "SELECT Id FROM CortesCaja WHERE Estado = 'Abierto' ORDER BY Id DESC LIMIT 1;";
+                var turnoObj = cmdTurno.ExecuteScalar();
+                if (turnoObj != null && turnoObj != DBNull.Value)
+                {
+                    sale.CorteCajaId = Convert.ToInt32(turnoObj);
+                }
+            }
+
             string metodoGuardar = sale.MetodoPago ?? "Efectivo";
             if (metodoGuardar == "Mixto")
             {
@@ -236,18 +344,19 @@ namespace Punto_de_Venta.Datos
             {
                 insertVenta.Transaction = tr;
                 insertVenta.CommandText = @"
-                    INSERT INTO Ventas (Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago, PagoEfectivo, PagoTarjeta, PagoTransferencia)
-                    VALUES (@id, @fecha, @total, @pago, @cambio, @estado, @metodo, @pEfec, @pTarj, @pTrans);";
+                    INSERT INTO Ventas (Id, FechaHora, Total, PagoCon, Cambio, Estado, MetodoPago, PagoEfectivo, PagoTarjeta, PagoTransferencia, CorteCajaId)
+                    VALUES (@id, @fecha, @total, @pago, @cambio, @estado, @metodo, @pEfec, @pTarj, @pTrans, @corteId);";
                 insertVenta.Parameters.AddWithValue("@id", sale.Id);
                 insertVenta.Parameters.AddWithValue("@fecha", sale.FechaHora.ToString("o", CultureInfo.InvariantCulture));
                 insertVenta.Parameters.AddWithValue("@total", Convert.ToDouble(sale.Total));
                 insertVenta.Parameters.AddWithValue("@pago", Convert.ToDouble(sale.PagoCon));
                 insertVenta.Parameters.AddWithValue("@cambio", Convert.ToDouble(sale.Cambio));
-                insertVenta.Parameters.AddWithValue("@estado", sale.Estado ?? "Abierta");
+                insertVenta.Parameters.AddWithValue("@estado", estadoGuardar);
                 insertVenta.Parameters.AddWithValue("@metodo", metodoGuardar);
                 insertVenta.Parameters.AddWithValue("@pEfec", Convert.ToDouble(sale.PagoEfectivo));
                 insertVenta.Parameters.AddWithValue("@pTarj", Convert.ToDouble(sale.PagoTarjeta));
                 insertVenta.Parameters.AddWithValue("@pTrans", Convert.ToDouble(sale.PagoTransferencia));
+                insertVenta.Parameters.AddWithValue("@corteId", sale.CorteCajaId.HasValue && sale.CorteCajaId.Value > 0 ? sale.CorteCajaId.Value : DBNull.Value);
                 insertVenta.ExecuteNonQuery();
             }
 
@@ -271,8 +380,13 @@ namespace Punto_de_Venta.Datos
 
                 foreach (var det in sale.Productos)
                 {
+                    int prodId = det.ProductoId > 0 ? det.ProductoId : det.Id;
+                    det.ProductoId = prodId;
+                    det.Id = prodId;
+                    det.VentaId = sale.Id;
+
                     dVId.Value = sale.Id;
-                    dPId.Value = det.Id;
+                    dPId.Value = prodId;
                     dNom.Value = det.Nombre ?? string.Empty;
                     dCant.Value = Convert.ToDouble(det.Cantidad);
                     dCosto.Value = Convert.ToDouble(det.Costo);

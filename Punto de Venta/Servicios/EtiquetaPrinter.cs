@@ -8,26 +8,38 @@ namespace Punto_de_Venta.Servicios
     {
         public static byte[] GenerarBytesEtiqueta(string negocio, string nombreProducto, string codigo, decimal precio, int copias = 1)
         {
+            string codigoSeguro = (codigo ?? string.Empty).Trim().Replace("{", "{{");
+            if (string.IsNullOrWhiteSpace(codigoSeguro))
+            {
+                throw new ArgumentException("El producto no tiene un codigo valido para imprimir etiqueta.");
+            }
+
+            int totalCopias = Math.Max(1, copias);
             using var ms = new MemoryStream();
             using var bw = new BinaryWriter(ms);
             var encoding = Encoding.Latin1;
-            for (int i = 0; i < copias; i++)
+            byte[] datosCodigo = encoding.GetBytes("{B" + codigoSeguro);
+            if (datosCodigo.Length > 255)
+            {
+                Array.Resize(ref datosCodigo, 255);
+            }
+
+            for (int i = 0; i < totalCopias; i++)
             {
                 bw.Write(new byte[] { 0x1B, 0x40 });
                 bw.Write(new byte[] { 0x1B, 0x61, 0x01 });
                 if (!string.IsNullOrWhiteSpace(negocio))
                 {
-                    bw.Write(new byte[] { 0x1B, 0x45, 0x00 }); 
+                    bw.Write(new byte[] { 0x1B, 0x45, 0x00 });
                     bw.Write(encoding.GetBytes(negocio + "\n"));
                 }
-                bw.Write(new byte[] { 0x1B, 0x45, 0x01 }); 
+                bw.Write(new byte[] { 0x1B, 0x45, 0x01 });
                 bw.Write(encoding.GetBytes(nombreProducto + "\n\n"));
-                bw.Write(new byte[] { 0x1B, 0x45, 0x00 }); 
+                bw.Write(new byte[] { 0x1B, 0x45, 0x00 });
                 bw.Write(new byte[] { 0x1D, 0x68, 60 });
                 bw.Write(new byte[] { 0x1D, 0x77, 2 });
                 bw.Write(new byte[] { 0x1D, 0x48, 0x02 });
                 bw.Write(new byte[] { 0x1D, 0x66, 0x00 });
-                byte[] datosCodigo = encoding.GetBytes("{B" + codigo);
                 bw.Write(new byte[] { 0x1D, 0x6B, 73, (byte)datosCodigo.Length });
                 bw.Write(datosCodigo);
                 bw.Write(encoding.GetBytes("\n"));

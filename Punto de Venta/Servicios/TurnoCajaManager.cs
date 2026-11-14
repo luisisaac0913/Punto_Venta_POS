@@ -13,7 +13,8 @@ namespace Punto_de_Venta
         {
             if (_esquemaValidado) return;
             try { using var cmd = conn.CreateCommand(); cmd.CommandText = "ALTER TABLE CortesCaja ADD COLUMN FechaHoraCierre TEXT;"; cmd.ExecuteNonQuery(); } catch { }
-            try { using var cmd = conn.CreateCommand(); cmd.CommandText = "ALTER TABLE MovimientosCaja ADD COLUMN CorteCajaId INTEGER DEFAULT 0;"; cmd.ExecuteNonQuery(); } catch { }
+            try { using var cmd = conn.CreateCommand(); cmd.CommandText = "ALTER TABLE MovimientosCaja ADD COLUMN CorteCajaId INTEGER NULL;"; cmd.ExecuteNonQuery(); } catch { }
+            try { using var cmd = conn.CreateCommand(); cmd.CommandText = "ALTER TABLE Ventas ADD COLUMN CorteCajaId INTEGER NULL;"; cmd.ExecuteNonQuery(); } catch { }
             _esquemaValidado = true;
         }
         public static void RegistrarMovimientoEfectivo(string tipo, decimal monto, string concepto)
@@ -116,6 +117,19 @@ namespace Punto_de_Venta
 
             try
             {
+                using (var cmdVincularMovs = conn.CreateCommand())
+                {
+                    cmdVincularMovs.Transaction = tr;
+                    cmdVincularMovs.CommandText = @"
+                        UPDATE MovimientosCaja
+                        SET CorteCajaId = @idTurno
+                        WHERE (CorteCajaId IS NULL OR CorteCajaId <= 0)
+                          AND FechaHora >= @fechaApertura;";
+                    cmdVincularMovs.Parameters.AddWithValue("@idTurno", turnoActivo.Id);
+                    cmdVincularMovs.Parameters.AddWithValue("@fechaApertura", turnoActivo.FechaHora.ToString("o", CultureInfo.InvariantCulture));
+                    cmdVincularMovs.ExecuteNonQuery();
+                }
+
                 using var cmdMovimientos = conn.CreateCommand();
                 cmdMovimientos.Transaction = tr;
                 cmdMovimientos.CommandText = @"SELECT COALESCE(SUM(CASE WHEN Tipo = 'Entrada' THEN Monto ELSE 0 END), 0) AS TotalEntradas, COALESCE(SUM(CASE WHEN Tipo = 'Salida' OR Tipo = 'Gasto' THEN Monto ELSE 0 END), 0) AS TotalSalidas FROM MovimientosCaja WHERE CorteCajaId = @idTurno;";
@@ -127,13 +141,57 @@ namespace Punto_de_Venta
                     if (reader.Read()) { totalEntradas = Convert.ToDecimal(reader.GetDouble(0)); totalSalidas = Convert.ToDecimal(reader.GetDouble(1)); }
                 }
 
-                decimal totalEsperado = turnoActivo.FondoInicial + ventasEfectivo + totalEntradas - totalSalidas;
+                decimal ventasEfectivoEnBD = 0m;
+                int conteoAbiertasEnBD = 0;
+                using (var cmdVentasAbiertas = conn.CreateCommand())
+                {
+                    cmdVentasAbiertas.Transaction = tr;
+                    cmdVentasAbiertas.CommandText = @"
+                        SELECT Total, Cambio, MetodoPago, COALESCE(PagoEfectivo, 0)
+                        FROM Ventas
+                        WHERE Estado = 'Abierta'
+                          AND (CorteCajaId = @idTurno OR CorteCajaId IS NULL OR CorteCajaId <= 0);";
+                    cmdVentasAbiertas.Parameters.AddWithValue("@idTurno", turnoActivo.Id);
+                    using var rVentas = cmdVentasAbiertas.ExecuteReader();
+                    while (rVentas.Read())
+                    {
+                        conteoAbiertasEnBD++;
+                        decimal totalVenta = Convert.ToDecimal(rVentas.GetDouble(0));
+                        decimal cambioVenta = Convert.ToDecimal(rVentas.GetDouble(1));
+                        string metodoRaw = rVentas.IsDBNull(2) ? string.Empty : rVentas.GetString(2);
+                        decimal pEfectivo = Convert.ToDecimal(rVentas.GetDouble(3));
+
+                        if (metodoRaw.StartsWith("Mixto|", StringComparison.OrdinalIgnoreCase))
+                        {
+                            foreach (var parte in metodoRaw.Split('|'))
+                            {
+                                if (parte.StartsWith("E:", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    decimal.TryParse(parte.Substring(2), NumberStyles.Any, CultureInfo.InvariantCulture, out pEfectivo);
+                                }
+                            }
+                            metodoRaw = "Mixto";
+                        }
+
+                        if (metodoRaw.Equals("Efectivo", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ventasEfectivoEnBD += totalVenta;
+                        }
+                        else if (metodoRaw.Equals("Mixto", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ventasEfectivoEnBD += Math.Max(0m, pEfectivo - cambioVenta);
+                        }
+                    }
+                }
+
+                decimal ventasEfectivoFinal = conteoAbiertasEnBD > 0 ? Math.Round(ventasEfectivoEnBD, 2) : ventasEfectivo;
+                decimal totalEsperado = turnoActivo.FondoInicial + ventasEfectivoFinal + totalEntradas - totalSalidas;
 
                 using var cmdCierre = conn.CreateCommand();
                 cmdCierre.Transaction = tr;
                 cmdCierre.CommandText = @"UPDATE CortesCaja SET FechaHoraCierre = @fechaCierre, Estado = 'Cerrado', VentasEfectivo = @ventasEfectivo, EntradasEfectivo = @entradas, SalidasEfectivo = @salidas, TotalEsperado = @esperado, TotalContado = @contado, Observaciones = @obs WHERE Id = @idTurno AND Estado = 'Abierto';";
                 cmdCierre.Parameters.AddWithValue("@fechaCierre", DateTime.Now.ToString("o", CultureInfo.InvariantCulture));
-                cmdCierre.Parameters.AddWithValue("@ventasEfectivo", Convert.ToDouble(ventasEfectivo));
+                cmdCierre.Parameters.AddWithValue("@ventasEfectivo", Convert.ToDouble(ventasEfectivoFinal));
                 cmdCierre.Parameters.AddWithValue("@entradas", Convert.ToDouble(totalEntradas));
                 cmdCierre.Parameters.AddWithValue("@salidas", Convert.ToDouble(totalSalidas));
                 cmdCierre.Parameters.AddWithValue("@esperado", Convert.ToDouble(totalEsperado));
@@ -144,7 +202,13 @@ namespace Punto_de_Venta
 
                 using var cmdCerrarVentas = conn.CreateCommand();
                 cmdCerrarVentas.Transaction = tr;
-                cmdCerrarVentas.CommandText = "UPDATE Ventas SET Estado = 'Cerrada' WHERE Estado = 'Abierta';";
+                cmdCerrarVentas.CommandText = @"
+                    UPDATE Ventas
+                    SET Estado = 'Cerrada',
+                        CorteCajaId = @idTurno
+                    WHERE Estado = 'Abierta'
+                      AND (CorteCajaId = @idTurno OR CorteCajaId IS NULL OR CorteCajaId <= 0);";
+                cmdCerrarVentas.Parameters.AddWithValue("@idTurno", turnoActivo.Id);
                 cmdCerrarVentas.ExecuteNonQuery();
 
                 tr.Commit();

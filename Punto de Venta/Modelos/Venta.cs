@@ -16,6 +16,7 @@ namespace Punto_de_Venta.Modelos
         public decimal PagoTarjeta { get; set; }
         public decimal PagoTransferencia { get; set; }
         public int Id { get; set; }
+        public int? CorteCajaId { get; set; }
         public DateTime FechaHora { get; set; } = DateTime.Now;
         public decimal Total { get; set; }
         public decimal PagoCon { get; set; }
