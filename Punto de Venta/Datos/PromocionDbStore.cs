@@ -13,11 +13,6 @@ namespace Punto_de_Venta.Datos
         private static void AsegurarTabla(SqliteConnection conn)
         {
             if (_tablaAsegurada) return;
-            using (var pragmaCmd = conn.CreateCommand())
-            {
-                pragmaCmd.CommandText = "PRAGMA foreign_keys = OFF;";
-                pragmaCmd.ExecuteNonQuery();
-            }
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = @"
@@ -117,14 +112,10 @@ namespace Punto_de_Venta.Datos
             try
             {
                 using var conn = DatabaseHelper.GetConnection();
-                using (var pragmaCmd = conn.CreateCommand())
-                {
-                    pragmaCmd.CommandText = "PRAGMA foreign_keys = OFF;";
-                    pragmaCmd.ExecuteNonQuery();
-                }
                 AsegurarTabla(conn);
                 using var cmd = conn.CreateCommand();
-                if (promo.Id == 0)
+                bool esNuevo = promo.Id == 0;
+                if (esNuevo)
                 {
                     cmd.CommandText = @"
                         INSERT INTO Promociones (
@@ -135,7 +126,8 @@ namespace Punto_de_Venta.Datos
                             @nom, @tipo, @act, @fi, @ff,
                             @p1, @cant, @esp,
                             @p2, @combo, @desc
-                        );";
+                        );
+                        SELECT last_insert_rowid();";
                 }
                 else
                 {
@@ -169,6 +161,12 @@ namespace Punto_de_Venta.Datos
                     cmd.Parameters.AddWithValue("@p2", DBNull.Value);
                 cmd.Parameters.AddWithValue("@combo", Convert.ToDouble(promo.PrecioComboTotal));
                 cmd.Parameters.AddWithValue("@desc", Convert.ToDouble(promo.PorcentajeDescuento));
+                if (esNuevo)
+                {
+                    var nuevoId = Convert.ToInt32(cmd.ExecuteScalar() ?? 0);
+                    if (nuevoId > 0) promo.Id = nuevoId;
+                    return nuevoId > 0;
+                }
                 return cmd.ExecuteNonQuery() > 0;
             }
             catch (Exception ex)

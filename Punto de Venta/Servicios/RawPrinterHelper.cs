@@ -35,9 +35,29 @@ namespace Punto_de_Venta.Servicios
         [DllImport("winspool.Drv", EntryPoint = "WritePrinter", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
         public static extern bool WritePrinter(IntPtr hPrinter, IntPtr pBytes, int dwCount, out int dwWritten);
 
-        public static bool SendBytesToPrinter(string szPrinterName, byte[] bytes)
+        public static bool EsImpresoraFisicaValida(string? printerName)
         {
-            if (string.IsNullOrWhiteSpace(szPrinterName) || bytes == null || bytes.Length == 0)
+            if (string.IsNullOrWhiteSpace(printerName)) return false;
+            string p = printerName.Trim();
+            if (p.StartsWith("(", StringComparison.Ordinal) ||
+                p.Contains("Ninguna", StringComparison.OrdinalIgnoreCase) ||
+                p.Contains("None", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            if (p.Contains("Print to PDF", StringComparison.OrdinalIgnoreCase) ||
+                p.Contains("XPS Document Writer", StringComparison.OrdinalIgnoreCase) ||
+                p.Contains("OneNote", StringComparison.OrdinalIgnoreCase) ||
+                p.Equals("Fax", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public static bool SendBytesToPrinter(string szPrinterName, byte[] bytes, string docName = "Documento POS")
+        {
+            if (!EsImpresoraFisicaValida(szPrinterName) || bytes == null || bytes.Length == 0)
                 return false;
 
             var pUnmanagedBytes = Marshal.AllocCoTaskMem(bytes.Length);
@@ -45,7 +65,7 @@ namespace Punto_de_Venta.Servicios
             {
                 Marshal.Copy(bytes, 0, pUnmanagedBytes, bytes.Length);
 
-                var di = new DOCINFOA { pDocName = "Etiqueta Codigo de Barras", pDataType = "RAW" };
+                var di = new DOCINFOA { pDocName = docName, pDataType = "RAW" };
                 bool success = false;
 
                 if (OpenPrinter(szPrinterName.Normalize(), out var hPrinter, IntPtr.Zero))

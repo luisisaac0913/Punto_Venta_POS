@@ -31,19 +31,30 @@ namespace Punto_de_Venta.Datos
 
         public static void ActualizarEsquemaVentas()
         {
-            using var conn = GetConnection();
+            using var conn = new SqliteConnection(ConnectionString);
+            conn.Open();
+            using (var pragmaCmd = conn.CreateCommand())
+            {
+                pragmaCmd.CommandText = "PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = OFF;";
+                pragmaCmd.ExecuteNonQuery();
+            }
+
             string[] queries = {
                 "ALTER TABLE Ventas ADD COLUMN PagoEfectivo REAL DEFAULT 0;",
                 "ALTER TABLE Ventas ADD COLUMN PagoTarjeta REAL DEFAULT 0;",
                 "ALTER TABLE Ventas ADD COLUMN PagoTransferencia REAL DEFAULT 0;",
                 "ALTER TABLE Ventas ADD COLUMN Estado TEXT NOT NULL DEFAULT 'Completada';",
+                "ALTER TABLE Ventas ADD COLUMN CorteCajaId INTEGER NULL;",
                 "ALTER TABLE MovimientosCaja ADD COLUMN CorteCajaId INTEGER NULL;",
+                "ALTER TABLE CortesCaja ADD COLUMN FechaHoraCierre TEXT NULL;",
                 "ALTER TABLE Productos ADD COLUMN PedirCantidadAlCobrar INTEGER NOT NULL DEFAULT 0;",
                 "ALTER TABLE Productos ADD COLUMN SeVendePorPeso INTEGER NOT NULL DEFAULT 0;",
                 "ALTER TABLE Productos ADD COLUMN ContarComoUnaPieza INTEGER NOT NULL DEFAULT 0;",
                 "ALTER TABLE Productos ADD COLUMN StockMinimo REAL NOT NULL DEFAULT 5;",
                 "ALTER TABLE VentasDetalle ADD COLUMN SeVendePorPeso INTEGER NOT NULL DEFAULT 0;",
-                "ALTER TABLE VentasDetalle ADD COLUMN ContarComoUnaPieza INTEGER NOT NULL DEFAULT 0;"
+                "ALTER TABLE VentasDetalle ADD COLUMN ContarComoUnaPieza INTEGER NOT NULL DEFAULT 0;",
+                "CREATE INDEX IF NOT EXISTS IX_Ventas_CorteCajaId ON Ventas(CorteCajaId);",
+                "CREATE INDEX IF NOT EXISTS IX_Movimientos_CorteCajaId ON MovimientosCaja(CorteCajaId);"
             };
             foreach (var query in queries)
             {
@@ -57,6 +68,26 @@ namespace Punto_de_Venta.Datos
                 {
                 }
             }
+
+            // Saneamiento no destructivo de registros huerfanos historicos antes de operar con foreign_keys = ON
+            string[] saneamientoQueries = {
+                "DELETE FROM VentasDetalle WHERE VentaId NOT IN (SELECT Id FROM Ventas);",
+                "DELETE FROM Abonos WHERE DeudorId NOT IN (SELECT Id FROM Deudores);",
+                "UPDATE MovimientosCaja SET CorteCajaId = NULL WHERE CorteCajaId IS NOT NULL AND (CorteCajaId <= 0 OR CorteCajaId NOT IN (SELECT Id FROM CortesCaja));",
+                "UPDATE Ventas SET CorteCajaId = NULL WHERE CorteCajaId IS NOT NULL AND (CorteCajaId <= 0 OR CorteCajaId NOT IN (SELECT Id FROM CortesCaja));"
+            };
+            foreach (var cleanQuery in saneamientoQueries)
+            {
+                try
+                {
+                    using var cleanCmd = conn.CreateCommand();
+                    cleanCmd.CommandText = cleanQuery;
+                    cleanCmd.ExecuteNonQuery();
+                }
+                catch
+                {
+                }
+            }
         }
 
         public static SqliteConnection GetConnection()
@@ -64,7 +95,7 @@ namespace Punto_de_Venta.Datos
             var conn = new SqliteConnection(ConnectionString);
             conn.Open();
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = "PRAGMA busy_timeout = 5000;";
+            cmd.CommandText = "PRAGMA busy_timeout = 5000; PRAGMA foreign_keys = ON;";
             cmd.ExecuteNonQuery();
             return conn;
         }
@@ -110,7 +141,9 @@ namespace Punto_de_Venta.Datos
                     MetodoPago TEXT NOT NULL,
                     PagoEfectivo REAL DEFAULT 0,
                     PagoTarjeta REAL DEFAULT 0,
-                    PagoTransferencia REAL DEFAULT 0
+                    PagoTransferencia REAL DEFAULT 0,
+                    CorteCajaId INTEGER NULL,
+                    FOREIGN KEY (CorteCajaId) REFERENCES CortesCaja(Id) ON DELETE SET NULL
                 );
                 CREATE INDEX IF NOT EXISTS IX_Ventas_FechaHora ON Ventas(FechaHora);
 

@@ -107,21 +107,73 @@ namespace Punto_de_Venta.Servicios
             }
             catch { }
         }
-        public static void ImprimirFisico(Venta venta, IEnumerable<DetalleVenta> items, decimal pagoCon, decimal cambio, AppConfig config)
+        public static bool EsImpresoraConfiguradaValida(string? printerName)
         {
-            if (string.IsNullOrWhiteSpace(config.ImpresoraSeleccionada) || config.ImpresoraSeleccionada.Contains("Ninguna", StringComparison.OrdinalIgnoreCase)) return;
+            if (string.IsNullOrWhiteSpace(printerName)) return false;
+            string p = printerName.Trim();
+            return !p.StartsWith("(", StringComparison.Ordinal) &&
+                   !p.Contains("Ninguna", StringComparison.OrdinalIgnoreCase) &&
+                   !p.Contains("None", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static bool ImprimirFisico(Venta venta, IEnumerable<DetalleVenta> items, decimal pagoCon, decimal cambio, AppConfig config)
+        {
+            if (!EsImpresoraConfiguradaValida(config.ImpresoraSeleccionada)) return false;
+            var textoTicket = GenerarTextoTicket(venta, items, pagoCon, cambio, config);
+            return ImprimirTextoFisico(config.ImpresoraSeleccionada, textoTicket, out _);
+        }
+
+        public static bool ImprimirTextoFisico(string? printerName, string textoTicket, out string error)
+        {
+            error = string.Empty;
+            if (!EsImpresoraConfiguradaValida(printerName))
+            {
+                error = "No hay una impresora configurada.";
+                return false;
+            }
+
             try
             {
-                var textoTicket = GenerarTextoTicket(venta, items, pagoCon, cambio, config);
-                var printDoc = new PrintDocument { PrinterSettings = { PrinterName = config.ImpresoraSeleccionada } };
+                string[] lineas = (textoTicket ?? string.Empty).Replace("\r\n", "\n").Split('\n');
+                int indiceLinea = 0;
+
+                using var printDoc = new PrintDocument
+                {
+                    PrintController = new StandardPrintController(),
+                    PrinterSettings = { PrinterName = printerName }
+                };
+
                 printDoc.PrintPage += (sender, e) =>
                 {
+                    if (e.Graphics == null)
+                    {
+                        e.HasMorePages = false;
+                        return;
+                    }
+
                     using var font = new Font("Consolas", 8, FontStyle.Regular);
-                    e.Graphics?.DrawString(textoTicket, font, Brushes.Black, new PointF(0, 0));
+                    float altoLinea = font.GetHeight(e.Graphics);
+                    float y = e.MarginBounds.Top > 0 ? Math.Min(10f, e.MarginBounds.Top) : 0f;
+                    float altoMaximo = e.PageBounds.Height > 0 ? e.PageBounds.Height - 10f : 1000f;
+
+                    while (indiceLinea < lineas.Length && y + altoLinea <= altoMaximo)
+                    {
+                        e.Graphics.DrawString(lineas[indiceLinea], font, Brushes.Black, new PointF(0, y));
+                        y += altoLinea;
+                        indiceLinea++;
+                    }
+
+                    e.HasMorePages = indiceLinea < lineas.Length;
                 };
+
                 printDoc.Print();
+                return true;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
         }
         public static string GenerarTicketMuestra(AppConfig config)
         {

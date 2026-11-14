@@ -713,10 +713,9 @@ namespace Punto_de_Venta.Servicios
                         return new { creado = false, mensaje = "El usuario cancelo el registro del deudor." };
                     }
 
-                    int nextId = todos.Count > 0 ? todos.Max(d => d.Id) + 1 : 1;
                     var nuevo = new Deudor
                     {
-                        Id = nextId,
+                        Id = 0,
                         Nombre = nom,
                         Telefono = tel,
                         Concepto = concepto,
@@ -854,10 +853,9 @@ namespace Punto_de_Venta.Servicios
                         return new { abonado = false, mensaje = "El deudor ya no existe en la base de datos." };
                     }
 
-                    int nextAbonoId = todos.SelectMany(d => d.Abonos).Select(a => a.Id).DefaultIfEmpty(0).Max() + 1;
                     target.Abonos.Insert(0, new Abono
                     {
-                        Id = nextAbonoId,
+                        Id = 0,
                         DeudorId = target.Id,
                         Fecha = DateTime.Now,
                         Monto = monto
@@ -877,7 +875,7 @@ namespace Punto_de_Venta.Servicios
                         PagoEfectivo = esEfectivo ? monto : 0m,
                         PagoTarjeta = esTarjeta ? monto : 0m,
                         PagoTransferencia = esTransferencia ? monto : 0m,
-                        Productos = [new DetalleVenta { Id = 0, VentaId = 0, Nombre = $"Abono de {target.Nombre}", Cantidad = 1m, Costo = 0m, Ganancia = 0m, Precio = monto, Categoria = "Abono" }]
+                        Productos = [new DetalleVenta { Id = 0, ProductoId = 0, VentaId = 0, Nombre = $"Abono de {target.Nombre}", Cantidad = 1m, Costo = 0m, Ganancia = 0m, Precio = monto, Categoria = "Abono" }]
                     };
 
                     PrestamoDB.RegistrarAbonoAtomico(

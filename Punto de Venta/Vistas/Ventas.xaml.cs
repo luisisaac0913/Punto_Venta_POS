@@ -145,7 +145,7 @@ namespace Punto_de_Venta
                             PagoEfectivo = esEfec ? mov.Monto : 0m,
                             PagoTarjeta = esTarj ? mov.Monto : 0m,
                             PagoTransferencia = esTransf ? mov.Monto : 0m,
-                            Productos = [new DetalleVenta { Id = 0, VentaId = nextId, Nombre = mov.Concepto, Cantidad = 1m, Costo = 0m, Ganancia = 0m, Precio = mov.Monto, Categoria = "Abono" }]
+                            Productos = [new DetalleVenta { Id = 0, ProductoId = 0, VentaId = nextId, Nombre = mov.Concepto, Cantidad = 1m, Costo = 0m, Ganancia = 0m, Precio = mov.Monto, Categoria = "Abono" }]
                         };
                         rawSales.Add(nueva);
                     }
@@ -333,7 +333,7 @@ namespace Punto_de_Venta
                     var cost = catalogProd?.Costo ?? 0m;
                     var margin = catalogProd?.Ganancia ?? 0m;
                     var price = catalogProd?.Precio ?? (sale.Total > 0 && sale.CantidadTotal > 0 ? sale.Total / sale.CantidadTotal : 0m);
-                    sale.Productos.Add(new DetalleVenta { Id = catalogProd?.Id ?? 0, VentaId = sale.Id, Nombre = name, Cantidad = quantity, Costo = cost, Ganancia = margin, Precio = price, Categoria = catalogProd?.Categoria ?? "N/A" });
+                    sale.Productos.Add(new DetalleVenta { Id = catalogProd?.Id ?? 0, ProductoId = catalogProd?.Id ?? 0, VentaId = sale.Id, Nombre = name, Cantidad = quantity, Costo = cost, Ganancia = margin, Precio = price, Categoria = catalogProd?.Categoria ?? "N/A" });
                 }
             }
             sale.NotifyTotalesChanged();
@@ -440,7 +440,7 @@ namespace Punto_de_Venta
             }
 
             var config = AppConfig.Load();
-            if (string.IsNullOrWhiteSpace(config.ImpresoraSeleccionada))
+            if (!TicketService.EsImpresoraConfiguradaValida(config.ImpresoraSeleccionada))
             {
                 ToastNotification.Show("No hay una impresora configurada en Ajustes.", ToastType.Warning);
                 return;
@@ -456,13 +456,12 @@ namespace Punto_de_Venta
                     config
                 );
 
-                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(textoTicket);
-                bool impreso = RawPrinterHelper.SendBytesToPrinter(config.ImpresoraSeleccionada, buffer);
+                bool impreso = TicketService.ImprimirTextoFisico(config.ImpresoraSeleccionada, textoTicket, out string errorImp);
 
                 if (impreso)
                     ToastNotification.Show($"🖨️ Copia del Ticket #{_selectedSale.Id} enviada a imprimir.", ToastType.Success);
                 else
-                    ToastNotification.Show("No se pudo conectar con la impresora termica.", ToastType.Error);
+                    ToastNotification.Show(string.IsNullOrWhiteSpace(errorImp) ? "No se pudo conectar con la impresora." : $"Impresion fallida: {errorImp}", ToastType.Error);
             }
             catch (Exception ex)
             {
@@ -608,19 +607,7 @@ namespace Punto_de_Venta
             {
                 var catalog = ProductoDB.Load();
                 var productosModificados = new List<Producto>();
-                if (_selectedSale.Productos.Count > 0)
-                {
-                    foreach (var item in _selectedSale.Productos)
-                    {
-                        var prod = catalog.FirstOrDefault(p => p.Id == item.Id || string.Equals(p.Nombre, item.Nombre, StringComparison.OrdinalIgnoreCase));
-                        if (prod != null)
-                        {
-                            prod.Stock += item.Cantidad;
-                            if (!productosModificados.Contains(prod)) productosModificados.Add(prod);
-                        }
-                    }
-                }
-                else if (!string.IsNullOrWhiteSpace(_selectedSale.ProductosResumen))
+                if (_selectedSale.Productos.Count == 0 && !string.IsNullOrWhiteSpace(_selectedSale.ProductosResumen))
                 {
                     foreach (var (name, quantity) in ParseProductSummary(_selectedSale.ProductosResumen))
                     {
@@ -635,6 +622,7 @@ namespace Punto_de_Venta
 
                 VentaDB.CancelarVentaConStock(_selectedSale.Id, productosModificados);
                 _selectedSale.Estado = "Cancelada";
+                try { _catalog = ProductoDB.Load(); } catch { }
                 ToastNotification.Show($"Venta #{_selectedSale.Id} cancelada. Stock reincorporado", ToastType.Success);
             }
             catch (Exception ex)
@@ -659,7 +647,8 @@ namespace Punto_de_Venta
             decimal salidas = 0m;
 
             decimal cashSales = VentaDB.Load()
-                .Where(s => s.Estado.Equals("Abierta", StringComparison.OrdinalIgnoreCase))
+                .Where(s => s.Estado.Equals("Abierta", StringComparison.OrdinalIgnoreCase) &&
+                            (s.CorteCajaId == null || s.CorteCajaId <= 0 || s.CorteCajaId == turnoActivo.Id))
                 .Sum(s =>
                     s.MetodoPago.Equals("Efectivo", StringComparison.OrdinalIgnoreCase) ? s.Total :
                     s.MetodoPago.Equals("Mixto", StringComparison.OrdinalIgnoreCase) ? Math.Max(0m, s.PagoEfectivo - s.Cambio) : 0m

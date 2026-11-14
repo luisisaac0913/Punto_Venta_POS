@@ -138,7 +138,7 @@ namespace Punto_de_Venta
                     var cost = catalogProd?.Costo ?? 0m;
                     var margin = catalogProd?.Ganancia ?? 0m;
                     var price = catalogProd?.Precio ?? (sale.Total > 0 && sale.CantidadTotal > 0 ? sale.Total / sale.CantidadTotal : 0m);
-                    sale.Productos.Add(new DetalleVenta { Id = catalogProd?.Id ?? 0, VentaId = sale.Id, Nombre = name, Cantidad = quantity, Costo = cost, Ganancia = margin, Precio = price, Categoria = catalogProd?.Categoria ?? "N/A" });
+                    sale.Productos.Add(new DetalleVenta { Id = catalogProd?.Id ?? 0, ProductoId = catalogProd?.Id ?? 0, VentaId = sale.Id, Nombre = name, Cantidad = quantity, Costo = cost, Ganancia = margin, Precio = price, Categoria = catalogProd?.Categoria ?? "N/A" });
                 }
             }
             sale.NotifyTotalesChanged();

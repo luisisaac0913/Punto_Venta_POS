@@ -112,6 +112,22 @@ namespace Punto_de_Venta.Datos
             }
         }
 
+        internal static int ObtenerSiguienteDeudorIdInternal(SqliteConnection conn, SqliteTransaction tr)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.Transaction = tr;
+            cmd.CommandText = "SELECT COALESCE(MAX(Id), 0) + 1 FROM Deudores;";
+            return Convert.ToInt32(cmd.ExecuteScalar() ?? 1);
+        }
+
+        internal static int ObtenerSiguienteAbonoIdInternal(SqliteConnection conn, SqliteTransaction tr)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.Transaction = tr;
+            cmd.CommandText = "SELECT COALESCE(MAX(Id), 0) + 1 FROM Abonos;";
+            return Convert.ToInt32(cmd.ExecuteScalar() ?? 1);
+        }
+
         internal static void SaveInternal(SqliteConnection conn, SqliteTransaction tr, IEnumerable<Deudor> debtors)
         {
             using var insertDeudor = conn.CreateCommand();
@@ -150,6 +166,11 @@ namespace Punto_de_Venta.Datos
 
             foreach (var debtor in debtors)
             {
+                if (debtor.Id <= 0)
+                {
+                    debtor.Id = ObtenerSiguienteDeudorIdInternal(conn, tr);
+                }
+
                 dId.Value = debtor.Id;
                 dNom.Value = debtor.Nombre ?? string.Empty;
                 dTel.Value = debtor.Telefono ?? string.Empty;
@@ -162,6 +183,12 @@ namespace Punto_de_Venta.Datos
                 {
                     foreach (var ab in debtor.Abonos)
                     {
+                        if (ab.Id <= 0)
+                        {
+                            ab.Id = ObtenerSiguienteAbonoIdInternal(conn, tr);
+                        }
+                        ab.DeudorId = debtor.Id;
+
                         aId.Value = ab.Id;
                         aDId.Value = debtor.Id;
                         aFecha.Value = ab.Fecha.ToString("o", CultureInfo.InvariantCulture);

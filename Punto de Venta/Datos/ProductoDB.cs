@@ -158,6 +158,14 @@ namespace Punto_de_Venta.Datos
             return Convert.ToInt32(cmd.ExecuteScalar() ?? 1);
         }
 
+        internal static int ObtenerSiguienteIdInternal(SqliteConnection conn, SqliteTransaction tr)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.Transaction = tr;
+            cmd.CommandText = "SELECT COALESCE(MAX(Id), 0) + 1 FROM Productos;";
+            return Convert.ToInt32(cmd.ExecuteScalar() ?? 1);
+        }
+
         public static bool ExisteCodigo(string codigo, int? excluirId = null)
         {
             if (string.IsNullOrWhiteSpace(codigo)) return false;
@@ -223,6 +231,10 @@ namespace Punto_de_Venta.Datos
                 var pStockMin = insertar.Parameters.Add("@stockMinimo", SqliteType.Real);
                 foreach (var prod in products)
                 {
+                    if (prod.Id <= 0)
+                    {
+                        prod.Id = ObtenerSiguienteIdInternal(conn, transaction);
+                    }
                     pId.Value = prod.Id;
                     pCodigo.Value = prod.Codigo ?? string.Empty;
                     pNombre.Value = prod.Nombre ?? string.Empty;
