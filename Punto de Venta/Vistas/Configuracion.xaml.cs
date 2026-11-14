@@ -48,6 +48,10 @@ namespace Punto_de_Venta
                 string navWa = IdiomaService.Obtener("SettingsNavWhatsApp", "📱  WhatsApp");
                 NavWhatsAppBtn.Content = esPremium ? navWa : navWa.Replace("📱", "🔒");
             }
+            if (NavIABtn != null)
+            {
+                NavIABtn.Content = esPremium ? "✨  Asistente IA" : "🔒  Asistente IA";
+            }
 
             if (BusinessSubtitleBox != null)
             {
@@ -255,6 +259,24 @@ namespace Punto_de_Venta
             ActualizarVistaPreviaTicket();
 
             StandbyCheckBox.IsChecked = _config.PantallaReposoHabilitada;
+            if (GeminiApiKeyBox != null)
+            {
+                GeminiApiKeyBox.Password = _config.ObtenerGeminiApiKey();
+            }
+            if (GeminiModelCombo != null)
+            {
+                string modeloCfg = string.IsNullOrWhiteSpace(_config.GeminiModelo) ? "gemini-3.5-flash-lite" : _config.GeminiModelo;
+                foreach (ComboBoxItem item in GeminiModelCombo.Items)
+                {
+                    if (string.Equals(item.Tag?.ToString(), modeloCfg, StringComparison.OrdinalIgnoreCase))
+                    {
+                        GeminiModelCombo.SelectedItem = item;
+                        break;
+                    }
+                }
+                if (GeminiModelCombo.SelectedItem == null && GeminiModelCombo.Items.Count > 0)
+                    GeminiModelCombo.SelectedIndex = 0;
+            }
             foreach (ComboBoxItem item in CmbTiempoReposo.Items)
             {
                 if (item.Tag?.ToString() == _config.PantallaReposoMinutos.ToString())
@@ -439,6 +461,15 @@ namespace Punto_de_Venta
             }
             MostrarPanel(PanelWhatsApp, false);
         }
+        private void NavIA_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Asistente IA (Gemini)");
+                return;
+            }
+            MostrarPanel(PanelIA, false);
+        }
         private void NavAyuda_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelAyuda, false);
 
         private void MostrarPanel(StackPanel panel, bool verPreviewTicket)
@@ -450,6 +481,7 @@ namespace Punto_de_Venta
             PanelSeguridad.Visibility = Visibility.Collapsed;
             PanelAtajos.Visibility = Visibility.Collapsed;
             PanelWhatsApp.Visibility = Visibility.Collapsed;
+            PanelIA.Visibility = Visibility.Collapsed;
             PanelAyuda.Visibility = Visibility.Collapsed;
 
             panel.Visibility = Visibility.Visible;
@@ -463,6 +495,7 @@ namespace Punto_de_Venta
             ActualizarBotonSidebar(NavWhatsAppBtn, panel == PanelWhatsApp);
             ActualizarBotonSidebar(NavSeguridadBtn, panel == PanelSeguridad);
             ActualizarBotonSidebar(NavAtajosBtn, panel == PanelAtajos);
+            ActualizarBotonSidebar(NavIABtn, panel == PanelIA);
             ActualizarBotonSidebar(NavAyudaBtn, panel == PanelAyuda);
         }
 
@@ -857,6 +890,19 @@ namespace Punto_de_Venta
                 }
                 ActualizarEstadoServidorUI();
 
+                if (LicenciaService.EsPremium())
+                {
+                    if (GeminiApiKeyBox != null)
+                    {
+                        _config.GuardarGeminiApiKey(GeminiApiKeyBox.Password);
+                    }
+                    if (GeminiModelCombo?.SelectedItem is ComboBoxItem gModel && gModel.Tag != null)
+                    {
+                        _config.GeminiModelo = gModel.Tag.ToString() ?? "gemini-3.5-flash-lite";
+                    }
+                }
+                _config.Save();
+
                 MainWindow.ReiniciarTemporizadorRespaldo();
                 try
                 {
@@ -884,6 +930,43 @@ namespace Punto_de_Venta
             {
                 ToastNotification.Show($"Error al guardar configuracion: {ex.Message}", ToastType.Error);
             }
+        }
+
+        private void BtnObtenerApiKeyGemini_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://aistudio.google.com/apikey",
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+            }
+        }
+
+        private void BtnAbrirAsistenteIA_Click(object sender, RoutedEventArgs e)
+        {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Asistente IA (Gemini)");
+                return;
+            }
+            if (GeminiApiKeyBox != null)
+            {
+                _config.GuardarGeminiApiKey(GeminiApiKeyBox.Password);
+            }
+            if (GeminiModelCombo?.SelectedItem is ComboBoxItem gModel && gModel.Tag != null)
+            {
+                _config.GeminiModelo = gModel.Tag.ToString() ?? "gemini-3.5-flash-lite";
+            }
+            _config.Save();
+
+            var owner = Window.GetWindow(this);
+            var modal = new AsistenteModal(owner);
+            modal.ShowDialog();
         }
 
         public bool ManejarEscape()

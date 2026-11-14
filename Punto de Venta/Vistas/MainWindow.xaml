@@ -665,7 +665,10 @@
                                 </Border>
 
                                 <DockPanel Grid.Row="3" Margin="0,16,0,0" LastChildFill="False">
-                                    <Button x:Name="BtnExportarErrores" Content="{DynamicResource MainPreviewExportErrors}" Height="36" Padding="14,0" Click="BtnExportarErrores_Click" Style="{StaticResource FluentButtonSecondary}" Visibility="Collapsed" />
+                                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                        <Button x:Name="BtnExportarErrores" Content="{DynamicResource MainPreviewExportErrors}" Height="36" Padding="14,0" Margin="0,0,10,0" Click="BtnExportarErrores_Click" Style="{StaticResource FluentButtonSecondary}" Visibility="Collapsed" />
+                                        <Button x:Name="BtnNormalizarIA" Content="✨ Normalizar con IA" Height="36" Padding="16,0" Click="BtnNormalizarIA_Click" Style="{StaticResource FluentButtonSecondary}" />
+                                    </StackPanel>
                                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
                                         <Button Content="{DynamicResource MainPreviewCancel}" Height="36" Padding="18,0" Margin="0,0,10,0" Click="BtnCancelarPreview_Click" Style="{StaticResource FluentButtonSecondary}" />
                                         <Button x:Name="BtnConfirmarImportacion" Content="{DynamicResource MainPreviewConfirm}" Height="36" Padding="20,0" Click="BtnConfirmarImportacion_Click" Style="{StaticResource FluentButtonPrimary}" Background="{DynamicResource ThemeAccent}" Foreground="White" FontWeight="Bold" />

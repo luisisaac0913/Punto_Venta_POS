@@ -275,7 +275,7 @@
                                         </DataGridTemplateColumn.Header>
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <Border CornerRadius="4" Padding="8,3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Border CornerRadius="4" Padding="8,3" HorizontalAlignment="Center" VerticalAlignment="Center" ToolTip="{Binding StockMinimo, StringFormat=Stock minimo: \{0:0.###\}}">
                                                     <Border.Style>
                                                         <Style TargetType="Border">
                                                             <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
@@ -366,19 +366,22 @@
                                     <TextBlock Text="{DynamicResource InvNameLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                     <TextBox x:Name="ProductNameBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,10" KeyDown="ProductNameBox_KeyDown" />
 
+                                    <TextBlock Text="{DynamicResource InvCategoryLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                    <TextBox x:Name="ProductCategoryBox" Style="{StaticResource FormTextBoxStyle}" Margin="0,0,0,10" KeyDown="ProductCategoryBox_KeyDown" />
+
                                     <Grid Margin="0,0,0,10">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="1.6*" />
+                                            <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="10" />
-                                            <ColumnDefinition Width="1*" />
+                                            <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0">
-                                            <TextBlock Text="{DynamicResource InvCategoryLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                                            <TextBox x:Name="ProductCategoryBox" Style="{StaticResource FormTextBoxStyle}" KeyDown="ProductCategoryBox_KeyDown" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="2">
                                             <TextBlock Text="{DynamicResource InvStockLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" Margin="2,0,0,4" />
                                             <TextBox x:Name="StockBox" Style="{StaticResource FormTextBoxStyle}" Text="0" HorizontalContentAlignment="Center" KeyDown="StockBox_KeyDown" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="{DynamicResource InvMinStockLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                            <TextBox x:Name="MinStockBox" Style="{StaticResource FormTextBoxStyle}" Text="5" HorizontalContentAlignment="Center" KeyDown="MinStockBox_KeyDown" />
                                         </StackPanel>
                                     </Grid>
 

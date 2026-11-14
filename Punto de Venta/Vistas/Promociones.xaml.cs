@@ -39,11 +39,16 @@ namespace Punto_de_Venta
                 TituloFormularioText.Text = LicenciaService.EsPremium() ? "Nueva Promocion" : $"Nueva Promocion ({ListaPromociones.Count}/5)";
             }
         }
+        public void RecargarDesdeBD()
+        {
+            CargarPromociones();
+        }
+
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if ((bool)e.NewValue)
             {
-                CargarPromociones();
+                RecargarDesdeBD();
                 this.Focus();
                 FocusSearch();
                 Keyboard.Focus(this);

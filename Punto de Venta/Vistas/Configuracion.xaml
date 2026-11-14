@@ -137,6 +137,7 @@
                     <Button x:Name="NavWhatsAppBtn" Content="{DynamicResource SettingsNavWhatsApp}" Style="{StaticResource SidebarButtonStyle}" Click="NavWhatsApp_Click" />
                     <Button x:Name="NavSeguridadBtn" Content="{DynamicResource SettingsNavSecurity}" Style="{StaticResource SidebarButtonStyle}" Click="NavSeguridad_Click" />
                     <Button x:Name="NavAtajosBtn" Content="{DynamicResource SettingsNavShortcuts}" Style="{StaticResource SidebarButtonStyle}" Click="NavAtajos_Click" />
+                    <Button x:Name="NavIABtn" Content="✨  Asistente IA" Style="{StaticResource SidebarButtonStyle}" Click="NavIA_Click" />
                     <Button x:Name="NavAyudaBtn" Content="{DynamicResource SettingsNavHelp}" Style="{StaticResource SidebarButtonStyle}" Click="NavAyuda_Click" />
                 </StackPanel>
             </Border>
@@ -1283,6 +1284,51 @@
                                             <TextBlock Text="{DynamicResource SettingsHelpVersion}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
                                         </StackPanel>
                                     </Grid>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel x:Name="PanelIA" Visibility="Collapsed">
+                                <TextBlock Text="Asistente IA (Gemini)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                                <TextBlock Text="Funcion exclusiva de la version Premium (BYOK). Ingresa tu propia API Key gratuita de Google Gemini para normalizar importaciones y usar el asistente (F12)." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" Margin="0,0,0,14" />
+
+                                <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <DockPanel LastChildFill="False" Margin="0,0,0,10">
+                                            <StackPanel>
+                                                <TextBlock Text="✨ Configuracion de Gemini" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                                <TextBlock Text="Tu clave se guarda cifrada localmente en esta computadora." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
+                                            </StackPanel>
+                                            <Button Content="Abrir Asistente (F12)" Height="32" Padding="12,0" DockPanel.Dock="Right"
+                                                    Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0"
+                                                    FontSize="12" FontWeight="Bold" Cursor="Hand" Click="BtnAbrirAsistenteIA_Click" />
+                                        </DockPanel>
+                                        <Grid Margin="0,4,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="2*" />
+                                                <ColumnDefinition Width="10" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <DockPanel Margin="0,0,0,4">
+                                                    <TextBlock Text="API Key de Google Gemini" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" />
+                                                    <Button Content="Obtener clave gratis" DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                                            Background="Transparent" BorderThickness="0" Padding="4,0" FontSize="11" FontWeight="SemiBold"
+                                                            Foreground="{DynamicResource ThemeAccent}" Cursor="Hand" Click="BtnObtenerApiKeyGemini_Click" />
+                                                </DockPanel>
+                                                <PasswordBox x:Name="GeminiApiKeyBox" Height="34" Padding="8,0" VerticalContentAlignment="Center"
+                                                             Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}"
+                                                             BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="Modelo" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
+                                                <ComboBox x:Name="GeminiModelCombo" Height="34" VerticalContentAlignment="Center">
+                                                    <ComboBoxItem Content="gemini-3.5-flash-lite" Tag="gemini-3.5-flash-lite" />
+                                                    <ComboBoxItem Content="gemini-flash-latest" Tag="gemini-flash-latest" />
+                                                    <ComboBoxItem Content="gemini-3.8-flash" Tag="gemini-3.8-flash" />
+                                                </ComboBox>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
                                 </Border>
                             </StackPanel>
                         </StackPanel>

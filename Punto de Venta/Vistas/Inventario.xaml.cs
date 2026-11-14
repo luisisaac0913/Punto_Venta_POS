@@ -97,26 +97,31 @@ namespace Punto_de_Venta
             };
         }
 
+        public void RecargarCatalogoDesdeBD()
+        {
+            try
+            {
+                Products.Clear();
+                foreach (var product in ProductoDB.Load())
+                {
+                    Products.Add(product);
+                }
+                ProductsView.Refresh();
+                UpdateProductCount();
+            }
+            catch { }
+        }
+
         private void UserControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if ((bool)e.NewValue)
             {
                 ActualizarIndicadoresPremiumUI();
-                try
-                {
-                    Products.Clear();
-                    foreach (var product in ProductoDB.Load())
-                    {
-                        Products.Add(product);
-                    }
-                }
-                catch { }
+                RecargarCatalogoDesdeBD();
 
                 this.Focus();
                 Keyboard.Focus(this);
                 SearchBox?.Focus();
-                ProductsView.Refresh();
-                UpdateProductCount();
             }
         }
 
@@ -153,6 +158,8 @@ namespace Punto_de_Venta
 
             return false;
         }
+
+        public bool TieneModalActivo => ObtenerModalActivo() != null;
 
         private UIElement ObtenerModalActivo()
         {
@@ -668,6 +675,10 @@ namespace Punto_de_Venta
                 ProductNameBox.Text = _selectedProduct.Nombre ?? string.Empty;
                 ProductCategoryBox.Text = _selectedProduct.Categoria ?? "N/A";
                 StockBox.Text = _selectedProduct.Stock.ToString("0.###", CultureInfo.InvariantCulture);
+                if (MinStockBox != null)
+                {
+                    MinStockBox.Text = _selectedProduct.StockMinimo.ToString("0.###", CultureInfo.InvariantCulture);
+                }
                 ProductCostBox.Text = _selectedProduct.Costo.ToString("0.00", CultureInfo.InvariantCulture);
                 ProductMarginBox.Text = _selectedProduct.Ganancia.ToString("0.00", CultureInfo.InvariantCulture);
 
@@ -743,6 +754,24 @@ namespace Punto_de_Venta
         {
             if (e.Key == Key.Enter)
             {
+                if (MinStockBox != null)
+                {
+                    MinStockBox.Focus();
+                    MinStockBox.SelectAll();
+                }
+                else
+                {
+                    ProductCostBox.Focus();
+                    ProductCostBox.SelectAll();
+                }
+                e.Handled = true;
+            }
+        }
+
+        private void MinStockBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
                 ProductCostBox.Focus();
                 ProductCostBox.SelectAll();
                 e.Handled = true;
@@ -783,7 +812,7 @@ namespace Punto_de_Venta
         #region Operaciones CRUD (Crear, Actualizar, Borrar)
         private void AddButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!CanWrite() || !TryReadForm(out var code, out var name, out var cost, out var margin, out var price, out var category, out var stock))
+            if (!CanWrite() || !TryReadForm(out var code, out var name, out var cost, out var margin, out var price, out var category, out var stock, out var minStock))
             {
                 return;
             }
@@ -826,6 +855,7 @@ namespace Punto_de_Venta
                 Ganancia = margin,
                 Precio = price,
                 Stock = stock,
+                StockMinimo = minStock,
                 PedirCantidadAlCobrar = AskQuantityCheckBox?.IsChecked == true,
                 SeVendePorPeso = ScaleWeighCheckBox?.IsChecked == true,
                 ContarComoUnaPieza = CountAsOnePieceCheckBox?.IsChecked == true
@@ -885,7 +915,7 @@ namespace Punto_de_Venta
 
         private void ModifyButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!CanWrite() || _selectedProduct is null || !TryReadForm(out var code, out var name, out var cost, out var margin, out var price, out var category, out var stock))
+            if (!CanWrite() || _selectedProduct is null || !TryReadForm(out var code, out var name, out var cost, out var margin, out var price, out var category, out var stock, out var minStock))
             {
                 return;
             }
@@ -912,6 +942,7 @@ namespace Punto_de_Venta
                 Ganancia = margin,
                 Precio = price,
                 Stock = stock,
+                StockMinimo = minStock,
                 PedirCantidadAlCobrar = AskQuantityCheckBox?.IsChecked == true,
                 SeVendePorPeso = ScaleWeighCheckBox?.IsChecked == true,
                 ContarComoUnaPieza = CountAsOnePieceCheckBox?.IsChecked == true
@@ -956,7 +987,7 @@ namespace Punto_de_Venta
             SetNextId();
         }
 
-        private bool TryReadForm(out string code, out string name, out decimal cost, out decimal margin, out decimal price, out string category, out decimal stock)
+        private bool TryReadForm(out string code, out string name, out decimal cost, out decimal margin, out decimal price, out string category, out decimal stock, out decimal minStock)
         {
             code = ProductCodeBox.Text.Trim();
             name = ProductNameBox.Text.Trim();
@@ -974,6 +1005,7 @@ namespace Punto_de_Venta
             margin = 0;
             price = 0;
             stock = 0;
+            minStock = 5m;
 
             if (name.Length == 0)
             {
@@ -985,6 +1017,14 @@ namespace Punto_de_Venta
             {
                 ShowValidationError("Introduce un stock valido igual o mayor que cero.", "StockBox");
                 return false;
+            }
+            if (MinStockBox != null && !string.IsNullOrWhiteSpace(MinStockBox.Text))
+            {
+                if (!TryParseDecimalFlexible(MinStockBox.Text, out minStock) || minStock < 0)
+                {
+                    ShowValidationError("Introduce un stock minimo valido igual o mayor que cero.", "MinStockBox");
+                    return false;
+                }
             }
             const NumberStyles styles = NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite | NumberStyles.AllowDecimalPoint;
             var usCulture = CultureInfo.GetCultureInfo("en-US");
@@ -1109,6 +1149,10 @@ namespace Punto_de_Venta
                 ProductNameBox.Clear();
                 ProductCategoryBox.Clear();
                 StockBox.Text = "0";
+                if (MinStockBox != null)
+                {
+                    MinStockBox.Text = "5";
+                }
                 ProductCostBox.Clear();
                 ProductMarginBox.Clear();
 
