@@ -121,18 +121,18 @@
                                 HorizontalAlignment="Right" 
                                 Margin="10,0,16,0"
                                 Cursor="Hand"
+                                Content="{DynamicResource ChartsExportPdf}"
                                 Click="ExportarReporteDia_Click">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="ExpBorder" Background="#1597a7" 
                                             CornerRadius="4" 
                                             BorderThickness="0">
-                                        <TextBlock Text="{DynamicResource ChartsExportPdf}" 
-                                                   Foreground="White" 
-                                                   FontWeight="SemiBold" 
-                                                   FontSize="13" 
-                                                   HorizontalAlignment="Center" 
-                                                   VerticalAlignment="Center"/>
+                                        <ContentPresenter VerticalAlignment="Center"
+                                                          HorizontalAlignment="Center"
+                                                          TextElement.Foreground="White"
+                                                          TextElement.FontWeight="SemiBold"
+                                                          TextElement.FontSize="13"/>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">

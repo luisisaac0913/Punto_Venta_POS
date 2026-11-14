@@ -46,15 +46,15 @@
     <sys:String x:Key="MainSubtitleDefault">Punto de Venta</sys:String>
     <sys:String x:Key="MainNavCharge">Cobrar</sys:String>
     <sys:String x:Key="MainNavChargeDesc">Iniciar nueva venta</sys:String>
-    <sys:String x:Key="MainNavSales">Historial de Ventas</sys:String>
+    <sys:String x:Key="MainNavSales">Ventas</sys:String>
     <sys:String x:Key="MainNavSalesDesc">Consultar tickets y cortes</sys:String>
     <sys:String x:Key="MainNavInventory">Inventario</sys:String>
     <sys:String x:Key="MainNavInventoryDesc">Catalogo, precios y stock</sys:String>
     <sys:String x:Key="MainNavPromos">Promociones</sys:String>
     <sys:String x:Key="MainNavPromosDesc">Combos y descuentos</sys:String>
-    <sys:String x:Key="MainNavCredits">Fiados y Creditos</sys:String>
+    <sys:String x:Key="MainNavCredits">Prestamos</sys:String>
     <sys:String x:Key="MainNavCreditsDesc">Cuentas por cobrar</sys:String>
-    <sys:String x:Key="MainNavCharts">Reportes y Graficas</sys:String>
+    <sys:String x:Key="MainNavCharts">Graficas</sys:String>
     <sys:String x:Key="MainNavChartsDesc">Metricas y rentabilidad</sys:String>
     <sys:String x:Key="MainNavBarcodes">Codigos de Barras</sys:String>
     <sys:String x:Key="MainNavNotebook">Libreta</sys:String>
@@ -160,9 +160,9 @@
     <sys:String x:Key="NotebookSaveBtn">Guardar</sys:String>
     <sys:String x:Key="NotebookDeleteBtn">Eliminar</sys:String>
 
-    <sys:String x:Key="SalesTitle">Historial de Ventas</sys:String>
-    <sys:String x:Key="ChartsTitle">Reportes y Graficas</sys:String>
-    <sys:String x:Key="CreditsTitle">Fiados y Creditos</sys:String>
+    <sys:String x:Key="SalesTitle">Ventas</sys:String>
+    <sys:String x:Key="ChartsTitle">Graficas</sys:String>
+    <sys:String x:Key="CreditsTitle">Prestamos</sys:String>
     <sys:String x:Key="PromosTitle">Promociones</sys:String>
     <sys:String x:Key="ActivationTitle">Activar Version Premium</sys:String>
     <sys:String x:Key="SettingsSidebarHeader">AJUSTES</sys:String>
@@ -256,7 +256,7 @@
     <sys:String x:Key="SettingsHelpWebDesc">Descarga de actualizaciones, manuales, novedades y licencias.</sys:String>
     <sys:String x:Key="SettingsHelpOpenWebBtn">Visitar sitio web</sys:String>
     <sys:String x:Key="SettingsHelpCopyBtn">Copiar</sys:String>
-    <sys:String x:Key="SettingsHelpVersion">Version 1.0 (Produccion) • Licencia Oficial Activa</sys:String>
+    <sys:String x:Key="SettingsHelpVersion">Version 1.0.16 (Produccion) • Licencia Oficial Activa</sys:String>
     <sys:String x:Key="PosHoldTooltip">Ver ventas en espera o pausar venta actual (F2)</sys:String>
     <sys:String x:Key="PosScaleStatusTooltip">Estado de la bascula</sys:String>
     <sys:String x:Key="PosPrinterStatusTooltip">Estado de la impresora termica</sys:String>

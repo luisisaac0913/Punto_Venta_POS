@@ -1,16 +1,21 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace Punto_de_Venta.Vistas
 {
     public partial class CustomMessageBox : Window
     {
         public MessageBoxResult Resultado { get; private set; } = MessageBoxResult.None;
+        private int _segundosRestantes = 0;
+        private DispatcherTimer? _timerBloqueo;
 
-        private CustomMessageBox(Window owner, string mensaje, string titulo, MessageBoxButton botones, MessageBoxImage icono)
+        private CustomMessageBox(Window owner, string mensaje, string titulo, MessageBoxButton botones, MessageBoxImage icono, int segundosBloqueo = 0)
         {
             InitializeComponent();
+            _segundosRestantes = Math.Max(0, segundosBloqueo);
             this.WindowStyle = WindowStyle.None;
             this.AllowsTransparency = true;
             this.Background = System.Windows.Media.Brushes.Transparent;
@@ -35,12 +40,18 @@ namespace Punto_de_Venta.Vistas
             TxtTitle.Text = Punto_de_Venta.Servicios.IdiomaService.TraducirTexto(titulo);
             TxtMessage.Text = Punto_de_Venta.Servicios.IdiomaService.TraducirTexto(mensaje);
             ConfigurarBotones(botones);
+            this.Closed += (_, _) => _timerBloqueo?.Stop();
         }
 
         private void CustomMessageBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
             {
+                if (_segundosRestantes > 0)
+                {
+                    e.Handled = true;
+                    return;
+                }
                 Resultado = (BotonesGrid.Columns == 1) ? MessageBoxResult.OK : MessageBoxResult.Cancel;
                 this.Close();
                 e.Handled = true;
@@ -54,7 +65,30 @@ namespace Punto_de_Venta.Vistas
             if (botones == MessageBoxButton.OK)
             {
                 BotonesGrid.Columns = 1;
-                BotonesGrid.Children.Add(CrearBoton("OK", MessageBoxResult.OK, true));
+                var btnOk = CrearBoton(_segundosRestantes > 0 ? $"OK ({_segundosRestantes}s)" : "OK", MessageBoxResult.OK, true);
+                if (_segundosRestantes > 0)
+                {
+                    btnOk.IsEnabled = false;
+                    _timerBloqueo = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+                    _timerBloqueo.Tick += (_, _) =>
+                    {
+                        _segundosRestantes--;
+                        if (_segundosRestantes > 0)
+                        {
+                            btnOk.Content = $"OK ({_segundosRestantes}s)";
+                        }
+                        else
+                        {
+                            _timerBloqueo?.Stop();
+                            btnOk.Content = "OK";
+                            btnOk.IsEnabled = true;
+                            btnOk.Focus();
+                            Keyboard.Focus(btnOk);
+                        }
+                    };
+                    _timerBloqueo.Start();
+                }
+                BotonesGrid.Children.Add(btnOk);
             }
             else if (botones == MessageBoxButton.YesNo)
             {
@@ -139,6 +173,13 @@ namespace Punto_de_Venta.Vistas
         public static MessageBoxResult Show(Window owner, string mensaje, string titulo, MessageBoxButton botones, MessageBoxImage icono)
         {
             CustomMessageBox msg = new CustomMessageBox(owner, mensaje, titulo, botones, icono);
+            msg.ShowDialog();
+            return msg.Resultado;
+        }
+
+        public static MessageBoxResult ShowWithDelay(Window owner, string mensaje, string titulo, int segundos)
+        {
+            CustomMessageBox msg = new CustomMessageBox(owner, mensaje, titulo, MessageBoxButton.OK, MessageBoxImage.Information, segundos);
             msg.ShowDialog();
             return msg.Resultado;
         }

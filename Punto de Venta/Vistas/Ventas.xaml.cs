@@ -299,7 +299,7 @@ namespace Punto_de_Venta
                 balanceNeto = fondosIniciales + entradasExtras + ventasEfectivo - totalGastos;
             }
             TotalSalesTodayText.Text = totalVentas.ToString("C2", culture);
-            TotalProfitText.Text = LicenciaService.EsPremium() ? totalProfit.ToString("C2", culture) : "🔒 Premium";
+            TotalProfitText.Text = totalProfit.ToString("C2", culture);
             TotalProductsSoldText.Text = $"{totalPiezasFisicas} pzas";
             MetricGastosText.Text = totalGastos.ToString("C2", culture);
             MetricBalanceText.Text = balanceNeto.ToString("C2", culture);

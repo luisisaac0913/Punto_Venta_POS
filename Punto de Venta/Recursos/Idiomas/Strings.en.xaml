@@ -46,13 +46,13 @@
     <sys:String x:Key="MainSubtitleDefault">Point of Sale</sys:String>
     <sys:String x:Key="MainNavCharge">Checkout</sys:String>
     <sys:String x:Key="MainNavChargeDesc">Start a new sale</sys:String>
-    <sys:String x:Key="MainNavSales">Sales History</sys:String>
+    <sys:String x:Key="MainNavSales">Sales</sys:String>
     <sys:String x:Key="MainNavSalesDesc">View receipts and shifts</sys:String>
     <sys:String x:Key="MainNavInventory">Inventory</sys:String>
     <sys:String x:Key="MainNavInventoryDesc">Catalog, prices and stock</sys:String>
     <sys:String x:Key="MainNavPromos">Promotions</sys:String>
     <sys:String x:Key="MainNavPromosDesc">Combos and discounts</sys:String>
-    <sys:String x:Key="MainNavCredits">Credits and Loans</sys:String>
+    <sys:String x:Key="MainNavCredits">Loans</sys:String>
     <sys:String x:Key="MainNavCreditsDesc">Accounts receivable</sys:String>
     <sys:String x:Key="MainNavCharts">Charts</sys:String>
     <sys:String x:Key="MainNavChartsDesc">Metrics and profitability</sys:String>
@@ -160,9 +160,9 @@
     <sys:String x:Key="NotebookSaveBtn">Save</sys:String>
     <sys:String x:Key="NotebookDeleteBtn">Delete</sys:String>
 
-    <sys:String x:Key="SalesTitle">Sales History</sys:String>
-    <sys:String x:Key="ChartsTitle">Reports and Charts</sys:String>
-    <sys:String x:Key="CreditsTitle">Credits and Loans</sys:String>
+    <sys:String x:Key="SalesTitle">Sales</sys:String>
+    <sys:String x:Key="ChartsTitle">Charts</sys:String>
+    <sys:String x:Key="CreditsTitle">Loans</sys:String>
     <sys:String x:Key="PromosTitle">Promotions</sys:String>
     <sys:String x:Key="ActivationTitle">Activate Premium Version</sys:String>
     <sys:String x:Key="SettingsSidebarHeader">SETTINGS</sys:String>
@@ -256,7 +256,7 @@
     <sys:String x:Key="SettingsHelpWebDesc">Download updates, manuals, news, and licenses.</sys:String>
     <sys:String x:Key="SettingsHelpOpenWebBtn">Visit website</sys:String>
     <sys:String x:Key="SettingsHelpCopyBtn">Copy</sys:String>
-    <sys:String x:Key="SettingsHelpVersion">Version 1.0 (Production) • Official Active License</sys:String>
+    <sys:String x:Key="SettingsHelpVersion">Version 1.0.16 (Production) • Official Active License</sys:String>
     <sys:String x:Key="PosHoldTooltip">View held sales or pause current sale (F2)</sys:String>
     <sys:String x:Key="PosScaleStatusTooltip">Scale status</sys:String>
     <sys:String x:Key="PosPrinterStatusTooltip">Thermal printer status</sys:String>

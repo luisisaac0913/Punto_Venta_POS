@@ -38,11 +38,6 @@ namespace Punto_de_Venta
         {
             bool esPremium = LicenciaService.EsPremium();
 
-            if (NavPersonalizacionBtn != null)
-            {
-                string navPers = IdiomaService.Obtener("SettingsNavPersonalization", "🎨  Personalizacion");
-                NavPersonalizacionBtn.Content = esPremium ? navPers : navPers.Replace("🎨", "🔒");
-            }
             if (NavServidorLocalBtn != null)
             {
                 string navSrv = IdiomaService.Obtener("SettingsNavServer", "🌐  Servidor Local");
@@ -52,11 +47,6 @@ namespace Punto_de_Venta
             {
                 string navWa = IdiomaService.Obtener("SettingsNavWhatsApp", "📱  WhatsApp");
                 NavWhatsAppBtn.Content = esPremium ? navWa : navWa.Replace("📱", "🔒");
-            }
-            if (NavSeguridadBtn != null)
-            {
-                string navSec = IdiomaService.Obtener("SettingsNavSecurity", "🛡️  Caja y Seguridad");
-                NavSeguridadBtn.Content = esPremium ? navSec : navSec.Replace("🛡️", "🔒");
             }
 
             if (BusinessSubtitleBox != null)
@@ -426,15 +416,7 @@ namespace Punto_de_Venta
         }
 
         private void NavImpresion_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelImpresion, true);
-        private void NavPersonalizacion_Click(object sender, RoutedEventArgs e)
-        {
-            if (!LicenciaService.EsPremium())
-            {
-                LicenciaService.MostrarMensajePremium("Personalizacion del sistema");
-                return;
-            }
-            MostrarPanel(PanelPersonalizacion, false);
-        }
+        private void NavPersonalizacion_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelPersonalizacion, false);
         private void NavBascula_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelBascula, false);
         private void NavServidorLocal_Click(object sender, RoutedEventArgs e)
         {
@@ -446,15 +428,7 @@ namespace Punto_de_Venta
             MostrarPanel(PanelServidorLocal, false);
             ActualizarEstadoServidorUI();
         }
-        private void NavSeguridad_Click(object sender, RoutedEventArgs e)
-        {
-            if (!LicenciaService.EsPremium())
-            {
-                LicenciaService.MostrarMensajePremium("Caja y Seguridad");
-                return;
-            }
-            MostrarPanel(PanelSeguridad, false);
-        }
+        private void NavSeguridad_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelSeguridad, false);
         private void NavAtajos_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelAtajos, false);
         private void NavWhatsApp_Click(object sender, RoutedEventArgs e)
         {

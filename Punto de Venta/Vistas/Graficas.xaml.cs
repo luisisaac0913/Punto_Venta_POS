@@ -78,7 +78,22 @@ namespace Punto_de_Venta
 
             Unloaded += (_, _) => _clockTimer.Stop();
 
+            ActualizarIndicadoresPremiumUI();
             RefreshData();
+        }
+
+        public void ActualizarIndicadoresPremiumUI()
+        {
+            bool esPremium = LicenciaService.EsPremium();
+            if (CustomButton != null)
+            {
+                CustomButton.Content = esPremium ? "  Rango  " : "  🔒 Rango  ";
+            }
+            if (BtnExportarPdf != null)
+            {
+                string textoExportar = IdiomaService.Obtener("ChartsExportPdf", "Exportar Reporte (PDF)");
+                BtnExportarPdf.Content = esPremium ? textoExportar : $"🔒 {textoExportar}";
+            }
         }
         private void RecargarDatosDesdeDisco()
         {
@@ -95,6 +110,7 @@ namespace Punto_de_Venta
                 {
                     this.Focus();
                     Keyboard.Focus(this);
+                    ActualizarIndicadoresPremiumUI();
                     RecargarDatosDesdeDisco();
                     RefreshData();
                 }));
@@ -227,6 +243,11 @@ namespace Punto_de_Venta
 
         private void CustomButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Personalizacion de fechas");
+                return;
+            }
             NormalPeriodContainer.Visibility = Visibility.Collapsed;
             CustomPeriodContainer.Visibility = Visibility.Visible;
             StartDatePicker.SelectedDate = _customStart;
@@ -959,6 +980,11 @@ namespace Punto_de_Venta
         }
         private void ExportarReporteDia_Click(object sender, RoutedEventArgs e)
         {
+            if (!LicenciaService.EsPremium())
+            {
+                LicenciaService.MostrarMensajePremium("Exportar Reporte de Graficas");
+                return;
+            }
             var today = DateTime.Today;
             DateTime start = today;
             DateTime end = today;

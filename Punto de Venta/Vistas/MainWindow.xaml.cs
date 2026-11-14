@@ -150,6 +150,30 @@ namespace Punto_de_Venta
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             VerificarTurnoPendienteDeDiasAnteriores();
+            MostrarGuiaPrimeraVez();
+        }
+
+        private void MostrarGuiaPrimeraVez()
+        {
+            try
+            {
+                var cfg = AppConfig.Load();
+                if (cfg.GuiaInicioMostrada) return;
+
+                cfg.GuiaInicioMostrada = true;
+                cfg.Save();
+
+                bool esIngles = string.Equals(cfg.Idioma, "en", StringComparison.OrdinalIgnoreCase);
+                string titulo = esIngles ? "Quick Navigation Tip" : "Consejo rapido de uso";
+                string mensaje = esIngles
+                    ? "Welcome!\n\n• Double-click on any record (sales, products, debtors, or cuts) to view its details.\n• Press the ESC key at any time to go back."
+                    : "¡Bienvenido!\n\n• Haz doble clic sobre cualquier registro (ventas, productos, deudores o cortes) para ver sus detalles.\n• Presiona la tecla ESC en cualquier momento para volver atras.";
+
+                CustomMessageBox.ShowWithDelay(this, mensaje, titulo, 5);
+            }
+            catch
+            {
+            }
         }
 
         public void VerificarTurnoPendienteDeDiasAnteriores()
