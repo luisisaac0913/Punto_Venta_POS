@@ -446,10 +446,12 @@ namespace Punto_de_Venta.Vistas
             ScaleStatusText.Text = "⏳ Conectando con la bascula...";
             var resultado = await BasculaService.ObtenerPesoAsync();
 
-            if (resultado.Exito && resultado.Peso > 0)
+            if (resultado.Exito)
             {
                 ScaleValueInput.Text = resultado.Peso.ToString("0.000", CultureInfo.InvariantCulture);
-                ScaleStatusText.Text = $"✅ Lectura recibida: {resultado.Peso:0.000} kg";
+                ScaleStatusText.Text = resultado.Peso > 0
+                    ? $"✅ Lectura recibida: {resultado.Peso:0.000} kg"
+                    : "✅ Báscula conectada (plato vacío: 0.000 kg)";
                 ActualizarCalculoPesaje();
             }
             else

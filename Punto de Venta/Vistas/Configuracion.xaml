@@ -398,16 +398,33 @@
                                             <ComboBoxItem Content="{DynamicResource SettingsBaud2400}" Tag="2400" />
                                             <ComboBoxItem Content="4800" Tag="4800" />
                                             <ComboBoxItem Content="19200" Tag="19200" />
+                                            <ComboBoxItem Content="38400" Tag="38400" />
+                                            <ComboBoxItem Content="57600" Tag="57600" />
+                                            <ComboBoxItem Content="115200" Tag="115200" />
                                         </ComboBox>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="{DynamicResource SettingsScaleProto}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                         <ComboBox x:Name="ScaleProtocolComboBox" Height="36" VerticalContentAlignment="Center" FontSize="13">
+                                            <ComboBoxItem Content="Universal / Auto-detectar" Tag="Auto" />
                                             <ComboBoxItem Content="{DynamicResource SettingsProtoTorrey}" Tag="PeticionP" IsSelected="True" />
+                                            <ComboBoxItem Content="CAS / Ohaus (Petición W)" Tag="PeticionW" />
+                                            <ComboBoxItem Content="Mettler Toledo / SICS (SI)" Tag="PeticionS" />
+                                            <ComboBoxItem Content="Estándar ENQ (0x05)" Tag="PeticionENQ" />
                                             <ComboBoxItem Content="{DynamicResource SettingsProtoContinuous}" Tag="Continuo" />
                                         </ComboBox>
                                     </StackPanel>
                                 </Grid>
+
+                                <StackPanel Margin="0,0,0,12">
+                                    <TextBlock Text="Formato serial (Bits / Paridad / Stop)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                    <ComboBox x:Name="ScaleSerialProfileComboBox" Height="36" VerticalContentAlignment="Center" FontSize="13">
+                                        <ComboBoxItem Content="8N1 — 8 bits, Sin paridad, 1 stop (Estándar)" Tag="8N1" IsSelected="True" />
+                                        <ComboBoxItem Content="7E1 — 7 bits, Paridad Par (CAS / Toledo / Ohaus)" Tag="7E1" />
+                                        <ComboBoxItem Content="8E1 — 8 bits, Paridad Par, 1 stop" Tag="8E1" />
+                                        <ComboBoxItem Content="7O1 — 7 bits, Paridad Impar, 1 stop" Tag="7O1" />
+                                    </ComboBox>
+                                </StackPanel>
 
                                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="14">
                                     <Grid>
@@ -1349,8 +1366,10 @@
                     </Grid.RowDefinitions>
                     <TextBlock Text="{DynamicResource SettingsTicketPreviewTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,10" />
                     <Border Grid.Row="1" Background="#FAF9F6" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6" Padding="12">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <TextBlock x:Name="PreviewTicketText" FontFamily="Consolas, Lucida Console, Courier New" FontSize="11" Foreground="#1C1C1E" TextWrapping="NoWrap" LineHeight="16" />
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                <TextBlock x:Name="PreviewTicketText" FontFamily="Consolas, Lucida Console, Courier New" FontSize="11" Foreground="#1C1C1E" TextWrapping="NoWrap" LineHeight="16" />
+                            </Viewbox>
                         </ScrollViewer>
                     </Border>
                 </Grid>

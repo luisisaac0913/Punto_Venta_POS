@@ -65,55 +65,12 @@ namespace Punto_de_Venta.Servicios
             {
                 Marshal.Copy(bytes, 0, pUnmanagedBytes, bytes.Length);
 
-                var di = new DOCINFOA { pDocName = docName, pDataType = "RAW" };
-                bool success = false;
-
-                if (OpenPrinter(szPrinterName.Normalize(), out var hPrinter, IntPtr.Zero))
+                bool success = TrySendWithDataType(szPrinterName, pUnmanagedBytes, bytes.Length, docName, "RAW", out int lastError);
+                if (!success)
                 {
-                    try
-                    {
-                        if (StartDocPrinter(hPrinter, 1, di))
-                        {
-                            try
-                            {
-                                if (StartPagePrinter(hPrinter))
-                                {
-                                    try
-                                    {
-                                        success = WritePrinter(hPrinter, pUnmanagedBytes, bytes.Length, out _);
-                                        if (!success)
-                                        {
-                                            PosLogger.Warn("RawPrinterHelper.WritePrinter", $"Fallo al enviar RAW a '{szPrinterName}'. Win32Error={Marshal.GetLastWin32Error()}");
-                                        }
-                                    }
-                                    finally
-                                    {
-                                        EndPagePrinter(hPrinter);
-                                    }
-                                }
-                                else
-                                {
-                                    PosLogger.Warn("RawPrinterHelper.StartPagePrinter", $"No se pudo iniciar pagina RAW en '{szPrinterName}'. Win32Error={Marshal.GetLastWin32Error()}");
-                                }
-                            }
-                            finally
-                            {
-                                EndDocPrinter(hPrinter);
-                            }
-                        }
-                        else
-                        {
-                            PosLogger.Warn("RawPrinterHelper.StartDocPrinter", $"No se pudo iniciar documento RAW '{docName}' en '{szPrinterName}'. Win32Error={Marshal.GetLastWin32Error()}");
-                        }
-                    }
-                    finally
-                    {
-                        ClosePrinter(hPrinter);
-                    }
-                }
-                else
-                {
-                    PosLogger.Warn("RawPrinterHelper.OpenPrinter", $"No se pudo abrir la impresora '{szPrinterName}'. Win32Error={Marshal.GetLastWin32Error()}");
+                    // Drivers Windows v4/XPS suelen rechazar pDataType="RAW" (ej. Win32Error 1804 ERROR_INVALID_DATATYPE)
+                    PosLogger.Warn("RawPrinterHelper.SendBytesToPrinter", $"Reintentando con XPS_PASS en '{szPrinterName}' tras fallo en modo RAW (Win32Error={lastError}).");
+                    success = TrySendWithDataType(szPrinterName, pUnmanagedBytes, bytes.Length, docName, "XPS_PASS", out _);
                 }
 
                 return success;
@@ -122,6 +79,67 @@ namespace Punto_de_Venta.Servicios
             {
                 Marshal.FreeCoTaskMem(pUnmanagedBytes);
             }
+        }
+
+        private static bool TrySendWithDataType(string szPrinterName, IntPtr pUnmanagedBytes, int byteCount, string docName, string dataType, out int win32Error)
+        {
+            win32Error = 0;
+            var di = new DOCINFOA { pDocName = docName, pDataType = dataType };
+            bool success = false;
+
+            if (OpenPrinter(szPrinterName.Normalize(), out var hPrinter, IntPtr.Zero))
+            {
+                try
+                {
+                    if (StartDocPrinter(hPrinter, 1, di))
+                    {
+                        try
+                        {
+                            if (StartPagePrinter(hPrinter))
+                            {
+                                try
+                                {
+                                    success = WritePrinter(hPrinter, pUnmanagedBytes, byteCount, out _);
+                                    if (!success)
+                                    {
+                                        win32Error = Marshal.GetLastWin32Error();
+                                        PosLogger.Warn("RawPrinterHelper.WritePrinter", $"Fallo al enviar {dataType} a '{szPrinterName}'. Win32Error={win32Error}");
+                                    }
+                                }
+                                finally
+                                {
+                                    EndPagePrinter(hPrinter);
+                                }
+                            }
+                            else
+                            {
+                                win32Error = Marshal.GetLastWin32Error();
+                                PosLogger.Warn("RawPrinterHelper.StartPagePrinter", $"No se pudo iniciar pagina {dataType} en '{szPrinterName}'. Win32Error={win32Error}");
+                            }
+                        }
+                        finally
+                        {
+                            EndDocPrinter(hPrinter);
+                        }
+                    }
+                    else
+                    {
+                        win32Error = Marshal.GetLastWin32Error();
+                        PosLogger.Warn("RawPrinterHelper.StartDocPrinter", $"No se pudo iniciar documento {dataType} '{docName}' en '{szPrinterName}'. Win32Error={win32Error}");
+                    }
+                }
+                finally
+                {
+                    ClosePrinter(hPrinter);
+                }
+            }
+            else
+            {
+                win32Error = Marshal.GetLastWin32Error();
+                PosLogger.Warn("RawPrinterHelper.OpenPrinter", $"No se pudo abrir la impresora '{szPrinterName}'. Win32Error={win32Error}");
+            }
+
+            return success;
         }
     }
 }

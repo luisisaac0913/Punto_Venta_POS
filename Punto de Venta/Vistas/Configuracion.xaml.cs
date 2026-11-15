@@ -256,22 +256,35 @@ namespace Punto_de_Venta
             if (ScaleBaudRateComboBox.SelectedItem == null && ScaleBaudRateComboBox.Items.Count > 0)
                 ScaleBaudRateComboBox.SelectedIndex = 0;
 
-            bool cfgEsContinuo = BasculaService.EsProtocoloContinuo(_config.BasculaProtocolo);
+            string protoGuardado = (_config.BasculaProtocolo ?? string.Empty).Trim();
+            bool cfgEsContinuo = BasculaService.EsProtocoloContinuo(protoGuardado);
             foreach (ComboBoxItem item in ScaleProtocolComboBox.Items)
             {
                 var tag = item.Tag?.ToString() ?? string.Empty;
                 var content = item.Content?.ToString() ?? string.Empty;
-                if ((cfgEsContinuo && string.Equals(tag, "Continuo", StringComparison.OrdinalIgnoreCase)) ||
-                    (!cfgEsContinuo && string.Equals(tag, "PeticionP", StringComparison.OrdinalIgnoreCase)) ||
-                    string.Equals(content, _config.BasculaProtocolo, StringComparison.OrdinalIgnoreCase) ||
-                    content.StartsWith(_config.BasculaProtocolo ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(tag, protoGuardado, StringComparison.OrdinalIgnoreCase) ||
+                    (cfgEsContinuo && string.Equals(tag, "Continuo", StringComparison.OrdinalIgnoreCase)) ||
+                    string.Equals(content, protoGuardado, StringComparison.OrdinalIgnoreCase) ||
+                    (!string.IsNullOrEmpty(protoGuardado) && content.StartsWith(protoGuardado, StringComparison.OrdinalIgnoreCase)))
                 {
                     ScaleProtocolComboBox.SelectedItem = item;
                     break;
                 }
             }
             if (ScaleProtocolComboBox.SelectedItem == null && ScaleProtocolComboBox.Items.Count > 0)
-                ScaleProtocolComboBox.SelectedIndex = 0;
+                ScaleProtocolComboBox.SelectedIndex = 1; // PeticionP por defecto
+
+            string perfilSerial = ObtenerTagPerfilSerial(_config.BasculaDataBits, _config.BasculaParity);
+            foreach (ComboBoxItem item in ScaleSerialProfileComboBox.Items)
+            {
+                if (string.Equals(item.Tag?.ToString(), perfilSerial, StringComparison.OrdinalIgnoreCase))
+                {
+                    ScaleSerialProfileComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+            if (ScaleSerialProfileComboBox.SelectedItem == null && ScaleSerialProfileComboBox.Items.Count > 0)
+                ScaleSerialProfileComboBox.SelectedIndex = 0;
 
             ActualizarVistaPreviaTicket();
 
@@ -395,6 +408,27 @@ namespace Punto_de_Venta
             CargarPuertosSerie();
         }
 
+        private static string ObtenerTagPerfilSerial(int dataBits, string? parity)
+        {
+            string p = (parity ?? "None").Trim();
+            if (dataBits == 7 && p.Equals("Even", StringComparison.OrdinalIgnoreCase)) return "7E1";
+            if (dataBits == 8 && p.Equals("Even", StringComparison.OrdinalIgnoreCase)) return "8E1";
+            if (dataBits == 7 && p.Equals("Odd", StringComparison.OrdinalIgnoreCase)) return "7O1";
+            return "8N1";
+        }
+
+        private (int DataBits, string Parity, string StopBits) ObtenerParametrosPerfilSerial()
+        {
+            string tag = (ScaleSerialProfileComboBox?.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "8N1";
+            return tag switch
+            {
+                "7E1" => (7, "Even", "One"),
+                "8E1" => (8, "Even", "One"),
+                "7O1" => (7, "Odd", "One"),
+                _ => (8, "None", "One")
+            };
+        }
+
         private void CargarPuertosSerie()
         {
             ScalePortComboBox.Items.Clear();
@@ -431,6 +465,7 @@ namespace Punto_de_Venta
             var protocolo = (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString()
                 ?? (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString()
                 ?? "PeticionP";
+            var (dataBits, parity, stopBits) = ObtenerParametrosPerfilSerial();
 
             _isTestingScale = true;
             try
@@ -438,7 +473,13 @@ namespace Punto_de_Venta
                 ScaleTestResultText.Text = "Conectando y leyendo bascula...";
                 ScaleTestResultText.Foreground = (Brush)FindResource("ThemeMutedForeground");
 
-                var (exito, peso, error) = await BasculaService.ProbarConexionAsync(puerto, baudRate, protocolo);
+                var (exito, peso, error) = await BasculaService.ProbarConexionAsync(
+                    puerto,
+                    baudRate,
+                    protocolo,
+                    dataBitsOverride: dataBits,
+                    parityOverride: parity,
+                    stopBitsOverride: stopBits);
 
                 if (exito)
                 {
@@ -846,6 +887,10 @@ namespace Punto_de_Venta
                 _config.BasculaProtocolo = (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString()
                     ?? (ScaleProtocolComboBox.SelectedItem as ComboBoxItem)?.Content?.ToString()
                     ?? "PeticionP";
+                var (dataBitsSave, paritySave, stopBitsSave) = ObtenerParametrosPerfilSerial();
+                _config.BasculaDataBits = dataBitsSave;
+                _config.BasculaParity = paritySave;
+                _config.BasculaStopBits = stopBitsSave;
                 if (!_config.BasculaHabilitada)
                 {
                     BasculaService.CerrarConexionPersistente();
