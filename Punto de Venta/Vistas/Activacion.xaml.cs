@@ -12,8 +12,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-using Punto_de_Venta.Vistas;
-
 namespace Punto_de_Venta
 {
     public partial class Activacion : UserControl, IManejadorEscape

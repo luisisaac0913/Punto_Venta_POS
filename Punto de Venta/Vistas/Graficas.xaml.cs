@@ -1100,7 +1100,7 @@ namespace Punto_de_Venta
                     page.Margin(1, QuestPDF.Infrastructure.Unit.Centimetre);
                     page.PageColor(QuestPDF.Helpers.Colors.White);
 
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(QuestPDF.Helpers.Fonts.SegoeUI));
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Segoe UI"));
 
                     page.Header().Column(col =>
                     {

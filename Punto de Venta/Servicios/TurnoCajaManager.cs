@@ -57,7 +57,7 @@ namespace Punto_de_Venta
             }
         }
 
-        public static CorteCaja ObtenerTurnoActivo()
+        public static CorteCaja? ObtenerTurnoActivo()
         {
             using var conn = DatabaseHelper.GetConnection();
             ValidarEsquemaBD(conn);
@@ -237,7 +237,7 @@ namespace Punto_de_Venta
                 cmd.Parameters.AddWithValue("@fecha", DateTime.Now.ToString("o", CultureInfo.InvariantCulture));
                 cmd.Parameters.AddWithValue("@fondo", Convert.ToDouble(fondoInicial));
                 cmd.Parameters.AddWithValue("@obs", concepto);
-                long idGenerado = (long)cmd.ExecuteScalar();
+                long idGenerado = Convert.ToInt64(cmd.ExecuteScalar());
                 using var cmdMov = conn.CreateCommand();
                 cmdMov.Transaction = tr;
                 cmdMov.CommandText = @"INSERT INTO MovimientosCaja (FechaHora, Tipo, Monto, Concepto, CorteCajaId) VALUES (@fecha, 'Fondo', @monto, @concepto, @corteId);";

@@ -1304,7 +1304,7 @@ namespace Punto_de_Venta.Vistas
 
         public bool TieneModalActivo => ObtenerModalActivo() != null;
 
-        private UIElement ObtenerModalActivo()
+        private UIElement? ObtenerModalActivo()
         {
             if (QuickRestockOverlay != null && QuickRestockOverlay.Visibility == Visibility.Visible) return QuickRestockOverlay;
             if (CreditOverlay != null && CreditOverlay.Visibility == Visibility.Visible) return CreditOverlay;
@@ -1318,7 +1318,7 @@ namespace Punto_de_Venta.Vistas
 
         private void Cobro_PreviewGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
-            UIElement modal = ObtenerModalActivo();
+            UIElement? modal = ObtenerModalActivo();
             if (modal != null)
             {
                 ModalFocusHelper.ProtegerFoco(e, modal);

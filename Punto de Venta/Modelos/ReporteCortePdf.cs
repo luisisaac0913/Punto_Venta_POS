@@ -132,7 +132,7 @@ namespace Punto_de_Venta.Reportes
             .GeneratePdf(rutaArchivo);
             Process.Start(new ProcessStartInfo(rutaArchivo) { UseShellExecute = true });
         }
-        public static byte[] CapturarElementoComoImagen(UIElement elementoGrafica)
+        public static byte[]? CapturarElementoComoImagen(UIElement elementoGrafica)
         {
             if (elementoGrafica == null) return null;
             elementoGrafica.UpdateLayout();

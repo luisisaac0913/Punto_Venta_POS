@@ -23,8 +23,6 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-using Punto_de_Venta.Vistas;
-
 namespace Punto_de_Venta
 {
     public partial class Ventas : UserControl, ILimpiarSeleccion, IManejadorEscape
@@ -529,7 +527,7 @@ namespace Punto_de_Venta
                             page.Size(PageSizes.A4.Landscape());
                             page.Margin(1, Unit.Centimetre);
                             page.PageColor(QuestPDF.Helpers.Colors.White);
-                            page.DefaultTextStyle(x => x.FontSize(9).FontFamily(QuestPDF.Helpers.Fonts.SegoeUI));
+                            page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Segoe UI"));
 
                             page.Header().Column(col =>
                             {

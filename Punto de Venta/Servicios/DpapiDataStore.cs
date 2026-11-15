@@ -69,7 +69,7 @@ namespace Punto_de_Venta.Servicios
                         var json = Encoding.UTF8.GetString(decryptedBytes);
                         var value = JsonConvert.DeserializeObject<T>(json);
 
-                        return Task.FromResult(value);
+                        return Task.FromResult(value!);
                     }
                 }
                 catch (Exception ex)
@@ -77,7 +77,7 @@ namespace Punto_de_Venta.Servicios
                     System.Diagnostics.Debug.WriteLine($"[DPAPI] Error al descifrar el token: {ex.Message}");
                 }
             }
-            return Task.FromResult(default(T));
+            return Task.FromResult(default(T)!);
         }
 
         public Task StoreAsync<T>(string key, T value)

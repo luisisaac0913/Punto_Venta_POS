@@ -121,11 +121,15 @@ namespace Punto_de_Venta.Servicios
 
                 foreach (var part in parts.EnumerateArray())
                 {
-                    if (part.TryGetProperty("functionCall", out var fc))
+                    if (part.TryGetProperty("functionCall", out var fc) &&
+                        fc.TryGetProperty("name", out var nameProp))
                     {
-                        string nombre = fc.GetProperty("name").GetString() ?? string.Empty;
-                        JsonElement args = fc.TryGetProperty("args", out var a) ? a.Clone() : default;
-                        llamadas.Add((nombre, args));
+                        string nombre = nameProp.GetString() ?? string.Empty;
+                        if (!string.IsNullOrWhiteSpace(nombre))
+                        {
+                            JsonElement args = fc.TryGetProperty("args", out var a) ? a.Clone() : default;
+                            llamadas.Add((nombre, args));
+                        }
                     }
                     else if (part.TryGetProperty("text", out var txt))
                     {
@@ -297,6 +301,7 @@ namespace Punto_de_Venta.Servicios
 
         private static string ExtraerErrorApi(string body)
         {
+            if (string.IsNullOrWhiteSpace(body)) return "Sin detalle de error.";
             try
             {
                 using var doc = JsonDocument.Parse(body);
@@ -305,7 +310,7 @@ namespace Punto_de_Venta.Servicios
                     return msg.GetString() ?? body;
                 }
             }
-            catch
+            catch (JsonException)
             {
             }
             return body.Length > 200 ? body[..200] : body;
