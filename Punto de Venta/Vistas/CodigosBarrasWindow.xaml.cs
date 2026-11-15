@@ -13,8 +13,6 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-using Punto_de_Venta.Vistas;
-
 namespace Punto_de_Venta
 {
     public partial class CodigosBarrasWindow : UserControl, ILimpiarSeleccion, IManejadorEscape

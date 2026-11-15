@@ -25,8 +25,6 @@ using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 using Brushes = System.Windows.Media.Brushes;
 using System.Windows.Threading;
 
-using Punto_de_Venta.Vistas;
-
 namespace Punto_de_Venta
 {
     public partial class Graficas : UserControl, INotifyPropertyChanged, IManejadorEscape

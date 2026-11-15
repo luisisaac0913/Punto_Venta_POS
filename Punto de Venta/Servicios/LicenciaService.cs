@@ -225,12 +225,6 @@ namespace Punto_de_Venta.Servicios
             catch { }
         }
 
-        public static bool LicenciaExiste()
-        {
-            LimpiarLicenciaLegacy();
-            return File.Exists(LicenciaPath);
-        }
-
         public static bool EsPremium()
         {
             if (_isPremiumCached.HasValue)

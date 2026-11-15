@@ -110,17 +110,6 @@ namespace Punto_de_Venta.Servicios
             }
         }
 
-        public static bool ProbarConexion(string puerto, int baudRate, out decimal pesoObtenido, out string mensajeError, string? protocolo = null)
-        {
-            pesoObtenido = 0m;
-            mensajeError = string.Empty;
-
-            var resultado = ProbarConexionAsync(puerto, baudRate, protocolo).GetAwaiter().GetResult();
-            pesoObtenido = resultado.Peso;
-            mensajeError = resultado.Error;
-            return resultado.Exito;
-        }
-
         public static async Task<(bool Exito, decimal Peso, string Error)> ProbarConexionAsync(
             string puerto,
             int baudRate,

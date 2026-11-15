@@ -68,12 +68,6 @@ namespace Punto_de_Venta.Servicios
     {
         private static readonly UTF8Encoding Utf8Bom = new(true);
 
-        public static ResultadoImportacion ImportarProductosCsv(string filePath, bool esPremium)
-        {
-            var preview = PrevisualizarImportacion(filePath, esPremium, ModoImportacion.CrearYActualizar);
-            return ConfirmarImportacion(preview);
-        }
-
         public static List<List<string>> LeerFilasCrudas(string filePath)
         {
             if (string.Equals(Path.GetExtension(filePath), ".xlsx", StringComparison.OrdinalIgnoreCase))
