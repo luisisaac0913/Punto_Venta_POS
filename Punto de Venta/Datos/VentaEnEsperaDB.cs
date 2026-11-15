@@ -104,21 +104,6 @@ namespace Punto_de_Venta.Datos
             cmd.Parameters.AddWithValue("@id", id);
             cmd.ExecuteNonQuery();
         }
-
-        public static int ObtenerCantidad()
-        {
-            try
-            {
-                using var conn = DatabaseHelper.GetConnection();
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "SELECT COUNT(1) FROM VentasEnEspera;";
-                return Convert.ToInt32(cmd.ExecuteScalar() ?? 0);
-            }
-            catch
-            {
-                return 0;
-            }
-        }
     }
 }
 

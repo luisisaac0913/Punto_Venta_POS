@@ -15,8 +15,6 @@ using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Threading;
 
-using Punto_de_Venta.Vistas;
-
 namespace Punto_de_Venta
 {
     public partial class Inventario : UserControl, ILimpiarSeleccion, IManejadorEscape

@@ -21,7 +21,6 @@ namespace Punto_de_Venta
         private AppConfig _config = new();
         private bool _isTestingScale = false;
         private bool _isCargando = true;
-        private bool _actualizandoIdioma = false;
         private string _selectedColorHex = "#007AFF";
         #endregion
 
@@ -196,16 +195,8 @@ namespace Punto_de_Venta
             DarkModeCheckBox.IsChecked = _config.ModoOscuro;
             if (CmbIdioma != null)
             {
-                _actualizandoIdioma = true;
-                try
-                {
-                    string codigo = IdiomaService.NormalizarCodigo(_config.Idioma);
-                    CmbIdioma.SelectedIndex = codigo == "en" ? 1 : 0;
-                }
-                finally
-                {
-                    _actualizandoIdioma = false;
-                }
+                string codigo = IdiomaService.NormalizarCodigo(_config.Idioma);
+                CmbIdioma.SelectedIndex = codigo == "en" ? 1 : 0;
             }
             if (CmbModoMetricas != null)
             {

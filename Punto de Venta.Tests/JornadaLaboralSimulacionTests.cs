@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Punto_de_Venta.Datos;
 using Punto_de_Venta.Modelos;
@@ -209,6 +210,161 @@ namespace Punto_de_Venta.Tests
             Assert.Equal("Cerrado", corteBd.Estado);
             Assert.Equal(450m, corteBd.TotalEsperado);
             Assert.Equal(0m, corteBd.Diferencia);
+        }
+
+        [Fact]
+        public async Task SimulacionJornada_FlujosEquivalentesAMetodosEliminados_FuncionanSinRegresion()
+        {
+            // 1. Licencia (reemplazo real de LicenciaExiste): validar estado y hardware ID sin errores
+            LicenciaService.InvalidarCache();
+            string hwId = LicenciaService.ObtenerIdentificadorHardware();
+            Assert.False(string.IsNullOrWhiteSpace(hwId));
+            _ = LicenciaService.EsPremium();
+
+            // 2. Importacion de catalogo (reemplazo real de ImportarProductosCsv): Previsualizar + Confirmar
+            string csvImportPath = Path.Combine(_tempDir, "catalogo_jornada.csv");
+            File.WriteAllText(
+                csvImportPath,
+                "Codigo,Nombre,Categoria,Costo,Precio,Stock\n" +
+                "7501000100011,Agua 1L,Bebidas,8.00,15.00,25\n" +
+                "2002,Naranja kg,Frutas,18.00,30.00,12\n");
+
+            var preview = ImportarExportarService.PrevisualizarImportacion(
+                csvImportPath,
+                esPremium: true,
+                ModoImportacion.CrearYActualizar);
+            Assert.Equal(2, preview.Creados);
+            Assert.Equal(0, preview.Rechazados);
+
+            var resImport = ImportarExportarService.ConfirmarImportacion(preview);
+            Assert.Equal(2, resImport.Creados);
+
+            var productos = ProductoDB.Load();
+            var agua = Assert.Single(productos, p => p.Codigo == "7501000100011");
+            var naranja = Assert.Single(productos, p => p.Codigo == "2002");
+
+            // 3. Bascula (reemplazo real de ProbarConexion sincrono): ProbarConexionAsync + trama continua
+            var pruebaBascula = await BasculaService.ProbarConexionAsync("", 9600);
+            Assert.False(pruebaBascula.Exito);
+            Assert.False(string.IsNullOrWhiteSpace(pruebaBascula.Error));
+
+            Assert.True(BasculaService.IntentarExtraerUltimaTramaCompletaValida(
+                "ST,GS,+ 1.500 kg\r\n",
+                false,
+                "\r\n",
+                out decimal pesoNaranja));
+            Assert.Equal(1.500m, pesoNaranja);
+
+            // 4. Apertura de turno
+            var corte = new CorteCaja
+            {
+                Id = 1,
+                FechaHora = DateTime.Now,
+                Estado = "Abierto",
+                FondoInicial = 300m
+            };
+            CorteCajaDB.Save([corte]);
+
+            // 5. Venta en espera (reemplazo real de VentaEnEsperaDB.ObtenerCantidad): Save + Load.Count + Delete
+            var enEspera = new VentaEnEspera
+            {
+                Identificador = "Cliente Mostrador",
+                TotalNeto = 30m,
+                TotalItems = 2m,
+                Items =
+                [
+                    new ItemCarrito
+                    {
+                        ProductoId = agua.Id,
+                        Nombre = agua.Nombre,
+                        Costo = agua.Costo,
+                        Ganancia = agua.Ganancia,
+                        Precio = agua.Precio,
+                        Cantidad = 2m
+                    }
+                ]
+            };
+            int esperaId = VentaEnEsperaDB.Save(enEspera);
+            Assert.True(esperaId > 0);
+            Assert.Single(VentaEnEsperaDB.Load());
+
+            // Se retoma y elimina de espera al cobrarla
+            VentaEnEsperaDB.Delete(esperaId);
+            Assert.Empty(VentaEnEsperaDB.Load());
+
+            // 6. Cobro y cancelacion (reemplazo real de VentaDB.ActualizarEstado): RegistrarVentaConStock + CancelarVentaConStock
+            agua.Stock -= 2m;
+            var ventaCompletada = new Venta
+            {
+                Id = VentaDB.ObtenerSiguienteId(),
+                CorteCajaId = corte.Id,
+                FechaHora = DateTime.Now,
+                Total = 30m,
+                PagoCon = 50m,
+                Estado = "Completada",
+                MetodoPago = "Efectivo",
+                PagoEfectivo = 30m,
+                Productos =
+                [
+                    new DetalleVenta
+                    {
+                        ProductoId = agua.Id, Nombre = agua.Nombre, Cantidad = 2m,
+                        Costo = agua.Costo, Ganancia = agua.Ganancia, Precio = agua.Precio, Categoria = agua.Categoria
+                    }
+                ]
+            };
+            VentaDB.RegistrarVentaConStock(ventaCompletada, [agua]);
+
+            naranja.Stock -= pesoNaranja;
+            var ventaACancelar = new Venta
+            {
+                Id = VentaDB.ObtenerSiguienteId(),
+                CorteCajaId = corte.Id,
+                FechaHora = DateTime.Now,
+                Total = pesoNaranja * naranja.Precio, // 45m
+                PagoCon = 50m,
+                Estado = "Completada",
+                MetodoPago = "Efectivo",
+                PagoEfectivo = 45m,
+                Productos =
+                [
+                    new DetalleVenta
+                    {
+                        ProductoId = naranja.Id, Nombre = naranja.Nombre, Cantidad = pesoNaranja,
+                        Costo = naranja.Costo, Ganancia = naranja.Ganancia, Precio = naranja.Precio,
+                        Categoria = naranja.Categoria, SeVendePorPeso = true
+                    }
+                ]
+            };
+            VentaDB.RegistrarVentaConStock(ventaACancelar, [naranja]);
+
+            naranja.Stock += pesoNaranja;
+            VentaDB.CancelarVentaConStock(ventaACancelar.Id, [naranja]);
+
+            var ventasRango = VentaDB.LoadPorRangoFechas(DateTime.Today, DateTime.Today.AddDays(1));
+            Assert.Single(ventasRango, v => v.Estado == "Completada");
+            Assert.Single(ventasRango, v => v.Estado == "Cancelada");
+
+            // Ticket con configuracion de idioma/negocio sin _actualizandoIdioma
+            var config = new AppConfig { NombreNegocio = "Tienda Prueba", Idioma = "es-MX", AnchoTicketCaracteres = 42 };
+            string ticket = TicketService.GenerarTextoTicket(ventaCompletada, ventaCompletada.Productos, 50m, 20m, config);
+            Assert.Contains("Tienda Prueba", ticket);
+
+            // 7. Cierre de turno y exportacion de reportes (sin ReporteDiarioPdf)
+            corte.Estado = "Cerrado";
+            corte.FechaHoraCierre = DateTime.Now;
+            corte.VentasEfectivo = 30m;
+            corte.TotalEsperado = 330m;
+            corte.TotalContado = 330m;
+            CorteCajaDB.Save([corte]);
+
+            string cortesCsv = Path.Combine(_tempDir, "cortes_jornada.csv");
+            string productosCsv = Path.Combine(_tempDir, "productos_jornada.csv");
+            ImportarExportarService.ExportarCortesCsv(cortesCsv);
+            ImportarExportarService.ExportarProductosCsv(ProductoDB.Load(), productosCsv);
+
+            Assert.True(File.Exists(cortesCsv) && new FileInfo(cortesCsv).Length > 0);
+            Assert.True(File.Exists(productosCsv) && new FileInfo(productosCsv).Length > 0);
         }
 
         public void Dispose()

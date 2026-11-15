@@ -428,16 +428,6 @@ namespace Punto_de_Venta.Datos
             }
         }
 
-        public static void ActualizarEstado(int ventaId, string nuevoEstado)
-        {
-            using var conn = DatabaseHelper.GetConnection();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "UPDATE Ventas SET Estado = @estado WHERE Id = @id;";
-            cmd.Parameters.AddWithValue("@estado", nuevoEstado);
-            cmd.Parameters.AddWithValue("@id", ventaId);
-            cmd.ExecuteNonQuery();
-        }
-
         internal static void InsertInternal(SqliteConnection conn, SqliteTransaction tr, Venta sale)
         {
             if (sale.Id <= 0)
