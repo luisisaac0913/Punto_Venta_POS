@@ -38,6 +38,32 @@ namespace Punto_de_Venta.Servicios
                    protocolo.Contains("Continuous", StringComparison.OrdinalIgnoreCase);
         }
 
+        private static string NormalizarProtocolo(string? protocolo)
+        {
+            if (string.IsNullOrWhiteSpace(protocolo)) return "PeticionP";
+            string p = protocolo.Trim();
+            if (p.Equals("Auto", StringComparison.OrdinalIgnoreCase) || p.Contains("Universal", StringComparison.OrdinalIgnoreCase))
+                return "Auto";
+            if (EsProtocoloContinuo(p))
+                return "Continuo";
+            if (p.Equals("PeticionW", StringComparison.OrdinalIgnoreCase) || p.Contains("CAS", StringComparison.OrdinalIgnoreCase) || p.Contains("Ohaus", StringComparison.OrdinalIgnoreCase))
+                return "PeticionW";
+            if (p.Equals("PeticionS", StringComparison.OrdinalIgnoreCase) || p.Contains("SICS", StringComparison.OrdinalIgnoreCase) || p.Contains("Mettler", StringComparison.OrdinalIgnoreCase))
+                return "PeticionS";
+            if (p.Equals("PeticionENQ", StringComparison.OrdinalIgnoreCase) || p.Contains("ENQ", StringComparison.OrdinalIgnoreCase))
+                return "PeticionENQ";
+            return "PeticionP";
+        }
+
+        private static string? ObtenerComandoPeticion(string protocoloNormalizado) => protocoloNormalizado switch
+        {
+            "Continuo" => null,
+            "PeticionW" => "W\r\n",
+            "PeticionS" => "SI\r\n",
+            "PeticionENQ" => "\x05",
+            _ => "P\r"
+        };
+
         public static void CerrarConexionPersistente()
         {
             if (!_serialLock.Wait(500))
@@ -99,7 +125,10 @@ namespace Punto_de_Venta.Servicios
             string puerto,
             int baudRate,
             string? protocolo = null,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            int? dataBitsOverride = null,
+            string? parityOverride = null,
+            string? stopBitsOverride = null)
         {
             if (string.IsNullOrWhiteSpace(puerto))
             {
@@ -107,8 +136,10 @@ namespace Punto_de_Venta.Servicios
             }
 
             var config = AppConfig.Load();
-            string protoEfectivo = string.IsNullOrWhiteSpace(protocolo) ? config.BasculaProtocolo : protocolo;
-            bool esModoContinuo = EsProtocoloContinuo(protoEfectivo);
+            string protoEfectivo = NormalizarProtocolo(string.IsNullOrWhiteSpace(protocolo) ? config.BasculaProtocolo : protocolo);
+            int dataBits = dataBitsOverride ?? config.BasculaDataBits;
+            string parity = !string.IsNullOrWhiteSpace(parityOverride) ? parityOverride : config.BasculaParity;
+            string stopBits = !string.IsNullOrWhiteSpace(stopBitsOverride) ? stopBitsOverride : config.BasculaStopBits;
 
             await _serialLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
@@ -116,11 +147,11 @@ namespace Punto_de_Venta.Servicios
                 return await LeerPesoDesdePuertoAsync(
                     puerto.Trim(),
                     baudRate > 0 ? baudRate : 9600,
-                    config.BasculaDataBits,
-                    config.BasculaParity,
-                    config.BasculaStopBits,
+                    dataBits,
+                    parity,
+                    stopBits,
                     config.BasculaNewLine,
-                    esModoContinuo,
+                    protoEfectivo,
                     cancellationToken).ConfigureAwait(false);
             }
             finally
@@ -145,7 +176,7 @@ namespace Punto_de_Venta.Servicios
             }
 
             int baudRate = config.BasculaBaudRate > 0 ? config.BasculaBaudRate : 9600;
-            bool esModoContinuo = EsProtocoloContinuo(config.BasculaProtocolo);
+            string protoEfectivo = NormalizarProtocolo(config.BasculaProtocolo);
 
             await _serialLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
@@ -157,7 +188,7 @@ namespace Punto_de_Venta.Servicios
                     config.BasculaParity,
                     config.BasculaStopBits,
                     config.BasculaNewLine,
-                    esModoContinuo,
+                    protoEfectivo,
                     cancellationToken).ConfigureAwait(false);
             }
             finally
@@ -218,75 +249,72 @@ namespace Punto_de_Venta.Servicios
             string? parityConfig,
             string? stopBitsConfig,
             string? newLineConfig,
-            bool esModoContinuo,
+            string protocoloNormalizado,
             CancellationToken cancellationToken)
         {
             try
             {
                 var port = ObtenerOAbrirPuertoPersistente(puerto, baudRate, dataBitsConfig, parityConfig, stopBitsConfig, newLineConfig);
-
-                port.DiscardInBuffer();
-                port.DiscardOutBuffer();
-
-                if (!esModoContinuo)
-                {
-                    port.Write("P\r");
-                }
-
                 string newLineConfigurado = NormalizarNewLine(newLineConfig);
-                var acumulador = new StringBuilder(128);
-                var sw = Stopwatch.StartNew();
 
-                while (sw.ElapsedMilliseconds < TimeoutLecturaMs)
+                if (string.Equals(protocoloNormalizado, "Auto", StringComparison.Ordinal))
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    string fragmento = port.ReadExisting();
-                    if (!string.IsNullOrEmpty(fragmento))
+                    // Modo Universal: primero escucha brevemente por si transmite en continuo y luego prueba comandos estandar
+                    var intentosAuto = new (string? Comando, bool DescartarPrimera, int TimeoutMs)[]
                     {
-                        acumulador.Append(fragmento);
+                        (null, true, 320),
+                        ("P\r", false, 450),
+                        ("W\r\n", false, 450),
+                        ("SI\r\n", false, 450),
+                        ("\x05", false, 450)
+                    };
 
-                        if (IntentarExtraerUltimaTramaCompletaValida(
-                                acumulador.ToString(),
-                                esModoContinuo,
-                                newLineConfigurado,
-                                out decimal pesoDetectado))
+                    string ultimoBuffer = string.Empty;
+                    foreach (var intento in intentosAuto)
+                    {
+                        var resIntento = await EjecutarLecturaUnicaAsync(
+                            port,
+                            intento.Comando,
+                            intento.DescartarPrimera,
+                            newLineConfigurado,
+                            intento.TimeoutMs,
+                            cancellationToken).ConfigureAwait(false);
+
+                        if (resIntento.Exito)
                         {
-                            // Breve ventana de estabilizacion por si queda un '\n' o segunda trama en transito
-                            if (port.BytesToRead > 0)
-                            {
-                                await Task.Delay(20, cancellationToken).ConfigureAwait(false);
-                                string extra = port.ReadExisting();
-                                if (!string.IsNullOrEmpty(extra))
-                                {
-                                    acumulador.Append(extra);
-                                    if (IntentarExtraerUltimaTramaCompletaValida(
-                                            acumulador.ToString(),
-                                            esModoContinuo,
-                                            newLineConfigurado,
-                                            out decimal pesoMasReciente))
-                                    {
-                                        pesoDetectado = pesoMasReciente;
-                                    }
-                                }
-                            }
+                            return (true, resIntento.Peso, string.Empty);
+                        }
 
-                            return (true, pesoDetectado, string.Empty);
+                        if (!string.IsNullOrWhiteSpace(resIntento.BufferRecibido))
+                        {
+                            ultimoBuffer = resIntento.BufferRecibido;
                         }
                     }
 
-                    await Task.Delay(25, cancellationToken).ConfigureAwait(false);
+                    return (false, 0m, string.IsNullOrWhiteSpace(ultimoBuffer)
+                        ? "La bascula no respondio en modo Universal (continuo, P, W, SI, ENQ)."
+                        : $"Trama incompleta o no valida de la bascula: '{LimpiarTextoLog(ultimoBuffer)}'");
                 }
 
-                string recibidoTotal = acumulador.ToString();
-                if (IntentarExtraerUltimaTramaCompletaValida(recibidoTotal, esModoContinuo, newLineConfigurado, out var pesoFinal))
+                bool esModoContinuo = string.Equals(protocoloNormalizado, "Continuo", StringComparison.Ordinal);
+                string? comando = ObtenerComandoPeticion(protocoloNormalizado);
+
+                var res = await EjecutarLecturaUnicaAsync(
+                    port,
+                    comando,
+                    esModoContinuo,
+                    newLineConfigurado,
+                    TimeoutLecturaMs,
+                    cancellationToken).ConfigureAwait(false);
+
+                if (res.Exito)
                 {
-                    return (true, pesoFinal, string.Empty);
+                    return (true, res.Peso, string.Empty);
                 }
 
-                return (false, 0m, string.IsNullOrWhiteSpace(recibidoTotal)
+                return (false, 0m, string.IsNullOrWhiteSpace(res.BufferRecibido)
                     ? "La bascula no respondio en el tiempo limite."
-                    : $"Trama incompleta o no valida de la bascula: '{LimpiarTextoLog(recibidoTotal)}'");
+                    : $"Trama incompleta o no valida de la bascula: '{LimpiarTextoLog(res.BufferRecibido)}'");
             }
             catch (OperationCanceledException)
             {
@@ -305,6 +333,75 @@ namespace Punto_de_Venta.Servicios
                 PosLogger.Error("BasculaService.LeerPesoDesdePuertoAsync", ex, $"Puerto={puerto}");
                 return (false, 0m, ex.Message);
             }
+        }
+
+        private static async Task<(bool Exito, decimal Peso, string BufferRecibido)> EjecutarLecturaUnicaAsync(
+            SerialPort port,
+            string? comandoPeticion,
+            bool descartarPrimeraTramaIncompleta,
+            string newLineConfigurado,
+            int timeoutMs,
+            CancellationToken cancellationToken)
+        {
+            port.DiscardInBuffer();
+            port.DiscardOutBuffer();
+
+            if (!string.IsNullOrEmpty(comandoPeticion))
+            {
+                port.Write(comandoPeticion);
+            }
+
+            var acumulador = new StringBuilder(128);
+            var sw = Stopwatch.StartNew();
+
+            while (sw.ElapsedMilliseconds < timeoutMs)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                string fragmento = port.ReadExisting();
+                if (!string.IsNullOrEmpty(fragmento))
+                {
+                    acumulador.Append(fragmento);
+
+                    if (IntentarExtraerUltimaTramaCompletaValida(
+                            acumulador.ToString(),
+                            descartarPrimeraTramaIncompleta,
+                            newLineConfigurado,
+                            out decimal pesoDetectado))
+                    {
+                        // Breve ventana de estabilizacion por si queda un '\n' o segunda trama en transito
+                        if (port.BytesToRead > 0)
+                        {
+                            await Task.Delay(20, cancellationToken).ConfigureAwait(false);
+                            string extra = port.ReadExisting();
+                            if (!string.IsNullOrEmpty(extra))
+                            {
+                                acumulador.Append(extra);
+                                if (IntentarExtraerUltimaTramaCompletaValida(
+                                        acumulador.ToString(),
+                                        descartarPrimeraTramaIncompleta,
+                                        newLineConfigurado,
+                                        out decimal pesoMasReciente))
+                                {
+                                    pesoDetectado = pesoMasReciente;
+                                }
+                            }
+                        }
+
+                        return (true, pesoDetectado, acumulador.ToString());
+                    }
+                }
+
+                await Task.Delay(25, cancellationToken).ConfigureAwait(false);
+            }
+
+            string recibidoTotal = acumulador.ToString();
+            if (IntentarExtraerUltimaTramaCompletaValida(recibidoTotal, descartarPrimeraTramaIncompleta, newLineConfigurado, out var pesoFinal))
+            {
+                return (true, pesoFinal, recibidoTotal);
+            }
+
+            return (false, 0m, recibidoTotal);
         }
 
         public static bool IntentarExtraerUltimaTramaCompletaValida(
@@ -384,6 +481,17 @@ namespace Punto_de_Venta.Servicios
                 if (candidato < 0m)
                 {
                     continue;
+                }
+
+                // Conversion automatica de unidad si la trama reporta gramos (g/gr/grs) o libras (lb/lbs)
+                if (Regex.IsMatch(respuesta, @"(?<![a-zA-Z])(?:gr?s?|gramos?)(?![a-zA-Z])", RegexOptions.IgnoreCase) &&
+                    !Regex.IsMatch(respuesta, @"(?<![a-zA-Z])kgs?(?![a-zA-Z])", RegexOptions.IgnoreCase))
+                {
+                    candidato = Math.Round(candidato / 1000m, 3, MidpointRounding.AwayFromZero);
+                }
+                else if (Regex.IsMatch(respuesta, @"(?<![a-zA-Z])lbs?(?![a-zA-Z])", RegexOptions.IgnoreCase))
+                {
+                    candidato = Math.Round(candidato * 0.45359237m, 3, MidpointRounding.AwayFromZero);
                 }
 
                 peso = candidato;

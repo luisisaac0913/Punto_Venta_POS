@@ -44,9 +44,9 @@ namespace Punto_de_Venta.Servicios
             sb.AppendLine($"{(en ? "Method" : "Metodo")}: {metodo}");
             sb.AppendLine(new string('-', ancho));
             if (en)
-                sb.AppendLine(ancho >= 42 ? "QTY   DESCRIPTION              PRICE  AMOUNT" : "QTY  DESCRIPTION      PRICE AMOUNT");
+                sb.AppendLine(ancho >= 42 ? "QTY  DESCRIPTION            PRICE   AMOUNT" : "QTY DESCRIPTION     PRICE AMOUNT");
             else
-                sb.AppendLine(ancho >= 42 ? "CANT  DESCRIPCION            PRECIO   IMPORTE" : "CANT DESCRIPCION       PRECIO IMPORTE");
+                sb.AppendLine(ancho >= 42 ? "CANT DESCRIPCION           PRECIO  IMPORTE" : "CANT DESCRIPCION  PRECIO IMPORTE");
             sb.AppendLine(new string('-', ancho));
             foreach (var item in items)
             {
