@@ -13,8 +13,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-using Punto_de_Venta.Vistas;
-
 namespace Punto_de_Venta
 {
     public partial class Configuracion : UserControl, IManejadorEscape

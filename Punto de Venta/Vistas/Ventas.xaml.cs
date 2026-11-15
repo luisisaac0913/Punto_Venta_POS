@@ -529,7 +529,7 @@ namespace Punto_de_Venta
                             page.Size(PageSizes.A4.Landscape());
                             page.Margin(1, Unit.Centimetre);
                             page.PageColor(QuestPDF.Helpers.Colors.White);
-                            page.DefaultTextStyle(x => x.FontSize(9).FontFamily(QuestPDF.Helpers.Fonts.SegoeUI));
+                            page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Segoe UI"));
 
                             page.Header().Column(col =>
                             {

@@ -1436,7 +1436,7 @@ namespace Punto_de_Venta
                     page.Size(PageSizes.A4);
                     page.Margin(1, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily(Fonts.SegoeUI));
+                    page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Segoe UI"));
 
                     page.Header().Column(c =>
                     {
@@ -1504,7 +1504,7 @@ namespace Punto_de_Venta
                     page.Size(PageSizes.A4);
                     page.Margin(1, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.SegoeUI));
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Segoe UI"));
 
                     page.Header().Column(c =>
                     {
@@ -1582,7 +1582,7 @@ namespace Punto_de_Venta
                     page.Size(PageSizes.A4);
                     page.Margin(1, Unit.Centimetre);
                     page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.SegoeUI));
+                    page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Segoe UI"));
 
                     page.Header().Column(col =>
                     {
