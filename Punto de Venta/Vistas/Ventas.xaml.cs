@@ -23,8 +23,6 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-using Punto_de_Venta.Vistas;
-
 namespace Punto_de_Venta
 {
     public partial class Ventas : UserControl, ILimpiarSeleccion, IManejadorEscape

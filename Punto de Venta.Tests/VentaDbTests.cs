@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Punto_de_Venta.Tests
 {
+    [Collection("BaseDatosAislada")]
     public class VentaDbTests : IDisposable
     {
         private readonly string _tempDir;
