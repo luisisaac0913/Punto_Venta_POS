@@ -189,13 +189,22 @@
                                 <TextBlock Grid.Column="1" Text="{DynamicResource ActivationFeat6}" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
                             </Grid>
 
-                            <Grid>
+                            <Grid Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="&#x2713;" Foreground="{DynamicResource ThemeAccent}" FontWeight="Bold" FontSize="13" Margin="0,0,10,0" />
                                 <TextBlock Grid.Column="1" Text="{DynamicResource ActivationFeat7}" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="&#x2713;" Foreground="{DynamicResource ThemeAccent}" FontWeight="Bold" FontSize="13" Margin="0,0,10,0" />
+                                <TextBlock Grid.Column="1" Text="{DynamicResource ActivationFeat8}" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
                             </Grid>
                         </StackPanel>
 

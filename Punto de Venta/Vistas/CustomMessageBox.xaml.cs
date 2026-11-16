@@ -40,6 +40,7 @@ namespace Punto_de_Venta.Vistas
             TxtTitle.Text = Punto_de_Venta.Servicios.IdiomaService.TraducirTexto(titulo);
             TxtMessage.Text = Punto_de_Venta.Servicios.IdiomaService.TraducirTexto(mensaje);
             ConfigurarBotones(botones);
+            this.Loaded += (_, _) => MainWindow.AnimarEntradaElemento(this.Content as UIElement);
             this.Closed += (_, _) => _timerBloqueo?.Stop();
         }
 

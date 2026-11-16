@@ -14,7 +14,7 @@ namespace Punto_de_Venta.Servicios
     public static class AsistenteHerramientasPOS
     {
         public static string InstruccionSistema =>
-            "Eres el asistente integrado de Chip&Chapa Punto de Venta (version 1.0.20, aplicacion de escritorio Windows). " +
+            "Eres el asistente integrado de Chip&Chapa Punto de Venta (version 1.0.21, aplicacion de escritorio Windows). " +
             "Responde en espanol claro, breve y util para el dueno o cajero de la tienda.\n\n" +
             "CONOCIMIENTO REAL DEL SISTEMA:\n" +
             "- Licencia Premium: NO es suscripcion mensual ni clave manual escrita. Se activa mediante pago unico en linea con Mercado Pago desde el apartado 'Activar Premium' y queda vinculada a esa PC.\n" +

@@ -276,6 +276,8 @@ namespace Punto_de_Venta
                                      f.EndsWith(".wma", StringComparison.OrdinalIgnoreCase));
         }
 
+        public static void ReproducirSonidoAlerta() => ReproducirSonidoError();
+
         private static void ReproducirSonidoError()
         {
             try

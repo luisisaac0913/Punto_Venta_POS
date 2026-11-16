@@ -254,6 +254,7 @@ namespace Punto_de_Venta
                     ? "Welcome!\n\n• Double-click on any record (sales, products, debtors, or cuts) to view its details.\n• Press the ESC key at any time to go back."
                     : "¡Bienvenido!\n\n• Haz doble clic sobre cualquier registro (ventas, productos, deudores o cortes) para ver sus detalles.\n• Presiona la tecla ESC en cualquier momento para volver atras.";
 
+                ToastNotification.ReproducirSonidoAlerta();
                 CustomMessageBox.ShowWithDelay(this, mensaje, titulo, 5);
             }
             catch
@@ -1043,7 +1044,7 @@ namespace Punto_de_Venta
         private DispatcherTimer? _timerNotaAsistente;
         private bool _notaDiariaVerificadaEnSesion;
 
-        private static void AnimarEntradaElemento(UIElement? elemento)
+        internal static void AnimarEntradaElemento(UIElement? elemento)
         {
             if (elemento == null) return;
 

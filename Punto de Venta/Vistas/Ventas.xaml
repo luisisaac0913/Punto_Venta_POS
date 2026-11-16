@@ -157,7 +157,8 @@
             </Grid>
 
             <Border Grid.Row="1" Style="{StaticResource AppleCardStyle}" Padding="0" ClipToBounds="True">
-                <DataGrid x:Name="SalesGrid" ItemsSource="{Binding SalesView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="SalesGrid_SelectionChanged" MouseDoubleClick="SalesGrid_MouseDoubleClick" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="48" EnableRowVirtualization="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                <Grid>
+                    <DataGrid x:Name="SalesGrid" ItemsSource="{Binding SalesView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="SalesGrid_SelectionChanged" MouseDoubleClick="SalesGrid_MouseDoubleClick" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="48" EnableRowVirtualization="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
                     <DataGrid.ColumnHeaderStyle>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
@@ -294,6 +295,22 @@
                         </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Items.Count, ElementName=SalesGrid}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <TextBlock Text="🧾" FontSize="34" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                        <TextBlock Text="Aun no hay ventas en este periodo" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
+                        <TextBlock Text="Realiza un cobro o cambia el filtro de fechas para ver el historial." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <Grid Grid.Row="2" Margin="0,14,0,0">

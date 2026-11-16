@@ -19,6 +19,7 @@ namespace Punto_de_Venta
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            MainWindow.AnimarEntradaElemento(this.Content as UIElement);
             if (Owner != null)
             {
                 _blurEffect = new BlurEffect

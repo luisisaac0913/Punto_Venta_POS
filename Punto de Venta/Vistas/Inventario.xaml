@@ -206,7 +206,8 @@
                     </Grid>
 
                         <Border Grid.Row="2" Style="{StaticResource ProductCardStyle}" Padding="0" ClipToBounds="True">
-                            <DataGrid x:Name="ProductGrid" ItemsSource="{Binding ProductsView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="48" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="ProductGrid_SelectionChanged" EnableRowVirtualization="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                            <Grid>
+                                <DataGrid x:Name="ProductGrid" ItemsSource="{Binding ProductsView}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserReorderColumns="False" CanUserResizeRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource ThemeBorder}" BorderThickness="0" Background="Transparent" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" RowHeight="48" SelectionUnit="FullRow" SelectionMode="Single" SelectionChanged="ProductGrid_SelectionChanged" EnableRowVirtualization="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
                                 <DataGrid.ColumnHeaderStyle>
                                     <Style TargetType="DataGridColumnHeader">
                                         <Setter Property="Background" Value="{DynamicResource ThemeInputBackground}" />
@@ -339,6 +340,22 @@
                                     </DataGridTextColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Items.Count, ElementName=ProductGrid}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <TextBlock Text="📦" FontSize="34" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                                    <TextBlock Text="No hay productos para mostrar" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Agrega tu primer producto en el panel derecho o importa desde Excel/CSV." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Grid>
                         </Border>
                     </Grid>
                     <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">

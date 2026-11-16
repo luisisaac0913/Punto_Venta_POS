@@ -515,6 +515,82 @@ namespace Punto_de_Venta.Tests
             Assert.Equal(100m, deudorDiario.SaldoRestante);
         }
 
+        [Fact]
+        public void ImportacionCatalogos_TodosLosFormatos_BienvenidaYPosIniciado_FuncionaCorrectamente()
+        {
+            // 1. Formato .csv (coma) - flujo Bienvenida / POS iniciado
+            string csvPath = Path.Combine(_tempDir, "catalogo.csv");
+            File.WriteAllText(csvPath,
+                "Codigo,Nombre,Categoria,Costo,Precio,Stock\n" +
+                "750001,Producto CSV,Bebidas,10.00,18.00,12\n");
+            var prevCsv = ImportarExportarService.PrevisualizarImportacion(csvPath, esPremium: true, ModoImportacion.CrearYActualizar);
+            Assert.Equal(1, prevCsv.Creados);
+            Assert.Equal(1, ImportarExportarService.ConfirmarImportacion(prevCsv).Creados);
+
+            // 2. Formato .tsv (tabulador)
+            string tsvPath = Path.Combine(_tempDir, "catalogo.tsv");
+            File.WriteAllText(tsvPath,
+                "Codigo\tNombre\tCategoria\tCosto\tPrecio\tStock\n" +
+                "750002\tProducto TSV\tBotanas\t7.50\t15.00\t20\n");
+            var prevTsv = ImportarExportarService.PrevisualizarImportacion(tsvPath, esPremium: true, ModoImportacion.CrearYActualizar);
+            Assert.Equal(1, prevTsv.Creados);
+            Assert.Equal(1, ImportarExportarService.ConfirmarImportacion(prevTsv).Creados);
+
+            // 3. Formato .txt (punto y coma)
+            string txtPath = Path.Combine(_tempDir, "catalogo.txt");
+            File.WriteAllText(txtPath,
+                "Codigo;Nombre;Categoria;Costo;Precio;Stock\n" +
+                "750003;Producto TXT;Abarrotes;20.00;32.00;8\n");
+            var prevTxt = ImportarExportarService.PrevisualizarImportacion(txtPath, esPremium: true, ModoImportacion.CrearYActualizar);
+            Assert.Equal(1, prevTxt.Creados);
+            Assert.Equal(1, ImportarExportarService.ConfirmarImportacion(prevTxt).Creados);
+
+            // 4. Formato .xlsx (exportado e importado en modo SumarStockYCrear con POS iniciado)
+            string xlsxPath = Path.Combine(_tempDir, "catalogo.xlsx");
+            ImportarExportarService.ExportarProductosXlsx(
+            [
+                new Producto { Codigo = "750001", Nombre = "Producto CSV", Categoria = "Bebidas", Costo = 10m, Precio = 18m, Stock = 5m },
+                new Producto { Codigo = "750004", Nombre = "Producto XLSX", Categoria = "Lacteos", Costo = 14m, Precio = 24m, Stock = 10m }
+            ], xlsxPath);
+            Assert.True(File.Exists(xlsxPath));
+
+            var prevXlsx = ImportarExportarService.PrevisualizarImportacion(xlsxPath, esPremium: true, ModoImportacion.SumarStockYCrear);
+            Assert.Equal(1, prevXlsx.Creados);      // 750004 nuevo
+            Assert.Equal(1, prevXlsx.Actualizados); // 750001 suma 5 al stock 12 -> 17
+            var resXlsx = ImportarExportarService.ConfirmarImportacion(prevXlsx);
+            Assert.Equal(1, resXlsx.Creados);
+            Assert.Equal(1, resXlsx.Actualizados);
+
+            var catalogo = ProductoDB.Load();
+            Assert.Equal(4, catalogo.Count);
+            Assert.Equal(17m, Assert.Single(catalogo, p => p.Codigo == "750001").Stock);
+            Assert.Equal(24m, Assert.Single(catalogo, p => p.Codigo == "750004").Precio);
+
+            // 5. Formato .xls binario antiguo debe rechazarse limpiamente
+            string xlsBinPath = Path.Combine(_tempDir, "legacy.xls");
+            File.WriteAllBytes(xlsBinPath, [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]);
+            Assert.Throws<InvalidOperationException>(() =>
+                ImportarExportarService.PrevisualizarImportacion(xlsBinPath, esPremium: true, ModoImportacion.CrearYActualizar));
+
+            // 6. Formato .db (respaldo completo en Bienvenida)
+            string backupDbPath = Path.Combine(_tempDir, "respaldo_bienvenida.db");
+            SqliteConnection.ClearAllPools();
+            File.Copy(DatabaseHelper.DbPath, backupDbPath, overwrite: true);
+
+            // Modificar BD actual y luego restaurar desde el .db
+            ProductoDB.Save([new Producto { Id = 99, Codigo = "999", Nombre = "Temporal", Precio = 1m }]);
+            Assert.Equal(5, ProductoDB.Load().Count);
+
+            SqliteConnection.ClearAllPools();
+            File.Copy(backupDbPath, DatabaseHelper.DbPath, overwrite: true);
+            DatabaseHelper.InicializarBaseDeDatos();
+            DatabaseHelper.ActualizarEsquemaVentas();
+
+            var restaurado = ProductoDB.Load();
+            Assert.Equal(4, restaurado.Count);
+            Assert.DoesNotContain(restaurado, p => p.Codigo == "999");
+        }
+
         public void Dispose()
         {
             SqliteConnection.ClearAllPools();
