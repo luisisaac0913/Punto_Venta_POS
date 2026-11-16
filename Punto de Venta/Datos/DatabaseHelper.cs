@@ -59,6 +59,12 @@ namespace Punto_de_Venta.Datos
                 "ALTER TABLE Productos ADD COLUMN ContarComoUnaPieza INTEGER NOT NULL DEFAULT 0;",
                 "ALTER TABLE Productos ADD COLUMN StockMinimo REAL NOT NULL DEFAULT 5;",
                 "ALTER TABLE VentasDetalle ADD COLUMN SeVendePorPeso INTEGER NOT NULL DEFAULT 0;",
+                "ALTER TABLE Deudores ADD COLUMN TieneInteres INTEGER NOT NULL DEFAULT 0;",
+                "ALTER TABLE Deudores ADD COLUMN PorcentajeInteres REAL NOT NULL DEFAULT 0;",
+                "ALTER TABLE Deudores ADD COLUMN TipoInteres TEXT NOT NULL DEFAULT 'PorcentajeSaldo';",
+                "ALTER TABLE Deudores ADD COLUMN FrecuenciaInteres TEXT NOT NULL DEFAULT 'Unico';",
+                "ALTER TABLE Deudores ADD COLUMN FechaInicioInteres TEXT;",
+                "ALTER TABLE Deudores ADD COLUMN InteresAcumulado REAL NOT NULL DEFAULT 0;",
                 "ALTER TABLE VentasDetalle ADD COLUMN ContarComoUnaPieza INTEGER NOT NULL DEFAULT 0;",
                 "CREATE INDEX IF NOT EXISTS IX_Ventas_CorteCajaId ON Ventas(CorteCajaId);",
                 "CREATE INDEX IF NOT EXISTS IX_Movimientos_CorteCajaId ON MovimientosCaja(CorteCajaId);"
@@ -193,7 +199,13 @@ namespace Punto_de_Venta.Datos
                     Telefono TEXT,
                     Concepto TEXT,
                     MontoOriginal REAL NOT NULL,
-                    TotalAbonado REAL NOT NULL DEFAULT 0
+                    TotalAbonado REAL NOT NULL DEFAULT 0,
+                    TieneInteres INTEGER NOT NULL DEFAULT 0,
+                    PorcentajeInteres REAL NOT NULL DEFAULT 0,
+                    TipoInteres TEXT NOT NULL DEFAULT 'PorcentajeSaldo',
+                    FrecuenciaInteres TEXT NOT NULL DEFAULT 'Unico',
+                    FechaInicioInteres TEXT,
+                    InteresAcumulado REAL NOT NULL DEFAULT 0
                 );
 
                 CREATE TABLE IF NOT EXISTS Abonos (

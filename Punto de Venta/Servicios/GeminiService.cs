@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -9,8 +10,32 @@ using System.Threading.Tasks;
 
 namespace Punto_de_Venta.Servicios
 {
+    public sealed class EstadoCuotaGemini
+    {
+        public string Modelo { get; init; } = string.Empty;
+        public int PeticionesHoy { get; init; }
+        public int LimiteDiarioEstimado { get; init; }
+        public int RestantesEstimados { get; init; }
+        public double PorcentajeRestante { get; init; }
+        public int TokensHoy { get; init; }
+        public bool LimiteAgotado { get; init; }
+    }
+
     public static class GeminiService
     {
+        private sealed class RegistroUsoDiario
+        {
+            public string Fecha { get; set; } = string.Empty;
+            public int Peticiones { get; set; }
+            public int Tokens { get; set; }
+            public bool LimiteAgotado { get; set; }
+        }
+
+        private static readonly object UsoLock = new();
+        private static readonly string UsoPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "POS_DataStorage",
+            "gemini_uso.json");
         private static readonly HttpClient Http = new()
         {
             Timeout = Timeout.InfiniteTimeSpan
@@ -26,6 +51,106 @@ namespace Punto_de_Venta.Servicios
             var cfg = AppConfig.Load();
             return !string.IsNullOrWhiteSpace(cfg.ObtenerGeminiApiKey()) ||
                    !string.IsNullOrWhiteSpace(cfg.GeminiProxyUrl);
+        }
+
+        public static EstadoCuotaGemini ObtenerEstadoCuota()
+        {
+            var cfg = AppConfig.Load();
+            string modelo = ResolverModeloActivo(cfg);
+            int limite = ObtenerLimiteDiarioEstimado(modelo);
+
+            lock (UsoLock)
+            {
+                var uso = CargarUsoDiarioSinLock();
+                int restantes = uso.LimiteAgotado ? 0 : Math.Max(0, limite - uso.Peticiones);
+                double porcentaje = limite > 0
+                    ? Math.Round((restantes * 100.0) / limite, 1)
+                    : 0.0;
+
+                return new EstadoCuotaGemini
+                {
+                    Modelo = modelo,
+                    PeticionesHoy = uso.Peticiones,
+                    LimiteDiarioEstimado = limite,
+                    RestantesEstimados = restantes,
+                    PorcentajeRestante = Math.Clamp(porcentaje, 0.0, 100.0),
+                    TokensHoy = uso.Tokens,
+                    LimiteAgotado = uso.LimiteAgotado
+                };
+            }
+        }
+
+        private static string ResolverModeloActivo(AppConfig cfg)
+        {
+            string modelo = string.IsNullOrWhiteSpace(cfg.GeminiModelo) ? "gemini-3.5-flash-lite" : cfg.GeminiModelo.Trim();
+            if (modelo.StartsWith("gemini-2.5", StringComparison.OrdinalIgnoreCase))
+            {
+                modelo = "gemini-3.5-flash-lite";
+            }
+            return modelo;
+        }
+
+        private static int ObtenerLimiteDiarioEstimado(string modelo)
+        {
+            if (modelo.Contains("pro", StringComparison.OrdinalIgnoreCase)) return 250;
+            if (modelo.Contains("flash-lite", StringComparison.OrdinalIgnoreCase)) return 1500;
+            if (modelo.Contains("flash", StringComparison.OrdinalIgnoreCase)) return 1000;
+            return 1500;
+        }
+
+        private static RegistroUsoDiario CargarUsoDiarioSinLock()
+        {
+            string hoy = DateTime.Today.ToString("yyyy-MM-dd");
+            try
+            {
+                if (File.Exists(UsoPath))
+                {
+                    var leido = JsonSerializer.Deserialize<RegistroUsoDiario>(File.ReadAllText(UsoPath));
+                    if (leido != null && string.Equals(leido.Fecha, hoy, StringComparison.Ordinal))
+                    {
+                        return leido;
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return new RegistroUsoDiario { Fecha = hoy };
+        }
+
+        private static void GuardarUsoDiarioSinLock(RegistroUsoDiario uso)
+        {
+            try
+            {
+                string? dir = Path.GetDirectoryName(UsoPath);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(UsoPath, JsonSerializer.Serialize(uso));
+            }
+            catch
+            {
+            }
+        }
+
+        private static void RegistrarPeticionExitosa(int tokens)
+        {
+            lock (UsoLock)
+            {
+                var uso = CargarUsoDiarioSinLock();
+                uso.Peticiones++;
+                if (tokens > 0) uso.Tokens += tokens;
+                uso.LimiteAgotado = false;
+                GuardarUsoDiarioSinLock(uso);
+            }
+        }
+
+        private static void RegistrarLimiteAlcanzado()
+        {
+            lock (UsoLock)
+            {
+                var uso = CargarUsoDiarioSinLock();
+                uso.LimiteAgotado = true;
+                GuardarUsoDiarioSinLock(uso);
+            }
         }
 
         public static async Task<string> GenerarJsonTextoAsync(string instruccionSistema, string promptUsuario, CancellationToken ct = default)
@@ -70,6 +195,66 @@ namespace Punto_de_Venta.Servicios
                 throw new InvalidOperationException("No se pudo interpretar el JSON devuelto por Gemini.");
             }
             return resultado;
+        }
+
+        public static async Task<string> BuscarInformacionInternetAsync(string consulta, CancellationToken ct = default)
+        {
+            string prompt =
+                "Busca en internet informacion comercial actualizada en Mexico (pesos mexicanos MXN) sobre:\n" +
+                consulta +
+                "\n\nDevuelve una lista clara y estructurada con: nombre comercial completo (incluyendo marca y presentacion/gramaje), categoria sugerida de tienda/abarrotes, precio de venta al publico sugerido en MXN, costo estimado de compra (aprox. 70-75% del precio si no hay dato exacto) y codigo de barras EAN/UPC solo si es verificado.";
+
+            var payloadConBusqueda = new
+            {
+                system_instruction = new
+                {
+                    parts = new[] { new { text = "Eres un investigador de catalogo comercial para tiendas de abarrotes y miscelaneas en Mexico. Usa busqueda web para obtener productos reales, marcas y precios vigentes en MXN." } }
+                },
+                contents = new[]
+                {
+                    new
+                    {
+                        role = "user",
+                        parts = new[] { new { text = prompt } }
+                    }
+                },
+                tools = new[] { new { google_search = new { } } },
+                generationConfig = new { temperature = 0.2 }
+            };
+
+            try
+            {
+                using var doc = await EnviarPeticionAsync(payloadConBusqueda, ct, timeoutSegundos: 35).ConfigureAwait(false);
+                string texto = ExtraerTextoRespuesta(doc);
+                if (!string.IsNullOrWhiteSpace(texto)) return texto;
+            }
+            catch (InvalidOperationException ex) when (ex.Message.StartsWith("Error de Gemini (400)", StringComparison.OrdinalIgnoreCase))
+            {
+                // Si el modelo o proxy no soporta google_search grounding, reintentar sin herramienta web.
+            }
+
+            var payloadRespaldo = new
+            {
+                system_instruction = new
+                {
+                    parts = new[] { new { text = "Eres un especialista en catalogo comercial de tiendas de abarrotes en Mexico. Proporciona productos reales, marcas y precios sugeridos realistas en MXN." } }
+                },
+                contents = new[]
+                {
+                    new
+                    {
+                        role = "user",
+                        parts = new[] { new { text = prompt } }
+                    }
+                },
+                generationConfig = new { temperature = 0.2 }
+            };
+
+            using var docRespaldo = await EnviarPeticionAsync(payloadRespaldo, ct, timeoutSegundos: 30).ConfigureAwait(false);
+            string textoRespaldo = ExtraerTextoRespuesta(docRespaldo);
+            return string.IsNullOrWhiteSpace(textoRespaldo)
+                ? "No se encontraron resultados en internet para esa consulta."
+                : textoRespaldo;
         }
 
         public static async Task<string> EjecutarChatConHerramientasAsync(
@@ -249,12 +434,22 @@ namespace Punto_de_Venta.Servicios
                     }
                     if ((int)resp.StatusCode == 429)
                     {
+                        RegistrarLimiteAlcanzado();
                         throw new InvalidOperationException("Limite de peticiones de Gemini alcanzado. Intenta de nuevo en unos segundos.");
                     }
                     throw new InvalidOperationException($"Error de Gemini ({(int)resp.StatusCode}): {ExtraerErrorApi(body)}");
                 }
 
-                return JsonDocument.Parse(body);
+                var jsonDoc = JsonDocument.Parse(body);
+                int tokens = 0;
+                if (jsonDoc.RootElement.TryGetProperty("usageMetadata", out var usage) &&
+                    usage.TryGetProperty("totalTokenCount", out var totalProp) &&
+                    totalProp.TryGetInt32(out int totalTokens))
+                {
+                    tokens = totalTokens;
+                }
+                RegistrarPeticionExitosa(tokens);
+                return jsonDoc;
             }
         }
 

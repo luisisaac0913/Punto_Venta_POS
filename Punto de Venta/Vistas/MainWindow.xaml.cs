@@ -16,6 +16,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 namespace Punto_de_Venta
@@ -506,6 +507,7 @@ namespace Punto_de_Venta
             GridDashboard.Visibility = Visibility.Collapsed;
             ContenedorVistas.Content = _vistasCache[nombreVista];
             ContenedorVistas.Visibility = Visibility.Visible;
+            AnimarEntradaElemento(ContenedorVistas);
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -527,6 +529,7 @@ namespace Punto_de_Venta
             if (GridDashboard != null)
             {
                 GridDashboard.Visibility = Visibility.Visible;
+                AnimarEntradaElemento(GridDashboard);
             }
 
             Dispatcher.BeginInvoke(new Action(() =>
@@ -556,6 +559,20 @@ namespace Punto_de_Venta
 
             if (BtnNormalizarIA != null)
                 BtnNormalizarIA.Content = esPremium ? "✨ Normalizar con IA" : "✨ Normalizar con IA 🔒";
+
+            if (BtnAsistenteFlotante != null)
+            {
+                BtnAsistenteFlotante.Visibility = esPremium ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            if (esPremium)
+            {
+                MostrarNotaDiariaAsistenteSiCorresponde();
+            }
+            else if (NotaAsistenteFlotante != null)
+            {
+                NotaAsistenteFlotante.Visibility = Visibility.Collapsed;
+            }
 
             if (_vistasCache.TryGetValue("Configuracion", out var configView) && configView is Configuracion cfg)
             {
@@ -1021,6 +1038,97 @@ namespace Punto_de_Venta
             {
                 promociones.RecargarDesdeBD();
             }
+        }
+
+        private DispatcherTimer? _timerNotaAsistente;
+        private bool _notaDiariaVerificadaEnSesion;
+
+        private static void AnimarEntradaElemento(UIElement? elemento)
+        {
+            if (elemento == null) return;
+
+            if (elemento.RenderTransform is not System.Windows.Media.TranslateTransform translate)
+            {
+                translate = new System.Windows.Media.TranslateTransform();
+                elemento.RenderTransform = translate;
+            }
+
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(170)) { EasingFunction = ease };
+            var slide = new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(190)) { EasingFunction = ease };
+
+            elemento.BeginAnimation(OpacityProperty, fade);
+            translate.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty, slide);
+        }
+
+        private void MostrarNotaDiariaAsistenteSiCorresponde()
+        {
+            if (_notaDiariaVerificadaEnSesion || NotaAsistenteFlotante == null) return;
+            _notaDiariaVerificadaEnSesion = true;
+
+            string hoy = DateTime.Today.ToString("yyyy-MM-dd");
+            string ruta = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "POS_DataStorage",
+                "ia_nota_vista.txt");
+
+            try
+            {
+                if (File.Exists(ruta) && string.Equals(File.ReadAllText(ruta).Trim(), hoy, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                string? dir = Path.GetDirectoryName(ruta);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllText(ruta, hoy);
+            }
+            catch
+            {
+                return;
+            }
+
+            NotaAsistenteFlotante.Visibility = Visibility.Visible;
+            AnimarEntradaElemento(NotaAsistenteFlotante);
+
+            _timerNotaAsistente?.Stop();
+            _timerNotaAsistente = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _timerNotaAsistente.Tick += (_, _) =>
+            {
+                _timerNotaAsistente.Stop();
+                OcultarNotaAsistente();
+            };
+            _timerNotaAsistente.Start();
+        }
+
+        private void OcultarNotaAsistente()
+        {
+            if (NotaAsistenteFlotante == null || NotaAsistenteFlotante.Visibility != Visibility.Visible) return;
+
+            var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(220));
+            fadeOut.Completed += (_, _) =>
+            {
+                if (NotaAsistenteFlotante != null)
+                {
+                    NotaAsistenteFlotante.Visibility = Visibility.Collapsed;
+                }
+            };
+            NotaAsistenteFlotante.BeginAnimation(OpacityProperty, fadeOut);
+        }
+
+        private void NotaAsistenteFlotante_Click(object sender, MouseButtonEventArgs e)
+        {
+            _timerNotaAsistente?.Stop();
+            if (NotaAsistenteFlotante != null)
+            {
+                NotaAsistenteFlotante.Visibility = Visibility.Collapsed;
+            }
+            AbrirAsistenteIA();
+        }
+
+        private void BtnAsistenteFlotante_Click(object sender, RoutedEventArgs e)
+        {
+            AbrirAsistenteIA();
         }
 
         public void AbrirAsistenteIA()

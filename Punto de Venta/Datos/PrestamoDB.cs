@@ -15,7 +15,7 @@ namespace Punto_de_Venta.Datos
             using var conn = DatabaseHelper.GetConnection();
             using (var cmd = conn.CreateCommand())
             {
-                cmd.CommandText = "SELECT Id, Nombre, Telefono, Concepto, MontoOriginal, TotalAbonado FROM Deudores ORDER BY Id ASC;";
+                cmd.CommandText = "SELECT Id, Nombre, Telefono, Concepto, MontoOriginal, TotalAbonado, COALESCE(TieneInteres, 0), COALESCE(PorcentajeInteres, 0), COALESCE(TipoInteres, 'PorcentajeSaldo'), COALESCE(FrecuenciaInteres, 'Unico'), FechaInicioInteres, COALESCE(InteresAcumulado, 0) FROM Deudores ORDER BY Id ASC;";
                 using var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
@@ -25,6 +25,16 @@ namespace Punto_de_Venta.Datos
                     var con = reader.IsDBNull(3) ? string.Empty : reader.GetString(3);
                     var monto = Convert.ToDecimal(reader.GetDouble(4));
                     var abonado = Convert.ToDecimal(reader.GetDouble(5));
+                    var tieneInteres = !reader.IsDBNull(6) && reader.GetInt32(6) != 0;
+                    var pctInteres = reader.IsDBNull(7) ? 0m : Convert.ToDecimal(reader.GetDouble(7));
+                    var tipoInteres = reader.IsDBNull(8) ? "PorcentajeSaldo" : reader.GetString(8);
+                    var frecInteres = reader.IsDBNull(9) ? "Unico" : reader.GetString(9);
+                    var fechaInicioStr = reader.IsDBNull(10) ? string.Empty : reader.GetString(10);
+                    if (!DateTime.TryParse(fechaInicioStr, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var fechaInicio))
+                    {
+                        fechaInicio = DateTime.Now;
+                    }
+                    var interesAcumulado = reader.IsDBNull(11) ? 0m : Convert.ToDecimal(reader.GetDouble(11));
 
                     deudores[id] = new Deudor
                     {
@@ -34,6 +44,12 @@ namespace Punto_de_Venta.Datos
                         Concepto = con,
                         MontoOriginal = monto,
                         TotalAbonado = abonado,
+                        TieneInteres = tieneInteres,
+                        PorcentajeInteres = pctInteres,
+                        TipoInteres = tipoInteres,
+                        FrecuenciaInteres = frecInteres,
+                        FechaInicioInteres = fechaInicio,
+                        InteresAcumulado = interesAcumulado,
                         Abonos = []
                     };
                 }
@@ -133,14 +149,20 @@ namespace Punto_de_Venta.Datos
             using var insertDeudor = conn.CreateCommand();
             insertDeudor.Transaction = tr;
             insertDeudor.CommandText = @"
-                INSERT INTO Deudores (Id, Nombre, Telefono, Concepto, MontoOriginal, TotalAbonado)
-                VALUES (@id, @nom, @tel, @con, @monto, @abonado)
+                INSERT INTO Deudores (Id, Nombre, Telefono, Concepto, MontoOriginal, TotalAbonado, TieneInteres, PorcentajeInteres, TipoInteres, FrecuenciaInteres, FechaInicioInteres, InteresAcumulado)
+                VALUES (@id, @nom, @tel, @con, @monto, @abonado, @tieneInt, @pctInt, @tipoInt, @frecInt, @fechaInt, @intAcum)
                 ON CONFLICT(Id) DO UPDATE SET 
                     Nombre = excluded.Nombre,
                     Telefono = excluded.Telefono,
                     Concepto = excluded.Concepto,
                     MontoOriginal = excluded.MontoOriginal,
-                    TotalAbonado = excluded.TotalAbonado;";
+                    TotalAbonado = excluded.TotalAbonado,
+                    TieneInteres = excluded.TieneInteres,
+                    PorcentajeInteres = excluded.PorcentajeInteres,
+                    TipoInteres = excluded.TipoInteres,
+                    FrecuenciaInteres = excluded.FrecuenciaInteres,
+                    FechaInicioInteres = excluded.FechaInicioInteres,
+                    InteresAcumulado = excluded.InteresAcumulado;";
 
             var dId = insertDeudor.Parameters.Add("@id", SqliteType.Integer);
             var dNom = insertDeudor.Parameters.Add("@nom", SqliteType.Text);
@@ -148,6 +170,12 @@ namespace Punto_de_Venta.Datos
             var dCon = insertDeudor.Parameters.Add("@con", SqliteType.Text);
             var dMonto = insertDeudor.Parameters.Add("@monto", SqliteType.Real);
             var dAbonado = insertDeudor.Parameters.Add("@abonado", SqliteType.Real);
+            var dTieneInt = insertDeudor.Parameters.Add("@tieneInt", SqliteType.Integer);
+            var dPctInt = insertDeudor.Parameters.Add("@pctInt", SqliteType.Real);
+            var dTipoInt = insertDeudor.Parameters.Add("@tipoInt", SqliteType.Text);
+            var dFrecInt = insertDeudor.Parameters.Add("@frecInt", SqliteType.Text);
+            var dFechaInt = insertDeudor.Parameters.Add("@fechaInt", SqliteType.Text);
+            var dIntAcum = insertDeudor.Parameters.Add("@intAcum", SqliteType.Real);
 
             using var insertAbono = conn.CreateCommand();
             insertAbono.Transaction = tr;
@@ -177,6 +205,13 @@ namespace Punto_de_Venta.Datos
                 dCon.Value = debtor.Concepto ?? string.Empty;
                 dMonto.Value = Convert.ToDouble(debtor.MontoOriginal);
                 dAbonado.Value = Convert.ToDouble(debtor.TotalAbonado);
+                dTieneInt.Value = debtor.TieneInteres ? 1 : 0;
+                dPctInt.Value = Convert.ToDouble(debtor.PorcentajeInteres);
+                dTipoInt.Value = string.IsNullOrWhiteSpace(debtor.TipoInteres) ? "PorcentajeSaldo" : debtor.TipoInteres;
+                dFrecInt.Value = string.IsNullOrWhiteSpace(debtor.FrecuenciaInteres) ? "Unico" : debtor.FrecuenciaInteres;
+                DateTime fechaInicio = debtor.FechaInicioInteres == default ? DateTime.Now : debtor.FechaInicioInteres;
+                dFechaInt.Value = fechaInicio.ToString("o", CultureInfo.InvariantCulture);
+                dIntAcum.Value = Convert.ToDouble(debtor.InteresAcumulado);
                 insertDeudor.ExecuteNonQuery();
 
                 if (debtor.Abonos != null)

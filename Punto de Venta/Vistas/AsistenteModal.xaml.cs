@@ -444,6 +444,30 @@ namespace Punto_de_Venta.Vistas
                 _consultaCts?.Dispose();
                 _consultaCts = null;
             };
+            ActualizarBarraCuota();
+        }
+
+        private void ActualizarBarraCuota()
+        {
+            var cuota = GeminiService.ObtenerEstadoCuota();
+            PbCuotaIA.Value = cuota.PorcentajeRestante;
+
+            if (cuota.LimiteAgotado)
+            {
+                TxtCuotaIA.Text = $"Limite alcanzado hoy ({cuota.PeticionesHoy} peticiones · {cuota.Modelo})";
+                PbCuotaIA.Foreground = new SolidColorBrush(Color.FromRgb(239, 68, 68));
+            }
+            else
+            {
+                TxtCuotaIA.Text = $"Limite diario estimado: {cuota.PorcentajeRestante:0.#}% restante ({cuota.RestantesEstimados}/{cuota.LimiteDiarioEstimado} · {cuota.Modelo})";
+                PbCuotaIA.Foreground = cuota.PorcentajeRestante > 30
+                    ? new SolidColorBrush(Color.FromRgb(34, 197, 94))
+                    : cuota.PorcentajeRestante > 10
+                        ? new SolidColorBrush(Color.FromRgb(245, 158, 11))
+                        : new SolidColorBrush(Color.FromRgb(239, 68, 68));
+            }
+
+            TxtTokensIA.Text = $"{cuota.TokensHoy:N0} tokens hoy";
         }
 
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -561,6 +585,7 @@ namespace Punto_de_Venta.Vistas
                 _ocupado = false;
                 BtnEnviar.IsEnabled = true;
                 BtnEnviar.Content = "Enviar";
+                ActualizarBarraCuota();
                 if (IsLoaded && IsVisible)
                 {
                     PromptBox.Focus();
