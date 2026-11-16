@@ -22,6 +22,7 @@ namespace Punto_de_Venta
         public CorteCiegoModal(decimal totalEsperado)
         {
             InitializeComponent();
+            this.Loaded += (_, _) => MainWindow.AnimarEntradaElemento(this.Content as UIElement);
             _totalEsperado = totalEsperado;
 
             var config = AppConfig.Load();

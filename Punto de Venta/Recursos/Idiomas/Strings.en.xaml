@@ -257,7 +257,7 @@
     <sys:String x:Key="SettingsHelpWebDesc">Download updates, manuals, news, and licenses.</sys:String>
     <sys:String x:Key="SettingsHelpOpenWebBtn">Visit website</sys:String>
     <sys:String x:Key="SettingsHelpCopyBtn">Copy</sys:String>
-    <sys:String x:Key="SettingsHelpVersion">Version 1.0.16 (Production) • Official Active License</sys:String>
+    <sys:String x:Key="SettingsHelpVersion">Version 1.0.21 (Production) • Official Active License</sys:String>
     <sys:String x:Key="PosHoldTooltip">View held sales or pause current sale (F2)</sys:String>
     <sys:String x:Key="PosScaleStatusTooltip">Scale status</sys:String>
     <sys:String x:Key="PosPrinterStatusTooltip">Thermal printer status</sys:String>
@@ -476,12 +476,13 @@
     <sys:String x:Key="ActivationInactiveDesc">Get permanent access to all advanced tools with no rent or monthly payments.</sys:String>
     <sys:String x:Key="ActivationIncludedHeader">INCLUDED FEATURES</sys:String>
     <sys:String x:Key="ActivationFeat1">No limits: inventory over 400 products, unlimited credits and promotions</sys:String>
-    <sys:String x:Key="ActivationFeat2">Electronic airtime top-ups and bill payments (integrated API)</sys:String>
-    <sys:String x:Key="ActivationFeat3">Full customization: accent colors, logo, and custom receipt design</sys:String>
-    <sys:String x:Key="ActivationFeat4">Automated collections: WhatsApp reminders and account statements in one click</sys:String>
-    <sys:String x:Key="ActivationFeat5">Local server and remote access: check your POS from any phone or tablet</sys:String>
+    <sys:String x:Key="ActivationFeat2">AI Assistant (Gemini): manage your store, search online prices, and smart CSV/Excel import</sys:String>
+    <sys:String x:Key="ActivationFeat3">Full customization: accent colors and extra receipt details (subtitle, address, and footer)</sys:String>
+    <sys:String x:Key="ActivationFeat4">Automated collections: WhatsApp loan reminders and account statements in one click</sys:String>
+    <sys:String x:Key="ActivationFeat5">Local server &amp; Quick Link: check your POS from any phone or tablet on your network</sys:String>
     <sys:String x:Key="ActivationFeat6">Advanced security: admin PIN authorization and automatic Google Drive backups</sys:String>
-    <sys:String x:Key="ActivationFeat7">Professional inventory control: batch expiration tracking and barcode printing</sys:String>
+    <sys:String x:Key="ActivationFeat7">Advanced history &amp; reports: date ranges, charts, receipt reprinting, and PDF/Excel export</sys:String>
+    <sys:String x:Key="ActivationFeat8">Barcode labels: generator and print queue ready for your products</sys:String>
     <sys:String x:Key="ActivationLifetimeFooter">Lifetime license for this computer • No recurring payments</sys:String>
     <sys:String x:Key="ActivationPriceHeader">LICENSE PRICE</sys:String>
     <sys:String x:Key="ActivationOneTime">One-time final payment</sys:String>
