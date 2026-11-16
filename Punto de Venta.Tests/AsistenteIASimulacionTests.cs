@@ -75,6 +75,32 @@ namespace Punto_de_Venta.Tests
                 "consultar_resumen_ventas", ventasArgsDoc.RootElement, owner: null);
             string jsonVentas = JsonSerializer.Serialize(resVentas);
             Assert.Contains("90", jsonVentas);
+
+            // Verificar cálculo de cuota estimada de Gemini y regla de alcance estricto
+            var cuota = GeminiService.ObtenerEstadoCuota();
+            Assert.True(cuota.LimiteDiarioEstimado > 0);
+            Assert.InRange(cuota.PorcentajeRestante, 0.0, 100.0);
+            Assert.Contains("ALCANCE ESTRICTO", AsistenteHerramientasPOS.InstruccionSistema);
+            Assert.Contains("Fiado", AsistenteHerramientasPOS.InstruccionSistema);
+            Assert.Contains("Cancelada", AsistenteHerramientasPOS.InstruccionSistema);
+            Assert.Contains("Abono", AsistenteHerramientasPOS.InstruccionSistema);
+            Assert.Contains("CONFIDENCIALIDAD Y SEGURIDAD ABSOLUTA", AsistenteHerramientasPOS.InstruccionSistema);
+            Assert.Contains("Corte Ciego", AsistenteHerramientasPOS.InstruccionSistema);
+            Assert.Contains("Etiquetas", AsistenteHerramientasPOS.InstruccionSistema);
+            Assert.Contains("Libreta", AsistenteHerramientasPOS.InstruccionSistema);
+
+            // Pregunta normal 3: estado de caja, ventas recientes y libreta
+            object resCaja = await AsistenteHerramientasPOS.EjecutarHerramientaAsync(
+                "consultar_estado_caja", emptyArgsDoc.RootElement, owner: null);
+            Assert.Contains("hayTurnoAbierto", JsonSerializer.Serialize(resCaja));
+
+            object resRecientes = await AsistenteHerramientasPOS.EjecutarHerramientaAsync(
+                "consultar_ventas_recientes", emptyArgsDoc.RootElement, owner: null);
+            Assert.Contains("Refresco 600ml", JsonSerializer.Serialize(resRecientes));
+
+            object resLibreta = await AsistenteHerramientasPOS.EjecutarHerramientaAsync(
+                "consultar_libreta", emptyArgsDoc.RootElement, owner: null);
+            Assert.Contains("notas", JsonSerializer.Serialize(resLibreta));
         }
 
         public void Dispose()

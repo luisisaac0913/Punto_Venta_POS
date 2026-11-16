@@ -680,6 +680,71 @@
                 </Grid>
             </Grid>
 
+            <Border x:Name="NotaAsistenteFlotante"
+                    Visibility="Collapsed"
+                    Panel.ZIndex="901"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom"
+                    Margin="18,0,0,70"
+                    Padding="12,8"
+                    CornerRadius="14,14,14,4"
+                    Background="{DynamicResource ThemeSurfaceBackground}"
+                    BorderBrush="{DynamicResource ThemeAccent}"
+                    BorderThickness="1.2"
+                    Cursor="Hand"
+                    MouseLeftButtonUp="NotaAsistenteFlotante_Click">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.22" Color="Black" />
+                </Border.Effect>
+                <TextBlock Text="✨ ¿Dudas o cambios rápidos? Pregúntale a tu IA"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource ThemeTextForeground}" />
+            </Border>
+
+            <Button x:Name="BtnAsistenteFlotante"
+                    Visibility="Collapsed"
+                    Panel.ZIndex="900"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom"
+                    Margin="18,0,0,18"
+                    Width="42" Height="42"
+                    Cursor="Hand"
+                    ToolTip="Asistente IA (F12)"
+                    Click="BtnAsistenteFlotante_Click">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Opacity" Value="0.78" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{DynamicResource ThemeSurfaceBackground}"
+                                            BorderBrush="{DynamicResource ThemeAccent}"
+                                            BorderThickness="1.5"
+                                            CornerRadius="21"
+                                            SnapsToDevicePixels="True">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.25" Color="Black" />
+                                        </Border.Effect>
+                                        <Viewbox Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Canvas Width="24" Height="24">
+                                                <Path Data="M20,2H4C2.9,2,2,2.9,2,4v18l4-4h14c1.1,0,2-0.9,2-2V4C22,2.9,21.1,2,20,2z M13.5,11.5L12,15l-1.5-3.5L7,10l3.5-1.5L12,5l1.5,3.5L17,10L13.5,11.5z"
+                                                      Fill="{DynamicResource ThemeAccent}" />
+                                            </Canvas>
+                                        </Viewbox>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="1.0" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+
             <Grid x:Name="StandbyOverlay" Visibility="Collapsed" Panel.ZIndex="9999" Background="#EE000000" MouseLeftButtonDown="StandbyOverlay_MouseLeftButtonDown">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />

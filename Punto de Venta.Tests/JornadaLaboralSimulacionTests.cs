@@ -367,6 +367,154 @@ namespace Punto_de_Venta.Tests
             Assert.True(File.Exists(productosCsv) && new FileInfo(productosCsv).Length > 0);
         }
 
+        [Fact]
+        public void PrestamosConInteres_CalculoYPersistenciaEnBD_FuncionaCorrectamente()
+        {
+            var deudorSaldo = new Deudor
+            {
+                Id = 0,
+                Nombre = "Carlos Interes Saldo",
+                MontoOriginal = 200m,
+                TotalAbonado = 50m,
+                TieneInteres = true,
+                PorcentajeInteres = 10m,
+                TipoInteres = "PorcentajeSaldo"
+            };
+            // Saldo base 150 * 10% = 15 -> TotalConInteres 215 -> SaldoRestante 165
+            Assert.Equal(15m, deudorSaldo.InteresCalculado);
+            Assert.Equal(215m, deudorSaldo.TotalConInteres);
+            Assert.Equal(165m, deudorSaldo.SaldoRestante);
+
+            var deudorOriginal = new Deudor
+            {
+                Id = 0,
+                Nombre = "Ana Interes Original",
+                MontoOriginal = 200m,
+                TotalAbonado = 50m,
+                TieneInteres = true,
+                PorcentajeInteres = 10m,
+                TipoInteres = "PorcentajeOriginal"
+            };
+            Assert.Equal(20m, deudorOriginal.InteresCalculado);
+            Assert.Equal(170m, deudorOriginal.SaldoRestante);
+
+            var deudorFijo = new Deudor
+            {
+                Id = 0,
+                Nombre = "Luis Monto Fijo",
+                MontoOriginal = 200m,
+                TotalAbonado = 0m,
+                TieneInteres = true,
+                PorcentajeInteres = 35m,
+                TipoInteres = "MontoFijo"
+            };
+            Assert.Equal(35m, deudorFijo.InteresCalculado);
+            Assert.Equal(235m, deudorFijo.SaldoRestante);
+
+            PrestamoDB.Save([deudorSaldo, deudorOriginal, deudorFijo]);
+            var cargados = PrestamoDB.Load();
+            var saldoBd = Assert.Single(cargados, d => d.Nombre == "Carlos Interes Saldo");
+            Assert.True(saldoBd.TieneInteres);
+            Assert.Equal(10m, saldoBd.PorcentajeInteres);
+            Assert.Equal("PorcentajeSaldo", saldoBd.TipoInteres);
+            Assert.Equal(165m, saldoBd.SaldoRestante);
+
+            // Frecuencias: Diario (2% diario x 3 dias = 6% sobre 100 = 6), Semanal (2% x 2 semanas = 4), Mensual (5% x 2 meses = 10)
+            var deudorDiario = new Deudor
+            {
+                Nombre = "Pedro Diario",
+                MontoOriginal = 100m,
+                TieneInteres = true,
+                PorcentajeInteres = 2m,
+                TipoInteres = "PorcentajeOriginal",
+                FrecuenciaInteres = "Diario",
+                FechaInicioInteres = DateTime.Now.AddDays(-3).AddMinutes(-5)
+            };
+            Assert.Equal(3, deudorDiario.PeriodosInteresTranscurridos);
+            Assert.Equal(6m, deudorDiario.InteresCalculado);
+            Assert.Equal(106m, deudorDiario.SaldoRestante);
+
+            // Cambio de frecuencia Diario -> Semanal -> Mensual conserva el interes ya acumulado ($6)
+            deudorDiario.ConsolidarInteresYReiniciarPeriodo(DateTime.Now.AddDays(-7).AddMinutes(-5));
+            deudorDiario.FrecuenciaInteres = "Semanal";
+            Assert.Equal(6m, deudorDiario.InteresAcumulado);
+            Assert.Equal(1, deudorDiario.PeriodosInteresTranscurridos);
+            Assert.Equal(8m, deudorDiario.InteresCalculado); // 6 acumulado + 2 de 1 semana
+
+            deudorDiario.ConsolidarInteresYReiniciarPeriodo(DateTime.Now);
+            deudorDiario.FrecuenciaInteres = "Mensual";
+            Assert.Equal(8m, deudorDiario.InteresAcumulado);
+            Assert.Equal(0, deudorDiario.PeriodosInteresTranscurridos);
+            Assert.Equal(8m, deudorDiario.InteresCalculado);
+
+            var deudorSemanal = new Deudor
+            {
+                Nombre = "Sofia Semanal",
+                MontoOriginal = 100m,
+                TieneInteres = true,
+                PorcentajeInteres = 2m,
+                TipoInteres = "PorcentajeOriginal",
+                FrecuenciaInteres = "Semanal",
+                FechaInicioInteres = DateTime.Now.AddDays(-14).AddMinutes(-5)
+            };
+            Assert.Equal(2, deudorSemanal.PeriodosInteresTranscurridos);
+            Assert.Equal(4m, deudorSemanal.InteresCalculado);
+
+            var deudorMensual = new Deudor
+            {
+                Nombre = "Mario Mensual",
+                MontoOriginal = 100m,
+                TieneInteres = true,
+                PorcentajeInteres = 5m,
+                TipoInteres = "PorcentajeOriginal",
+                FrecuenciaInteres = "Mensual",
+                FechaInicioInteres = DateTime.Now.AddMonths(-2).AddMinutes(-5)
+            };
+            Assert.Equal(2, deudorMensual.PeriodosInteresTranscurridos);
+            Assert.Equal(10m, deudorMensual.InteresCalculado);
+
+            PrestamoDB.Save([deudorDiario]);
+            var diarioBd = Assert.Single(PrestamoDB.Load(), d => d.Nombre == "Pedro Diario");
+            Assert.Equal("Mensual", diarioBd.FrecuenciaInteres);
+            Assert.Equal(8m, diarioBd.InteresAcumulado);
+            Assert.Equal(8m, diarioBd.InteresCalculado);
+
+            // Escenario legado: deudor existente sin interes (como registros previos a la actualizacion)
+            var legado = new Deudor
+            {
+                Nombre = "Cliente Legado",
+                MontoOriginal = 150m,
+                TotalAbonado = 50m,
+                TieneInteres = false,
+                PorcentajeInteres = 0m
+            };
+            Assert.Equal(0m, legado.InteresCalculado);
+            Assert.Equal(150m, legado.TotalConInteres);
+            Assert.Equal(100m, legado.SaldoRestante);
+            legado.TotalAbonado = 150m;
+            Assert.True(legado.EstaSaldada);
+
+            // Escenario 0 periodos transcurridos (recien creado hoy con Diario/Semanal) -> 0 interes hoy
+            var recienCreadoDiario = new Deudor
+            {
+                Nombre = "Hoy Diario",
+                MontoOriginal = 100m,
+                TieneInteres = true,
+                PorcentajeInteres = 2m,
+                TipoInteres = "PorcentajeSaldo",
+                FrecuenciaInteres = "Diario",
+                FechaInicioInteres = DateTime.Today
+            };
+            Assert.Equal(0, recienCreadoDiario.PeriodosInteresTranscurridos);
+            Assert.Equal(0m, recienCreadoDiario.InteresCalculado);
+            Assert.Equal(100m, recienCreadoDiario.SaldoRestante);
+
+            // Escenario deshabilitar interes despues de tenerlo activo -> vuelve a 0
+            deudorDiario.TieneInteres = false;
+            Assert.Equal(0m, deudorDiario.InteresCalculado);
+            Assert.Equal(100m, deudorDiario.SaldoRestante);
+        }
+
         public void Dispose()
         {
             SqliteConnection.ClearAllPools();

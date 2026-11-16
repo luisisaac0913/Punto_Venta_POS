@@ -242,7 +242,46 @@
                                 <TextBlock Text="{DynamicResource CreditsConceptLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <TextBox x:Name="ConceptBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,10" KeyDown="DebtorField_KeyDown" />
                                 <TextBlock Text="{DynamicResource CreditsTotalDebt}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                                <TextBox x:Name="AmountBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,14" KeyDown="DebtorField_KeyDown" />
+                                <TextBox x:Name="AmountBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,10" KeyDown="DebtorField_KeyDown" TextChanged="InterestInputs_Changed" />
+
+                                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <CheckBox x:Name="InterestEnabledCheckBox" Content="Habilitar interes al deudor"
+                                                  FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold"
+                                                  Foreground="{DynamicResource ThemeTextForeground}"
+                                                  Checked="InterestEnabledCheckBox_Changed" Unchecked="InterestEnabledCheckBox_Changed" />
+                                        <StackPanel x:Name="InterestOptionsPanel" IsEnabled="False" Margin="0,8,0,0">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="90" />
+                                                    <ColumnDefinition Width="8" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox x:Name="InterestValueBox" Grid.Column="0" Style="{StaticResource LoanTextBoxStyle}"
+                                                         ToolTip="Porcentaje (%) o monto fijo ($)"
+                                                         KeyDown="DebtorField_KeyDown" TextChanged="InterestInputs_Changed" />
+                                                <ComboBox x:Name="InterestTypeCombo" Grid.Column="2" Height="34" VerticalContentAlignment="Center"
+                                                          FontFamily="Segoe UI Variable, Segoe UI" FontSize="12"
+                                                          SelectedIndex="0" SelectionChanged="InterestTypeCombo_SelectionChanged">
+                                                    <ComboBoxItem Content="% sobre saldo pendiente" Tag="PorcentajeSaldo" />
+                                                    <ComboBoxItem Content="% sobre deuda original" Tag="PorcentajeOriginal" />
+                                                    <ComboBoxItem Content="Monto fijo ($)" Tag="MontoFijo" />
+                                                </ComboBox>
+                                            </Grid>
+                                            <ComboBox x:Name="InterestFrequencyCombo" Height="32" Margin="0,6,0,0" VerticalContentAlignment="Center"
+                                                      FontFamily="Segoe UI Variable, Segoe UI" FontSize="12"
+                                                      SelectedIndex="0" SelectionChanged="InterestTypeCombo_SelectionChanged">
+                                                <ComboBoxItem Content="Aplicar una sola vez" Tag="Unico" />
+                                                <ComboBoxItem Content="Aumenta cada dia" Tag="Diario" />
+                                                <ComboBoxItem Content="Aumenta cada semana" Tag="Semanal" />
+                                                <ComboBoxItem Content="Aumenta cada mes" Tag="Mensual" />
+                                            </ComboBox>
+                                        </StackPanel>
+                                        <TextBlock x:Name="InterestPreviewText" Text="Sin interes aplicado"
+                                                   FontFamily="Segoe UI Variable, Segoe UI" FontSize="11"
+                                                   Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,6,0,0" />
+                                    </StackPanel>
+                                </Border>
 
                                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,12">
                                     <StackPanel>

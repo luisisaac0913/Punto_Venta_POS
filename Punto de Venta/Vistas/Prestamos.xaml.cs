@@ -262,11 +262,18 @@ namespace Punto_de_Venta
             DebtorPhoneBox.Text = _selectedDebtor.Telefono;
             ConceptBox.Text = _selectedDebtor.Concepto;
             AmountBox.Text = _selectedDebtor.MontoOriginal.ToString("0.00", CultureInfo.InvariantCulture);
+            InterestEnabledCheckBox.IsChecked = _selectedDebtor.TieneInteres;
+            InterestValueBox.Text = _selectedDebtor.PorcentajeInteres > 0
+                ? _selectedDebtor.PorcentajeInteres.ToString("0.##", CultureInfo.InvariantCulture)
+                : string.Empty;
+            SeleccionarTipoInteresCombo(_selectedDebtor.TipoInteres);
+            SeleccionarFrecuenciaInteresCombo(_selectedDebtor.FrecuenciaInteres);
+            ActualizarVistaInteres();
             PaymentAmountBox.Clear();
         }
         private void AddButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!CanWrite() || !TryReadLoanForm(out var name, out var concept, out var amount))
+            if (!CanWrite() || !TryReadLoanForm(out var name, out var concept, out var amount, out var tieneInteres, out var valorInteres, out var tipoInteres))
             {
                 return;
             }
@@ -280,6 +287,25 @@ namespace Punto_de_Venta
                 var updatedDebtor = CopyDebtor(pendingDebtor);
                 updatedDebtor.MontoOriginal += amount;
                 updatedDebtor.Concepto = CombineConcepts(updatedDebtor.Concepto, concept);
+                if (tieneInteres)
+                {
+                    string nuevaFrec = ObtenerFrecuenciaInteresSeleccionada();
+                    if (updatedDebtor.TieneInteres &&
+                        (!string.Equals(updatedDebtor.FrecuenciaInteres, nuevaFrec, StringComparison.OrdinalIgnoreCase) ||
+                         !string.Equals(updatedDebtor.TipoInteres, tipoInteres, StringComparison.OrdinalIgnoreCase) ||
+                         updatedDebtor.PorcentajeInteres != valorInteres))
+                    {
+                        updatedDebtor.ConsolidarInteresYReiniciarPeriodo();
+                    }
+                    else if (!updatedDebtor.TieneInteres)
+                    {
+                        updatedDebtor.FechaInicioInteres = DateTime.Now;
+                    }
+                    updatedDebtor.TieneInteres = true;
+                    updatedDebtor.PorcentajeInteres = valorInteres;
+                    updatedDebtor.TipoInteres = tipoInteres;
+                    updatedDebtor.FrecuenciaInteres = nuevaFrec;
+                }
                 if (!string.IsNullOrWhiteSpace(phone))
                 {
                     updatedDebtor.Telefono = phone;
@@ -308,7 +334,12 @@ namespace Punto_de_Venta
                 Telefono = phone,
                 Concepto = concept,
                 MontoOriginal = amount,
-                TotalAbonado = 0
+                TotalAbonado = 0,
+                TieneInteres = tieneInteres,
+                PorcentajeInteres = valorInteres,
+                TipoInteres = tipoInteres,
+                FrecuenciaInteres = ObtenerFrecuenciaInteresSeleccionada(),
+                FechaInicioInteres = DateTime.Now
             };
             if (!TrySave(new[] { newDebtor }))
             {
@@ -375,7 +406,7 @@ namespace Punto_de_Venta
         }
         private void ModifyButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!CanWrite() || _selectedDebtor is null || !TryReadLoanForm(out var name, out var concept, out var amount))
+            if (!CanWrite() || _selectedDebtor is null || !TryReadLoanForm(out var name, out var concept, out var amount, out var tieneInteres, out var valorInteres, out var tipoInteres))
             {
                 return;
             }
@@ -391,6 +422,26 @@ namespace Punto_de_Venta
             updatedDebtor.Telefono = DebtorPhoneBox.Text.Trim();
             updatedDebtor.Concepto = concept;
             updatedDebtor.MontoOriginal = amount;
+            string nuevaFrecuencia = ObtenerFrecuenciaInteresSeleccionada();
+            if (!tieneInteres)
+            {
+                updatedDebtor.InteresAcumulado = 0m;
+            }
+            else if (!oldDebtor.TieneInteres)
+            {
+                updatedDebtor.InteresAcumulado = 0m;
+                updatedDebtor.FechaInicioInteres = DateTime.Now;
+            }
+            else if (!string.Equals(oldDebtor.FrecuenciaInteres, nuevaFrecuencia, StringComparison.OrdinalIgnoreCase) ||
+                     !string.Equals(oldDebtor.TipoInteres, tipoInteres, StringComparison.OrdinalIgnoreCase) ||
+                     oldDebtor.PorcentajeInteres != valorInteres)
+            {
+                updatedDebtor.ConsolidarInteresYReiniciarPeriodo();
+            }
+            updatedDebtor.TieneInteres = tieneInteres;
+            updatedDebtor.PorcentajeInteres = valorInteres;
+            updatedDebtor.TipoInteres = tipoInteres;
+            updatedDebtor.FrecuenciaInteres = nuevaFrecuencia;
             if (!TrySave(new[] { updatedDebtor }))
             {
                 return;
@@ -790,11 +841,15 @@ namespace Punto_de_Venta
             UpdateSelectionButtons();
             DebtorPhoneBox.Focus();
         }
-        private bool TryReadLoanForm(out string name, out string concept, out decimal amount)
+        private bool TryReadLoanForm(out string name, out string concept, out decimal amount, out bool tieneInteres, out decimal valorInteres, out string tipoInteres)
         {
             name = DebtorNameBox.Text.Trim();
             concept = ConceptBox.Text.Trim();
             amount = 0;
+            tieneInteres = InterestEnabledCheckBox.IsChecked == true;
+            valorInteres = 0m;
+            tipoInteres = ObtenerTipoInteresSeleccionado();
+
             if (name.Length == 0)
             {
                 ShowStatus("El nombre del deudor es obligatorio.", false);
@@ -807,7 +862,120 @@ namespace Punto_de_Venta
                 AmountBox.Focus();
                 return false;
             }
+            if (tieneInteres)
+            {
+                if (!TryParseAmount(InterestValueBox.Text, out valorInteres) || valorInteres <= 0)
+                {
+                    ShowStatus("Introduce un porcentaje o monto de interes valido mayor que cero.", false);
+                    InterestValueBox.Focus();
+                    return false;
+                }
+            }
             return true;
+        }
+
+        private void InterestEnabledCheckBox_Changed(object sender, RoutedEventArgs e) => ActualizarVistaInteres();
+        private void InterestInputs_Changed(object sender, TextChangedEventArgs e) => ActualizarVistaInteres();
+        private void InterestTypeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e) => ActualizarVistaInteres();
+
+        private string ObtenerTipoInteresSeleccionado()
+        {
+            if (InterestTypeCombo?.SelectedItem is ComboBoxItem item && item.Tag is string tag && !string.IsNullOrWhiteSpace(tag))
+            {
+                return tag;
+            }
+            return "PorcentajeSaldo";
+        }
+
+        private void SeleccionarTipoInteresCombo(string? tipo)
+        {
+            if (InterestTypeCombo == null) return;
+            foreach (ComboBoxItem item in InterestTypeCombo.Items)
+            {
+                if (string.Equals(item.Tag?.ToString(), tipo, StringComparison.OrdinalIgnoreCase))
+                {
+                    InterestTypeCombo.SelectedItem = item;
+                    return;
+                }
+            }
+            InterestTypeCombo.SelectedIndex = 0;
+        }
+
+        private string ObtenerFrecuenciaInteresSeleccionada()
+        {
+            if (InterestFrequencyCombo?.SelectedItem is ComboBoxItem item && item.Tag is string tag && !string.IsNullOrWhiteSpace(tag))
+            {
+                return tag;
+            }
+            return "Unico";
+        }
+
+        private void SeleccionarFrecuenciaInteresCombo(string? frecuencia)
+        {
+            if (InterestFrequencyCombo == null) return;
+            foreach (ComboBoxItem item in InterestFrequencyCombo.Items)
+            {
+                if (string.Equals(item.Tag?.ToString(), frecuencia, StringComparison.OrdinalIgnoreCase))
+                {
+                    InterestFrequencyCombo.SelectedItem = item;
+                    return;
+                }
+            }
+            InterestFrequencyCombo.SelectedIndex = 0;
+        }
+
+        private void ActualizarVistaInteres()
+        {
+            if (InterestOptionsPanel == null || InterestPreviewText == null || InterestEnabledCheckBox == null) return;
+
+            bool habilitado = InterestEnabledCheckBox.IsChecked == true;
+            InterestOptionsPanel.IsEnabled = habilitado;
+
+            if (!habilitado)
+            {
+                InterestPreviewText.Text = "Sin interes aplicado";
+                return;
+            }
+
+            TryParseAmount(AmountBox.Text, out decimal monto);
+            TryParseAmount(InterestValueBox.Text, out decimal valor);
+            decimal abonado = _selectedDebtor?.TotalAbonado ?? 0m;
+            string frecuencia = ObtenerFrecuenciaInteresSeleccionada();
+            DateTime fechaInicio = (_selectedDebtor != null && _selectedDebtor.TieneInteres && string.Equals(_selectedDebtor.FrecuenciaInteres, frecuencia, StringComparison.OrdinalIgnoreCase))
+                ? _selectedDebtor.FechaInicioInteres
+                : DateTime.Now;
+            decimal acumulado = (_selectedDebtor != null && _selectedDebtor.TieneInteres)
+                ? _selectedDebtor.InteresAcumulado
+                : 0m;
+
+            var preview = new Deudor
+            {
+                MontoOriginal = Math.Max(0m, monto),
+                TotalAbonado = abonado,
+                TieneInteres = true,
+                PorcentajeInteres = Math.Max(0m, valor),
+                TipoInteres = ObtenerTipoInteresSeleccionado(),
+                FrecuenciaInteres = frecuencia,
+                FechaInicioInteres = fechaInicio,
+                InteresAcumulado = acumulado
+            };
+
+            var culture = CultureInfo.GetCultureInfo("es-MX");
+            if (string.Equals(frecuencia, "Unico", StringComparison.OrdinalIgnoreCase))
+            {
+                InterestPreviewText.Text = $"Interes: {preview.InteresCalculado.ToString("C2", culture)} · Total a pagar: {preview.TotalConInteres.ToString("C2", culture)}";
+            }
+            else
+            {
+                string sufijo = frecuencia switch
+                {
+                    "Diario" => "dia",
+                    "Semanal" => "semana",
+                    "Mensual" => "mes",
+                    _ => "periodo"
+                };
+                InterestPreviewText.Text = $"+{preview.InteresPorPeriodo.ToString("C2", culture)} / {sufijo} ({preview.PeriodosInteresTranscurridos} transcurridos = {preview.InteresCalculado.ToString("C2", culture)}) · Total: {preview.TotalConInteres.ToString("C2", culture)}";
+            }
         }
         private static bool TryParseAmount(string text, out decimal amount)
         {
@@ -862,6 +1030,12 @@ namespace Punto_de_Venta
             Concepto = debtor.Concepto,
             MontoOriginal = debtor.MontoOriginal,
             TotalAbonado = debtor.TotalAbonado,
+            TieneInteres = debtor.TieneInteres,
+            PorcentajeInteres = debtor.PorcentajeInteres,
+            TipoInteres = debtor.TipoInteres,
+            FrecuenciaInteres = debtor.FrecuenciaInteres,
+            FechaInicioInteres = debtor.FechaInicioInteres,
+            InteresAcumulado = debtor.InteresAcumulado,
             Abonos = debtor.Abonos.ToList()
         };
         private static string CombineConcepts(string current, string added) =>
@@ -912,6 +1086,11 @@ namespace Punto_de_Venta
             DebtorPhoneBox.Clear();
             ConceptBox.Clear();
             AmountBox.Clear();
+            InterestEnabledCheckBox.IsChecked = false;
+            InterestValueBox.Clear();
+            if (InterestTypeCombo != null) InterestTypeCombo.SelectedIndex = 0;
+            if (InterestFrequencyCombo != null) InterestFrequencyCombo.SelectedIndex = 0;
+            ActualizarVistaInteres();
             PaymentAmountBox.Clear();
             StatusText.Text = string.Empty;
             _successStatusVisible = false;

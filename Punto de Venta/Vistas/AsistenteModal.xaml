@@ -41,11 +41,24 @@
                         FontSize="15" FontWeight="Bold" Cursor="Hand" Click="BtnCerrar_Click" />
             </DockPanel>
 
-            <WrapPanel Grid.Row="1" Margin="0,0,0,10">
-                <Button Content="📦 Stock bajo" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaStock_Click" />
-                <Button Content="💰 Ventas de hoy" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaVentas_Click" />
-                <Button Content="📒 Deudores" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaDeudores_Click" />
-            </WrapPanel>
+            <StackPanel Grid.Row="1" Margin="0,0,0,10">
+                <WrapPanel Margin="0,0,0,6">
+                    <Button Content="📦 Stock bajo" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaStock_Click" />
+                    <Button Content="💰 Ventas de hoy" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaVentas_Click" />
+                    <Button Content="📒 Deudores" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaDeudores_Click" />
+                </WrapPanel>
+
+                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6" Padding="8,6">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,4">
+                            <TextBlock x:Name="TxtCuotaIA" Text="Limite diario estimado: 100% restante" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock x:Name="TxtTokensIA" DockPanel.Dock="Right" HorizontalAlignment="Right" Text="0 tokens hoy" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" />
+                        </DockPanel>
+                        <ProgressBar x:Name="PbCuotaIA" Height="6" Minimum="0" Maximum="100" Value="100"
+                                     Background="{DynamicResource ThemeBorder}" Foreground="#22C55E" BorderThickness="0" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
 
             <Border Grid.Row="2" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="12" SnapsToDevicePixels="True">
                 <ScrollViewer x:Name="ChatScroll" VerticalScrollBarVisibility="Auto" RenderOptions.ClearTypeHint="Enabled">
