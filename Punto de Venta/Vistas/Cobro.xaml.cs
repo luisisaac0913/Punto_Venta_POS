@@ -1860,6 +1860,7 @@ namespace Punto_de_Venta.Vistas
                 var config = AppConfig.Load();
                 TicketService.GuardarCopiaDigital(sale, sale.Productos, 0m, 0m, config);
 
+                PantallaClienteService.MostrarGraciasPorSuCompra(sale.Total, 0m, 0m);
                 LimpiarEventosCarrito();
                 _saleNumber++;
                 RefreshSummary();
@@ -2048,18 +2049,15 @@ namespace Punto_de_Venta.Vistas
             ((TextBlock)FindName("ChangeText")).Text = 0m.ToString("C2", CultureInfo.GetCultureInfo("es-MX"));
             ((Button)FindName("FinalizeButton")).IsEnabled = false;
 
-            if (RbMixto.IsChecked == true)
+            RbEfectivo.IsChecked = true;
+            PaymentMethod_Changed(this, new RoutedEventArgs());
+            Dispatcher.BeginInvoke(new Action(() =>
             {
-                MixedCashBox.Text = "0";
-                MixedCardBox.Text = "0";
-                MixedTransferBox.Text = "0";
-                MixedCashBox.Focus();
-                MixedCashBox.SelectAll();
-            }
-            else
-            {
-                PaymentMethod_Changed(this, new RoutedEventArgs());
-            }
+                if (((Grid)FindName("PaymentOverlay")).Visibility == Visibility.Visible && RbEfectivo.IsChecked == true)
+                {
+                    CashReceivedBox.Focus();
+                }
+            }), DispatcherPriority.Input);
         }
 
         private async void FinalizeButton_Click(object sender, RoutedEventArgs e)
@@ -2182,6 +2180,7 @@ namespace Punto_de_Venta.Vistas
                     }
                 }
 
+                PantallaClienteService.MostrarGraciasPorSuCompra(sale.Total, amountReceived, change);
                 LimpiarEventosCarrito();
                 _saleNumber++;
                 RefreshSummary();
@@ -2564,6 +2563,9 @@ namespace Punto_de_Venta.Vistas
             {
                 promoBlock.Text = resultadoPromo.PromocionesAplicadasCount.ToString(culture);
             }
+
+            string nombreNegocio = AppConfig.Load().NombreNegocio;
+            PantallaClienteService.ActualizarCarrito(Cart, subtotalBruto, resultadoPromo.DescuentoTotal, totalNetoRedondeado, nombreNegocio);
         }
         #endregion
 

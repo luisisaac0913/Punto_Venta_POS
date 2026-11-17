@@ -46,6 +46,8 @@ namespace Punto_de_Venta
         public bool GuiaInicioMostrada { get; set; } = false;
         public string GeminiApiKeyCifrada { get; set; } = string.Empty;
         public string GeminiModelo { get; set; } = "gemini-3.5-flash-lite";
+        public bool SegundaPantallaHabilitada { get; set; } = false;
+        public string SegundaPantallaModo { get; set; } = "CobroCliente";
         public string GeminiProxyUrl { get; set; } = string.Empty;
 
         public string ObtenerGeminiApiKey()

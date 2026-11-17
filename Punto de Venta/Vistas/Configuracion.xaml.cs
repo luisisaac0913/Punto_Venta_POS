@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using Punto_de_Venta.Modelos;
 using Punto_de_Venta.Servicios;
 using Punto_de_Venta.Vistas;
 using System;
@@ -162,6 +163,7 @@ namespace Punto_de_Venta
         {
             _config = AppConfig.Load();
             WhatsAppTemplateBox.Text = _config.MensajeWhatsAppRecordatorio ?? string.Empty;
+            ActualizarVistaPreviaWhatsApp();
 
             _selectedColorHex = _config.ColorAcentoHex ?? "#007AFF";
             CambiarColorAcentoLocally(_selectedColorHex);
@@ -296,6 +298,33 @@ namespace Punto_de_Venta
                 if (GeminiModelCombo.SelectedItem == null && GeminiModelCombo.Items.Count > 0)
                     GeminiModelCombo.SelectedIndex = 0;
             }
+
+            if (ChkSegundaPantalla != null)
+            {
+                ChkSegundaPantalla.IsChecked = _config.SegundaPantallaHabilitada;
+            }
+            if (CmbModoSegundaPantalla != null)
+            {
+                string modoCfg = string.IsNullOrWhiteSpace(_config.SegundaPantallaModo) ? "CobroCliente" : _config.SegundaPantallaModo;
+                foreach (ComboBoxItem item in CmbModoSegundaPantalla.Items)
+                {
+                    if (string.Equals(item.Tag?.ToString(), modoCfg, StringComparison.OrdinalIgnoreCase))
+                    {
+                        CmbModoSegundaPantalla.SelectedItem = item;
+                        break;
+                    }
+                }
+                if (CmbModoSegundaPantalla.SelectedItem == null && CmbModoSegundaPantalla.Items.Count > 0)
+                    CmbModoSegundaPantalla.SelectedIndex = 0;
+            }
+            ActualizarEstadoSegundaPantallaUI();
+            Loaded += (_, _) =>
+            {
+                PantallaClienteService.EstadoCambiado -= OnSegundaPantallaEstadoCambiado;
+                PantallaClienteService.EstadoCambiado += OnSegundaPantallaEstadoCambiado;
+                ActualizarEstadoSegundaPantallaUI();
+            };
+            Unloaded += (_, _) => PantallaClienteService.EstadoCambiado -= OnSegundaPantallaEstadoCambiado;
             foreach (ComboBoxItem item in CmbTiempoReposo.Items)
             {
                 if (item.Tag?.ToString() == _config.PantallaReposoMinutos.ToString())
@@ -509,6 +538,42 @@ namespace Punto_de_Venta
         }
         private void NavSeguridad_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelSeguridad, false);
         private void NavAtajos_Click(object sender, RoutedEventArgs e) => MostrarPanel(PanelAtajos, false);
+        private void BtnInsertarVarWhatsApp_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string variable && WhatsAppTemplateBox != null)
+            {
+                int pos = WhatsAppTemplateBox.CaretIndex;
+                string texto = WhatsAppTemplateBox.Text ?? string.Empty;
+                WhatsAppTemplateBox.Text = texto.Insert(pos, variable);
+                WhatsAppTemplateBox.CaretIndex = pos + variable.Length;
+                WhatsAppTemplateBox.Focus();
+            }
+        }
+
+        private void WhatsAppTemplateBox_TextChanged(object sender, TextChangedEventArgs e) => ActualizarVistaPreviaWhatsApp();
+
+        private void ActualizarVistaPreviaWhatsApp()
+        {
+            if (TxtWhatsAppPreview == null || WhatsAppTemplateBox == null) return;
+            var ejemplo = new Deudor
+            {
+                Nombre = "Juan Perez",
+                Concepto = "Refresco 600ml x2; Papas 45g x1",
+                MontoOriginal = 150m,
+                TotalAbonado = 50m,
+                TieneInteres = true,
+                PorcentajeInteres = 10m,
+                TipoInteres = "PorcentajeSaldo",
+                Abonos = [new Abono { Fecha = DateTime.Today, Monto = 50m }]
+            };
+            var cfgPreview = new AppConfig
+            {
+                NombreNegocio = string.IsNullOrWhiteSpace(BusinessNameBox?.Text) ? "Mi Tienda" : BusinessNameBox.Text.Trim(),
+                MensajeWhatsAppRecordatorio = WhatsAppTemplateBox.Text
+            };
+            TxtWhatsAppPreview.Text = Prestamos.FormatearMensajeWhatsApp(ejemplo, cfgPreview);
+        }
+
         private void NavWhatsApp_Click(object sender, RoutedEventArgs e)
         {
             if (!LicenciaService.EsPremium())
@@ -826,6 +891,27 @@ namespace Punto_de_Venta
         {
         }
 
+        private void OnSegundaPantallaEstadoCambiado()
+        {
+            Dispatcher.InvokeAsync(ActualizarEstadoSegundaPantallaUI);
+        }
+
+        private void BtnAbrirSegundaPantalla_Click(object sender, RoutedEventArgs e)
+        {
+            PantallaClienteService.Alternar(Window.GetWindow(this));
+            ActualizarEstadoSegundaPantallaUI();
+        }
+
+        private void ActualizarEstadoSegundaPantallaUI()
+        {
+            if (TxtEstadoSegundaPantalla == null || BtnAbrirSegundaPantalla == null) return;
+            bool abierta = PantallaClienteService.EstaAbierta;
+            BtnAbrirSegundaPantalla.Content = abierta ? "Cerrar pantalla" : "Probar / Abrir";
+            TxtEstadoSegundaPantalla.Text = abierta
+                ? "Estado: Segunda pantalla abierta y sincronizada con Cobro."
+                : "Estado: Inactiva.";
+        }
+
         private void SaveConfig_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -1007,6 +1093,16 @@ namespace Punto_de_Venta
                     mainWindow.ActualizarNombreNegocioEnUI(_config);
                     mainWindow.ActualizarConfiguracionReposo(_config);
                 }
+
+                if (_config.SegundaPantallaHabilitada)
+                {
+                    PantallaClienteService.Abrir(Window.GetWindow(this));
+                }
+                else
+                {
+                    PantallaClienteService.Cerrar();
+                }
+                ActualizarEstadoSegundaPantallaUI();
                 ToastNotification.Show("Configuracion guardada exitosamente", ToastType.Success);
             }
             catch (Exception ex)
@@ -1044,6 +1140,14 @@ namespace Punto_de_Venta
             if (GeminiModelCombo?.SelectedItem is ComboBoxItem gModel && gModel.Tag != null)
             {
                 _config.GeminiModelo = gModel.Tag.ToString() ?? "gemini-3.5-flash-lite";
+            }
+            if (ChkSegundaPantalla != null)
+            {
+                _config.SegundaPantallaHabilitada = ChkSegundaPantalla.IsChecked == true;
+            }
+            if (CmbModoSegundaPantalla?.SelectedItem is ComboBoxItem modoItem && modoItem.Tag != null)
+            {
+                _config.SegundaPantallaModo = modoItem.Tag.ToString() ?? "CobroCliente";
             }
             _config.Save();
 

@@ -567,16 +567,32 @@
 
                                 <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="8" Padding="14" Margin="0,0,0,12">
                                     <StackPanel>
-                                        <TextBlock Text="{DynamicResource SettingsWhatsAppVars}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,6" />
-                                        <TextBlock Text="{DynamicResource SettingsWhatsAppVar1}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" />
-                                        <TextBlock Text="{DynamicResource SettingsWhatsAppVar2}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" />
-                                        <TextBlock Text="{DynamicResource SettingsWhatsAppVar3}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" />
-                                        <TextBlock Text="{DynamicResource SettingsWhatsAppVar4}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" />
+                                        <TextBlock Text="Variables disponibles (haz clic para insertar):" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,8" />
+                                        <WrapPanel Margin="0,0,0,4">
+                                            <Button Content="{}{CLIENTE}" Tag="{}{CLIENTE}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Nombre del cliente" />
+                                            <Button Content="{}{SALDO}" Tag="{}{SALDO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Saldo pendiente total" />
+                                            <Button Content="{}{LISTA}" Tag="{}{LISTA}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Lista de productos o conceptos con vinetas" />
+                                            <Button Content="{}{CONCEPTO}" Tag="{}{CONCEPTO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Concepto en una linea" />
+                                            <Button Content="{}{NEGOCIO}" Tag="{}{NEGOCIO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Nombre de tu tienda" />
+                                            <Button Content="{}{FECHA}" Tag="{}{FECHA}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Fecha actual" />
+                                            <Button Content="{}{HORA}" Tag="{}{HORA}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Hora actual" />
+                                            <Button Content="{}{ORIGINAL}" Tag="{}{ORIGINAL}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Deuda original" />
+                                            <Button Content="{}{ABONADO}" Tag="{}{ABONADO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Total abonado" />
+                                            <Button Content="{}{INTERES}" Tag="{}{INTERES}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Interes acumulado" />
+                                            <Button Content="{}{ULTIMO_ABONO}" Tag="{}{ULTIMO_ABONO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Fecha y monto del ultimo abono" />
+                                        </WrapPanel>
                                     </StackPanel>
                                 </Border>
 
                                 <TextBlock Text="{DynamicResource SettingsWhatsAppTemplate}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                                <TextBox x:Name="WhatsAppTemplateBox" Style="{StaticResource FormTextBoxStyle}" Height="90" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" Padding="10,6" Margin="0,0,0,14" />
+                                <TextBox x:Name="WhatsAppTemplateBox" Style="{StaticResource FormTextBoxStyle}" Height="100" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top" Padding="10,6" Margin="0,0,0,10" TextChanged="WhatsAppTemplateBox_TextChanged" />
+
+                                <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="12">
+                                    <StackPanel>
+                                        <TextBlock Text="Vista previa del mensaje" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
+                                        <TextBlock x:Name="TxtWhatsAppPreview" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
 
                             <StackPanel x:Name="PanelSeguridad" Visibility="Collapsed">
@@ -860,6 +876,12 @@
                                                 <TextBlock Text="Esc" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                             </Border>
                                         </Grid>
+                                        <Grid Margin="0,5,0,3">
+                                            <TextBlock Text="{DynamicResource SettingsScOpenAI}" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
+                                            <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="8,3" HorizontalAlignment="Right">
+                                                <TextBlock Text="F12" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            </Border>
+                                        </Grid>
                                     </StackPanel>
                                 </Border>
 
@@ -914,6 +936,12 @@
                                                 <TextBlock Text="8" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                             </Border>
                                         </Grid>
+                                        <Grid Margin="0,5,0,3">
+                                            <TextBlock Text="{DynamicResource SettingsScOpenNotebook}" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
+                                            <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="8,3" HorizontalAlignment="Right">
+                                                <TextBlock Text="9" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            </Border>
+                                        </Grid>
                                     </StackPanel>
                                 </Border>
 
@@ -948,6 +976,12 @@
                                             <TextBlock Text="{DynamicResource SettingsScRemoveCart}" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
                                             <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="8,3" HorizontalAlignment="Right">
                                                 <TextBlock Text="Supr" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            </Border>
+                                        </Grid>
+                                        <Grid Margin="0,5,0,3">
+                                            <TextBlock Text="{DynamicResource SettingsScHoldSale}" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
+                                            <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="8,3" HorizontalAlignment="Right">
+                                                <TextBlock Text="F2" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                             </Border>
                                         </Grid>
                                         <Grid Margin="0,5,0,3">
@@ -1043,7 +1077,7 @@
                                         <Grid Margin="0,3">
                                             <TextBlock Text="{DynamicResource SettingsScFocusCode}" FontSize="13" Foreground="{DynamicResource ThemeTextForeground}" VerticalAlignment="Center" />
                                             <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="8,3" HorizontalAlignment="Right">
-                                                <TextBlock Text="Ctrl + F" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                                <TextBlock Text="Ctrl + F  /  Shift + F" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" />
                                             </Border>
                                         </Grid>
                                         <Grid Margin="0,5,0,3">
@@ -1345,6 +1379,33 @@
                                                 </ComboBox>
                                             </StackPanel>
                                         </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,12,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Segunda pantalla" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                                        <TextBlock Text="Muestra informacion en un monitor secundario para tus clientes. Proximamente incluira modos adicionales ademas de Cobro." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                                        <CheckBox x:Name="ChkSegundaPantalla" Content="Activar segunda pantalla automaticamente" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10" />
+
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="10" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Contenido a mostrar" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
+                                                <ComboBox x:Name="CmbModoSegundaPantalla" Height="34" VerticalContentAlignment="Center" SelectedIndex="0">
+                                                    <ComboBoxItem Content="Cobro / Carrito para el cliente" Tag="CobroCliente" />
+                                                </ComboBox>
+                                            </StackPanel>
+                                            <Button x:Name="BtnAbrirSegundaPantalla" Grid.Column="2" Content="Probar / Abrir" Height="34" Padding="14,0" VerticalAlignment="Bottom"
+                                                    Style="{StaticResource FluentButtonSecondary}" Click="BtnAbrirSegundaPantalla_Click" />
+                                        </Grid>
+
+                                        <TextBlock x:Name="TxtEstadoSegundaPantalla" Text="" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" />
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

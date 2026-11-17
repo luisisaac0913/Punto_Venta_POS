@@ -589,14 +589,7 @@ namespace Punto_de_Venta
                 return;
             }
             var config = AppConfig.Load();
-            var plantilla = !string.IsNullOrWhiteSpace(config.MensajeWhatsAppRecordatorio)
-                ? config.MensajeWhatsAppRecordatorio
-                : "Hola {CLIENTE}, te recordamos de {NEGOCIO} que tienes un saldo pendiente de {SALDO} por concepto de: {CONCEPTO}. ¡Agradecemos tu pronto pago!";
-            var mensaje = plantilla
-                .Replace("{CLIENTE}", _selectedDebtor.Nombre)
-                .Replace("{SALDO}", _selectedDebtor.SaldoRestante.ToString("C2", CultureInfo.GetCultureInfo("es-MX")))
-                .Replace("{CONCEPTO}", _selectedDebtor.Concepto)
-                .Replace("{NEGOCIO}", config.NombreNegocio);
+            var mensaje = FormatearMensajeWhatsApp(_selectedDebtor, config);
             var url = $"https://web.whatsapp.com/send?phone={digitos}&text={Uri.EscapeDataString(mensaje)}";
             try
             {
@@ -611,6 +604,40 @@ namespace Punto_de_Venta
             {
                 ToastNotification.Show($"No se pudo abrir el navegador: {ex.Message}", ToastType.Error);
             }
+        }
+        public static string FormatearMensajeWhatsApp(Deudor deudor, AppConfig config)
+        {
+            var culture = CultureInfo.GetCultureInfo("es-MX");
+            string plantilla = !string.IsNullOrWhiteSpace(config.MensajeWhatsAppRecordatorio)
+                ? config.MensajeWhatsAppRecordatorio
+                : "Hola {CLIENTE}, te recordamos de {NEGOCIO} que tienes un saldo pendiente de {SALDO} por concepto de: {CONCEPTO}. ¡Agradecemos tu pronto pago!";
+
+            var items = (deudor.Concepto ?? string.Empty)
+                .Split(new[] { ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .Where(x => x.Length > 0)
+                .ToList();
+
+            string lista = items.Count > 0
+                ? string.Join("\n", items.Select(i => $"• {i}"))
+                : "• Sin detalle registrado";
+
+            string ultimoAbono = deudor.Abonos != null && deudor.Abonos.Count > 0
+                ? $"{deudor.Abonos[0].Monto.ToString("C2", culture)} ({deudor.Abonos[0].Fecha:dd/MM/yyyy})"
+                : "Sin abonos aun";
+
+            return plantilla
+                .Replace("{CLIENTE}", deudor.Nombre ?? string.Empty)
+                .Replace("{NEGOCIO}", config.NombreNegocio ?? string.Empty)
+                .Replace("{SALDO}", deudor.SaldoRestante.ToString("C2", culture))
+                .Replace("{CONCEPTO}", deudor.Concepto ?? string.Empty)
+                .Replace("{LISTA}", lista)
+                .Replace("{FECHA}", DateTime.Now.ToString("dd/MM/yyyy", culture))
+                .Replace("{HORA}", DateTime.Now.ToString("hh:mm tt", culture))
+                .Replace("{ORIGINAL}", deudor.MontoOriginal.ToString("C2", culture))
+                .Replace("{ABONADO}", deudor.TotalAbonado.ToString("C2", culture))
+                .Replace("{INTERES}", deudor.InteresCalculado.ToString("C2", culture))
+                .Replace("{ULTIMO_ABONO}", ultimoAbono);
         }
         #endregion
 
