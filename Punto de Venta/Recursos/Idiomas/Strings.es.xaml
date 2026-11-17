@@ -530,6 +530,7 @@
     <sys:String x:Key="SettingsScGeneralHeader">GENERAL (TODAS LAS VISTAS)</sys:String>
     <sys:String x:Key="SettingsScClearSel">Limpiar seleccion de la vista actual</sys:String>
     <sys:String x:Key="SettingsScEscBack">Cerrar ventana emergente / Regresar al menu</sys:String>
+    <sys:String x:Key="SettingsScOpenAI">Abrir Asistente IA</sys:String>
     <sys:String x:Key="SettingsScMainMenuHeader">MENU PRINCIPAL</sys:String>
     <sys:String x:Key="SettingsScOpenCharge">Abrir Cobro</sys:String>
     <sys:String x:Key="SettingsScOpenSales">Abrir Ventas</sys:String>
@@ -539,12 +540,14 @@
     <sys:String x:Key="SettingsScOpenConfig">Abrir Configuracion</sys:String>
     <sys:String x:Key="SettingsScExportReports">Exportar reportes</sys:String>
     <sys:String x:Key="SettingsScOpenPromos">Abrir Promociones</sys:String>
+    <sys:String x:Key="SettingsScOpenNotebook">Abrir Libreta</sys:String>
     <sys:String x:Key="SettingsScChargeHeader">PANTALLA DE COBRO</sys:String>
     <sys:String x:Key="SettingsScSearchProd">Buscar producto en caja</sys:String>
     <sys:String x:Key="SettingsScAddProd">Agregar producto / Seleccionar sugerencia</sys:String>
     <sys:String x:Key="SettingsScNavSuggest">Navegar lista de sugerencias</sys:String>
     <sys:String x:Key="SettingsScOpenPay">Abrir ventana de cobro / liquidar</sys:String>
     <sys:String x:Key="SettingsScRemoveCart">Quitar producto seleccionado del carrito</sys:String>
+    <sys:String x:Key="SettingsScHoldSale">Pausar venta actual / Ver ventas en espera</sys:String>
     <sys:String x:Key="SettingsScCashMove">Movimientos de caja (Entradas / Gastos / Fondo)</sys:String>
     <sys:String x:Key="SettingsScOpenDrawer">Abrir cajon de dinero manualmente</sys:String>
     <sys:String x:Key="SettingsScWeighScale">Abrir modal de pesaje en bascula</sys:String>

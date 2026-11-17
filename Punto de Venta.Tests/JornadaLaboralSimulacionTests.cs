@@ -589,6 +589,30 @@ namespace Punto_de_Venta.Tests
             var restaurado = ProductoDB.Load();
             Assert.Equal(4, restaurado.Count);
             Assert.DoesNotContain(restaurado, p => p.Codigo == "999");
+
+            // Verificar variables extendidas de plantilla WhatsApp ({LISTA}, {FECHA}, {ORIGINAL}, {ABONADO}, {INTERES}, {ULTIMO_ABONO})
+            var deudorWa = new Deudor
+            {
+                Nombre = "Maria Lopez",
+                Concepto = "Leche 1L x2; Pan Bimbo",
+                MontoOriginal = 200m,
+                TotalAbonado = 50m,
+                TieneInteres = true,
+                PorcentajeInteres = 10m,
+                TipoInteres = "PorcentajeSaldo",
+                Abonos = [new Abono { Fecha = new DateTime(2026, 11, 10), Monto = 50m }]
+            };
+            var cfgWa = new AppConfig
+            {
+                NombreNegocio = "Mi Tiendita",
+                MensajeWhatsAppRecordatorio = "{NEGOCIO} - {CLIENTE} ({FECHA})\n{LISTA}\nOrig:{ORIGINAL} Abon:{ABONADO} Int:{INTERES} Saldo:{SALDO}\nUlt:{ULTIMO_ABONO}"
+            };
+            string msgWa = Punto_de_Venta.Prestamos.FormatearMensajeWhatsApp(deudorWa, cfgWa);
+            Assert.Contains("• Leche 1L x2", msgWa);
+            Assert.Contains("• Pan Bimbo", msgWa);
+            Assert.Contains("Maria Lopez", msgWa);
+            Assert.Contains("Mi Tiendita", msgWa);
+            Assert.Contains("10/11/2026", msgWa);
         }
 
         public void Dispose()

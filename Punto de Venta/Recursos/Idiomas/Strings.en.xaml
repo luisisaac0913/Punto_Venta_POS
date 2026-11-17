@@ -530,6 +530,7 @@
     <sys:String x:Key="SettingsScGeneralHeader">GENERAL (ALL VIEWS)</sys:String>
     <sys:String x:Key="SettingsScClearSel">Clear selection in current view</sys:String>
     <sys:String x:Key="SettingsScEscBack">Close popup / Return to menu</sys:String>
+    <sys:String x:Key="SettingsScOpenAI">Open AI Assistant</sys:String>
     <sys:String x:Key="SettingsScMainMenuHeader">MAIN MENU</sys:String>
     <sys:String x:Key="SettingsScOpenCharge">Open Checkout</sys:String>
     <sys:String x:Key="SettingsScOpenSales">Open Sales</sys:String>
@@ -539,12 +540,14 @@
     <sys:String x:Key="SettingsScOpenConfig">Open Settings</sys:String>
     <sys:String x:Key="SettingsScExportReports">Export reports</sys:String>
     <sys:String x:Key="SettingsScOpenPromos">Open Promotions</sys:String>
+    <sys:String x:Key="SettingsScOpenNotebook">Open Notebook</sys:String>
     <sys:String x:Key="SettingsScChargeHeader">CHECKOUT SCREEN</sys:String>
     <sys:String x:Key="SettingsScSearchProd">Search product at checkout</sys:String>
     <sys:String x:Key="SettingsScAddProd">Add product / Select suggestion</sys:String>
     <sys:String x:Key="SettingsScNavSuggest">Navigate suggestions list</sys:String>
     <sys:String x:Key="SettingsScOpenPay">Open payment / settle window</sys:String>
     <sys:String x:Key="SettingsScRemoveCart">Remove selected product from cart</sys:String>
+    <sys:String x:Key="SettingsScHoldSale">Hold current sale / View held sales</sys:String>
     <sys:String x:Key="SettingsScCashMove">Cash movements (Inflows / Expenses / Fund)</sys:String>
     <sys:String x:Key="SettingsScOpenDrawer">Open cash drawer manually</sys:String>
     <sys:String x:Key="SettingsScWeighScale">Open scale weighing modal</sys:String>

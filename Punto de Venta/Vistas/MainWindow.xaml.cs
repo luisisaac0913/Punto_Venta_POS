@@ -143,6 +143,7 @@ namespace Punto_de_Venta
 
         private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
+            PantallaClienteService.Cerrar();
             if (_backupCierreCompletado)
             {
                 return;
@@ -235,6 +236,10 @@ namespace Punto_de_Venta
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             VerificarTurnoPendienteDeDiasAnteriores();
+            if (AppConfig.Load().SegundaPantallaHabilitada)
+            {
+                PantallaClienteService.Abrir(this);
+            }
             MostrarGuiaPrimeraVez();
         }
 
