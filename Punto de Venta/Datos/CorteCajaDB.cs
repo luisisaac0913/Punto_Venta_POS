@@ -16,7 +16,7 @@ namespace Punto_de_Venta.Datos
             TurnoCajaManager.ValidarEsquemaBD(conn);
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT Id, FechaHora, FondoInicial, VentasEfectivo, EntradasEfectivo, SalidasEfectivo, TotalEsperado, TotalContado, Observaciones, COALESCE(Estado, 'Cerrado'), FechaHoraCierre 
+                SELECT Id, FechaHora, FondoInicial, VentasEfectivo, EntradasEfectivo, SalidasEfectivo, TotalEsperado, TotalContado, Observaciones, COALESCE(Estado, 'Cerrado'), FechaHoraCierre, COALESCE(VentasTarjeta, 0), COALESCE(VentasTransferencia, 0) 
                 FROM CortesCaja 
                 ORDER BY Id ASC;";
             using var reader = cmd.ExecuteReader();
@@ -33,6 +33,8 @@ namespace Punto_de_Venta.Datos
                 var notas = reader.IsDBNull(8) ? string.Empty : reader.GetString(8);
                 var estado = reader.IsDBNull(9) ? "Cerrado" : reader.GetString(9);
                 var fechaCierreStr = reader.IsDBNull(10) ? null : reader.GetString(10);
+                var ventasTarjeta = reader.IsDBNull(11) ? 0m : Convert.ToDecimal(reader.GetDouble(11));
+                var ventasTransferencia = reader.IsDBNull(12) ? 0m : Convert.ToDecimal(reader.GetDouble(12));
 
                 if (!DateTime.TryParse(fechaStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fecha))
                 {
@@ -53,6 +55,8 @@ namespace Punto_de_Venta.Datos
                     Estado = estado,
                     FondoInicial = fondo,
                     VentasEfectivo = ventas,
+                    VentasTarjeta = ventasTarjeta,
+                    VentasTransferencia = ventasTransferencia,
                     EntradasEfectivo = entradas,
                     SalidasEfectivo = salidas,
                     TotalEsperado = esperado,
@@ -76,7 +80,7 @@ namespace Punto_de_Venta.Datos
             TurnoCajaManager.ValidarEsquemaBD(conn);
             using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT Id, FechaHora, FondoInicial, VentasEfectivo, EntradasEfectivo, SalidasEfectivo, TotalEsperado, TotalContado, Observaciones, COALESCE(Estado, 'Cerrado'), FechaHoraCierre 
+                SELECT Id, FechaHora, FondoInicial, VentasEfectivo, EntradasEfectivo, SalidasEfectivo, TotalEsperado, TotalContado, Observaciones, COALESCE(Estado, 'Cerrado'), FechaHoraCierre, COALESCE(VentasTarjeta, 0), COALESCE(VentasTransferencia, 0) 
                 FROM CortesCaja 
                 WHERE (FechaHora >= @inicioIso AND FechaHora < @finIso)
                    OR Estado = 'Abierto'
@@ -111,6 +115,8 @@ namespace Punto_de_Venta.Datos
                 var contado = Convert.ToDecimal(reader.GetDouble(7));
                 var notas = reader.IsDBNull(8) ? string.Empty : reader.GetString(8);
                 var fechaCierreStr = reader.IsDBNull(10) ? null : reader.GetString(10);
+                var ventasTarjeta = reader.IsDBNull(11) ? 0m : Convert.ToDecimal(reader.GetDouble(11));
+                var ventasTransferencia = reader.IsDBNull(12) ? 0m : Convert.ToDecimal(reader.GetDouble(12));
 
                 DateTime? fechaCierre = null;
                 if (!string.IsNullOrEmpty(fechaCierreStr) && DateTime.TryParse(fechaCierreStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fCierre))
@@ -126,6 +132,8 @@ namespace Punto_de_Venta.Datos
                     Estado = estado,
                     FondoInicial = fondo,
                     VentasEfectivo = ventas,
+                    VentasTarjeta = ventasTarjeta,
+                    VentasTransferencia = ventasTransferencia,
                     EntradasEfectivo = entradas,
                     SalidasEfectivo = salidas,
                     TotalEsperado = esperado,
@@ -148,14 +156,16 @@ namespace Punto_de_Venta.Datos
                 using var insertCmd = conn.CreateCommand();
                 insertCmd.Transaction = tr;
                 insertCmd.CommandText = @"
-                    INSERT INTO CortesCaja (Id, FechaHora, FechaHoraCierre, Estado, FondoInicial, VentasEfectivo, EntradasEfectivo, SalidasEfectivo, TotalEsperado, TotalContado, Observaciones)
-                    VALUES (@id, @fecha, @fechaCierre, @estado, @fondo, @ventas, @entradas, @salidas, @esperado, @contado, @obs)
+                    INSERT INTO CortesCaja (Id, FechaHora, FechaHoraCierre, Estado, FondoInicial, VentasEfectivo, VentasTarjeta, VentasTransferencia, EntradasEfectivo, SalidasEfectivo, TotalEsperado, TotalContado, Observaciones)
+                    VALUES (@id, @fecha, @fechaCierre, @estado, @fondo, @ventas, @ventasTarj, @ventasTransf, @entradas, @salidas, @esperado, @contado, @obs)
                     ON CONFLICT(Id) DO UPDATE SET
                         FechaHora = excluded.FechaHora,
                         FechaHoraCierre = COALESCE(excluded.FechaHoraCierre, CortesCaja.FechaHoraCierre),
                         Estado = COALESCE(excluded.Estado, CortesCaja.Estado),
                         FondoInicial = excluded.FondoInicial,
                         VentasEfectivo = excluded.VentasEfectivo,
+                        VentasTarjeta = excluded.VentasTarjeta,
+                        VentasTransferencia = excluded.VentasTransferencia,
                         EntradasEfectivo = excluded.EntradasEfectivo,
                         SalidasEfectivo = excluded.SalidasEfectivo,
                         TotalEsperado = excluded.TotalEsperado,
@@ -168,6 +178,8 @@ namespace Punto_de_Venta.Datos
                 var pEstado = insertCmd.Parameters.Add("@estado", SqliteType.Text);
                 var pFondo = insertCmd.Parameters.Add("@fondo", SqliteType.Real);
                 var pVentas = insertCmd.Parameters.Add("@ventas", SqliteType.Real);
+                var pVentasTarj = insertCmd.Parameters.Add("@ventasTarj", SqliteType.Real);
+                var pVentasTransf = insertCmd.Parameters.Add("@ventasTransf", SqliteType.Real);
                 var pEntradas = insertCmd.Parameters.Add("@entradas", SqliteType.Real);
                 var pSalidas = insertCmd.Parameters.Add("@salidas", SqliteType.Real);
                 var pEsperado = insertCmd.Parameters.Add("@esperado", SqliteType.Real);
@@ -184,6 +196,8 @@ namespace Punto_de_Venta.Datos
                     pEstado.Value = string.IsNullOrWhiteSpace(c.Estado) ? "Cerrado" : c.Estado;
                     pFondo.Value = Convert.ToDouble(c.FondoInicial);
                     pVentas.Value = Convert.ToDouble(c.VentasEfectivo);
+                    pVentasTarj.Value = Convert.ToDouble(c.VentasTarjeta);
+                    pVentasTransf.Value = Convert.ToDouble(c.VentasTransferencia);
                     pEntradas.Value = Convert.ToDouble(c.EntradasEfectivo);
                     pSalidas.Value = Convert.ToDouble(c.SalidasEfectivo);
                     pEsperado.Value = Convert.ToDouble(c.TotalEsperado);

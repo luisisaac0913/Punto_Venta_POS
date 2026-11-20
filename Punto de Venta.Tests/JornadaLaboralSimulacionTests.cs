@@ -615,6 +615,115 @@ namespace Punto_de_Venta.Tests
             Assert.Contains("10/11/2026", msgWa);
         }
 
+        [Fact]
+        public void LimiteCreditoDeudor_SeCalculaYPersisteCorrectamente()
+        {
+            var sinLimite = new Deudor
+            {
+                Nombre = "Cliente Sin Limite",
+                MontoOriginal = 200m,
+                LimiteCredito = 0m
+            };
+            Assert.False(sinLimite.TieneLimiteCredito);
+            Assert.False(sinLimite.ExcederiaLimite(10000m));
+
+            var conLimite = new Deudor
+            {
+                Id = 0,
+                Nombre = "Carlos Ruiz",
+                Concepto = "Abarrotes",
+                MontoOriginal = 200m,
+                TotalAbonado = 50m,
+                LimiteCredito = 500m
+            };
+            Assert.True(conLimite.TieneLimiteCredito);
+            Assert.Equal(150m, conLimite.SaldoRestante);
+            Assert.Equal(350m, conLimite.CreditoDisponible);
+            Assert.False(conLimite.ExcederiaLimite(350m));
+            Assert.True(conLimite.ExcederiaLimite(351m));
+
+            PrestamoDB.Save([conLimite]);
+            var cargados = PrestamoDB.Load();
+            var carlosDb = Assert.Single(cargados, d => d.Nombre == "Carlos Ruiz");
+            Assert.Equal(500m, carlosDb.LimiteCredito);
+            Assert.Equal(350m, carlosDb.CreditoDisponible);
+        }
+
+        [Fact]
+        public void ProductosRapidos_ValidacionTeclasYPersistenciaConfig()
+        {
+            Assert.Equal("Ctrl+1", Punto_de_Venta.Vistas.Cobro.FormatearAtajoTecla(System.Windows.Input.Key.D1, System.Windows.Input.ModifierKeys.Control));
+            Assert.Equal("F3", Punto_de_Venta.Vistas.Cobro.FormatearAtajoTecla(System.Windows.Input.Key.F3, System.Windows.Input.ModifierKeys.None));
+            Assert.Equal("Alt+P", Punto_de_Venta.Vistas.Cobro.FormatearAtajoTecla(System.Windows.Input.Key.P, System.Windows.Input.ModifierKeys.Alt));
+
+            Assert.True(Punto_de_Venta.Vistas.Cobro.EsAtajoValidoParaProductoRapido("F3", out _));
+            Assert.True(Punto_de_Venta.Vistas.Cobro.EsAtajoValidoParaProductoRapido("Ctrl+1", out _));
+            Assert.True(Punto_de_Venta.Vistas.Cobro.EsAtajoValidoParaProductoRapido("Alt+P", out _));
+
+            Assert.False(Punto_de_Venta.Vistas.Cobro.EsAtajoValidoParaProductoRapido("F2", out _));
+            Assert.False(Punto_de_Venta.Vistas.Cobro.EsAtajoValidoParaProductoRapido("F5", out _));
+            Assert.False(Punto_de_Venta.Vistas.Cobro.EsAtajoValidoParaProductoRapido("Enter", out _));
+            Assert.False(Punto_de_Venta.Vistas.Cobro.EsAtajoValidoParaProductoRapido("Shift+Enter", out _));
+            Assert.False(Punto_de_Venta.Vistas.Cobro.EsAtajoValidoParaProductoRapido("A", out _));
+            Assert.False(Punto_de_Venta.Vistas.Cobro.EsAtajoValidoParaProductoRapido("1", out _));
+
+            AppConfig.InvalidarCache();
+            var cfg = AppConfig.Load(forzarLectura: true);
+            cfg.ProductosRapidos =
+            [
+                new ProductoRapidoConfig
+                {
+                    ProductoId = 42,
+                    NombreProducto = "Pan Frances",
+                    Tecla = "Ctrl+1",
+                    Cantidad = 2m
+                }
+            ];
+            cfg.Save();
+
+            AppConfig.InvalidarCache();
+            var recargado = AppConfig.Load(forzarLectura: true);
+            var rapido = Assert.Single(recargado.ProductosRapidos);
+            Assert.Equal(42, rapido.ProductoId);
+            Assert.Equal("Pan Frances", rapido.NombreProducto);
+            Assert.Equal("Ctrl+1", rapido.Tecla);
+            Assert.Equal(2m, rapido.Cantidad);
+        }
+
+        [Fact]
+        public void CorteDeCaja_CalculaYPersisteVentasTarjetaYTransferencia()
+        {
+            var ventasPrueba = new List<Venta>
+            {
+                new() { Total = 100m, MetodoPago = "Efectivo", PagoEfectivo = 100m },
+                new() { Total = 250m, MetodoPago = "Tarjeta", PagoTarjeta = 250m },
+                new() { Total = 180m, MetodoPago = "Transferencia", PagoTransferencia = 180m },
+                new() { Total = 150m, MetodoPago = "Mixto", PagoCon = 200m, PagoEfectivo = 100m, PagoTarjeta = 60m, PagoTransferencia = 40m }
+            };
+
+            var (efectivo, tarjeta, transferencia) = TurnoCajaManager.CalcularTotalesVentasTurno(ventasPrueba);
+            Assert.Equal(150m, efectivo);
+            Assert.Equal(310m, tarjeta);
+            Assert.Equal(220m, transferencia);
+
+            var turno = TurnoCajaManager.AbrirTurno(500m, "Apertura test");
+            foreach (var v in ventasPrueba)
+            {
+                v.Id = VentaDB.ObtenerSiguienteId();
+                v.Estado = "Abierta";
+                v.CorteCajaId = turno.Id;
+                v.Productos = [];
+                VentaDB.RegistrarVentaConStock(v, []);
+            }
+
+            TurnoCajaManager.CerrarTurno(turno, 650m, "Exacto", efectivo);
+            var corteCerrado = Assert.Single(CorteCajaDB.Load(), c => c.Id == turno.Id);
+            Assert.Equal(150m, corteCerrado.VentasEfectivo);
+            Assert.Equal(310m, corteCerrado.VentasTarjeta);
+            Assert.Equal(220m, corteCerrado.VentasTransferencia);
+            Assert.Equal(650m, corteCerrado.TotalEsperado);
+        }
+
         public void Dispose()
         {
             SqliteConnection.ClearAllPools();

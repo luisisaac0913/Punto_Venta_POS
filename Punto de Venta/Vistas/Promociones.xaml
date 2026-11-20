@@ -7,7 +7,9 @@
              IsVisibleChanged="UserControl_IsVisibleChanged"
              PreviewKeyDown="UserControl_PreviewKeyDown"
              UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Display">
+             SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
 
     <UserControl.Resources>
         <Style TargetType="DataGrid">

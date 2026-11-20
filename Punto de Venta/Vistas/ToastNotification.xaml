@@ -9,18 +9,24 @@
         SizeToContent="WidthAndHeight"
         Focusable="False"
         IsHitTestVisible="False"
-        WindowStartupLocation="Manual">
-    <Border x:Name="ToastContainer" 
-            CornerRadius="8" 
-            Padding="16,10" 
-            Margin="12" 
-            BorderThickness="1" 
-            Background="{DynamicResource ThemeSurfaceBackground}" 
-            BorderBrush="{DynamicResource ThemeBorder}">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.15" />
-        </Border.Effect>
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        WindowStartupLocation="Manual"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+    <Grid Margin="12">
+        <Border x:Name="ToastContainer" 
+                CornerRadius="8" 
+                BorderThickness="1" 
+                Background="{DynamicResource ThemeSurfaceBackground}" 
+                BorderBrush="{DynamicResource ThemeBorder}"
+                IsHitTestVisible="False">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="8" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.15" />
+            </Border.Effect>
+        </Border>
+        <Border Padding="16,10" CornerRadius="8">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
             <TextBlock x:Name="IconText" 
                        Text="✓" 
                        FontSize="14" 
@@ -37,5 +43,6 @@
                        TextWrapping="Wrap" 
                        MaxWidth="520" />
         </StackPanel>
-    </Border>
+        </Border>
+    </Grid>
 </Window>

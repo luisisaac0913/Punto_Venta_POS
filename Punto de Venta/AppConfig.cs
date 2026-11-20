@@ -9,6 +9,14 @@ using System.Text.Json;
 
 namespace Punto_de_Venta
 {
+    public class ProductoRapidoConfig
+    {
+        public int ProductoId { get; set; }
+        public string NombreProducto { get; set; } = string.Empty;
+        public string Tecla { get; set; } = string.Empty;
+        public decimal Cantidad { get; set; } = 1m;
+    }
+
     public class AppConfig
     {
         public bool PantallaReposoHabilitada { get; set; } = true;
@@ -49,6 +57,7 @@ namespace Punto_de_Venta
         public bool SegundaPantallaHabilitada { get; set; } = false;
         public string SegundaPantallaModo { get; set; } = "CobroCliente";
         public string GeminiProxyUrl { get; set; } = string.Empty;
+        public System.Collections.Generic.List<ProductoRapidoConfig> ProductosRapidos { get; set; } = [];
 
         public string ObtenerGeminiApiKey()
         {

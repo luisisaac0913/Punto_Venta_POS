@@ -10,6 +10,10 @@
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
         PreviewKeyDown="Window_PreviewKeyDown"
         Loaded="Window_Loaded">
 
@@ -18,13 +22,10 @@
     </Window.Resources>
 
     <Border x:Name="ModalRootBorder"
-            Background="{DynamicResource ThemeSurfaceBackground}" 
+            Background="Transparent" 
             CornerRadius="8" 
-            BorderBrush="{DynamicResource ThemeBorder}" 
-            BorderThickness="1" 
             Margin="10"
             Opacity="0"
-            Effect="{StaticResource FluentModalShadow}"
             RenderTransformOrigin="0.5,0.5">
         <Border.RenderTransform>
             <ScaleTransform x:Name="ModalScaleTransform" ScaleX="1.0" ScaleY="1.0" />
@@ -43,7 +44,9 @@
             </EventTrigger>
         </Border.Triggers>
 
-        <Grid Margin="24">
+        <Grid>
+            <Border Background="{DynamicResource ThemeSurfaceBackground}" CornerRadius="8" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Effect="{StaticResource FluentModalShadow}" IsHitTestVisible="False" />
+            <Grid Margin="24">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -153,6 +156,7 @@
                     </Button.Template>
                 </Button>
             </Grid>
+        </Grid>
         </Grid>
     </Border>
 </Window>

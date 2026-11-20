@@ -15,7 +15,7 @@ namespace Punto_de_Venta.Datos
             using var conn = DatabaseHelper.GetConnection();
             using (var cmd = conn.CreateCommand())
             {
-                cmd.CommandText = "SELECT Id, Nombre, Telefono, Concepto, MontoOriginal, TotalAbonado, COALESCE(TieneInteres, 0), COALESCE(PorcentajeInteres, 0), COALESCE(TipoInteres, 'PorcentajeSaldo'), COALESCE(FrecuenciaInteres, 'Unico'), FechaInicioInteres, COALESCE(InteresAcumulado, 0) FROM Deudores ORDER BY Id ASC;";
+                cmd.CommandText = "SELECT Id, Nombre, Telefono, Concepto, MontoOriginal, TotalAbonado, COALESCE(TieneInteres, 0), COALESCE(PorcentajeInteres, 0), COALESCE(TipoInteres, 'PorcentajeSaldo'), COALESCE(FrecuenciaInteres, 'Unico'), FechaInicioInteres, COALESCE(InteresAcumulado, 0), COALESCE(LimiteCredito, 0) FROM Deudores ORDER BY Id ASC;";
                 using var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
@@ -35,6 +35,7 @@ namespace Punto_de_Venta.Datos
                         fechaInicio = DateTime.Now;
                     }
                     var interesAcumulado = reader.IsDBNull(11) ? 0m : Convert.ToDecimal(reader.GetDouble(11));
+                    var limiteCredito = reader.IsDBNull(12) ? 0m : Convert.ToDecimal(reader.GetDouble(12));
 
                     deudores[id] = new Deudor
                     {
@@ -50,6 +51,7 @@ namespace Punto_de_Venta.Datos
                         FrecuenciaInteres = frecInteres,
                         FechaInicioInteres = fechaInicio,
                         InteresAcumulado = interesAcumulado,
+                        LimiteCredito = limiteCredito,
                         Abonos = []
                     };
                 }
@@ -149,8 +151,8 @@ namespace Punto_de_Venta.Datos
             using var insertDeudor = conn.CreateCommand();
             insertDeudor.Transaction = tr;
             insertDeudor.CommandText = @"
-                INSERT INTO Deudores (Id, Nombre, Telefono, Concepto, MontoOriginal, TotalAbonado, TieneInteres, PorcentajeInteres, TipoInteres, FrecuenciaInteres, FechaInicioInteres, InteresAcumulado)
-                VALUES (@id, @nom, @tel, @con, @monto, @abonado, @tieneInt, @pctInt, @tipoInt, @frecInt, @fechaInt, @intAcum)
+                INSERT INTO Deudores (Id, Nombre, Telefono, Concepto, MontoOriginal, TotalAbonado, TieneInteres, PorcentajeInteres, TipoInteres, FrecuenciaInteres, FechaInicioInteres, InteresAcumulado, LimiteCredito)
+                VALUES (@id, @nom, @tel, @con, @monto, @abonado, @tieneInt, @pctInt, @tipoInt, @frecInt, @fechaInt, @intAcum, @limiteCredito)
                 ON CONFLICT(Id) DO UPDATE SET 
                     Nombre = excluded.Nombre,
                     Telefono = excluded.Telefono,
@@ -162,7 +164,8 @@ namespace Punto_de_Venta.Datos
                     TipoInteres = excluded.TipoInteres,
                     FrecuenciaInteres = excluded.FrecuenciaInteres,
                     FechaInicioInteres = excluded.FechaInicioInteres,
-                    InteresAcumulado = excluded.InteresAcumulado;";
+                    InteresAcumulado = excluded.InteresAcumulado,
+                    LimiteCredito = excluded.LimiteCredito;";
 
             var dId = insertDeudor.Parameters.Add("@id", SqliteType.Integer);
             var dNom = insertDeudor.Parameters.Add("@nom", SqliteType.Text);
@@ -176,6 +179,7 @@ namespace Punto_de_Venta.Datos
             var dFrecInt = insertDeudor.Parameters.Add("@frecInt", SqliteType.Text);
             var dFechaInt = insertDeudor.Parameters.Add("@fechaInt", SqliteType.Text);
             var dIntAcum = insertDeudor.Parameters.Add("@intAcum", SqliteType.Real);
+            var dLimite = insertDeudor.Parameters.Add("@limiteCredito", SqliteType.Real);
 
             using var insertAbono = conn.CreateCommand();
             insertAbono.Transaction = tr;
@@ -212,6 +216,7 @@ namespace Punto_de_Venta.Datos
                 DateTime fechaInicio = debtor.FechaInicioInteres == default ? DateTime.Now : debtor.FechaInicioInteres;
                 dFechaInt.Value = fechaInicio.ToString("o", CultureInfo.InvariantCulture);
                 dIntAcum.Value = Convert.ToDouble(debtor.InteresAcumulado);
+                dLimite.Value = Convert.ToDouble(debtor.LimiteCredito);
                 insertDeudor.ExecuteNonQuery();
 
                 if (debtor.Abonos != null)

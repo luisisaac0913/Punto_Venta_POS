@@ -107,6 +107,7 @@ namespace Punto_de_Venta.Vistas
                 _catalog = ProductoDB.Load();
                 CargarPromocionesDesdeDb();
                 CargarVentasEnEsperaDesdeDb();
+                CargarProductosRapidosDesdeConfig();
                 RefreshSuggestions();
                 _ = ActualizarEstadoHardwareAsync();
             }
@@ -188,6 +189,7 @@ namespace Punto_de_Venta.Vistas
                 }
                 CargarPromocionesDesdeDb();
                 CargarVentasEnEsperaDesdeDb();
+                CargarProductosRapidosDesdeConfig();
                 _ = ActualizarEstadoHardwareAsync();
 
                 this.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
@@ -1312,6 +1314,7 @@ namespace Punto_de_Venta.Vistas
             if (QuickAddOverlay != null && QuickAddOverlay.Visibility == Visibility.Visible) return QuickAddOverlay;
             if (CashMovementOverlay != null && CashMovementOverlay.Visibility == Visibility.Visible) return CashMovementOverlay;
             if (VentasEnEsperaOverlay != null && VentasEnEsperaOverlay.Visibility == Visibility.Visible) return VentasEnEsperaOverlay;
+            if (ProductosRapidosOverlay != null && ProductosRapidosOverlay.Visibility == Visibility.Visible) return ProductosRapidosOverlay;
             if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible) return PaymentOverlay;
             return null;
         }
@@ -1355,6 +1358,11 @@ namespace Punto_de_Venta.Vistas
             if (VentasEnEsperaOverlay != null && VentasEnEsperaOverlay.Visibility == Visibility.Visible)
             {
                 CloseVentasEnEspera();
+                return true;
+            }
+            if (ProductosRapidosOverlay != null && ProductosRapidosOverlay.Visibility == Visibility.Visible)
+            {
+                CloseProductosRapidos();
                 return true;
             }
             if (PaymentOverlay != null && PaymentOverlay.Visibility == Visibility.Visible)
@@ -1580,6 +1588,21 @@ namespace Punto_de_Venta.Vistas
             }
             if (e.Key == Key.F4) { OpenCashMovement(); e.Handled = true; return; }
 
+            if (_productosRapidos.Count > 0)
+            {
+                var teclaPresionada = FormatearAtajoTecla(e.Key == Key.System ? e.SystemKey : e.Key, Keyboard.Modifiers);
+                if (!string.IsNullOrEmpty(teclaPresionada))
+                {
+                    var rapido = _productosRapidos.FirstOrDefault(r => string.Equals(r.Tecla, teclaPresionada, StringComparison.OrdinalIgnoreCase));
+                    if (rapido != null)
+                    {
+                        EjecutarProductoRapido(rapido);
+                        e.Handled = true;
+                        return;
+                    }
+                }
+            }
+
             if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control && e.Key == Key.Left || e.Key == Key.Tab)
             {
                 FocusSearch();
@@ -1794,14 +1817,37 @@ namespace Punto_de_Venta.Vistas
                 var existingDebtor = debtors.Where(d => string.Equals(d.Nombre, debtorName, StringComparison.OrdinalIgnoreCase) && d.SaldoRestante > 0).OrderByDescending(d => d.Id).FirstOrDefault();
 
                 Deudor targetDebtor;
+                var culture = CultureInfo.GetCultureInfo("es-MX");
                 if (existingDebtor is not null)
                 {
+                    if (existingDebtor.ExcederiaLimite(total))
+                    {
+                        string msgLimite = $"'{debtorName}' excede su limite de credito ({existingDebtor.LimiteCredito.ToString("C2", culture)}). Saldo actual: {existingDebtor.SaldoRestante.ToString("C2", culture)}, disponible: {existingDebtor.CreditoDisponible.ToString("C2", culture)}.";
+                        CreditValidationMessage.Text = msgLimite;
+                        ToastNotification.Show(msgLimite, ToastType.Warning);
+                        DebtorNameBox.Focus();
+                        return;
+                    }
                     existingDebtor.MontoOriginal += total;
                     existingDebtor.Concepto += $" | {DateTime.Now:dd/MM}: {conceptSummary}";
                     targetDebtor = existingDebtor;
                 }
                 else
                 {
+                    var historialDeudor = debtors
+                        .Where(d => string.Equals(d.Nombre, debtorName, StringComparison.OrdinalIgnoreCase) && d.TieneLimiteCredito)
+                        .OrderByDescending(d => d.Id)
+                        .FirstOrDefault();
+
+                    if (historialDeudor is not null && total > historialDeudor.LimiteCredito)
+                    {
+                        string msgLimite = $"'{debtorName}' excede su limite de credito ({historialDeudor.LimiteCredito.ToString("C2", culture)}). Disponible: {historialDeudor.LimiteCredito.ToString("C2", culture)}.";
+                        CreditValidationMessage.Text = msgLimite;
+                        ToastNotification.Show(msgLimite, ToastType.Warning);
+                        DebtorNameBox.Focus();
+                        return;
+                    }
+
                     if (!LicenciaService.EsPremium() && debtors.Count >= 5)
                     {
                         CreditValidationMessage.Text = "Limite de 5 prestamos alcanzado.";
@@ -1813,6 +1859,8 @@ namespace Punto_de_Venta.Vistas
                     {
                         Id = 0,
                         Nombre = debtorName,
+                        Telefono = historialDeudor?.Telefono ?? string.Empty,
+                        LimiteCredito = historialDeudor?.LimiteCredito ?? 0m,
                         Concepto = $"{DateTime.Now:dd/MM}: {conceptSummary}",
                         MontoOriginal = total
                     };
@@ -2895,6 +2943,309 @@ namespace Punto_de_Venta.Vistas
             {
                 ToastNotification.Show($"Error al descartar la venta: {ex.Message}", ToastType.Error);
             }
+        }
+        #endregion
+
+        #region Productos Rapidos
+        private readonly ObservableCollection<ProductoRapidoConfig> _productosRapidos = [];
+        private string _teclaCapturadaTemporal = string.Empty;
+
+        private void CargarProductosRapidosDesdeConfig()
+        {
+            _productosRapidos.Clear();
+            var cfg = AppConfig.Load();
+            if (cfg.ProductosRapidos != null)
+            {
+                var porId = _catalog.ToDictionary(p => p.Id);
+                foreach (var item in cfg.ProductosRapidos)
+                {
+                    if (porId.TryGetValue(item.ProductoId, out var prod))
+                    {
+                        item.NombreProducto = prod.Nombre;
+                    }
+                    _productosRapidos.Add(item);
+                }
+            }
+            if (QuickProdsListBox != null)
+            {
+                QuickProdsListBox.ItemsSource = _productosRapidos;
+            }
+            ActualizarBadgeProductosRapidos();
+        }
+
+        private void ActualizarBadgeProductosRapidos()
+        {
+            if (TxtProductosRapidosBadge != null)
+            {
+                TxtProductosRapidosBadge.Text = $"⚡ Rapidos ({_productosRapidos.Count})";
+            }
+            if (TxtQuickProdsEmpty != null)
+            {
+                TxtQuickProdsEmpty.Visibility = _productosRapidos.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        private void GuardarProductosRapidosEnConfig()
+        {
+            var cfg = AppConfig.Load();
+            cfg.ProductosRapidos = _productosRapidos.ToList();
+            cfg.Save();
+            ActualizarBadgeProductosRapidos();
+        }
+
+        private void BtnProductosRapidos_Click(object sender, RoutedEventArgs e)
+        {
+            AbrirModalProductosRapidos();
+        }
+
+        private void AbrirModalProductosRapidos()
+        {
+            if (ProductosRapidosOverlay == null) return;
+            CargarProductosRapidosDesdeConfig();
+            if (QuickProdSearchBox != null) QuickProdSearchBox.Clear();
+            RefrescarComboProductosRapidos(string.Empty);
+            _teclaCapturadaTemporal = string.Empty;
+            if (QuickKeyCaptureBox != null) QuickKeyCaptureBox.Text = "Presiona tecla...";
+            if (QuickProdQtyBox != null) QuickProdQtyBox.Text = "1";
+            if (QuickProdValidationText != null)
+            {
+                QuickProdValidationText.Text = string.Empty;
+                QuickProdValidationText.Visibility = Visibility.Collapsed;
+            }
+            ProductosRapidosOverlay.Visibility = Visibility.Visible;
+            QuickProdSearchBox?.Focus();
+        }
+
+        private void CloseProductosRapidos()
+        {
+            if (ProductosRapidosOverlay != null)
+            {
+                ProductosRapidosOverlay.Visibility = Visibility.Collapsed;
+            }
+            FocusSearch();
+        }
+
+        private void CloseProductosRapidos_Click(object sender, RoutedEventArgs e) => CloseProductosRapidos();
+
+        private void ProductosRapidosOverlay_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (ReferenceEquals(e.OriginalSource, ProductosRapidosOverlay))
+            {
+                CloseProductosRapidos();
+            }
+        }
+
+        private void QuickProdSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            RefrescarComboProductosRapidos(QuickProdSearchBox?.Text ?? string.Empty);
+        }
+
+        private void RefrescarComboProductosRapidos(string filtro)
+        {
+            if (QuickProdCombo == null) return;
+            var q = filtro.Trim();
+            var lista = string.IsNullOrWhiteSpace(q)
+                ? _catalog.Take(60).ToList()
+                : _catalog.Where(p =>
+                    (!string.IsNullOrEmpty(p.Nombre) && p.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(p.Codigo) && p.Codigo.Contains(q, StringComparison.OrdinalIgnoreCase)))
+                    .Take(60)
+                    .ToList();
+            QuickProdCombo.ItemsSource = lista;
+            if (lista.Count > 0) QuickProdCombo.SelectedIndex = 0;
+        }
+
+        private void QuickKeyCaptureBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape || e.Key == Key.Tab) return;
+            e.Handled = true;
+
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
+            var atajo = FormatearAtajoTecla(key, Keyboard.Modifiers);
+            if (string.IsNullOrEmpty(atajo)) return;
+
+            if (!EsAtajoValidoParaProductoRapido(atajo, out var error))
+            {
+                _teclaCapturadaTemporal = string.Empty;
+                if (QuickKeyCaptureBox != null) QuickKeyCaptureBox.Text = "Presiona tecla...";
+                MostrarValidacionProductoRapido(error);
+                return;
+            }
+
+            _teclaCapturadaTemporal = atajo;
+            if (QuickKeyCaptureBox != null) QuickKeyCaptureBox.Text = atajo;
+            OcultarValidacionProductoRapido();
+        }
+
+        private void BtnAgregarProductoRapido_Click(object sender, RoutedEventArgs e)
+        {
+            if (QuickProdCombo?.SelectedItem is not Producto prod)
+            {
+                MostrarValidacionProductoRapido("Selecciona un producto del catalogo.");
+                return;
+            }
+
+            if (!EsAtajoValidoParaProductoRapido(_teclaCapturadaTemporal, out var error))
+            {
+                MostrarValidacionProductoRapido(error);
+                QuickKeyCaptureBox?.Focus();
+                return;
+            }
+
+            if (!decimal.TryParse(QuickProdQtyBox?.Text.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var cant) &&
+                !decimal.TryParse(QuickProdQtyBox?.Text.Trim(), NumberStyles.Any, CultureInfo.GetCultureInfo("es-MX"), out cant))
+            {
+                cant = 0m;
+            }
+            if (cant <= 0m)
+            {
+                MostrarValidacionProductoRapido("La cantidad debe ser mayor que cero.");
+                QuickProdQtyBox?.Focus();
+                return;
+            }
+
+            var existenteMismaTecla = _productosRapidos.FirstOrDefault(r => string.Equals(r.Tecla, _teclaCapturadaTemporal, StringComparison.OrdinalIgnoreCase));
+            if (existenteMismaTecla != null)
+            {
+                _productosRapidos.Remove(existenteMismaTecla);
+            }
+
+            _productosRapidos.Add(new ProductoRapidoConfig
+            {
+                ProductoId = prod.Id,
+                NombreProducto = prod.Nombre,
+                Tecla = _teclaCapturadaTemporal,
+                Cantidad = Math.Round(cant, 3)
+            });
+
+            GuardarProductosRapidosEnConfig();
+            _teclaCapturadaTemporal = string.Empty;
+            if (QuickKeyCaptureBox != null) QuickKeyCaptureBox.Text = "Presiona tecla...";
+            if (QuickProdQtyBox != null) QuickProdQtyBox.Text = "1";
+            OcultarValidacionProductoRapido();
+            ToastNotification.Show($"Atajo '{_productosRapidos.Last().Tecla}' asignado a {prod.Nombre}.", ToastType.Success);
+        }
+
+        private void BtnUsarProductoRapido_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is ProductoRapidoConfig item)
+            {
+                CloseProductosRapidos();
+                EjecutarProductoRapido(item);
+            }
+        }
+
+        private void BtnEliminarProductoRapido_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is ProductoRapidoConfig item)
+            {
+                _productosRapidos.Remove(item);
+                GuardarProductosRapidosEnConfig();
+                ToastNotification.Show($"Atajo '{item.Tecla}' eliminado.", ToastType.Info);
+            }
+        }
+
+        private void EjecutarProductoRapido(ProductoRapidoConfig item)
+        {
+            var prod = _catalog.FirstOrDefault(p => p.Id == item.ProductoId);
+            if (prod == null)
+            {
+                ToastNotification.Show($"No se encontro el producto '{item.NombreProducto}' en el catalogo.", ToastType.Warning);
+                return;
+            }
+
+            decimal cantidad = item.Cantidad > 0 ? item.Cantidad : 1m;
+            if (prod.SeVendePorPeso || prod.ContarComoUnaPieza || cantidad == 1m)
+            {
+                AddSuggestion(prod);
+            }
+            else
+            {
+                AddProduct(prod, cantidad);
+                ActualizarVisibilidadEmptyState();
+                AnimarEntradaProducto();
+                FocusSearch();
+            }
+
+            ToastNotification.Show($"+{cantidad:0.###} {prod.Nombre} ({item.Tecla})", ToastType.Success);
+        }
+
+        private void MostrarValidacionProductoRapido(string msg)
+        {
+            if (QuickProdValidationText != null)
+            {
+                QuickProdValidationText.Text = msg;
+                QuickProdValidationText.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void OcultarValidacionProductoRapido()
+        {
+            if (QuickProdValidationText != null)
+            {
+                QuickProdValidationText.Text = string.Empty;
+                QuickProdValidationText.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        public static string FormatearAtajoTecla(Key key, ModifierKeys modifiers)
+        {
+            if (key == Key.None || key == Key.LeftCtrl || key == Key.RightCtrl ||
+                key == Key.LeftAlt || key == Key.RightAlt ||
+                key == Key.LeftShift || key == Key.RightShift ||
+                key == Key.LWin || key == Key.RWin)
+            {
+                return string.Empty;
+            }
+
+            string keyName = key switch
+            {
+                >= Key.D0 and <= Key.D9 => ((char)('0' + (key - Key.D0))).ToString(),
+                >= Key.NumPad0 and <= Key.NumPad9 => ((char)('0' + (key - Key.NumPad0))).ToString(),
+                _ => key.ToString()
+            };
+
+            var parts = new List<string>();
+            if ((modifiers & ModifierKeys.Control) == ModifierKeys.Control) parts.Add("Ctrl");
+            if ((modifiers & ModifierKeys.Alt) == ModifierKeys.Alt) parts.Add("Alt");
+            if ((modifiers & ModifierKeys.Shift) == ModifierKeys.Shift) parts.Add("Shift");
+            parts.Add(keyName);
+            return string.Join("+", parts);
+        }
+
+        public static bool EsAtajoValidoParaProductoRapido(string atajo, out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrWhiteSpace(atajo))
+            {
+                error = "Presiona una tecla o combinacion valida (ej. F3, F9, Ctrl+1, Alt+P).";
+                return false;
+            }
+
+            var reservadas = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Return", "Enter", "Escape", "Tab", "Delete", "Back", "Space",
+                "F2", "F4", "F5", "F8", "F10", "F12",
+                "Shift+Return", "Shift+Enter", "Ctrl+Left", "Up", "Down", "Left", "Right"
+            };
+
+            if (reservadas.Contains(atajo))
+            {
+                error = $"La tecla '{atajo}' esta reservada por el sistema de cobro.";
+                return false;
+            }
+
+            bool tieneModificador = atajo.Contains("Ctrl+", StringComparison.OrdinalIgnoreCase) ||
+                                    atajo.Contains("Alt+", StringComparison.OrdinalIgnoreCase);
+            bool esTeclaFuncion = System.Text.RegularExpressions.Regex.IsMatch(atajo, @"^(Shift\+)?F([1-9]|1[0-2])$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            if (!tieneModificador && !esTeclaFuncion)
+            {
+                error = "Usa una tecla de funcion (ej. F3, F9, F11) o una combinacion con Ctrl/Alt (ej. Ctrl+1, Alt+P) para no interferir al escribir o escanear.";
+                return false;
+            }
+
+            return true;
         }
         #endregion
     }

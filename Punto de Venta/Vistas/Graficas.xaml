@@ -13,6 +13,7 @@
              PreviewKeyDown="UserControl_PreviewKeyDown"
              Loaded="UserControl_Loaded"
              UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
              TextOptions.TextFormattingMode="Display"
              TextOptions.TextRenderingMode="ClearType">
 

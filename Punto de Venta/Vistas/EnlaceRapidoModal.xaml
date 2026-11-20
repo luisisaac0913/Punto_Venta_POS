@@ -8,6 +8,10 @@
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
         Loaded="Window_Loaded"
         PreviewKeyDown="Window_PreviewKeyDown">
 
@@ -15,14 +19,15 @@
         <DropShadowEffect x:Key="FluentModalShadow" BlurRadius="16" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.25" />
     </Window.Resources>
 
-    <Border Background="{DynamicResource ThemeSurfaceBackground}" 
-            BorderBrush="{DynamicResource ThemeBorder}" 
-            BorderThickness="1" 
-            CornerRadius="8" 
-            Padding="20"
-            Margin="10"
-            Effect="{StaticResource FluentModalShadow}">
-        <Grid>
+    <Grid Margin="10">
+        <Border Background="{DynamicResource ThemeSurfaceBackground}" 
+                BorderBrush="{DynamicResource ThemeBorder}" 
+                BorderThickness="1" 
+                CornerRadius="8" 
+                Effect="{StaticResource FluentModalShadow}"
+                IsHitTestVisible="False" />
+        <Border Padding="20" CornerRadius="8">
+            <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -85,5 +90,6 @@
                 </Button>
             </StackPanel>
         </Grid>
-    </Border>
+        </Border>
+    </Grid>
 </Window>

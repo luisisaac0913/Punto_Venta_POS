@@ -100,11 +100,12 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid Margin="48">
         <Border Background="{DynamicResource ThemeSurfaceBackground}" 
                 BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" 
-                CornerRadius="8" Margin="48" Effect="{StaticResource FluentModalShadow}">
-
+                CornerRadius="8" Effect="{StaticResource FluentModalShadow}"
+                IsHitTestVisible="False" />
+        <Border CornerRadius="8">
             <Grid Margin="32,24,32,24">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />

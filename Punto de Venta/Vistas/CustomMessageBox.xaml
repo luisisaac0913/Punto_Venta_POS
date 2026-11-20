@@ -74,14 +74,14 @@
     </Window.Resources>
 
     <Grid MouseDown="Fondo_MouseDown" Background="Transparent">
-        <Border MinWidth="340" MaxWidth="540" MinHeight="160" MaxHeight="600" 
-                Background="{DynamicResource ThemeSurfaceBackground}" 
-                BorderBrush="{DynamicResource ThemeBorder}" 
-                BorderThickness="1" CornerRadius="8" Padding="24" 
-                HorizontalAlignment="Center" VerticalAlignment="Center" 
-                Effect="{StaticResource FluentModalShadow}">
-
-            <Grid>
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="340" MaxWidth="540" MinHeight="160" MaxHeight="600">
+            <Border Background="{DynamicResource ThemeSurfaceBackground}" 
+                    BorderBrush="{DynamicResource ThemeBorder}" 
+                    BorderThickness="1" CornerRadius="8" 
+                    Effect="{StaticResource FluentModalShadow}"
+                    IsHitTestVisible="False" />
+            <Border Padding="24" CornerRadius="8">
+                <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -95,5 +95,6 @@
                 </UniformGrid>
             </Grid>
         </Border>
+        </Grid>
     </Grid>
 </Window>
