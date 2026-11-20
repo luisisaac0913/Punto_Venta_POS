@@ -65,6 +65,9 @@ namespace Punto_de_Venta.Datos
                 "ALTER TABLE Deudores ADD COLUMN FrecuenciaInteres TEXT NOT NULL DEFAULT 'Unico';",
                 "ALTER TABLE Deudores ADD COLUMN FechaInicioInteres TEXT;",
                 "ALTER TABLE Deudores ADD COLUMN InteresAcumulado REAL NOT NULL DEFAULT 0;",
+                "ALTER TABLE Deudores ADD COLUMN LimiteCredito REAL NOT NULL DEFAULT 0;",
+                "ALTER TABLE CortesCaja ADD COLUMN VentasTarjeta REAL NOT NULL DEFAULT 0;",
+                "ALTER TABLE CortesCaja ADD COLUMN VentasTransferencia REAL NOT NULL DEFAULT 0;",
                 "ALTER TABLE VentasDetalle ADD COLUMN ContarComoUnaPieza INTEGER NOT NULL DEFAULT 0;",
                 "CREATE INDEX IF NOT EXISTS IX_Ventas_CorteCajaId ON Ventas(CorteCajaId);",
                 "CREATE INDEX IF NOT EXISTS IX_Movimientos_CorteCajaId ON MovimientosCaja(CorteCajaId);"
@@ -205,7 +208,8 @@ namespace Punto_de_Venta.Datos
                     TipoInteres TEXT NOT NULL DEFAULT 'PorcentajeSaldo',
                     FrecuenciaInteres TEXT NOT NULL DEFAULT 'Unico',
                     FechaInicioInteres TEXT,
-                    InteresAcumulado REAL NOT NULL DEFAULT 0
+                    InteresAcumulado REAL NOT NULL DEFAULT 0,
+                    LimiteCredito REAL NOT NULL DEFAULT 0
                 );
 
                 CREATE TABLE IF NOT EXISTS Abonos (
@@ -223,6 +227,8 @@ namespace Punto_de_Venta.Datos
                     Estado TEXT NOT NULL DEFAULT 'Cerrado',
                     FondoInicial REAL NOT NULL,
                     VentasEfectivo REAL NOT NULL DEFAULT 0,
+                    VentasTarjeta REAL NOT NULL DEFAULT 0,
+                    VentasTransferencia REAL NOT NULL DEFAULT 0,
                     EntradasEfectivo REAL NOT NULL DEFAULT 0,
                     SalidasEfectivo REAL NOT NULL DEFAULT 0,
                     TotalEsperado REAL NOT NULL DEFAULT 0,

@@ -262,6 +262,9 @@ namespace Punto_de_Venta
             DebtorPhoneBox.Text = _selectedDebtor.Telefono;
             ConceptBox.Text = _selectedDebtor.Concepto;
             AmountBox.Text = _selectedDebtor.MontoOriginal.ToString("0.00", CultureInfo.InvariantCulture);
+            CreditLimitBox.Text = _selectedDebtor.LimiteCredito > 0
+                ? _selectedDebtor.LimiteCredito.ToString("0.00", CultureInfo.InvariantCulture)
+                : string.Empty;
             InterestEnabledCheckBox.IsChecked = _selectedDebtor.TieneInteres;
             InterestValueBox.Text = _selectedDebtor.PorcentajeInteres > 0
                 ? _selectedDebtor.PorcentajeInteres.ToString("0.##", CultureInfo.InvariantCulture)
@@ -273,7 +276,7 @@ namespace Punto_de_Venta
         }
         private void AddButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!CanWrite() || !TryReadLoanForm(out var name, out var concept, out var amount, out var tieneInteres, out var valorInteres, out var tipoInteres))
+            if (!CanWrite() || !TryReadLoanForm(out var name, out var concept, out var amount, out var limiteCredito, out var tieneInteres, out var valorInteres, out var tipoInteres))
             {
                 return;
             }
@@ -285,6 +288,17 @@ namespace Punto_de_Venta
             if (pendingDebtor is not null)
             {
                 var updatedDebtor = CopyDebtor(pendingDebtor);
+                if (limiteCredito > 0m)
+                {
+                    updatedDebtor.LimiteCredito = limiteCredito;
+                }
+                if (updatedDebtor.ExcederiaLimite(amount))
+                {
+                    var culture = CultureInfo.GetCultureInfo("es-MX");
+                    ShowStatus($"El monto excede el limite de credito de {updatedDebtor.LimiteCredito.ToString("C2", culture)} (saldo actual: {updatedDebtor.SaldoRestante.ToString("C2", culture)}).", false);
+                    AmountBox.Focus();
+                    return;
+                }
                 updatedDebtor.MontoOriginal += amount;
                 updatedDebtor.Concepto = CombineConcepts(updatedDebtor.Concepto, concept);
                 if (tieneInteres)
@@ -327,6 +341,14 @@ namespace Punto_de_Venta
                 return;
             }
 
+            if (limiteCredito > 0m && amount > limiteCredito)
+            {
+                var culture = CultureInfo.GetCultureInfo("es-MX");
+                ShowStatus($"La deuda inicial ({amount.ToString("C2", culture)}) supera el limite de credito ({limiteCredito.ToString("C2", culture)}).", false);
+                AmountBox.Focus();
+                return;
+            }
+
             var newDebtor = new Deudor
             {
                 Id = 0,
@@ -335,6 +357,7 @@ namespace Punto_de_Venta
                 Concepto = concept,
                 MontoOriginal = amount,
                 TotalAbonado = 0,
+                LimiteCredito = limiteCredito,
                 TieneInteres = tieneInteres,
                 PorcentajeInteres = valorInteres,
                 TipoInteres = tipoInteres,
@@ -406,7 +429,7 @@ namespace Punto_de_Venta
         }
         private void ModifyButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!CanWrite() || _selectedDebtor is null || !TryReadLoanForm(out var name, out var concept, out var amount, out var tieneInteres, out var valorInteres, out var tipoInteres))
+            if (!CanWrite() || _selectedDebtor is null || !TryReadLoanForm(out var name, out var concept, out var amount, out var limiteCredito, out var tieneInteres, out var valorInteres, out var tipoInteres))
             {
                 return;
             }
@@ -422,6 +445,7 @@ namespace Punto_de_Venta
             updatedDebtor.Telefono = DebtorPhoneBox.Text.Trim();
             updatedDebtor.Concepto = concept;
             updatedDebtor.MontoOriginal = amount;
+            updatedDebtor.LimiteCredito = limiteCredito;
             string nuevaFrecuencia = ObtenerFrecuenciaInteresSeleccionada();
             if (!tieneInteres)
             {
@@ -868,11 +892,12 @@ namespace Punto_de_Venta
             UpdateSelectionButtons();
             DebtorPhoneBox.Focus();
         }
-        private bool TryReadLoanForm(out string name, out string concept, out decimal amount, out bool tieneInteres, out decimal valorInteres, out string tipoInteres)
+        private bool TryReadLoanForm(out string name, out string concept, out decimal amount, out decimal limiteCredito, out bool tieneInteres, out decimal valorInteres, out string tipoInteres)
         {
             name = DebtorNameBox.Text.Trim();
             concept = ConceptBox.Text.Trim();
             amount = 0;
+            limiteCredito = 0m;
             tieneInteres = InterestEnabledCheckBox.IsChecked == true;
             valorInteres = 0m;
             tipoInteres = ObtenerTipoInteresSeleccionado();
@@ -888,6 +913,15 @@ namespace Punto_de_Venta
                 ShowStatus("Introduce una deuda valida y mayor que cero.", false);
                 AmountBox.Focus();
                 return false;
+            }
+            if (CreditLimitBox != null && !string.IsNullOrWhiteSpace(CreditLimitBox.Text))
+            {
+                if (!TryParseAmount(CreditLimitBox.Text, out limiteCredito) || limiteCredito < 0)
+                {
+                    ShowStatus("Introduce un limite de credito valido (o dejalo vacio para sin limite).", false);
+                    CreditLimitBox.Focus();
+                    return false;
+                }
             }
             if (tieneInteres)
             {
@@ -1057,6 +1091,7 @@ namespace Punto_de_Venta
             Concepto = debtor.Concepto,
             MontoOriginal = debtor.MontoOriginal,
             TotalAbonado = debtor.TotalAbonado,
+            LimiteCredito = debtor.LimiteCredito,
             TieneInteres = debtor.TieneInteres,
             PorcentajeInteres = debtor.PorcentajeInteres,
             TipoInteres = debtor.TipoInteres,
@@ -1113,6 +1148,7 @@ namespace Punto_de_Venta
             DebtorPhoneBox.Clear();
             ConceptBox.Clear();
             AmountBox.Clear();
+            CreditLimitBox?.Clear();
             InterestEnabledCheckBox.IsChecked = false;
             InterestValueBox.Clear();
             if (InterestTypeCombo != null) InterestTypeCombo.SelectedIndex = 0;

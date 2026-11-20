@@ -13,6 +13,8 @@ namespace Punto_de_Venta
         {
             if (_esquemaValidado) return;
             try { using var cmd = conn.CreateCommand(); cmd.CommandText = "ALTER TABLE CortesCaja ADD COLUMN FechaHoraCierre TEXT;"; cmd.ExecuteNonQuery(); } catch { }
+            try { using var cmd = conn.CreateCommand(); cmd.CommandText = "ALTER TABLE CortesCaja ADD COLUMN VentasTarjeta REAL NOT NULL DEFAULT 0;"; cmd.ExecuteNonQuery(); } catch { }
+            try { using var cmd = conn.CreateCommand(); cmd.CommandText = "ALTER TABLE CortesCaja ADD COLUMN VentasTransferencia REAL NOT NULL DEFAULT 0;"; cmd.ExecuteNonQuery(); } catch { }
             try { using var cmd = conn.CreateCommand(); cmd.CommandText = "ALTER TABLE MovimientosCaja ADD COLUMN CorteCajaId INTEGER NULL;"; cmd.ExecuteNonQuery(); } catch { }
             try { using var cmd = conn.CreateCommand(); cmd.CommandText = "ALTER TABLE Ventas ADD COLUMN CorteCajaId INTEGER NULL;"; cmd.ExecuteNonQuery(); } catch { }
             _esquemaValidado = true;
@@ -109,6 +111,38 @@ namespace Punto_de_Venta
             return null;
         }
 
+        public static (decimal Efectivo, decimal Tarjeta, decimal Transferencia) CalcularTotalesVentasTurno(System.Collections.Generic.IEnumerable<Venta> ventas)
+        {
+            decimal efectivo = 0m;
+            decimal tarjeta = 0m;
+            decimal transferencia = 0m;
+            if (ventas == null) return (0m, 0m, 0m);
+
+            foreach (var s in ventas)
+            {
+                if (s.MetodoPago.Equals("Efectivo", StringComparison.OrdinalIgnoreCase))
+                {
+                    efectivo += s.Total;
+                }
+                else if (s.MetodoPago.Equals("Tarjeta", StringComparison.OrdinalIgnoreCase))
+                {
+                    tarjeta += s.Total;
+                }
+                else if (s.MetodoPago.Equals("Transferencia", StringComparison.OrdinalIgnoreCase))
+                {
+                    transferencia += s.Total;
+                }
+                else if (s.MetodoPago.Equals("Mixto", StringComparison.OrdinalIgnoreCase))
+                {
+                    efectivo += Math.Max(0m, s.PagoEfectivo - s.Cambio);
+                    tarjeta += Math.Max(0m, s.PagoTarjeta);
+                    transferencia += Math.Max(0m, s.PagoTransferencia);
+                }
+            }
+
+            return (Math.Round(efectivo, 2), Math.Round(tarjeta, 2), Math.Round(transferencia, 2));
+        }
+
         public static void CerrarTurno(CorteCaja turnoActivo, decimal totalContadoFisico, string observacionesCierre, decimal ventasEfectivo)
         {
             using var conn = DatabaseHelper.GetConnection();
@@ -142,12 +176,14 @@ namespace Punto_de_Venta
                 }
 
                 decimal ventasEfectivoEnBD = 0m;
+                decimal ventasTarjetaEnBD = 0m;
+                decimal ventasTransferenciaEnBD = 0m;
                 int conteoAbiertasEnBD = 0;
                 using (var cmdVentasAbiertas = conn.CreateCommand())
                 {
                     cmdVentasAbiertas.Transaction = tr;
                     cmdVentasAbiertas.CommandText = @"
-                        SELECT Total, Cambio, MetodoPago, COALESCE(PagoEfectivo, 0)
+                        SELECT Total, Cambio, MetodoPago, COALESCE(PagoEfectivo, 0), COALESCE(PagoTarjeta, 0), COALESCE(PagoTransferencia, 0)
                         FROM Ventas
                         WHERE Estado = 'Abierta'
                           AND (CorteCajaId = @idTurno OR CorteCajaId IS NULL OR CorteCajaId <= 0);";
@@ -160,6 +196,8 @@ namespace Punto_de_Venta
                         decimal cambioVenta = Convert.ToDecimal(rVentas.GetDouble(1));
                         string metodoRaw = rVentas.IsDBNull(2) ? string.Empty : rVentas.GetString(2);
                         decimal pEfectivo = Convert.ToDecimal(rVentas.GetDouble(3));
+                        decimal pTarjeta = Convert.ToDecimal(rVentas.GetDouble(4));
+                        decimal pTransferencia = Convert.ToDecimal(rVentas.GetDouble(5));
 
                         if (metodoRaw.StartsWith("Mixto|", StringComparison.OrdinalIgnoreCase))
                         {
@@ -169,6 +207,14 @@ namespace Punto_de_Venta
                                 {
                                     decimal.TryParse(parte.Substring(2), NumberStyles.Any, CultureInfo.InvariantCulture, out pEfectivo);
                                 }
+                                else if (parte.StartsWith("T:", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    decimal.TryParse(parte.Substring(2), NumberStyles.Any, CultureInfo.InvariantCulture, out pTarjeta);
+                                }
+                                else if (parte.StartsWith("Tr:", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    decimal.TryParse(parte.Substring(3), NumberStyles.Any, CultureInfo.InvariantCulture, out pTransferencia);
+                                }
                             }
                             metodoRaw = "Mixto";
                         }
@@ -177,21 +223,35 @@ namespace Punto_de_Venta
                         {
                             ventasEfectivoEnBD += totalVenta;
                         }
+                        else if (metodoRaw.Equals("Tarjeta", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ventasTarjetaEnBD += totalVenta;
+                        }
+                        else if (metodoRaw.Equals("Transferencia", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ventasTransferenciaEnBD += totalVenta;
+                        }
                         else if (metodoRaw.Equals("Mixto", StringComparison.OrdinalIgnoreCase))
                         {
                             ventasEfectivoEnBD += Math.Max(0m, pEfectivo - cambioVenta);
+                            ventasTarjetaEnBD += Math.Max(0m, pTarjeta);
+                            ventasTransferenciaEnBD += Math.Max(0m, pTransferencia);
                         }
                     }
                 }
 
                 decimal ventasEfectivoFinal = conteoAbiertasEnBD > 0 ? Math.Round(ventasEfectivoEnBD, 2) : ventasEfectivo;
+                decimal ventasTarjetaFinal = Math.Round(ventasTarjetaEnBD, 2);
+                decimal ventasTransferenciaFinal = Math.Round(ventasTransferenciaEnBD, 2);
                 decimal totalEsperado = turnoActivo.FondoInicial + ventasEfectivoFinal + totalEntradas - totalSalidas;
 
                 using var cmdCierre = conn.CreateCommand();
                 cmdCierre.Transaction = tr;
-                cmdCierre.CommandText = @"UPDATE CortesCaja SET FechaHoraCierre = @fechaCierre, Estado = 'Cerrado', VentasEfectivo = @ventasEfectivo, EntradasEfectivo = @entradas, SalidasEfectivo = @salidas, TotalEsperado = @esperado, TotalContado = @contado, Observaciones = @obs WHERE Id = @idTurno AND Estado = 'Abierto';";
+                cmdCierre.CommandText = @"UPDATE CortesCaja SET FechaHoraCierre = @fechaCierre, Estado = 'Cerrado', VentasEfectivo = @ventasEfectivo, VentasTarjeta = @ventasTarjeta, VentasTransferencia = @ventasTransferencia, EntradasEfectivo = @entradas, SalidasEfectivo = @salidas, TotalEsperado = @esperado, TotalContado = @contado, Observaciones = @obs WHERE Id = @idTurno AND Estado = 'Abierto';";
                 cmdCierre.Parameters.AddWithValue("@fechaCierre", DateTime.Now.ToString("o", CultureInfo.InvariantCulture));
                 cmdCierre.Parameters.AddWithValue("@ventasEfectivo", Convert.ToDouble(ventasEfectivoFinal));
+                cmdCierre.Parameters.AddWithValue("@ventasTarjeta", Convert.ToDouble(ventasTarjetaFinal));
+                cmdCierre.Parameters.AddWithValue("@ventasTransferencia", Convert.ToDouble(ventasTransferenciaFinal));
                 cmdCierre.Parameters.AddWithValue("@entradas", Convert.ToDouble(totalEntradas));
                 cmdCierre.Parameters.AddWithValue("@salidas", Convert.ToDouble(totalSalidas));
                 cmdCierre.Parameters.AddWithValue("@esperado", Convert.ToDouble(totalEsperado));

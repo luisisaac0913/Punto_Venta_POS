@@ -12,6 +12,7 @@ namespace Punto_de_Venta.Modelos
         private string _concepto = string.Empty;
         private decimal _montoOriginal;
         private decimal _totalAbonado;
+        private decimal _limiteCredito;
         private bool _tieneInteres;
         private decimal _porcentajeInteres;
         private decimal _interesAcumulado;
@@ -214,6 +215,24 @@ namespace Punto_de_Venta.Modelos
             get => SaldoRestante;
             set => MontoOriginal = TotalAbonado + value;
         }
+        public decimal LimiteCredito
+        {
+            get => _limiteCredito;
+            set
+            {
+                var normalizado = Math.Max(0m, value);
+                if (_limiteCredito != normalizado)
+                {
+                    _limiteCredito = normalizado;
+                    OnPropertyChanged();
+                    NotifyBalanceState();
+                }
+            }
+        }
+        public bool TieneLimiteCredito => LimiteCredito > 0m;
+        public decimal CreditoDisponible => TieneLimiteCredito ? Math.Max(0m, LimiteCredito - SaldoRestante) : 0m;
+        public bool ExcedeLimiteCredito => TieneLimiteCredito && SaldoRestante > LimiteCredito;
+        public bool ExcederiaLimite(decimal nuevoCargo) => TieneLimiteCredito && (SaldoRestante + Math.Max(0m, nuevoCargo)) > LimiteCredito;
         public bool EstaSaldada => SaldoRestante <= 0;
         public bool EstaAbonada => TotalAbonado > 0 && SaldoRestante > 0;
         public bool SinAbonos => TotalAbonado == 0 && SaldoRestante > 0;
@@ -230,6 +249,9 @@ namespace Punto_de_Venta.Modelos
             OnPropertyChanged(nameof(PorcentajeAbonado));
             OnPropertyChanged(nameof(SaldoRestante));
             OnPropertyChanged(nameof(SaldoPendiente));
+            OnPropertyChanged(nameof(TieneLimiteCredito));
+            OnPropertyChanged(nameof(CreditoDisponible));
+            OnPropertyChanged(nameof(ExcedeLimiteCredito));
             OnPropertyChanged(nameof(EstaSaldada));
             OnPropertyChanged(nameof(EstaAbonada));
             OnPropertyChanged(nameof(SinAbonos));

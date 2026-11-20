@@ -10,6 +10,8 @@ namespace Punto_de_Venta.Modelos
         public string Estado { get; set; } = "Cerrado"; 
         public decimal FondoInicial { get; set; }
         public decimal VentasEfectivo { get; set; }
+        public decimal VentasTarjeta { get; set; }
+        public decimal VentasTransferencia { get; set; }
         public decimal EntradasEfectivo { get; set; }
         public decimal SalidasEfectivo { get; set; }
         public decimal TotalEsperado { get; set; }

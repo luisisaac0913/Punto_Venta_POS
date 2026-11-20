@@ -662,13 +662,11 @@ namespace Punto_de_Venta
             decimal entradas = 0m;
             decimal salidas = 0m;
 
-            decimal cashSales = VentaDB.LoadPorRangoFechas(turnoActivo.FechaHora.Date, DateTime.Today.AddDays(1), limiteMaximo: 5000, incluirAbiertas: true)
+            var ventasAbiertasTurno = VentaDB.LoadPorRangoFechas(turnoActivo.FechaHora.Date, DateTime.Today.AddDays(1), limiteMaximo: 5000, incluirAbiertas: true)
                 .Where(s => s.Estado.Equals("Abierta", StringComparison.OrdinalIgnoreCase) &&
                             (s.CorteCajaId == null || s.CorteCajaId <= 0 || s.CorteCajaId == turnoActivo.Id))
-                .Sum(s =>
-                    s.MetodoPago.Equals("Efectivo", StringComparison.OrdinalIgnoreCase) ? s.Total :
-                    s.MetodoPago.Equals("Mixto", StringComparison.OrdinalIgnoreCase) ? Math.Max(0m, s.PagoEfectivo - s.Cambio) : 0m
-                );
+                .ToList();
+            var (cashSales, cardSales, transferSales) = TurnoCajaManager.CalcularTotalesVentasTurno(ventasAbiertasTurno);
 
             using (var conn = DatabaseHelper.GetConnection())
             {
@@ -691,7 +689,8 @@ namespace Punto_de_Venta
             var culture = CultureInfo.GetCultureInfo("es-MX");
             var diferenciaTexto = diferencia == 0m ? "$0.00 (Exacto)" : (diferencia > 0m ? $"+{diferencia.ToString("C2", culture)} (Sobrante)" : $"{diferencia.ToString("C2", culture)} (Faltante)");
 
-            var desglose = $"--- RESUMEN DE CORTE DE CAJA ---\n\nFondo Inicial:           {fondo.ToString("C2", culture)}\n(+) Ventas en Efectivo:  {cashSales.ToString("C2", culture)}\n(+) Entradas Extras:     {entradas.ToString("C2", culture)}\n(-) Gastos / Retiros:    {salidas.ToString("C2", culture)}\n---------------------------------\nEFECTIVO EN SISTEMA:     {totalEnCajon.ToString("C2", culture)}\nEFECTIVO CONTADO:        {contadoFisico.ToString("C2", culture)}\nDIFERENCIA:              {diferenciaTexto}\n\n¿Deseas confirmar el cierre de caja?";
+            var totalVentasTurno = cashSales + cardSales + transferSales;
+            var desglose = $"--- RESUMEN DE CORTE DE CAJA ---\n\nFondo Inicial:           {fondo.ToString("C2", culture)}\n(+) Ventas en Efectivo:  {cashSales.ToString("C2", culture)}\n(+) Entradas Extras:     {entradas.ToString("C2", culture)}\n(-) Gastos / Retiros:    {salidas.ToString("C2", culture)}\n---------------------------------\nEFECTIVO EN SISTEMA:     {totalEnCajon.ToString("C2", culture)}\nEFECTIVO CONTADO:        {contadoFisico.ToString("C2", culture)}\nDIFERENCIA:              {diferenciaTexto}\n\n--- OTROS METODOS (NO EN CAJON) ---\nVentas con Tarjeta:      {cardSales.ToString("C2", culture)}\nVentas Transferencia:    {transferSales.ToString("C2", culture)}\nTOTAL VENTAS DEL TURNO:  {totalVentasTurno.ToString("C2", culture)}\n\n¿Deseas confirmar el cierre de caja?";
 
             var confirmation = CustomMessageBox.Show(Application.Current.MainWindow, desglose, "Confirmar Cierre de Caja", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (confirmation != MessageBoxResult.Yes) return;

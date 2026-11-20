@@ -8,6 +8,7 @@
              PreviewKeyDown="UserControl_PreviewKeyDown"
              Loaded="UserControl_Loaded"
              UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
              TextOptions.TextFormattingMode="Display"
              TextOptions.TextRenderingMode="ClearType">
 
@@ -241,8 +242,21 @@
                                 <TextBox x:Name="DebtorNameBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,10" KeyDown="DebtorField_KeyDown" />
                                 <TextBlock Text="{DynamicResource CreditsConceptLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                 <TextBox x:Name="ConceptBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,10" KeyDown="DebtorField_KeyDown" />
-                                <TextBlock Text="{DynamicResource CreditsTotalDebt}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
-                                <TextBox x:Name="AmountBox" Style="{StaticResource LoanTextBoxStyle}" Margin="0,0,0,10" KeyDown="DebtorField_KeyDown" TextChanged="InterestInputs_Changed" />
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="10" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{DynamicResource CreditsTotalDebt}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                        <TextBox x:Name="AmountBox" Style="{StaticResource LoanTextBoxStyle}" KeyDown="DebtorField_KeyDown" TextChanged="InterestInputs_Changed" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Limite credito (opc.)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" ToolTip="Monto maximo permitido para fiar. Dejar vacio o en 0 para sin limite." />
+                                        <TextBox x:Name="CreditLimitBox" Style="{StaticResource LoanTextBoxStyle}" KeyDown="DebtorField_KeyDown" ToolTip="Opcional ($0 = sin limite)" />
+                                    </StackPanel>
+                                </Grid>
 
                                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,12">
                                     <StackPanel>
