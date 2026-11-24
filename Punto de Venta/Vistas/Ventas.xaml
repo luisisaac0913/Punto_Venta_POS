@@ -134,7 +134,7 @@
                 </Border>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="BtnExportarExcel" Content="{DynamicResource SalesExportExcel}" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,12,0" Height="40" Padding="12,0" Foreground="{DynamicResource ThemeAccent}" Click="ExportButton_Click" ToolTip="Descargar historial filtrado en archivo Excel/CSV" />
+                    <Button x:Name="BtnExportarExcel" Content="{DynamicResource SalesExportExcel}" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,12,0" Height="40" Padding="12,0" Foreground="{DynamicResource ThemeAccent}" Click="ExportButton_Click" ToolTip="{DynamicResource SalesExportTip}" />
 
                     <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="3" Height="40" Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
@@ -308,8 +308,8 @@
                             </Style>
                         </StackPanel.Style>
                         <TextBlock Text="🧾" FontSize="34" HorizontalAlignment="Center" Margin="0,0,0,8" />
-                        <TextBlock Text="Aun no hay ventas en este periodo" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
-                        <TextBlock Text="Realiza un cobro o cambia el filtro de fechas para ver el historial." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        <TextBlock Text="{DynamicResource SalesEmptyTitle}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource SalesEmptySub}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,4,0,0" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -360,10 +360,10 @@
                     </Grid>
                 </Border>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="{DynamicResource SalesReprintBtn}" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,8,0" IsEnabled="{Binding ElementName=ReturnButton, Path=IsEnabled}" Click="ReprintTicketButton_Click" ToolTip="Imprimir copia del ticket de la venta seleccionada" />
-                    <Button Content="{DynamicResource SalesDetailsBtn}" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,8,0" IsEnabled="{Binding ElementName=ReturnButton, Path=IsEnabled}" Click="ViewDetailsButton_Click" ToolTip="Ver que se vendio (Doble clic en la tabla)" />
-                    <Button x:Name="ReturnButton" Content="{DynamicResource SalesRefundBtn}" Style="{StaticResource AppleDangerButtonStyle}" MinWidth="120" Margin="0,0,8,0" IsEnabled="False" Click="ReturnButton_Click" ToolTip="Cancelar venta y retornar mercancia" />
-                    <Button Content="{DynamicResource SalesCloseCashBtn}" Style="{StaticResource ApplePrimaryActionButtonStyle}" MinWidth="130" Click="CashCloseButton_Click" ToolTip="Hacer corte ciego de caja" />
+                    <Button Content="{DynamicResource SalesReprintBtn}" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,8,0" IsEnabled="{Binding ElementName=ReturnButton, Path=IsEnabled}" Click="ReprintTicketButton_Click" ToolTip="{DynamicResource SalesReprintTip}" />
+                    <Button Content="{DynamicResource SalesDetailsBtn}" Style="{StaticResource ApplePillButtonStyle}" Margin="0,0,8,0" IsEnabled="{Binding ElementName=ReturnButton, Path=IsEnabled}" Click="ViewDetailsButton_Click" ToolTip="{DynamicResource SalesDetailTip}" />
+                    <Button x:Name="ReturnButton" Content="{DynamicResource SalesRefundBtn}" Style="{StaticResource AppleDangerButtonStyle}" MinWidth="120" Margin="0,0,8,0" IsEnabled="False" Click="ReturnButton_Click" ToolTip="{DynamicResource SalesCancelTip}" />
+                    <Button Content="{DynamicResource SalesCloseCashBtn}" Style="{StaticResource ApplePrimaryActionButtonStyle}" MinWidth="130" Click="CashCloseButton_Click" ToolTip="{DynamicResource SalesCloseTip}" />
                 </StackPanel>
             </Grid>
         </Grid>

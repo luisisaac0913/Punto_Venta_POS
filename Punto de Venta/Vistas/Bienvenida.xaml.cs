@@ -161,10 +161,6 @@ namespace Punto_de_Venta.Vistas
                 config.Save();
             }
         }
-        private void VideoIntro_Loaded(object sender, RoutedEventArgs e)
-        {
-            VideoIntro.Play();
-        }
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
@@ -205,7 +201,6 @@ namespace Punto_de_Venta.Vistas
         private void BtnIniciarIntro_Click(object sender, RoutedEventArgs e)
         {
             _pasoActual = 1;
-            VideoIntro.Stop();
             ActualizarVistaPasos();
         }
 
@@ -289,11 +284,6 @@ namespace Punto_de_Venta.Vistas
                 _pasoActual--;
                 ActualizarVistaPasos();
             }
-        }
-
-        private void VideoIntro_MediaEnded(object sender, RoutedEventArgs e)
-        {
-            VideoIntro.Position = TimeSpan.Zero;
         }
 
         private void BtnFinalizar_Click(object sender, RoutedEventArgs e)
@@ -401,7 +391,6 @@ namespace Punto_de_Venta.Vistas
 
         private void BtnOmitirIntro_Click(object sender, RoutedEventArgs e)
         {
-            VideoIntro.Stop();
             var config = AppConfig.Load();
             config.Idioma = IdiomaService.IdiomaActual;
             if (string.IsNullOrWhiteSpace(config.NombreNegocio))
@@ -614,7 +603,6 @@ namespace Punto_de_Venta.Vistas
                 CustomMessageBox.Show(this, resumen, "Importacion completada", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 _pasoActual = 1;
-                VideoIntro.Stop();
                 ActualizarVistaPasos();
             }
             catch (Exception ex)

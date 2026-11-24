@@ -253,14 +253,14 @@
                                         <TextBox x:Name="AmountBox" Style="{StaticResource LoanTextBoxStyle}" KeyDown="DebtorField_KeyDown" TextChanged="InterestInputs_Changed" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Limite credito (opc.)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" ToolTip="Monto maximo permitido para fiar. Dejar vacio o en 0 para sin limite." />
-                                        <TextBox x:Name="CreditLimitBox" Style="{StaticResource LoanTextBoxStyle}" KeyDown="DebtorField_KeyDown" ToolTip="Opcional ($0 = sin limite)" />
+                                        <TextBlock Text="{DynamicResource CreditsLimitLabel}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" ToolTip="{DynamicResource CreditsLimitTip}" />
+                                        <TextBox x:Name="CreditLimitBox" Style="{StaticResource LoanTextBoxStyle}" KeyDown="DebtorField_KeyDown" ToolTip="{DynamicResource CreditsLimitTip}" />
                                     </StackPanel>
                                 </Grid>
 
                                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,12">
                                     <StackPanel>
-                                        <CheckBox x:Name="InterestEnabledCheckBox" Content="Habilitar interes al deudor"
+                                        <CheckBox x:Name="InterestEnabledCheckBox" Content="{DynamicResource CreditsIntEnable}"
                                                   FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" FontWeight="SemiBold"
                                                   Foreground="{DynamicResource ThemeTextForeground}"
                                                   Checked="InterestEnabledCheckBox_Changed" Unchecked="InterestEnabledCheckBox_Changed" />
@@ -272,26 +272,26 @@
                                                     <ColumnDefinition Width="*" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBox x:Name="InterestValueBox" Grid.Column="0" Style="{StaticResource LoanTextBoxStyle}"
-                                                         ToolTip="Porcentaje (%) o monto fijo ($)"
+                                                         ToolTip="%"
                                                          KeyDown="DebtorField_KeyDown" TextChanged="InterestInputs_Changed" />
                                                 <ComboBox x:Name="InterestTypeCombo" Grid.Column="2" Height="34" VerticalContentAlignment="Center"
                                                           FontFamily="Segoe UI Variable, Segoe UI" FontSize="12"
                                                           SelectedIndex="0" SelectionChanged="InterestTypeCombo_SelectionChanged">
-                                                    <ComboBoxItem Content="% sobre saldo pendiente" Tag="PorcentajeSaldo" />
-                                                    <ComboBoxItem Content="% sobre deuda original" Tag="PorcentajeOriginal" />
-                                                    <ComboBoxItem Content="Monto fijo ($)" Tag="MontoFijo" />
+                                                    <ComboBoxItem Content="{DynamicResource CreditsIntPctBal}" Tag="PorcentajeSaldo" />
+                                                    <ComboBoxItem Content="{DynamicResource CreditsIntPctOrig}" Tag="PorcentajeOriginal" />
+                                                    <ComboBoxItem Content="{DynamicResource InvPromoFixed}" Tag="MontoFijo" />
                                                 </ComboBox>
                                             </Grid>
                                             <ComboBox x:Name="InterestFrequencyCombo" Height="32" Margin="0,6,0,0" VerticalContentAlignment="Center"
                                                       FontFamily="Segoe UI Variable, Segoe UI" FontSize="12"
                                                       SelectedIndex="0" SelectionChanged="InterestTypeCombo_SelectionChanged">
-                                                <ComboBoxItem Content="Aplicar una sola vez" Tag="Unico" />
-                                                <ComboBoxItem Content="Aumenta cada dia" Tag="Diario" />
-                                                <ComboBoxItem Content="Aumenta cada semana" Tag="Semanal" />
-                                                <ComboBoxItem Content="Aumenta cada mes" Tag="Mensual" />
+                                                <ComboBoxItem Content="{DynamicResource CreditsIntOnce}" Tag="Unico" />
+                                                <ComboBoxItem Content="{DynamicResource CreditsIntDaily}" Tag="Diario" />
+                                                <ComboBoxItem Content="{DynamicResource CreditsIntWeekly}" Tag="Semanal" />
+                                                <ComboBoxItem Content="{DynamicResource CreditsIntMonthly}" Tag="Mensual" />
                                             </ComboBox>
                                         </StackPanel>
-                                        <TextBlock x:Name="InterestPreviewText" Text="Sin interes aplicado"
+                                        <TextBlock x:Name="InterestPreviewText" Text="{DynamicResource CreditsIntNone}"
                                                    FontFamily="Segoe UI Variable, Segoe UI" FontSize="11"
                                                    Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,6,0,0" />
                                     </StackPanel>
@@ -322,7 +322,7 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBox x:Name="PaymentAmountBox" Grid.Column="0" Style="{StaticResource LoanTextBoxStyle}" KeyDown="PaymentAmountBox_KeyDown" Background="{DynamicResource ThemeSurfaceBackground}" />
                                             <Button x:Name="PayButton" Grid.Column="2" Content="{DynamicResource CreditsApplyPay}" Style="{StaticResource SuccessPayButtonStyle}" IsEnabled="False" Click="PayButton_Click" />
-                                            <Button x:Name="LiquidateButton" Grid.Column="4" Content="{DynamicResource CreditsSettle}" Style="{StaticResource SuccessPayButtonStyle}" Background="#DBEAFE" Foreground="#1D4ED8" IsEnabled="False" Click="LiquidateButton_Click" ToolTip="Pagar el total restante automaticamente" />
+                                            <Button x:Name="LiquidateButton" Grid.Column="4" Content="{DynamicResource CreditsSettle}" Style="{StaticResource SuccessPayButtonStyle}" Background="#DBEAFE" Foreground="#1D4ED8" IsEnabled="False" Click="LiquidateButton_Click" ToolTip="{DynamicResource CreditsSettleTip}" />
                                         </Grid>
                                     </StackPanel>
                                 </Border>
@@ -543,8 +543,8 @@
                                     </Style>
                                 </StackPanel.Style>
                                 <TextBlock Text="📒" FontSize="34" HorizontalAlignment="Center" Margin="0,0,0,8" />
-                                <TextBlock Text="Sin deudores registrados" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
-                                <TextBlock Text="Registra un prestamo a la izquierda o cobra con metodo Fiado." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                <TextBlock Text="{DynamicResource CreditsEmptyTitle}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource CreditsEmptySub}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,4,0,0" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -618,7 +618,7 @@
                             <Border Grid.Column="2" Height="36" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="14,0">
                                 <TextBlock x:Name="HistoryMontoTotalText" Text="$0.00" FontFamily="Segoe UI Variable, Segoe UI" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
-                            <Button Grid.Column="4" Content="{DynamicResource CreditsPrintReceipt}" Height="36" Style="{StaticResource PrimaryAddButtonStyle}" Click="PrintStatementButton_Click" ToolTip="Imprimir el estado de cuenta actual del cliente" Margin="0,0,10,0" />
+                            <Button Grid.Column="4" Content="{DynamicResource CreditsPrintReceipt}" Height="36" Style="{StaticResource PrimaryAddButtonStyle}" Click="PrintStatementButton_Click" ToolTip="{DynamicResource CreditsPrintStmtTip}" Margin="0,0,10,0" />
                         </Grid>
                     </Grid>
                 </Border>

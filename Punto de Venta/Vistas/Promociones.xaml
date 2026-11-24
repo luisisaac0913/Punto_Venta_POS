@@ -131,8 +131,8 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Button Content="✏️" FontSize="14" ToolTip="Editar" Style="{StaticResource FluentButtonSubtle}" Width="32" Height="32" Padding="0" Cursor="Hand" Margin="0,0,6,0" Click="EditarPromo_Click"/>
-                                            <Button Content="🗑️" FontSize="14" ToolTip="Eliminar" Style="{StaticResource FluentButtonSubtle}" Width="32" Height="32" Padding="0" Cursor="Hand" Click="EliminarPromo_Click"/>
+                                            <Button Content="✏️" FontSize="14" ToolTip="{DynamicResource CommonEdit}" Style="{StaticResource FluentButtonSubtle}" Width="32" Height="32" Padding="0" Cursor="Hand" Margin="0,0,6,0" Click="EditarPromo_Click"/>
+                                            <Button Content="🗑️" FontSize="14" ToolTip="{DynamicResource CommonDelete}" Style="{StaticResource FluentButtonSubtle}" Width="32" Height="32" Padding="0" Cursor="Hand" Click="EliminarPromo_Click"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
