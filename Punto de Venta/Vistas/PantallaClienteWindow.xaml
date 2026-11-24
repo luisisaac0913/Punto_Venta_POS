@@ -25,7 +25,7 @@
                            RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,12,0" />
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock x:Name="TxtNombreNegocio" Text="Chip&amp;Chapa" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                        <TextBlock x:Name="TxtEstadoCliente" Text="Listo para atenderte" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
+                        <TextBlock x:Name="TxtEstadoCliente" Text="{DynamicResource CustReady}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" />
                     </StackPanel>
                 </StackPanel>
 
@@ -50,8 +50,8 @@
                     </Grid.RowDefinitions>
 
                     <DockPanel Grid.Row="0" Margin="0,0,0,12">
-                        <TextBlock Text="Tus productos" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                        <TextBlock x:Name="TxtConteoArticulosHeader" DockPanel.Dock="Right" HorizontalAlignment="Right" Text="0 articulos" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource CustYourItems}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                        <TextBlock x:Name="TxtConteoArticulosHeader" DockPanel.Dock="Right" HorizontalAlignment="Right" Text="0" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" />
                     </DockPanel>
 
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -85,8 +85,8 @@
 
                     <StackPanel x:Name="PanelBienvenidaCliente" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
                         <TextBlock Text="🛒" FontSize="54" HorizontalAlignment="Center" Margin="0,0,0,10" />
-                        <TextBlock Text="¡Bienvenido!" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
-                        <TextBlock Text="Aqui veras cada producto, su precio y el total en tiempo real." FontSize="15" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                        <TextBlock Text="{DynamicResource CustWelcome}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
+                        <TextBlock Text="{DynamicResource CustWelcomeSub}" FontSize="15" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,6,0,0" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -94,43 +94,43 @@
             <Border Grid.Column="2" Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="10" Padding="24">
                 <Grid>
                     <StackPanel x:Name="PanelResumenTotal" VerticalAlignment="Center">
-                        <TextBlock Text="RESUMEN DE COMPRA" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,18" />
+                        <TextBlock Text="{DynamicResource CustSummaryHeader}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,18" />
 
                         <Grid Margin="0,0,0,12">
-                            <TextBlock Text="Articulos" FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock Text="{DynamicResource CustItems}" FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" />
                             <TextBlock x:Name="TxtCantidadTotal" Text="0" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Right" />
                         </Grid>
 
                         <Grid Margin="0,0,0,12">
-                            <TextBlock Text="Subtotal" FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" />
+                            <TextBlock Text="{DynamicResource CustSubtotal}" FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" />
                             <TextBlock x:Name="TxtSubtotal" Text="$0.00" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Right" />
                         </Grid>
 
                         <Grid x:Name="FilaDescuento" Visibility="Collapsed" Margin="0,0,0,14">
-                            <TextBlock Text="Descuento promociones" FontSize="16" Foreground="#10B981" FontWeight="SemiBold" />
+                            <TextBlock Text="{DynamicResource CustPromoDiscount}" FontSize="16" Foreground="#10B981" FontWeight="SemiBold" />
                             <TextBlock x:Name="TxtDescuento" Text="-$0.00" FontSize="18" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Right" />
                         </Grid>
 
                         <Border Height="1" Background="{DynamicResource ThemeBorder}" Margin="0,8,0,18" />
 
-                        <TextBlock Text="TOTAL A PAGAR" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
+                        <TextBlock Text="{DynamicResource CustTotalToPay}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" />
                         <TextBlock x:Name="TxtTotalPagar" Text="$0.00" FontSize="54" FontWeight="Bold" Foreground="{DynamicResource ThemeAccent}" Margin="0,4,0,0" />
                     </StackPanel>
 
                     <StackPanel x:Name="PanelGraciasCompra" Visibility="Collapsed" VerticalAlignment="Center">
                         <Border Background="#1810B981" BorderBrush="#10B981" BorderThickness="1.5" CornerRadius="12" Padding="20">
                             <StackPanel>
-                                <TextBlock Text="✓ ¡Gracias por su compra!" FontSize="24" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Center" Margin="0,0,0,16" />
+                                <TextBlock Text="{DynamicResource CustThanks}" FontSize="24" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Center" Margin="0,0,0,16" />
                                 <Grid Margin="0,0,0,8">
-                                    <TextBlock Text="Total" FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" />
+                                    <TextBlock Text="{DynamicResource CustTotal}" FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" />
                                     <TextBlock x:Name="TxtGraciasTotal" Text="$0.00" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Right" />
                                 </Grid>
                                 <Grid Margin="0,0,0,12">
-                                    <TextBlock Text="Pagó con" FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" />
+                                    <TextBlock Text="{DynamicResource CustPaidWith}" FontSize="16" Foreground="{DynamicResource ThemeMutedForeground}" />
                                     <TextBlock x:Name="TxtGraciasPagoCon" Text="$0.00" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Right" />
                                 </Grid>
                                 <Border Height="1" Background="{DynamicResource ThemeBorder}" Margin="0,4,0,12" />
-                                <TextBlock Text="SU CAMBIO" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" />
+                                <TextBlock Text="{DynamicResource CustChange}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" />
                                 <TextBlock x:Name="TxtGraciasCambio" Text="$0.00" FontSize="42" FontWeight="Bold" Foreground="#10B981" HorizontalAlignment="Center" Margin="0,4,0,0" />
                             </StackPanel>
                         </Border>

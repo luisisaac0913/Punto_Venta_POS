@@ -138,7 +138,7 @@
                     <Button x:Name="NavWhatsAppBtn" Content="{DynamicResource SettingsNavWhatsApp}" Style="{StaticResource SidebarButtonStyle}" Click="NavWhatsApp_Click" />
                     <Button x:Name="NavSeguridadBtn" Content="{DynamicResource SettingsNavSecurity}" Style="{StaticResource SidebarButtonStyle}" Click="NavSeguridad_Click" />
                     <Button x:Name="NavAtajosBtn" Content="{DynamicResource SettingsNavShortcuts}" Style="{StaticResource SidebarButtonStyle}" Click="NavAtajos_Click" />
-                    <Button x:Name="NavIABtn" Content="✨  Asistente IA" Style="{StaticResource SidebarButtonStyle}" Click="NavIA_Click" />
+                    <Button x:Name="NavIABtn" Content="{DynamicResource SettingsNavAI}" Style="{StaticResource SidebarButtonStyle}" Click="NavIA_Click" />
                     <Button x:Name="NavAyudaBtn" Content="{DynamicResource SettingsNavHelp}" Style="{StaticResource SidebarButtonStyle}" Click="NavAyuda_Click" />
                 </StackPanel>
             </Border>
@@ -289,49 +289,49 @@
                                 <TextBlock x:Name="LblColorAcentoDesc" Text="{DynamicResource SettingsAccentDesc}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,12" TextWrapping="Wrap" />
 
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#007AFF" Click="ColorButton_Click" ToolTip="Azul Clasico">
+                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#007AFF" Click="ColorButton_Click" ToolTip="{DynamicResource SettingsColorBlue}">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="#007AFF" CornerRadius="4" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" />
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
-                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#10B981" Click="ColorButton_Click" ToolTip="Verde Esmeralda">
+                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#10B981" Click="ColorButton_Click" ToolTip="{DynamicResource SettingsColorGreen}">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="#10B981" CornerRadius="4" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" />
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
-                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#8B5CF6" Click="ColorButton_Click" ToolTip="Morado Neon">
+                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#8B5CF6" Click="ColorButton_Click" ToolTip="{DynamicResource SettingsColorPurple}">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="#8B5CF6" CornerRadius="4" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" />
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
-                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#F97316" Click="ColorButton_Click" ToolTip="Naranja Vibrante">
+                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#F97316" Click="ColorButton_Click" ToolTip="{DynamicResource SettingsColorOrange}">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="#F97316" CornerRadius="4" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" />
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
-                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#E11D48" Click="ColorButton_Click" ToolTip="Rojo Carmesi">
+                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#E11D48" Click="ColorButton_Click" ToolTip="{DynamicResource SettingsColorRed}">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="#E11D48" CornerRadius="4" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" />
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
-                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#EC4899" Click="ColorButton_Click" ToolTip="Rosa">
+                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#EC4899" Click="ColorButton_Click" ToolTip="{DynamicResource SettingsColorPink}">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="#EC4899" CornerRadius="4" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" />
                                             </ControlTemplate>
                                         </Button.Template>
                                     </Button>
-                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#3F3F46" Click="ColorButton_Click" ToolTip="Gris Elegante">
+                                    <Button Width="34" Height="34" Margin="0,0,10,0" Cursor="Hand" Tag="#3F3F46" Click="ColorButton_Click" ToolTip="{DynamicResource SettingsColorGray}">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="#3F3F46" CornerRadius="4" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" />
@@ -407,18 +407,18 @@
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="{DynamicResource SettingsScaleProto}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                         <ComboBox x:Name="ScaleProtocolComboBox" Height="36" VerticalContentAlignment="Center" FontSize="13">
-                                            <ComboBoxItem Content="Universal / Auto-detectar" Tag="Auto" />
+                                            <ComboBoxItem Content="{DynamicResource SettingsScaleProtoAuto}" Tag="Auto" />
                                             <ComboBoxItem Content="{DynamicResource SettingsProtoTorrey}" Tag="PeticionP" IsSelected="True" />
-                                            <ComboBoxItem Content="CAS / Ohaus (Petición W)" Tag="PeticionW" />
-                                            <ComboBoxItem Content="Mettler Toledo / SICS (SI)" Tag="PeticionS" />
-                                            <ComboBoxItem Content="Estándar ENQ (0x05)" Tag="PeticionENQ" />
+                                            <ComboBoxItem Content="{DynamicResource SettingsScaleProtoCas}" Tag="PeticionW" />
+                                            <ComboBoxItem Content="{DynamicResource SettingsScaleProtoMettler}" Tag="PeticionS" />
+                                            <ComboBoxItem Content="{DynamicResource SettingsScaleProtoEnq}" Tag="PeticionENQ" />
                                             <ComboBoxItem Content="{DynamicResource SettingsProtoContinuous}" Tag="Continuo" />
                                         </ComboBox>
                                     </StackPanel>
                                 </Grid>
 
                                 <StackPanel Margin="0,0,0,12">
-                                    <TextBlock Text="Formato serial (Bits / Paridad / Stop)" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
+                                    <TextBlock Text="{DynamicResource SettingsScaleSerialFmt}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="2,0,0,4" />
                                     <ComboBox x:Name="ScaleSerialProfileComboBox" Height="36" VerticalContentAlignment="Center" FontSize="13">
                                         <ComboBoxItem Content="8N1 — 8 bits, Sin paridad, 1 stop (Estándar)" Tag="8N1" IsSelected="True" />
                                         <ComboBoxItem Content="7E1 — 7 bits, Paridad Par (CAS / Toledo / Ohaus)" Tag="7E1" />
@@ -568,19 +568,19 @@
 
                                 <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="8" Padding="14" Margin="0,0,0,12">
                                     <StackPanel>
-                                        <TextBlock Text="Variables disponibles (haz clic para insertar):" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,8" />
+                                        <TextBlock Text="{DynamicResource SettingsWaVarsLabel}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource ThemeAccent}" Margin="0,0,0,8" />
                                         <WrapPanel Margin="0,0,0,4">
-                                            <Button Content="{}{CLIENTE}" Tag="{}{CLIENTE}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Nombre del cliente" />
-                                            <Button Content="{}{SALDO}" Tag="{}{SALDO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Saldo pendiente total" />
-                                            <Button Content="{}{LISTA}" Tag="{}{LISTA}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Lista de productos o conceptos con vinetas" />
-                                            <Button Content="{}{CONCEPTO}" Tag="{}{CONCEPTO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Concepto en una linea" />
-                                            <Button Content="{}{NEGOCIO}" Tag="{}{NEGOCIO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Nombre de tu tienda" />
-                                            <Button Content="{}{FECHA}" Tag="{}{FECHA}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Fecha actual" />
-                                            <Button Content="{}{HORA}" Tag="{}{HORA}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Hora actual" />
-                                            <Button Content="{}{ORIGINAL}" Tag="{}{ORIGINAL}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Deuda original" />
-                                            <Button Content="{}{ABONADO}" Tag="{}{ABONADO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Total abonado" />
-                                            <Button Content="{}{INTERES}" Tag="{}{INTERES}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Interes acumulado" />
-                                            <Button Content="{}{ULTIMO_ABONO}" Tag="{}{ULTIMO_ABONO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="Fecha y monto del ultimo abono" />
+                                            <Button Content="{}{CLIENTE}" Tag="{}{CLIENTE}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="{DynamicResource SettingsWaVarClientTip}" />
+                                            <Button Content="{}{SALDO}" Tag="{}{SALDO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="{DynamicResource SettingsWaVarBalTip}" />
+                                            <Button Content="{}{LISTA}" Tag="{}{LISTA}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="{DynamicResource SettingsWaVarListTip}" />
+                                            <Button Content="{}{CONCEPTO}" Tag="{}{CONCEPTO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="{DynamicResource SettingsWaVarConceptTip}" />
+                                            <Button Content="{}{NEGOCIO}" Tag="{}{NEGOCIO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="{DynamicResource SettingsWaVarStoreTip}" />
+                                            <Button Content="{}{FECHA}" Tag="{}{FECHA}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="{DynamicResource SettingsWaVarDateTip}" />
+                                            <Button Content="{}{HORA}" Tag="{}{HORA}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="{DynamicResource SettingsWaVarTimeTip}" />
+                                            <Button Content="{}{ORIGINAL}" Tag="{}{ORIGINAL}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="{DynamicResource SettingsWaVarOrigTip}" />
+                                            <Button Content="{}{ABONADO}" Tag="{}{ABONADO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="{DynamicResource SettingsWaVarPaidTip}" />
+                                            <Button Content="{}{INTERES}" Tag="{}{INTERES}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="{DynamicResource SettingsWaVarIntTip}" />
+                                            <Button Content="{}{ULTIMO_ABONO}" Tag="{}{ULTIMO_ABONO}" Style="{StaticResource FluentButtonSecondary}" Height="26" Padding="8,0" Margin="0,0,6,6" FontSize="11" Click="BtnInsertarVarWhatsApp_Click" ToolTip="{DynamicResource SettingsWaVarLastTip}" />
                                         </WrapPanel>
                                     </StackPanel>
                                 </Border>
@@ -590,7 +590,7 @@
 
                                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="12">
                                     <StackPanel>
-                                        <TextBlock Text="Vista previa del mensaje" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
+                                        <TextBlock Text="{DynamicResource SettingsWaPreviewLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
                                         <TextBlock x:Name="TxtWhatsAppPreview" FontSize="12" Foreground="{DynamicResource ThemeTextForeground}" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
@@ -657,7 +657,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
 
-                                    <TextBox x:Name="BackupFolderBox" Style="{StaticResource FormTextBoxStyle}" IsReadOnly="True" ToolTip="Ruta de almacenamiento de respaldos" />
+                                    <TextBox x:Name="BackupFolderBox" Style="{StaticResource FormTextBoxStyle}" IsReadOnly="True" ToolTip="{DynamicResource SettingsBackupPathTip}" />
 
                                     <Button Grid.Column="2" Content="{DynamicResource SettingsBrowseBtn}" Height="36" Padding="14,0" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" FontFamily="Segoe UI Variable, Segoe UI" FontWeight="SemiBold" Cursor="Hand" Click="BrowseBackupFolder_Click">
                                         <Button.Template>
@@ -1332,7 +1332,7 @@
                                 <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="16">
                                     <Grid>
                                         <StackPanel>
-                                            <TextBlock Text="Chip &amp; Chapa POS • Sistema de Punto de Venta" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="{DynamicResource SettingsAboutTagline}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
                                             <TextBlock Text="{DynamicResource SettingsHelpVersion}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
                                         </StackPanel>
                                     </Grid>
@@ -1340,17 +1340,17 @@
                             </StackPanel>
 
                             <StackPanel x:Name="PanelIA" Visibility="Collapsed">
-                                <TextBlock Text="Asistente IA (Gemini)" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                                <TextBlock Text="Funcion exclusiva de la version Premium (BYOK). Ingresa tu propia API Key gratuita de Google Gemini para normalizar importaciones y usar el asistente (F12)." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" Margin="0,0,0,14" />
+                                <TextBlock Text="{DynamicResource SettingsAITitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                                <TextBlock Text="{DynamicResource SettingsAIDesc}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" Margin="0,0,0,14" />
 
                                 <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,0,12">
                                     <StackPanel>
                                         <DockPanel LastChildFill="False" Margin="0,0,0,10">
                                             <StackPanel>
-                                                <TextBlock Text="✨ Configuracion de Gemini" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                                <TextBlock Text="Tu clave se guarda cifrada localmente en esta computadora." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
+                                                <TextBlock Text="{DynamicResource SettingsAIGeminiHeader}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                                <TextBlock Text="{DynamicResource SettingsAIGeminiSub}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
                                             </StackPanel>
-                                            <Button Content="Abrir Asistente (F12)" Height="32" Padding="12,0" DockPanel.Dock="Right"
+                                            <Button Content="{DynamicResource SettingsAIOpenBtn}" Height="32" Padding="12,0" DockPanel.Dock="Right"
                                                     Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0"
                                                     FontSize="12" FontWeight="Bold" Cursor="Hand" Click="BtnAbrirAsistenteIA_Click" />
                                         </DockPanel>
@@ -1362,8 +1362,8 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Grid.Column="0">
                                                 <DockPanel Margin="0,0,0,4">
-                                                    <TextBlock Text="API Key de Google Gemini" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" />
-                                                    <Button Content="Obtener clave gratis" DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                                    <TextBlock Text="{DynamicResource SettingsAIKeyLabel}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" VerticalAlignment="Center" />
+                                                    <Button Content="{DynamicResource SettingsAIGetKeyBtn}" DockPanel.Dock="Right" HorizontalAlignment="Right"
                                                             Background="Transparent" BorderThickness="0" Padding="4,0" FontSize="11" FontWeight="SemiBold"
                                                             Foreground="{DynamicResource ThemeAccent}" Cursor="Hand" Click="BtnObtenerApiKeyGemini_Click" />
                                                 </DockPanel>
@@ -1372,7 +1372,7 @@
                                                              BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="2">
-                                                <TextBlock Text="Modelo" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
+                                                <TextBlock Text="{DynamicResource SettingsAIModelLabel}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
                                                 <ComboBox x:Name="GeminiModelCombo" Height="34" VerticalContentAlignment="Center">
                                                     <ComboBoxItem Content="gemini-3.5-flash-lite" Tag="gemini-3.5-flash-lite" />
                                                     <ComboBoxItem Content="gemini-flash-latest" Tag="gemini-flash-latest" />
@@ -1385,10 +1385,10 @@
 
                                 <Border Background="{DynamicResource ThemeSurfaceBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,12,0,0">
                                     <StackPanel>
-                                        <TextBlock Text="Segunda pantalla" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
-                                        <TextBlock Text="Muestra informacion en un monitor secundario para tus clientes. Proximamente incluira modos adicionales ademas de Cobro." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                        <TextBlock Text="{DynamicResource SettingsDualTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,4" />
+                                        <TextBlock Text="{DynamicResource SettingsDualDesc}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" Margin="0,0,0,12" />
 
-                                        <CheckBox x:Name="ChkSegundaPantalla" Content="Activar segunda pantalla automaticamente" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10" />
+                                        <CheckBox x:Name="ChkSegundaPantalla" Content="{DynamicResource SettingsDualAutoCheck}" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,10" />
 
                                         <Grid Margin="0,0,0,10">
                                             <Grid.ColumnDefinitions>
@@ -1397,12 +1397,12 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel Grid.Column="0">
-                                                <TextBlock Text="Contenido a mostrar" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
+                                                <TextBlock Text="{DynamicResource SettingsDualContentLabel}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,4" />
                                                 <ComboBox x:Name="CmbModoSegundaPantalla" Height="34" VerticalContentAlignment="Center" SelectedIndex="0">
-                                                    <ComboBoxItem Content="Cobro / Carrito para el cliente" Tag="CobroCliente" />
+                                                    <ComboBoxItem Content="{DynamicResource SettingsDualModeCart}" Tag="CobroCliente" />
                                                 </ComboBox>
                                             </StackPanel>
-                                            <Button x:Name="BtnAbrirSegundaPantalla" Grid.Column="2" Content="Probar / Abrir" Height="34" Padding="14,0" VerticalAlignment="Bottom"
+                                            <Button x:Name="BtnAbrirSegundaPantalla" Grid.Column="2" Content="{DynamicResource SettingsDualTestBtn}" Height="34" Padding="14,0" VerticalAlignment="Bottom"
                                                     Style="{StaticResource FluentButtonSecondary}" Click="BtnAbrirSegundaPantalla_Click" />
                                         </Grid>
 

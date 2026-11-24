@@ -185,7 +185,7 @@
                             </Grid>
                         </Border>
 
-                        <Button x:Name="BtnCargarLote" Grid.Column="2" Content="{DynamicResource InvLoadBatchBtn}" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Height="40" Padding="12,0" Click="OpenLotesModal_Click" ToolTip="Ingresar mercancia masiva por proveedor" />
+                        <Button x:Name="BtnCargarLote" Grid.Column="2" Content="{DynamicResource InvLoadBatchBtn}" Style="{StaticResource PrimaryAddButtonStyle}" Background="{StaticResource SystemOrange}" Height="40" Padding="12,0" Click="OpenLotesModal_Click" ToolTip="{DynamicResource InvBulkTip}" />
 
                         <Button Grid.Column="4" Content="{DynamicResource InvQuickRestockBtn}" Style="{StaticResource PrimaryAddButtonStyle}" Height="40" Padding="12,0" Click="OpenQuickRestockModal_Click" ToolTip="Escanear y reabastecer a gran velocidad" />
 
@@ -353,8 +353,8 @@
                                         </Style>
                                     </StackPanel.Style>
                                     <TextBlock Text="📦" FontSize="34" HorizontalAlignment="Center" Margin="0,0,0,8" />
-                                    <TextBlock Text="No hay productos para mostrar" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
-                                    <TextBlock Text="Agrega tu primer producto en el panel derecho o importa desde Excel/CSV." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                    <TextBlock Text="{DynamicResource InvEmptyTitle}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{DynamicResource InvEmptySub}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" Margin="0,4,0,0" />
                                 </StackPanel>
                             </Grid>
                         </Border>

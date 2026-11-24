@@ -218,29 +218,15 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,1">
-                        <Button x:Name="BtnProductosRapidosBadge" Height="36" Padding="12,0" Background="#15FF9500" BorderBrush="#35FF9500" BorderThickness="1" Cursor="Hand" Click="BtnProductosRapidos_Click" ToolTip="Configurar y usar teclas de acceso rapido para productos sin codigo" Margin="0,0,8,0">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
+                        <Button x:Name="BtnProductosRapidosBadge" Height="36" Padding="14,0" Style="{StaticResource ActionButtonStyle}" FontSize="12" FontWeight="SemiBold" Click="BtnProductosRapidos_Click" ToolTip="{DynamicResource PosQuickProdTip}" Margin="0,0,8,0">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock x:Name="TxtProductosRapidosBadge" Text="⚡ Rapidos (0)" FontSize="12" FontWeight="SemiBold" Foreground="#D97706" VerticalAlignment="Center" />
+                                <TextBlock x:Name="TxtProductosRapidosBadge" Text="⚡ Rapidos (0)" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
 
-                        <Button x:Name="BtnVentasEnEsperaBadge" Height="36" Padding="12,0" Background="#15007AFF" BorderBrush="#30007AFF" BorderThickness="1" Cursor="Hand" Click="BtnVentasEnEspera_Click" ToolTip="{DynamicResource PosHoldTooltip}" Margin="0,0,10,0">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
-                                    </Border>
-                                </ControlTemplate>
-                            </Button.Template>
+                        <Button x:Name="BtnVentasEnEsperaBadge" Height="36" Padding="14,0" Style="{StaticResource ActionButtonStyle}" FontSize="12" FontWeight="SemiBold" Click="BtnVentasEnEspera_Click" ToolTip="{DynamicResource PosHoldTooltip}" Margin="0,0,10,0">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock x:Name="TxtVentasEsperaBadge" Text="En espera (0)" FontSize="12" FontWeight="SemiBold" Foreground="#007AFF" VerticalAlignment="Center" />
+                                <TextBlock x:Name="TxtVentasEsperaBadge" Text="En espera (0)" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
 
@@ -1032,7 +1018,7 @@
                                 </Button.Template>
                             </Button>
 
-                            <Button Grid.Column="4" Content="Recuperar (Enter)" Height="38" Padding="18,0" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="RecuperarVentaEnEspera_Click">
+                            <Button Grid.Column="4" Content="{DynamicResource PosHoldRecoverBtn}" Height="38" Padding="18,0" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="RecuperarVentaEnEspera_Click">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border x:Name="BorderRecuperar" Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
@@ -1068,8 +1054,8 @@
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0">
-                            <TextBlock Text="⚡ Productos Rapidos" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                            <TextBlock Text="Asigna una tecla o combinacion (ej. F3, F9, Ctrl+1, Alt+P) para agregar productos sin codigo al carrito al instante." FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                            <TextBlock Text="{DynamicResource PosQuickProdTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                            <TextBlock Text="{DynamicResource PosQuickProdDesc}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" TextWrapping="Wrap" Margin="0,4,0,0" />
                         </StackPanel>
 
                         <Border Grid.Row="2" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6" Padding="12">
@@ -1081,12 +1067,12 @@
                                         <ColumnDefinition Width="180" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Filtrar producto" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,3" />
+                                        <TextBlock Text="{DynamicResource PosQuickProdFilter}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,3" />
                                         <TextBox x:Name="QuickProdSearchBox" Height="32" Padding="8,0" VerticalContentAlignment="Center" FontSize="13" Background="{DynamicResource ThemeSurfaceBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" TextChanged="QuickProdSearchBox_TextChanged" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Tecla / Atajo" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,3" />
-                                        <TextBox x:Name="QuickKeyCaptureBox" Height="32" Padding="8,0" VerticalContentAlignment="Center" FontSize="13" FontWeight="SemiBold" IsReadOnly="True" Background="{DynamicResource ThemeSurfaceBackground}" Foreground="{DynamicResource ThemeAccent}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Text="Presiona tecla..." PreviewKeyDown="QuickKeyCaptureBox_PreviewKeyDown" ToolTip="Haz clic aqui y presiona F3, F9, F11, Ctrl+1, Alt+P, etc." />
+                                        <TextBlock Text="{DynamicResource PosQuickProdKeyLabel}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,3" />
+                                        <TextBox x:Name="QuickKeyCaptureBox" Height="32" Padding="8,0" VerticalContentAlignment="Center" FontSize="13" FontWeight="SemiBold" IsReadOnly="True" Background="{DynamicResource ThemeSurfaceBackground}" Foreground="{DynamicResource ThemeAccent}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Text="{DynamicResource PosQuickProdKeyPlaceholder}" PreviewKeyDown="QuickKeyCaptureBox_PreviewKeyDown" ToolTip="{DynamicResource PosQuickProdKeyTip}" />
                                     </StackPanel>
                                 </Grid>
                                 <Grid>
@@ -1098,14 +1084,14 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Producto del catalogo" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,3" />
+                                        <TextBlock Text="{DynamicResource PosQuickProdCatalog}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,3" />
                                         <ComboBox x:Name="QuickProdCombo" Height="32" VerticalContentAlignment="Center" FontSize="13" DisplayMemberPath="Nombre" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Cant." FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,3" />
+                                        <TextBlock Text="{DynamicResource PosQuickProdQty}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,0,0,3" />
                                         <TextBox x:Name="QuickProdQtyBox" Height="32" Padding="8,0" VerticalContentAlignment="Center" FontSize="13" Text="1" Background="{DynamicResource ThemeSurfaceBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" />
                                     </StackPanel>
-                                    <Button Grid.Column="4" VerticalAlignment="Bottom" Content="Asignar" Height="32" Padding="16,0" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="BtnAgregarProductoRapido_Click">
+                                    <Button Grid.Column="4" VerticalAlignment="Bottom" Content="{DynamicResource PosQuickProdAssign}" Height="32" Padding="16,0" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="BtnAgregarProductoRapido_Click">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
@@ -1121,7 +1107,7 @@
 
                         <Border Grid.Row="4" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6" Padding="8" MinHeight="160" MaxHeight="240">
                             <Grid>
-                                <TextBlock x:Name="TxtQuickProdsEmpty" Text="Aun no hay productos rapidos configurados." FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+                                <TextBlock x:Name="TxtQuickProdsEmpty" Text="{DynamicResource PosQuickProdEmpty}" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
                                 <ListBox x:Name="QuickProdsListBox" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
                                     <ListBox.ItemContainerStyle>
                                         <Style TargetType="ListBoxItem">
@@ -1157,7 +1143,7 @@
                                                         <TextBlock Text="{Binding NombreProducto}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource ThemeTextForeground}" TextTrimming="CharacterEllipsis" />
                                                         <TextBlock Text="{Binding Cantidad, StringFormat='Cantidad: {0:0.###}'}" FontSize="11" Foreground="{DynamicResource ThemeMutedForeground}" />
                                                     </StackPanel>
-                                                    <Button Grid.Column="4" Content="+ Agregar" Height="28" Padding="10,0" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontSize="11" FontWeight="SemiBold" Cursor="Hand" Tag="{Binding}" Click="BtnUsarProductoRapido_Click">
+                                                    <Button Grid.Column="4" Content="{DynamicResource PosQuickProdUse}" Height="28" Padding="10,0" Background="{DynamicResource ThemeAccent}" Foreground="White" BorderThickness="0" FontSize="11" FontWeight="SemiBold" Cursor="Hand" Tag="{Binding}" Click="BtnUsarProductoRapido_Click">
                                                         <Button.Template>
                                                             <ControlTemplate TargetType="Button">
                                                                 <Border Background="{TemplateBinding Background}" CornerRadius="4" Padding="{TemplateBinding Padding}">
@@ -1166,7 +1152,7 @@
                                                             </ControlTemplate>
                                                         </Button.Template>
                                                     </Button>
-                                                    <Button Grid.Column="6" Content="✕" Width="28" Height="28" Background="Transparent" Foreground="{StaticResource SystemRed}" BorderBrush="{StaticResource SystemRed}" BorderThickness="1" FontSize="11" FontWeight="Bold" Cursor="Hand" Tag="{Binding}" Click="BtnEliminarProductoRapido_Click" ToolTip="Eliminar atajo">
+                                                    <Button Grid.Column="6" Content="✕" Width="28" Height="28" Background="Transparent" Foreground="{StaticResource SystemRed}" BorderBrush="{StaticResource SystemRed}" BorderThickness="1" FontSize="11" FontWeight="Bold" Cursor="Hand" Tag="{Binding}" Click="BtnEliminarProductoRapido_Click" ToolTip="{DynamicResource PosQuickProdDelTip}">
                                                         <Button.Template>
                                                             <ControlTemplate TargetType="Button">
                                                                 <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">

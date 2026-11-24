@@ -33,8 +33,8 @@
 
             <DockPanel Grid.Row="0" Margin="0,0,0,12" Background="Transparent" MouseLeftButtonDown="Header_MouseLeftButtonDown">
                 <StackPanel>
-                    <TextBlock Text="✨ Asistente IA (Gemini)" FontSize="19" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                    <TextBlock Text="Consulta o modifica inventario, ventas, prestamos y promociones." FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
+                    <TextBlock Text="{DynamicResource AiTitle}" FontSize="19" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                    <TextBlock Text="{DynamicResource AiSubtitle}" FontSize="12" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,2,0,0" />
                 </StackPanel>
                 <Button Content="✕" Width="32" Height="32" DockPanel.Dock="Right" HorizontalAlignment="Right"
                         Background="Transparent" BorderThickness="0" Foreground="{DynamicResource ThemeMutedForeground}"
@@ -43,9 +43,9 @@
 
             <StackPanel Grid.Row="1" Margin="0,0,0,10">
                 <WrapPanel Margin="0,0,0,6">
-                    <Button Content="📦 Stock bajo" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaStock_Click" />
-                    <Button Content="💰 Ventas de hoy" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaVentas_Click" />
-                    <Button Content="📒 Deudores" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaDeudores_Click" />
+                    <Button Content="{DynamicResource AiChipLowStock}" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaStock_Click" />
+                    <Button Content="{DynamicResource AiChipTodaySales}" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaVentas_Click" />
+                    <Button Content="{DynamicResource AiChipDebtors}" Padding="10,5" Margin="0,0,8,4" Background="{DynamicResource ThemeInputBackground}" Foreground="{DynamicResource ThemeTextForeground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" Cursor="Hand" Click="BtnSugerenciaDeudores_Click" />
                 </WrapPanel>
 
                 <Border Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6" Padding="8,6">
@@ -94,7 +94,7 @@
                              CaretBrush="{DynamicResource ThemeAccent}" RenderOptions.ClearTypeHint="Enabled" KeyDown="PromptBox_KeyDown" />
                 </Border>
 
-                <Button x:Name="BtnEnviar" Grid.Column="2" Content="Enviar" Height="40" Padding="20,0"
+                <Button x:Name="BtnEnviar" Grid.Column="2" Content="{DynamicResource AiSendBtn}" Height="40" Padding="20,0"
                         Background="{DynamicResource ThemeAccent}" Foreground="White" FontWeight="Bold" FontSize="13"
                         BorderThickness="0" Cursor="Hand" Click="BtnEnviar_Click" />
             </Grid>

@@ -150,11 +150,11 @@
                         <Grid VerticalAlignment="Center">
                             <Border x:Name="NormalPeriodContainer" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4" Padding="2" VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal">
-                                    <Button x:Name="DayButton" Content="   Hoy   " Style="{StaticResource SegmentButtonStyle}" Click="DayButton_Click" />
-                                    <Button x:Name="WeekButton" Content="  Semana " Style="{StaticResource SegmentButtonStyle}" Click="WeekButton_Click" />
-                                    <Button x:Name="MonthButton" Content="   Mes   " Style="{StaticResource SegmentButtonStyle}" Click="MonthButton_Click" />
-                                    <Button x:Name="YearButton" Content="   Año   " Style="{StaticResource SegmentButtonStyle}" Click="YearButton_Click" />
-                                    <Button x:Name="CustomButton" Content="  Rango  " Style="{StaticResource SegmentButtonStyle}" Click="CustomButton_Click" />
+                                    <Button x:Name="DayButton" Content="{DynamicResource ChartsToday}" Style="{StaticResource SegmentButtonStyle}" Click="DayButton_Click" />
+                                    <Button x:Name="WeekButton" Content="{DynamicResource ChartsWeek}" Style="{StaticResource SegmentButtonStyle}" Click="WeekButton_Click" />
+                                    <Button x:Name="MonthButton" Content="{DynamicResource ChartsMonth}" Style="{StaticResource SegmentButtonStyle}" Click="MonthButton_Click" />
+                                    <Button x:Name="YearButton" Content="{DynamicResource ChartsYear}" Style="{StaticResource SegmentButtonStyle}" Click="YearButton_Click" />
+                                    <Button x:Name="CustomButton" Content="{DynamicResource ChartsRange}" Style="{StaticResource SegmentButtonStyle}" Click="CustomButton_Click" />
                                 </StackPanel>
                             </Border>
 
@@ -451,7 +451,7 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock x:Name="TopListTitleText" Text="Top Productos Vendidos" TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,12" />
+                            <TextBlock x:Name="TopListTitleText" Text="{DynamicResource ChartsTopProducts}" TextWrapping="Wrap" FontFamily="Segoe UI Variable, Segoe UI" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,12" />
 
                             <ItemsControl Grid.Row="1" ItemsSource="{Binding TopProductos}" VerticalAlignment="Top">
                                 <ItemsControl.ItemTemplate>
@@ -490,53 +490,53 @@
                             </Grid.RowDefinitions>
 
                             <StackPanel Grid.Row="0">
-                                <TextBlock Text="Guia de Metricas" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                <TextBlock Text="{DynamicResource ChartsGuideTitle}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
                             </StackPanel>
 
                             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                                 <StackPanel Margin="0,0,10,0">
                                     <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="6" Padding="14,12" Margin="0,0,0,10">
                                         <StackPanel>
-                                            <TextBlock Text="Venta Total" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" />
-                                            <TextBlock Text="Importe bruto cobrado por todos los metodos de pago disponibles." TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
+                                            <TextBlock Text="{DynamicResource ChartsGuideTotalTitle}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="{DynamicResource ChartsGuideTotalDesc}" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
                                         </StackPanel>
                                     </Border>
                                     <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="6" Padding="14,12" Margin="0,0,0,10">
                                         <StackPanel>
-                                            <TextBlock Text="Costo" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" />
-                                            <TextBlock Text="Costo de adquisicion de la mercancia vendida (inversion de reposicion)." TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
+                                            <TextBlock Text="{DynamicResource ChartsGuideCostTitle}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="{DynamicResource ChartsGuideCostDesc}" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
                                         </StackPanel>
                                     </Border>
                                     <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="6" Padding="14,12" Margin="0,0,0,10">
                                         <StackPanel>
-                                            <TextBlock Text="Ganancia Bruta" FontWeight="Bold" FontSize="14" Foreground="{StaticResource SystemGreen}" />
-                                            <TextBlock Text="Utilidad generada antes de descontar los gastos operativos de caja." TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
+                                            <TextBlock Text="{DynamicResource ChartsGuideProfitTitle}" FontWeight="Bold" FontSize="14" Foreground="{StaticResource SystemGreen}" />
+                                            <TextBlock Text="{DynamicResource ChartsGuideProfitDesc}" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
                                         </StackPanel>
                                     </Border>
                                     <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="6" Padding="14,12" Margin="0,0,0,10">
                                         <StackPanel>
-                                            <TextBlock Text="Gastos de Caja" FontWeight="Bold" FontSize="14" Foreground="#EF4444" />
-                                            <TextBlock Text="Retiros registrados en el turno para compras menores, servicios o pagos a proveedores." TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
-                                        </StackPanel>
-                                    </Border>
-
-                                    <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="6" Padding="14,12" Margin="0,0,0,10">
-                                        <StackPanel>
-                                            <TextBlock Text="Velocidad de Rotacion" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ThemeAccent}" />
-                                            <TextBlock Text="Compara la cantidad de piezas vendidas en el periodo vs. el stock fisico que aun te queda en tienda. Identifica que productos se agotan mas rapido." TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
+                                            <TextBlock Text="{DynamicResource ChartsGuideExpTitle}" FontWeight="Bold" FontSize="14" Foreground="#EF4444" />
+                                            <TextBlock Text="{DynamicResource ChartsGuideExpDesc}" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
                                         </StackPanel>
                                     </Border>
 
                                     <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="6" Padding="14,12" Margin="0,0,0,10">
                                         <StackPanel>
-                                            <TextBlock Text="Analisis ABC (Pareto)" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" />
-                                            <TextBlock Text="Clasifica todo tu catalogo: Clase A son el pequeno porcentaje de productos que te generan el 80% de todo tu dinero. Son los articulos que jamas deben faltar." TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
+                                            <TextBlock Text="{DynamicResource ChartsGuideRotTitle}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ThemeAccent}" />
+                                            <TextBlock Text="{DynamicResource ChartsGuideRotDesc}" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="{DynamicResource ThemeInputBackground}" CornerRadius="6" Padding="14,12" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <TextBlock Text="{DynamicResource ChartsGuideAbcTitle}" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource ThemeTextForeground}" />
+                                            <TextBlock Text="{DynamicResource ChartsGuideAbcDesc}" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource ThemeMutedForeground}" Margin="0,4,0,0" />
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
                             </ScrollViewer>
 
-                            <Button Grid.Row="4" Content="Entendido" Height="36" Background="{DynamicResource ThemeAccent}" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="CloseHelp_Click">
+                            <Button Grid.Row="4" Content="{DynamicResource ChartsGuideGotIt}" Height="36" Background="{DynamicResource ThemeAccent}" Foreground="White" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="Bold" Cursor="Hand" Click="CloseHelp_Click">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border x:Name="OkBorder" Background="{TemplateBinding Background}" CornerRadius="4">
@@ -566,7 +566,7 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock x:Name="MovimientosModalTitle" Text="Movimientos del Turno" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,16" />
+                            <TextBlock x:Name="MovimientosModalTitle" Text="{DynamicResource ChartsShiftMovesTitle}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" Margin="0,0,0,16" />
 
                             <Border Grid.Row="1" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="6" Padding="12,12,4,12">
                                 <Grid>
@@ -582,10 +582,10 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="90" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="Hora" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                        <TextBlock Grid.Column="1" Text="Tipo" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                        <TextBlock Grid.Column="2" Text="Concepto" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
-                                        <TextBlock Grid.Column="3" Text="Monto" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Right" />
+                                        <TextBlock Grid.Column="0" Text="{DynamicResource ChartsColTime}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock Grid.Column="1" Text="{DynamicResource ChartsColType}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock Grid.Column="2" Text="{DynamicResource ChartsColConcept}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" />
+                                        <TextBlock Grid.Column="3" Text="{DynamicResource CreditsAmount}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource ThemeTextForeground}" HorizontalAlignment="Right" />
                                     </Grid>
 
                                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,4,0">
@@ -613,7 +613,7 @@
                                 </Grid>
                             </Border>
 
-                            <Button Grid.Row="2" Content="Cerrar (Esc)" Height="36" Width="130" HorizontalAlignment="Right" Margin="0,16,0,0" Foreground="{DynamicResource ThemeTextForeground}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="CloseMovimientosOverlay_Click">
+                            <Button Grid.Row="2" Content="{DynamicResource CommonCloseEsc}" Height="36" Width="130" HorizontalAlignment="Right" Margin="0,16,0,0" Foreground="{DynamicResource ThemeTextForeground}" FontFamily="Segoe UI Variable, Segoe UI" FontSize="13" FontWeight="SemiBold" Cursor="Hand" Click="CloseMovimientosOverlay_Click">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border x:Name="CloseBorder" Background="{DynamicResource ThemeInputBackground}" BorderBrush="{DynamicResource ThemeBorder}" BorderThickness="1" CornerRadius="4">
